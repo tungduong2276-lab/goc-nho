@@ -1,11 +1,26 @@
-# Cập nhật bản mới (đã cài app từ trước)
+# Cập nhật lên bản mới (bản 8 · thế giới 3D)
 
-Làm 2 việc, khoảng 5 phút:
+Bản này giữ nguyên toàn bộ dữ liệu và Rules cũ. Không cần dán lại `firestore.rules`, không cần sửa `firebase-config.js`.
 
-1. **Dán lại Rules.** Vào Firebase → Firestore → tab **Rules** → xoá hết → dán toàn bộ nội dung file `firestore.rules` mới → bấm **Publish**. Thiếu bước này thì nút Rời nhà và Chuyển nhà sẽ báo "Firebase từ chối".
-2. **Tải code mới lên GitHub.** Trong repo `goc-nho`, bấm **Add file → Upload files**, kéo vào: `index.html`, `sw.js`, `HUONG-DAN.md`, `firestore.rules` và **cả thư mục `assets`** → **Commit changes**. Đợi 1–2 phút, rồi đóng hẳn app trên điện thoại và mở lại 1–2 lần.
+1. Trong repo `goc-nho` trên GitHub, bấm **Add file → Upload files**.
+2. Kéo vào: `index.html`, `sw.js`, `manifest.webmanifest`, 4 file icon (`icon-192.png`, `icon-512.png`, `icon-1024.png`, `apple-touch-icon.png`) và **cả thư mục `assets`** (bên trong có thư mục `3d`) → **Commit changes**.
+3. Có thể xoá các file cũ không còn dùng trong `assets`: `phong-khach.webp` và các file `nv_...webp` nằm ngay trong `assets`. Thư mục `assets/3d` thì giữ nguyên.
+4. Đợi 1–2 phút rồi mở app. Bấm **Mở bản mới** khi app báo có bản mới.
+5. Icon trên màn hình chính có thể vẫn là chậu cây cũ. Muốn đổi sang ngôi nhà mới thì xoá app khỏi màn hình chính rồi thêm lại (dữ liệu không mất vì nằm trên Firebase).
 
-Không cần sửa `firebase-config.js`, dữ liệu cũ giữ nguyên.
+**Bản 8 có gì mới**
+- **Trang Nhà là ngôi nhà búp bê 3D** trên đảo giữa biển. Chạm phòng nào thì vào phòng đó: phòng khách, bếp (tủ lạnh), góc sáng tạo (truyện tiếp sức), gác kỷ niệm (từ điển), vườn chung, hộp thư (thư hẹn giờ), quán cà phê (hũ hẹn hò), bến thuyền và đảo (vương quốc).
+- **Cảnh đổi theo giờ:** bình minh, ban ngày, hoàng hôn, ban đêm (cửa sổ sáng đèn, sao, trăng).
+- **Phòng khách 3D:** hai nhân vật mới (Anh hoodie trắng, Em váy yếm hồng). Chạm người kia để ôm, chạm sofa để ngồi cạnh nhau. Lịch treo tường hiện số ngày bên nhau, khung ảnh hiện ảnh kỷ niệm mới nhất, chạm hũ để bốc thăm. Đài radio mở bài hát của hai đứa (dán link trong Cài đặt).
+- **Nuôi chung một bé mèo:** đặt tên, chọn màu lông. Bé đói nếu 12 tiếng chưa ăn, lấm lem nếu 2 ngày chưa tắm, nhớ người ở xa, ngủ ban đêm, đợi ở cửa khi có tin nhắn mới.
+- **"Bạn đang làm gì?":** Rảnh / Đang bận / Đi ngủ rồi. Người kia nhìn bản đồ là biết bạn đang ở phòng nào.
+- **Vườn 3D:** cây chăm hằng ngày lớn qua 5 giai đoạn, xoay vòng 6 loại hoa (anh đào, tulip, cẩm tú cầu, oải hương, sen, cúc họa mi). Chậu đã nở được trồng ra các luống trên bản đồ.
+- **Thời tiết thật:** chọn thành phố trong Cài đặt, trời mưa thật thì cửa sổ và bản đồ cũng mưa. Dịp Noel (20–26/12) có tuyết rơi.
+- Icon app và màn hình chờ mới, icon điều hướng mới (đang chọn thì tô màu của bạn: xanh trời hoặc hồng).
+
+## Nếu sau này cần dán lại Rules
+
+Vào Firebase → Firestore → tab **Rules** → xoá hết → dán toàn bộ nội dung file `firestore.rules` → **Publish**. Thiếu Rules thì nút Rời nhà và Chuyển nhà sẽ báo "Firebase từ chối".
 
 ---
 
@@ -21,7 +36,7 @@ Thư mục này gồm:
 | `firebase-config.js` | Nơi bạn dán cấu hình Firebase (bước 1) |
 | `firestore.rules` | Quy tắc bảo mật, dán vào Firebase (bước 1) |
 | thư mục `assets` | Hình nhân vật và căn phòng |
-| `manifest.webmanifest`, `sw.js`, các file `.png` | Giúp app cài được lên màn hình chính và mở được khi mạng yếu |
+| `manifest.webmanifest`, `sw.js`, các file `.png` | Giúp app cài được lên màn hình chính, mở được khi mạng yếu và tự báo khi có bản mới |
 
 ---
 
@@ -78,7 +93,7 @@ Mở địa chỉ app trên điện thoại:
 - **iPhone:** bắt buộc mở bằng **Safari**. Bấm nút **Chia sẻ** (ô vuông có mũi tên) → **Thêm vào MH chính** → **Thêm**.
 - **Android:** mở bằng **Chrome**. Bấm menu **⋮** → **Cài đặt ứng dụng** (hoặc **Thêm vào màn hình chính**).
 
-Từ giờ mở app bằng biểu tượng chậu cây trên màn hình chính. App chạy toàn màn hình như app thật.
+Từ giờ mở app bằng biểu tượng ngôi nhà nhỏ trên màn hình chính. App chạy toàn màn hình như app thật.
 
 > Trên iPhone, app trên màn hình chính có bộ nhớ riêng với Safari. Vì vậy hãy đăng nhập **bên trong app** sau khi cài, không đăng nhập ở Safari rồi mới cài.
 
@@ -97,7 +112,7 @@ Từ giờ mở app bằng biểu tượng chậu cây trên màn hình chính. 
 - **App báo "Chưa kết nối Firebase":** file `firebase-config.js` chưa được điền, hoặc chưa được tải lên cùng `index.html`.
 - **Báo "Firebase từ chối truy cập":** chưa dán quy tắc ở bước 1.7, hoặc dán chưa xong mà quên bấm Publish.
 - **Đăng nhập báo lỗi ngay:** kiểm tra lại bước 1.5 (bật Email/Password).
-- **Sửa code xong mà điện thoại chưa thấy bản mới:** đóng hẳn app rồi mở lại 1–2 lần.
+- **Sửa code xong mà điện thoại chưa thấy bản mới:** mở app, đợi thanh "Góc Nhỏ có bản mới rồi" rồi bấm Mở bản mới. Nếu tự sửa code, nhớ tăng số phiên bản ở dòng `const CACHE = "goc-nho-v8"` trong `sw.js` (ví dụ thành v9).
 - **Quên mật khẩu:** ở màn hình đăng nhập, gõ email rồi bấm **Quên mật khẩu?**. Firebase sẽ gửi thư đặt lại mật khẩu.
 
 ## Ghép nhà: các tình huống hay gặp

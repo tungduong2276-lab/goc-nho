@@ -1,16 +1,26 @@
 {
+  "id": "./",
   "name": "Góc Nhỏ",
   "short_name": "Góc Nhỏ",
   "description": "App riêng của hai đứa: hũ hẹn hò, vườn chăm chung, tủ lạnh nhắn nhủ, vương quốc nhỏ.",
   "lang": "vi",
-  "start_url": "./",
+  "dir": "ltr",
+  "start_url": "./#nha",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#EAF5FF",
-  "theme_color": "#7CC3F2",
+  "theme_color": "#EAF5FF",
+  "categories": ["lifestyle", "social"],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Tủ lạnh nhắn nhủ", "short_name": "Tủ lạnh", "url": "./#tu-lanh", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Bốc thăm hẹn hò", "short_name": "Bốc thăm", "url": "./#hom-nay", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Tưới cây chung", "short_name": "Tưới cây", "url": "./#khu-vuon", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
   ]
 }

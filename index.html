@@ -1,5 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="theme-color" content="#7CC3F2"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon-192.png"><link rel="apple-touch-icon" href="./apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Góc Nhỏ"></head><body>
-<title>Góc Nhỏ</title>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><title>Góc Nhỏ</title><meta name="theme-color" content="#EAF5FF" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#101A33" media="(prefers-color-scheme: dark)"><meta name="description" content="App riêng của hai đứa"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon-192.png"><link rel="apple-touch-icon" href="./apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Góc Nhỏ"></head><body>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -400,7 +399,7 @@ nav.subtabs a[aria-current="page"]{color:var(--pink-deep);border-bottom-color:va
 nav.subtabs a .ct{font-variant-numeric:tabular-nums;font-size:12px;background:var(--petal);border-radius:999px;padding:0 6px}
 nav.subtabs a .ct:empty{display:none}
 
-#tab-home,#tab-care,#tab-fridge,#tab-story,#tab-kingdom{display:flex;flex-direction:column;gap:18px}
+#tab-home,#tab-care,#tab-fridge,#tab-story,#tab-kingdom,#tab-room{display:flex;flex-direction:column;gap:18px}
 #tab-draw,#draw-state{display:flex;flex-direction:column;gap:14px}
 #tab-draw{gap:18px}
 #draw-state:empty,#draw-gal:empty,#draw-pad:empty{display:none}
@@ -921,6 +920,188 @@ body.gated{overflow:hidden}
 .btn-danger:disabled{opacity:.6}
 #acctBox .bk{display:flex;flex-direction:column;gap:8px}
 
+/* ---------- v7 · hoàn thiện: thanh điều hướng dưới, cài đặt dạng trang, cảm giác app ---------- */
+html{-webkit-text-size-adjust:100%}
+body{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px));-webkit-tap-highlight-color:transparent;overscroll-behavior-y:contain}
+button,a,label,summary,.sc-ch{touch-action:manipulation}
+/* iPhone tự phóng to khi ô nhập nhỏ hơn 16px — giữ 16px để không bị giật màn hình */
+.field input,.field textarea,.field select,.repform input{font-size:16px}
+
+/* header gọn */
+header{align-items:flex-start}
+.brand>div{min-width:0}
+.sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sync{margin-top:2px;font-size:11.5px;white-space:nowrap}
+.sync i{flex:none}
+.icon-btn.gear{width:44px;height:44px;padding:0;display:grid;place-items:center;flex:none;background:var(--surface)}
+.icon-btn.gear svg{width:24px;height:24px}
+.icon-btn.gear:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--pop)}
+.topline{margin-top:-12px}
+.topline:has(.days[hidden]){display:none}
+.days{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* thanh điều hướng dưới đáy */
+nav.tabs{position:fixed;left:0;right:0;top:auto;bottom:0;z-index:30;margin:0;
+  display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;overflow:visible;
+  padding:7px max(8px,env(safe-area-inset-right,0px),calc((100% - 540px)/2)) calc(7px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px),calc((100% - 540px)/2));
+  background:color-mix(in srgb,var(--surface) 94%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  border-top:2.5px solid var(--edge)}
+nav.tabs a,nav.tabs a[aria-current="page"]{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:0;padding:2px 0;border:0;border-radius:14px;background:none;box-shadow:none;color:var(--muted);font-size:11px;font-weight:800;line-height:1.1;white-space:nowrap}
+nav.tabs a::before,nav.tabs a[aria-current="page"]::before{display:none}
+nav.tabs .nic{display:grid;place-items:center;width:48px;height:32px;border-radius:12px;border:2px solid transparent;transition:background .15s,transform .15s}
+nav.tabs .nic svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+nav.tabs .nic svg .f{fill:currentColor;stroke:none}
+nav.tabs .nlb{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+nav.tabs a[aria-current="page"]{color:var(--ink)}
+nav.tabs a[aria-current="page"] .nic{background:var(--sky);border-color:var(--edge);box-shadow:2px 2px 0 var(--pop);color:#10203F}
+nav.tabs a[aria-current="page"] .nic svg{fill:color-mix(in srgb,#fff 55%,transparent)}
+nav.tabs a:active .nic{transform:scale(.92)}
+nav.tabs .ndot{position:absolute;top:0;left:calc(50% + 14px);margin:0;width:10px;height:10px;background:var(--heart);box-shadow:0 0 0 2px var(--surface)}
+nav.tabs a[aria-current="page"] .ndot{background:var(--heart);box-shadow:0 0 0 2px var(--surface)}
+h1{white-space:nowrap}
+@media (max-width:350px){nav.tabs .nic{width:40px}nav.tabs a,nav.tabs a[aria-current="page"]{font-size:9.5px;letter-spacing:-.02em}h1{font-size:28px}.brand .mascot{width:46px;height:46px}}
+
+/* tab con dính trên đầu khi cuộn */
+nav.subtabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);margin-top:-12px;padding-top:4px;box-shadow:0 10px 10px -10px color-mix(in srgb,var(--edge) 35%,transparent)}
+
+/* chuyển trang nhẹ nhàng */
+.view:not([hidden]){animation:vin .28s ease both}
+@keyframes vin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* cài đặt thành một trang riêng */
+#settings:not([hidden]){position:fixed;inset:0;z-index:70;margin:0;border:0!important;border-radius:0;box-shadow:none!important;overflow-y:auto;overscroll-behavior:contain;
+  background-color:var(--bg);align-items:center;gap:14px;
+  padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(40px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  animation:sheetin .3s cubic-bezier(.2,1,.4,1)}
+#settings>*{width:min(100%,520px)}
+@keyframes sheetin{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:calc(-12px - env(safe-area-inset-top,0px));z-index:2;background:var(--bg);padding-block:10px 8px;border-bottom:2.5px solid var(--line)}
+.sheet-head h2{font-family:var(--display);font-size:28px;margin:0;color:var(--ink);line-height:1.1}
+#settings>.lbl{margin-top:6px;margin-bottom:-4px}
+#settings .bk{border-top:2.5px dashed var(--line)}
+.rules-fold{padding:10px 14px}
+.rules-fold summary{font-size:15px}
+.rules-fold .rules{margin-top:8px}
+body.sheet-open{overflow:hidden}
+body[data-g="nha"] .topline{display:none}
+body.sheet-open nav.tabs{display:none}
+
+/* thông báo nổi phía trên thanh điều hướng */
+.toast{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+.updbar{position:fixed;z-index:40;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));width:min(calc(100% - 32px),488px);
+  display:flex;align-items:center;gap:10px;background:var(--surface);color:var(--ink);border:2.5px solid var(--edge);box-shadow:4px 4px 0 var(--pop);border-radius:18px;padding:10px 10px 10px 14px;font-weight:800;font-size:14px;animation:updin .3s ease}
+@keyframes updin{from{transform:translate(-50%,20px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+.updbar span{flex:1;min-width:0}
+.sync.offline i{background:#E3A92B}
+
+/* căn phòng: tên không đè lên nhau */
+.sc-tag{z-index:2}
+
+/* ---------- v8 · thế giới 3D ---------- */
+.w3fit{position:relative;width:100%;overflow:hidden}
+.w3fit .wcanvas{position:absolute;left:0;top:0;transform:scale(var(--k,.3333));transform-origin:0 0}
+.wcanvas .wbg{position:absolute;left:0;top:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-select:none}
+.spr{position:absolute;max-width:none;pointer-events:none;user-select:none}
+.spr.ghost,.chr.ghost .spr{opacity:.5;filter:grayscale(.35)}
+
+/* bản đồ ngôi nhà */
+.world{position:relative;margin-inline:-16px;border-block:2.5px solid var(--edge);overflow:hidden;background:linear-gradient(180deg,#9FD5F7 0%,#D8EEFF 20%,#D8EEFF 100%)}
+.world.t-sang{background:linear-gradient(180deg,#FFD6DE 0%,#FFE9D6 12%,#B9DEF7 24%)}
+.world.t-chieu{background:linear-gradient(180deg,#FFB98A 0%,#F7A9B8 12%,#C9B6F2 24%)}
+.world.t-dem{background:linear-gradient(180deg,#121B36 0%,#1D2B4F 16%,#2A3D6E 26%)}
+.world.t-dem .sky{background-image:radial-gradient(#FFD66B 1.4px,transparent 1.8px),radial-gradient(#fff 1px,transparent 1.4px);background-size:58px 44px,37px 29px;background-position:9px 5px,22px 17px;-webkit-mask-image:linear-gradient(#000 0%,transparent 26%);mask-image:linear-gradient(#000 0%,transparent 26%)}
+.world .sky{position:absolute;inset:0;pointer-events:none}
+.world .wstage{aspect-ratio:1170/1960}
+.cloud{position:absolute;opacity:.92;animation:drift 70s linear infinite;width:28%}
+.cloud.c1{top:2.5%;left:-30%}.cloud.c2{top:7%;width:20%;left:-25%;animation-duration:95s;animation-delay:-40s}.cloud.c3{top:12.5%;width:16%;left:-20%;animation-duration:120s;animation-delay:-80s}
+.world.t-dem .cloud{opacity:.25}
+@keyframes drift{to{transform:translateX(560%)}}
+.world .zones{position:absolute;inset:0;width:100%;height:100%}
+.world .zones polygon{fill:transparent;cursor:pointer;outline:none;transition:fill .15s,stroke .15s;stroke-width:6;stroke:transparent;stroke-linejoin:round}
+.world .zones polygon:hover,.world .zones polygon:focus-visible,.world .zones polygon:active{fill:rgba(255,255,255,.22);stroke:#FF6FA5}
+.zlbl{position:absolute;transform:translate(-50%,-50%);font:800 25px/1.3 var(--body);color:#1D2B4F;background:rgba(255,255,255,.88);border:3.5px solid #1D2B4F;border-radius:999px;padding:1px 14px;white-space:nowrap;pointer-events:none}
+.world.t-dem .zlbl{background:rgba(234,244,255,.85)}
+.msign{position:absolute;font:800 26px/1 var(--display);color:#1D2B4F;transform:translate(-50%,-55%) matrix(.866,.5,0,1,0,0);white-space:nowrap;pointer-events:none}
+.m-ch{filter:drop-shadow(0 0 0 transparent)}
+.w-day{position:absolute;left:12px;top:12px;background:var(--surface);border:2.5px solid var(--edge);border-radius:16px;box-shadow:3px 3px 0 var(--edge);padding:6px 10px 5px;text-align:center;line-height:1}
+.w-day b{display:block;font-family:var(--display);font-size:26px;color:var(--pink-deep);font-variant-numeric:tabular-nums}
+.w-day span{font-size:10px;font-weight:800;color:var(--muted)}
+.w-time{position:absolute;right:12px;top:12px;font-size:12px;font-weight:800;color:#1D2B4F;background:rgba(255,255,255,.85);border:2px solid #1D2B4F;border-radius:999px;padding:2px 10px}
+.w-pres{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);margin:0;display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px;font-weight:800;color:var(--ink);background:var(--surface);border:2.5px solid var(--edge);box-shadow:3px 3px 0 var(--edge);border-radius:999px;padding:5px 12px;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
+.w-loading{min-height:420px;display:grid;place-items:center}
+.fx-rain{position:absolute;inset:0;pointer-events:none;background-image:repeating-linear-gradient(105deg,transparent 0 14px,rgba(255,255,255,.55) 14px 15px,transparent 15px 34px);background-size:120px 120px;animation:rain .5s linear infinite;opacity:.65}
+@keyframes rain{to{background-position:-30px 120px}}
+.fx-snow{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(#fff 2px,transparent 2.6px),radial-gradient(#fff 1.4px,transparent 2px);background-size:60px 60px,40px 40px;animation:snow 9s linear infinite}
+@keyframes snow{to{background-position:30px 600px,-20px 400px}}
+
+/* phòng khách */
+.back{display:inline-block;font-size:14px;font-weight:800;text-decoration:none;color:var(--pink-deep);margin-bottom:4px}
+.room3d{position:relative;margin-inline:-16px;overflow:hidden;background:radial-gradient(circle at 50% 55%,var(--sky-soft),transparent 70%)}
+.room3d .rstage{aspect-ratio:1170/960}
+.room3d .rstage .wcanvas{top:calc(-150px * var(--k,.3333))}
+.room3d.t-dem .lay img,.room3d.t-dem .spr,.room3d.t-dem .onwall{filter:brightness(.72) saturate(.85) hue-rotate(-8deg)}
+.room3d.t-chieu .lay img,.room3d.t-chieu .spr{filter:sepia(.18) saturate(1.05)}
+.lay{position:absolute;display:block;padding:0;margin:0;border:0;background:none}
+.lay img{width:100%;height:100%;display:block;pointer-events:none}
+.lay.hot{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.lay.hot:active img{transform:translateY(4px)}
+.lay.hot:focus-visible{outline:6px solid var(--pink);outline-offset:4px;border-radius:20px}
+.onwall{position:absolute;left:0;top:0;z-index:4;transform-origin:0 0;pointer-events:none;overflow:hidden}
+.onwall.cal{width:130px;height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;color:#1D2B4F}
+.onwall.cal b{font:800 52px/1 var(--display);font-variant-numeric:tabular-nums;color:#D93A7B}
+.onwall.cal span{font:800 17px/1.2 var(--body)}
+.onwall.photo{width:140px;height:100px;background:#FFE6F0;display:grid;place-items:center}
+.onwall.photo img{width:100%;height:100%;object-fit:cover}
+.onwall.photo i{font-style:normal;font-size:46px;color:#FF6FA5}
+.notes{position:absolute;pointer-events:none;width:0;height:0}
+.notes i{position:absolute;font:900 40px/1 var(--body);color:#D93A7B;font-style:normal;-webkit-text-stroke:2px #1D2B4F;animation:note 2.4s ease-out infinite;opacity:0}
+.notes i:nth-child(2){animation-delay:.8s;color:#2FA463}.notes i:nth-child(3){animation-delay:1.6s;color:#7CC3F2}
+@keyframes note{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(40px,-110px) rotate(15deg)}}
+.chr{position:absolute;left:0;top:0;width:0;height:0;padding:0;border:0;background:none;overflow:visible;cursor:pointer}
+.chr .spr{pointer-events:auto;animation:scbob 3.4s ease-in-out infinite;transform-origin:50% 90%}
+.chr.pet .spr{animation-duration:2.6s}
+.chr.hop .spr{animation:schop .45s ease 2}
+.chr:focus-visible .spr{outline:6px solid var(--pink);outline-offset:4px;border-radius:30px}
+.ctag{position:absolute;transform:translateX(-50%);white-space:nowrap;font:800 26px/1.45 var(--body);color:#1D2B4F;background:#fff;border:3.5px solid #1D2B4F;border-radius:999px;padding:0 14px;pointer-events:none}
+.ctag.c-anh{background:#D8EEFF}.ctag.c-em{background:#FFE6F0}.ctag small{font-size:22px;color:#5B6B8A}
+.bubble{position:absolute;transform:translate(-50%,-100%);width:84px;height:76px;background:#fff;border:4px solid #1D2B4F;border-radius:40px;box-shadow:5px 5px 0 #1D2B4F;display:grid;place-items:center;pointer-events:none;animation:scbob 2.4s ease-in-out infinite}
+.bubble::after{content:"";position:absolute;bottom:-14px;left:24px;width:20px;height:20px;background:#fff;border-right:4px solid #1D2B4F;border-bottom:4px solid #1D2B4F;transform:rotate(45deg)}
+.bubble svg{width:48px;height:48px;position:relative;z-index:1}
+.flyheart{position:fixed;z-index:90;transform:translate(-50%,0);font-size:30px;color:#FF6FA5;-webkit-text-stroke:2px #1D2B4F;pointer-events:none;animation:scfly 1.3s ease-out forwards}
+.room-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:-6px}
+.room-acts .btn{flex:1 1 150px}
+.petcard{display:flex;gap:14px;align-items:center;background:var(--surface);border:2.5px solid var(--edge);box-shadow:4px 4px 0 var(--pop);border-radius:20px;padding:10px 14px}
+.petimg{width:110px;height:110px;flex:none;object-fit:contain;margin-block:-14px -4px}
+.petimg.hop{animation:schop .45s ease 2}
+.petlog{list-style:none;margin:0;padding:0;flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.petlog li{display:flex;justify-content:space-between;gap:8px;border-bottom:2px dotted var(--line);padding-bottom:3px}
+.petlog li:last-child{border-bottom:0}
+.petlog span{color:var(--muted);font-weight:700;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.petbtns .btn{flex:1 1 90px}
+.petpick{display:flex;justify-content:center;gap:4px}.petpick img{width:88px;height:88px;object-fit:contain}
+
+/* vườn 3D */
+.care .care-plant{width:190px;height:180px;display:grid;place-items:end center;overflow:visible}
+.plant3d{width:250px;height:250px;max-width:none;object-fit:contain;display:block;margin:-60px -30px -12px}
+.plant3d.wilt{filter:saturate(.35) brightness(.98);transform:rotate(-5deg);transform-origin:50% 90%}
+.care .care-plant svg{display:none}
+.sill-row.s3d span img{width:66px;height:66px;display:block;object-fit:contain;margin-bottom:-6px}
+
+/* biểu tượng điều hướng v8 */
+body{--acc:#7CC3F2}
+body[data-me="em"]{--acc:#FF6FA5}
+nav.tabs .nic svg,nav.tabs a[aria-current="page"] .nic svg{fill:none;stroke:#1D2B4F;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+nav.tabs .nic svg .w,nav.tabs .nic svg .a{fill:#FFFFFF}
+nav.tabs .nic svg .p{fill:#FF6FA5}nav.tabs .nic svg .g{fill:#2FA463}nav.tabs .nic svg .y{fill:#FFD66B}
+nav.tabs a[aria-current="page"] .nic svg .a{fill:var(--acc)}
+nav.tabs a[aria-current="page"] .nic{background:color-mix(in srgb,var(--acc) 22%,var(--surface));color:var(--ink)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) nav.tabs .nic svg .w,:root:not([data-theme="light"]) nav.tabs .nic svg .a{fill:#EAF4FF}}
+
+/* màn hình chờ */
+.glogo .gsplash{width:min(260px,70%);display:block;margin:0 auto -6px;animation:none}
+@media (prefers-reduced-motion:reduce){.cloud,.fx-rain,.fx-snow,.notes i,.chr .spr,.bubble{animation:none}}
+
 </style>
 
 <div class="wrap" id="app">
@@ -930,17 +1111,19 @@ body.gated{overflow:hidden}
       <div>
         <h1>Góc Nhỏ<span class="hrt" aria-hidden="true">♥</span></h1>
         <p class="sub" id="couple">Anh &amp; Em</p>
+        <span class="sync off" id="syncBox"><i></i><span id="syncText">Đang lưu trên máy này</span></span>
       </div>
     </div>
-    <button class="icon-btn" id="openSettings" aria-expanded="false" aria-controls="settings">Cài đặt</button>
+    <button class="icon-btn gear" id="openSettings" aria-expanded="false" aria-controls="settings" aria-label="Cài đặt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.6a3.4 3.4 0 100 6.8 3.4 3.4 0 000-6.8z" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M19.4 13.5l1.7 1.3-1.9 3.3-2-.8a7.6 7.6 0 01-2.3 1.3l-.3 2.1h-3.8l-.3-2.1a7.6 7.6 0 01-2.3-1.3l-2 .8-1.9-3.3 1.7-1.3a7.7 7.7 0 010-2.7L2.3 9.5l1.9-3.3 2 .8a7.6 7.6 0 012.3-1.3l.3-2.1h3.8l.3 2.1a7.6 7.6 0 012.3 1.3l2-.8 1.9 3.3-1.7 1.3a7.7 7.7 0 010 2.7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
   </header>
 
   <div class="topline">
     <span class="days" id="daysBox" hidden></span>
-    <span class="sync off" id="syncBox"><i></i><span id="syncText">Đang lưu trên máy này</span></span>
   </div>
 
-  <div class="sheet" id="settings" hidden>
+  <div class="sheet" id="settings" hidden role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div class="sheet-head"><h2 id="setTitle">Cài đặt</h2><button type="button" class="btn btn-ghost btn-small" id="closeSettings">Đóng</button></div>
+    <div class="lbl">Hai người</div>
     <div class="row">
       <label class="field">Tên người thứ nhất<input id="set-name1" maxlength="20"></label>
       <label class="field">Tên người thứ hai<input id="set-name2" maxlength="20"></label>
@@ -951,21 +1134,25 @@ body.gated{overflow:hidden}
     <div class="field">Nhân vật trong nhà
       <div class="seg" id="set-chars"></div>
     </div>
+    <div class="lbl">Ngày quan trọng</div>
     <div class="row">
       <label class="field">Ngày bắt đầu yêu<input id="set-start" type="date"></label>
     </div>
+    <div class="lbl">Ngôi nhà</div>
+    <label class="field">Bài hát của hai đứa<input id="set-song" type="url" inputmode="url" placeholder="Dán link YouTube hoặc Spotify"><small>Chạm vào đài radio trong phòng khách để mở bài này.</small></label>
+    <label class="field">Thời tiết ở cửa sổ<select id="set-city"><option value="">Không dùng</option><option value="hn">Hà Nội</option><option value="hcm">TP. Hồ Chí Minh</option><option value="dn">Đà Nẵng</option><option value="hp">Hải Phòng</option><option value="hue">Huế</option><option value="ct">Cần Thơ</option><option value="dl">Đà Lạt</option><option value="nt">Nha Trang</option></select><small>Trời mưa thật thì cửa sổ và bản đồ cũng mưa.</small></label>
     <div class="row">
       <label class="field" id="lbl-b1">Sinh nhật<input id="set-b1" type="date"></label>
       <label class="field" id="lbl-b2">Sinh nhật<input id="set-b2" type="date"></label>
     </div>
-    <ul class="rules">
+    <details class="fold rules-fold"><summary>Luật chơi của hũ hẹn hò</summary><ul class="rules">
       <li>Mỗi buổi hẹn: bốc trò của ngày, đặt 1 từ mới, giữ 1 hiện vật, đánh dấu 1 địa điểm, cuối buổi thả tim.</li>
       <li>Lá vừa chơi nghỉ 3 buổi. Mỗi mùa 10 buổi, 2 lượt đổi lá.</li>
       <li>Thỉnh thoảng sẽ bốc trúng lá vàng có phần thưởng. Ngày đặc biệt bốc ra 2 lá cùng lúc.</li>
       <li>Hết mỗi mùa, mỗi người được viết thêm 1 lá mới vào hũ.</li>
       <li id="syncRule">Để cùng dùng trên hai điện thoại, chia sẻ trang này cho người kia với quyền chỉnh sửa.</li>
-    </ul>
-    <div class="row"><button class="btn btn-main btn-small" id="saveSettings">Lưu</button></div>
+    </ul></details>
+    <div class="row"><button class="btn btn-main btn-small" id="saveSettings">Lưu thay đổi</button></div>
     <div id="acctBox"></div>
     <div class="bk"><div class="lbl">Sao lưu dữ liệu</div>
       <p class="quiet" style="margin:0">Tải về một file chứa toàn bộ dữ liệu của hai bạn (cả ảnh và ghi âm). Dùng file này để chuyển sang app riêng hoặc cất giữ phòng khi cần.</p>
@@ -980,12 +1167,12 @@ body.gated{overflow:hidden}
   </div>
 
   <nav class="tabs" aria-label="Mục">
-    <a href="#nha" data-group="nha">Nhà<i class="ndot" id="dot-nha" hidden></i></a>
-    <a href="#hom-nay" data-group="hen">Hẹn hò</a>
-    <a href="#khu-vuon" data-group="vuon">Khu vườn<i class="ndot" id="dot-vuon" hidden></i></a>
-    <a href="#tu-lanh" data-group="gui">Gửi nhau<i class="ndot" id="dot-gui" hidden></i></a>
-    <a href="#truyen" data-group="choi">Chơi cùng<i class="ndot" id="dot-choi" hidden></i></a>
-    <a href="#tu-dien" data-group="ky">Kỷ niệm</a>
+    <a href="#nha" data-group="nha"><span class="nic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11.2L12 4l8.5 7.2V20a1 1 0 01-1 1h-4.8v-5.6h-5.4V21H4.5a1 1 0 01-1-1z"/></svg></span><span class="nlb">Nhà</span><i class="ndot" id="dot-nha" hidden></i></a>
+    <a href="#hom-nay" data-group="hen"><span class="nic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10v3H7z"/><path d="M6.5 6.5h11a2 2 0 012 2V18a3 3 0 01-3 3h-9a3 3 0 01-3-3V8.5a2 2 0 012-2z"/><path d="M12 16.8c-2.6-1.7-3.6-3-3.6-4.3 0-1 .8-1.8 1.8-1.8.8 0 1.4.4 1.8 1 .4-.6 1-1 1.8-1 1 0 1.8.8 1.8 1.8 0 1.3-1 2.6-3.6 4.3z"/></svg></span><span class="nlb">Hẹn hò</span></a>
+    <a href="#khu-vuon" data-group="vuon"><span class="nic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9"/><path d="M12 12C12 7.5 8.8 5 4.5 5c0 4.3 3 7 7.5 7z"/><path d="M12 13.5c0-3.8 2.8-6.3 7.5-6.3 0 3.8-2.9 6.3-7.5 6.3z"/><path d="M7.5 21h9"/></svg></span><span class="nlb">Khu vườn</span><i class="ndot" id="dot-vuon" hidden></i></a>
+    <a href="#tu-lanh" data-group="gui"><span class="nic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="M3.8 7l8.2 6 8.2-6"/></svg></span><span class="nlb">Gửi nhau</span><i class="ndot" id="dot-gui" hidden></i></a>
+    <a href="#truyen" data-group="choi"><span class="nic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" class="f"/><circle cx="15.5" cy="15.5" r="1.3" class="f"/><circle cx="15.5" cy="8.5" r="1.3" class="f"/><circle cx="8.5" cy="15.5" r="1.3" class="f"/></svg></span><span class="nlb">Chơi cùng</span><i class="ndot" id="dot-choi" hidden></i></a>
+    <a href="#tu-dien" data-group="ky"><span class="nic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h10.5a3 3 0 013 3V20H8a3 3 0 01-3-3z"/><path d="M5 17a3 3 0 013-3h10.5"/><path d="M11.8 11c-1.8-1.1-2.5-2-2.5-2.9 0-.7.6-1.2 1.2-1.2.6 0 1 .3 1.3.7.3-.4.7-.7 1.3-.7.7 0 1.2.5 1.2 1.2 0 .9-.7 1.8-2.5 2.9z"/></svg></span><span class="nlb">Kỷ niệm</span></a>
   </nav>
   <nav class="subtabs" data-group="hen" aria-label="Hẹn hò" hidden><a href="#hom-nay" data-tab="hom-nay">Hũ hẹn hò</a><a href="#nhat-ky" data-tab="nhat-ky">Nhật ký<span class="ct" id="ct-history"></span></a><a href="#bo-luat" data-tab="bo-luat">Bộ luật<span class="ct" id="ct-rules"></span></a></nav>
   <nav class="subtabs" data-group="gui" aria-label="Gửi nhau" hidden><a href="#tu-lanh" data-tab="tu-lanh">Tủ lạnh</a><a href="#thu" data-tab="thu">Thư hẹn giờ<span class="ct" id="ct-letters"></span></a><a href="#uoc-mo" data-tab="uoc-mo">Ước mơ<span class="ct" id="ct-wishes"></span></a></nav>
@@ -998,6 +1185,7 @@ body.gated{overflow:hidden}
   </div>
 
   <div class="view" id="v-nha"><section id="tab-home"></section></div>
+  <div class="view" id="v-phong-khach" hidden><section id="tab-room"></section></div>
   <div class="view" id="v-hom-nay" hidden>
     <div id="banner"></div>
     <div id="whoBox"></div>
@@ -1161,7 +1349,7 @@ function flowerSVG(kind){
 
 /* ================= state ================= */
 const LKEY="hu-hen-ho-v2",OLDKEY="hu-hen-ho-v1";
-const COLS=["history","dict","museum","places","wishes","letters","rules","care","taps","presence","gifts","fridge","story","drawings","kingdom","treasures","realm","medals"];
+const COLS=["history","dict","museum","places","wishes","letters","rules","care","taps","presence","gifts","fridge","story","drawings","kingdom","treasures","realm","medals","pet"];
 const defaultMeta=()=>({names:["Anh","Em"],swaps:{},extraSwaps:{},pending:null,custom:[],startDate:"",bday:["",""]});
 const S={meta:defaultMeta()};COLS.forEach(c=>S[c]={});
 let MODE="local",DB=null,UID=null,dbReady=false;
@@ -1199,7 +1387,7 @@ function put(col,obj){S[col][obj.id]=obj;if(MODE==="db")DB.collection(col).doc(o
 function del(col,id){delete S[col][id];if(MODE==="db")DB.collection(col).doc(id).delete().catch(dbErr);else saveLocal();}
 function putMeta(patch){Object.assign(S.meta,patch);if(MODE==="db")DB.doc("meta/main").set(clone(S.meta)).catch(dbErr);else saveLocal();}
 
-function setSync(text,on){$("syncText").textContent=text;$("syncBox").classList.toggle("off",!on);}
+function setSync(text,on){if(navigator.onLine===false&&on){text="Đang ngoại tuyến · có mạng sẽ tự đồng bộ";on=false;}$("syncBox").classList.toggle("offline",navigator.onLine===false);$("syncText").textContent=text;$("syncBox").classList.toggle("off",!on);}
 async function initDb(){
   const db=await CLOUD.ready;if(!db)return;
   DB=db;UID=CLOUD.uid;
@@ -1212,6 +1400,7 @@ async function initDb(){
   DB.doc("meta/main").onSnapshot(s=>{
     if(s.exists){metaExists=true;S.meta=Object.assign(defaultMeta(),clone(s.data()));}
     if(metaFirst){metaFirst=false;onFirst();}
+    else if(dbReady)setSync("Đồng bộ giữa hai máy",true);
     schedule();
   },()=>setSync("Mất kết nối, đang thử lại...",false));
   COLS.forEach(c=>{let f=true;
@@ -1405,7 +1594,7 @@ function renderHeader(){
   ["history","dict","museum","places","wishes","letters","rules"].forEach(c=>{const e=$("ct-"+c);if(e)e.textContent=list(c).length||"";});
   const st=parseDay(S.meta.startDate),db=$("daysBox");
   if(st){const n=Math.round((dayStart(new Date())-st)/864e5)+1;const ev=nextEvent();
-    db.hidden=false;db.innerHTML=`Ngày thứ ${n} bên nhau${ev?` <span>· còn ${ev.n} ngày: ${esc(ev.title)}</span>`:""}`;}
+    db.hidden=false;db.innerHTML=`Ngày thứ ${n} bên nhau${ev?` <span>· ${ev.n?`${ev.n} ngày nữa`:"hôm nay"}: ${esc(ev.title)}</span>`:""}`;}
   else{const ev=nextEvent();if(ev){db.hidden=false;db.innerHTML=`<span>Còn ${ev.n} ngày: ${esc(ev.title)}</span>`;}else db.hidden=true;}
 }
 
@@ -1867,6 +2056,8 @@ function route(){
   document.querySelectorAll("nav.subtabs").forEach(n=>{n.hidden=n.dataset.group!==g.id;});
   document.querySelectorAll("nav.subtabs a").forEach(a=>a.setAttribute("aria-current",a.dataset.tab===t?"page":"false"));
   $("seasonRow").hidden=!(g.id==="hen"||g.id==="vuon");
+  document.body.dataset.g=g.id;
+  if(route.last&&route.last!==t)window.scrollTo(0,0);route.last=t;
   if(t==="tu-lanh"){lsSet("v3-fridge-seen",new Date().toISOString());if(typeof navDots==="function")schedule();}
 }
 window.addEventListener("hashchange",route);
@@ -1954,6 +2145,7 @@ let tapCool=0;const shownTap=new Set();
 function sendTap(kind){
   if(ME===null)return;if(Date.now()-tapCool<2500){toast("Từ từ thôi, đợi một chút rồi gửi tiếp nhé.");return;}tapCool=Date.now();
   put("taps",{id:uid(),from:ME,to:OTHER(),kind,at:nowIso(),seen:false});
+  try{navigator.vibrate&&navigator.vibrate(18);}catch(e){}
   toast("Đã gửi \""+TAPS[kind][0]+"\" cho "+S.meta.names[OTHER()]);
 }
 function checkTaps(){
@@ -2000,12 +2192,12 @@ function renderCare(){
     return `<div class="can${rec?" done":""}">${ICON.drop}<div><b>${N(w)}</b><span>${rec?"đã tưới lúc "+hhmm(rec.at):"chưa tưới hôm nay"}</span></div>${w===ME&&!rec?`<button class="btn btn-main btn-small" data-water="1">Tưới cây</button>`:""}</div>`;};
   const drops=Date.now()-justWatered<1500?`<div class="drops">${[44,62,80,98,116].map((x,i)=>`<i style="left:${x}px;animation-delay:${i*.12}s"></i>`).join("")}</div>`:"";
   root.innerHTML=`<div class="tab-head"><div><h2>Cây chăm hằng ngày</h2><p>Cây này lớn theo những ngày cả hai cùng tưới. Đủ 10 ngày thì nở hoa và được đặt lên bậu cửa sổ.</p></div></div>
-    <div class="plant-card care${wilt?" wilt":thirsty?" thirsty":""}"><div class="care-plant">${plantSVG(stage,"sakura")}${drops}</div>
-      <div class="txt"><h3>${stage}/10 ngày đủ nước</h3><p>${status}</p>
+    <div class="plant-card care${wilt?" wilt":thirsty?" thirsty":""}"><div class="care-plant">${carePlant3D()}${drops}</div>
+      <div class="txt"><h3>${FL3N[careNow().type]} · ${stage}/10 ngày đủ nước</h3><p>${status}</p>
         ${ME===null?`<p class="quiet">Chọn "Điện thoại này của ai" ở mục Nhà để tưới cây.</p>`:""}
         <div class="cans">${can(0)}${can(1)}</div>
         <div class="stat" style="margin-top:10px"><span><b>${cs.streak}</b> ngày liền cùng tưới</span><span><b>${cs.bothCount}</b> ngày đủ nước</span></div></div></div>
-    ${pots?`<div class="sill"><div class="lbl">Bậu cửa sổ · ${pots} chậu đã nở</div><div class="sill-row">${Array.from({length:pots},(_,i)=>`<span>${flowerSVG(["sakura","tulip","hydrangea","lavender","lotus","daisy"][i%6])}</span>`).join("")}</div></div>`:""}`;
+    ${pots?`<div class="sill"><div class="lbl">Bậu cửa sổ · ${pots} chậu đã nở</div><div class="sill-row s3d">${sill3D(pots)}</div></div>`:""}`;
   root.querySelectorAll("[data-water]").forEach(b=>b.onclick=water);
 }
 
@@ -2192,14 +2384,7 @@ function renderHome(){
   if(w.realm&&w.realm.length)todos.push(`<li><span class="ic">${ICON.crown}</span><span class="tx">${N(o)} đã đặt móng ${w.realm.map(b=>(BLD[b.type]||{t:"công trình"}).t.toLowerCase()).join(", ")}<small>Cần bạn góp tay mới xây xong</small></span><a class="btn btn-ghost btn-small" href="#vuong-quoc" data-kvmap="1">Góp tay</a></li>`);
   if(w.fridgeNew)todos.push(`<li><span class="ic">${ICON.note}</span><span class="tx">${w.fridgeNew} mẩu giấy mới trên tủ lạnh</span><a class="btn btn-ghost btn-small" href="#tu-lanh">Đọc</a></li>`);
   const fd=feed(),up=upcoming(5),gifts=list("gifts"),treH=treasureHTML();
-  root.innerHTML=`${inviteHTML()}<div class="duo">
-      ${sceneHTML(dayN,here,pres)}
-      <div class="duo-top">
-        <div class="duo-names"><h2>${N(0)} &amp; ${N(1)}</h2>
-          ${dayN?`<p class="quiet">Từ ${fmtDate(S.meta.startDate+"T12:00:00")}</p>`:`<button class="linkish" data-opensettings="1">Thêm ngày bắt đầu hẹn hò để đếm ngày</button>`}
-          <p class="pres">${here?`<i class="live"></i>${N(o)} cũng đang mở app`:pres?`${N(o)} ghé lần cuối ${ago(pres.last)}`:`${N(o)} chưa ghé app`}</p></div></div>
-      <div class="taps"><span class="lbl">Gửi ${N(o)} một cái chạm</span>${Object.entries(TAPS).map(([k,v])=>`<button type="button" data-tap="${k}">${ICON.heart}${v[0]}</button>`).join("")}</div>
-    </div>
+  root.innerHTML=`${inviteHTML()}${worldMapHTML()}
     <section class="blk" aria-label="Việc của bạn"><div><h2 class="v3h">Việc của bạn hôm nay</h2></div>
       ${todos.length?`<ul class="todo">${todos.join("")}</ul>`:`<p class="alldone">Xong hết rồi. Ghé tủ lạnh dán một mẩu giấy cho ${N(o)} không?</p>`}</section>
     ${treH}
@@ -2210,7 +2395,7 @@ function renderHome(){
       <div class="card3"><ul class="cd">${up.map(e=>`<li class="${e.k===0?"today":""}"><div class="cd-n"><b>${e.k===0?"Hôm nay":e.k}</b>${e.k?"<span>ngày nữa</span>":""}</div><div class="cd-t"><b>${esc(e.title)}</b><span>${fmtDate(e.date)}</span></div>${gifts.some(g=>g.key===e.key&&!g.opened)?`<span class="giftmark" title="Có hộp quà cho ngày này">${ICON.gift}</span>`:"<span></span>"}</li>`).join("")}</ul></div>
       ${giftsHTML()}</section>`;
   root.querySelectorAll("[data-tap]").forEach(b=>b.onclick=()=>sendTap(b.dataset.tap));
-  bindScene(root);
+  bindWorld(root);
   root.querySelectorAll("[data-water]").forEach(b=>b.onclick=water);
   root.querySelectorAll("[data-jump]").forEach(b=>b.onclick=e=>{e.preventDefault();const t=$(b.dataset.jump);if(t)t.scrollIntoView({behavior:reduced()?"auto":"smooth"});});
   const os=root.querySelector("[data-opensettings]");if(os)os.onclick=()=>{datesEdit=true;rerender();const d=$("dates");if(d)d.scrollIntoView({behavior:reduced()?"auto":"smooth"});};
@@ -2862,14 +3047,14 @@ const POSE_FLIP={em_34sau:true};
 const charImg=(i,pose)=>{const k=CH(i)+"_"+pose;return`<img src="assets/nv_${k}.webp" alt="" draggable="false"${POSE_FLIP[k]?' class="flip"':""}>`;};
 function sceneHTML(dayN,here,pres){
   const o=OTHER(),h=new Date().getHours(),night=h>=19||h<5;
-  const op=here?{pose:"vaytay",x:63,y:69}:{pose:"34sau",x:28,y:62};
+  const op=here?{pose:"vaytay",x:68,y:68}:{pose:"34sau",x:25,y:58};
   const oState=here?"":`<small> · ${pres?"đi vắng":"chưa ghé"}</small>`;
   const ch=(i,p,cls,attr,label)=>`<button type="button" class="sc-ch ${cls}" style="left:${p.x}%;top:${p.y}%;z-index:${p.y}" ${attr} aria-label="${label}">${charImg(i,p.pose)}<span class="sc-tag c-${CH(i)}">${N(i)}${i===o?oState:""}</span></button>`;
   return`<div class="scene${night?" night":""}" id="scene">
       <img class="sc-room" src="assets/phong-khach.webp" alt="Phòng khách của ${N(0)} và ${N(1)}" draggable="false">
       ${dayN?`<div class="sc-day"><b>${dayN}</b><span>ngày bên nhau</span></div>`:""}
       ${ch(o,op,pres?"":"ghost",'data-schug="1"',"Ôm "+N(o))}
-      ${ch(ME,{pose:"34truoc",x:43,y:80},"",'data-scme="1"',N(ME))}
+      ${ch(ME,{pose:"34truoc",x:here?44:54,y:80},"",'data-scme="1"',N(ME))}
     </div>
     <p class="sc-hint">${here?`${N(o)} đang ở nhà. Chạm vào ${N(o)} để ôm một cái.`:`Chạm vào ${N(o)} để gửi một cái ôm.`}</p>`;
 }
@@ -2889,7 +3074,7 @@ function bindScene(root){
 
 const inviteHTML=()=>window.HHH_INVITE?window.HHH_INVITE():"";
 
-["anh","em"].forEach(c=>["vaytay","34sau","34truoc"].forEach(p=>{const i=new Image();i.src="assets/nv_"+c+"_"+p+".webp";}));
+// (bản 8: nhân vật 3D nằm trong assets/3d)
 
 /* ================= bản app riêng: Firebase ================= */
 const CLOUD={uid:null,email:"",cid:null,code:"",members:[],roles:{},fs:null};
@@ -2924,7 +3109,7 @@ function renderGate(){
     <div class="gcard"><b>Chưa ai tạo nhà</b><p class="quiet" style="margin:0">Tạo nhà rồi gửi mã cho bạn ấy.</p><button class="btn btn-ghost" id="gCreate" type="button">Tạo nhà mới</button></div>
     <button type="button" class="linkish" id="gOut">Đăng xuất (${esc(CLOUD.email)})</button>`;
   else body=`<h2>Có lỗi rồi</h2>${err}<button class="btn btn-main" type="button" onclick="location.reload()">Tải lại</button><button type="button" class="linkish" id="gOut">Đăng xuất</button>`;
-  g.innerHTML=`<div class="gbox"><div class="glogo">${mascot(1)}</div><h1>Góc Nhỏ<span class="hrt" aria-hidden="true">♥</span></h1>${body}</div>`;
+  g.innerHTML=`<div class="gbox"><div class="glogo"><img class="gsplash" src="assets/3d/man_hinh_cho.webp" alt=""></div><h1>Góc Nhỏ<span class="hrt" aria-hidden="true">♥</span></h1>${body}</div>`;
   g.querySelectorAll("[data-gm]").forEach(b=>b.onclick=()=>{gateMode=b.dataset.gm;gateErr="";renderGate();});
   const f=$("gForm");if(f)f.onsubmit=async e=>{e.preventDefault();const em=$("g-email").value.trim(),pw=$("g-pass").value;const btn=f.querySelector(".btn-main");btn.disabled=true;
     try{if(gateMode==="login")await firebase.auth().signInWithEmailAndPassword(em,pw);else await firebase.auth().createUserWithEmailAndPassword(em,pw);}
@@ -3099,9 +3284,276 @@ function cloudInit(){
     catch(e){showGate("error",e);}
   });
 }
-if("serviceWorker" in navigator)window.addEventListener("load",()=>{navigator.serviceWorker.register("./sw.js").catch(()=>{});});
+/* --- v7: cập nhật bản mới, mất mạng, trang cài đặt --- */
+function showUpdate(){
+  if(document.querySelector(".updbar"))return;
+  const d=document.createElement("div");d.className="updbar";d.setAttribute("role","status");
+  d.innerHTML=`<span>Góc Nhỏ có bản mới rồi</span><button type="button" class="btn btn-main btn-small">Mở bản mới</button>`;
+  d.querySelector("button").onclick=()=>location.reload();document.body.appendChild(d);
+}
+if("serviceWorker" in navigator)window.addEventListener("load",()=>{
+  const hadCtl=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register("./sw.js").then(reg=>{
+    const check=()=>reg.update().catch(()=>{});
+    setInterval(check,30*60e3);
+    document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")check();});
+  }).catch(()=>{});
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(hadCtl)showUpdate();});
+});
+function netState(){
+  const off=navigator.onLine===false,b=$("syncBox");if(!b)return;
+  b.classList.toggle("offline",off);
+  if(off)setSync("Đang ngoại tuyến · có mạng sẽ tự đồng bộ",false);
+  else if(MODE==="db")setSync(dbReady?"Đồng bộ giữa hai máy":"Đang kết nối...",dbReady);
+}
+window.addEventListener("online",netState);window.addEventListener("offline",netState);
+(()=>{
+  const st=$("settings"),btn=$("openSettings");
+  const sync=()=>{document.body.classList.toggle("sheet-open",!st.hidden);btn.setAttribute("aria-expanded",String(!st.hidden));};
+  new MutationObserver(sync).observe(st,{attributes:true,attributeFilter:["hidden"]});
+  const close=()=>{if(st.hidden)return;st.hidden=true;$("resetConfirm").hidden=true;btn.focus({preventScroll:true});};
+  $("closeSettings").onclick=close;
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")close();});
+  btn.addEventListener("click",()=>{if(!st.hidden){st.scrollTop=0;setTimeout(()=>$("closeSettings").focus({preventScroll:true}),50);}});
+})();
 
-loadLocal();route();renderAll();cloudInit();initDb();startV3();bindBackup();
+/* ================= v8 · thế giới 3D (bản đồ ngôi nhà, phòng khách, thú cưng, vườn 3D) ================= */
+let SC3=null;
+fetch("assets/3d/scene.json").then(r=>r.json()).then(j=>{SC3=j;schedule();}).catch(()=>{});
+const A3=n=>"assets/3d/"+n+".webp";
+function buoi(d=new Date()){const h=d.getHours();return h>=5&&h<8?"sang":h>=8&&h<17?"ngay":h>=17&&h<19?"chieu":"dem";}
+const BUOI_TXT={sang:"Bình minh",ngay:"Ban ngày",chieu:"Hoàng hôn",dem:"Ban đêm"};
+const PRES=i=>i===null?null:(S.presence["p"+i]||null);
+const isHere=i=>{const p=PRES(i);return !!p&&Date.now()-new Date(p.last)<180e3;};
+const stOf=i=>{const p=PRES(i);if(!p||!p.st)return"";if(Date.now()-new Date(p.stAt||0)>14*3600e3)return"";return p.st;};
+const sits=i=>{const p=PRES(i);return !!p&&!!p.sit&&Date.now()-new Date(p.sitAt||0)<3*3600e3&&(i===ME||isHere(i));};
+function setMine(patch){if(ME===null)return;const id="p"+ME,cur=S.presence[id]||{};put("presence",Object.assign({},cur,patch,{id,who:ME,last:nowIso()}));}
+// giữ trạng thái (bận, ngủ, ngồi sofa) khi cập nhật "đang mở app"
+touchPresence=function(){if(ME===null)return;const id="p"+ME,cur=S.presence[id];if(cur&&Date.now()-new Date(cur.last)<110e3)return;put("presence",Object.assign({},cur||{},{id,who:ME,last:nowIso()}));};
+
+/* --- thời tiết thật ở cửa sổ (Open-Meteo, không cần tài khoản) --- */
+const CITIES={hn:["Hà Nội",21.03,105.85],hcm:["TP. Hồ Chí Minh",10.78,106.7],dn:["Đà Nẵng",16.05,108.2],hp:["Hải Phòng",20.86,106.68],hue:["Huế",16.46,107.6],ct:["Cần Thơ",10.03,105.78],dl:["Đà Lạt",11.94,108.44],nt:["Nha Trang",12.24,109.19]};
+let WX={};try{WX=JSON.parse(localStorage.getItem("gn-wx")||"{}")||{};}catch(e){}
+function wxRefresh(){
+  const key=S.meta.city,c=CITIES[key];if(!c)return;
+  if(WX.city===key&&Date.now()-(WX.at||0)<30*60e3)return;
+  WX.at=Date.now();
+  fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c[1]}&longitude=${c[2]}&current=weather_code&timezone=auto`).then(r=>r.json()).then(j=>{
+    const code=j&&j.current?j.current.weather_code:null;
+    WX={city:key,code,rain:[51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99].includes(code),at:Date.now()};
+    try{localStorage.setItem("gn-wx",JSON.stringify(WX));}catch(e){}schedule();}).catch(()=>{});
+}
+const raining=()=>!!(S.meta.city&&WX.city===S.meta.city&&WX.rain);
+const snowing=()=>{const d=new Date();return d.getMonth()===11&&d.getDate()>=20&&d.getDate()<=26;};
+
+/* --- bố cục khung: mỗi cảnh vẽ trên toạ độ ảnh @3x rồi thu nhỏ vừa màn hình --- */
+function fit3(){document.querySelectorAll(".w3fit").forEach(el=>{const w=+el.dataset.w,k=el.clientWidth/w;if(k>0)el.style.setProperty("--k",k);});}
+window.addEventListener("resize",fit3);
+const PX=(x,y,w,h,z)=>`left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;width:${w.toFixed(1)}px;${h!=null?`height:${h.toFixed(1)}px;`:""}${z!=null?`z-index:${Math.round(z)};`:""}`;
+function quadM(q,bw,bh){const[tl,tr,,bl]=q;return`matrix(${((tr[0]-tl[0])/bw).toFixed(4)},${((tr[1]-tl[1])/bw).toFixed(4)},${((bl[0]-tl[0])/bh).toFixed(4)},${((bl[1]-tl[1])/bh).toFixed(4)},${tl[0]},${tl[1]})`;}
+function sprite(file,pt,scale,z,cls="",anchor=SC3.char.anchor,size=512){const s=scale;return`<img class="spr ${cls}" src="${A3(file)}" alt="" draggable="false" style="${PX(pt[0]-anchor[0]*s,pt[1]-anchor[1]*s,size*s,size*s,z)}">`;}
+const fx=()=>`${raining()?'<div class="fx-rain" aria-hidden="true"></div>':""}${snowing()?'<div class="fx-snow" aria-hidden="true"></div>':""}`;
+
+/* --- cây hoa 3D: kiểu cây xoay vòng theo số chậu đã nở --- */
+const FL3=["anhdao","tulip","camtucau","oaihuong","sen","cuc"];
+const FL3N={anhdao:"Anh đào",tulip:"Tulip",camtucau:"Cẩm tú cầu",oaihuong:"Oải hương",sen:"Hoa sen",cuc:"Cúc họa mi"};
+function careGd(stage,wilt){if(wilt&&stage>=6)return"heo";return stage<1?"gd1":stage<3?"gd2":stage<6?"gd3":"gd4";}
+function careNow(){const cs=careStats(),stage=cs.bothCount%10,pots=Math.floor(cs.bothCount/10),wilt=cs.dry!==null&&cs.dry>=3;return{cs,stage,pots,wilt,type:FL3[pots%6],gd:careGd(stage,wilt)};}
+
+/* --- bản đồ ngôi nhà (màn hình chính) --- */
+function placeOnMap(i){
+  const M=SC3.map,st=stOf(i),who=CH(i);
+  if(st==="ngu")return{pt:M[who],pose:"ngu",st};
+  if(st==="ban")return{pt:M[who],pose:"dung",st};
+  if(i===ME)return{pt:M.khach,pose:"dung",st};
+  if(isHere(i))return{pt:[M.khach[0]+64,M.khach[1]+37],pose:"vaytay",st:"o-nha"};
+  return{pt:M[who],pose:"dung",st:"vang"};
+}
+function worldMapHTML(){
+  if(!SC3)return`<div class="world w-loading"><p class="quiet">Đang mở ngôi nhà...</p></div>`;
+  const M=SC3.map,t=buoi(),o=OTHER(),k=M.ppm/SC3.char.ppm,fk=M.plotPpm/SC3.flower.ppm;
+  const st=parseDay(S.meta.startDate),dayN=st?Math.round((dayStart(new Date())-st)/864e5)+1:null;
+  let chars="";
+  if(ME!==null)[ME,o].forEach(i=>{const p=placeOnMap(i);chars+=sprite(`nv_${CH(i)}_${p.pose}`,p.pt,k*1.15,p.pt[1],"m-ch"+(p.st==="vang"?" ghost":""));});
+  // thú cưng nằm trước bậc cửa
+  const pet=S.pet&&S.pet.main;if(pet)chars+=sprite(`thu_meo_${pet.color||"trang"}_${petState()==="ngu"?"nam":"ngoi"}`,M.pet_door,k*1.1,M.pet_door[1]);
+  // vườn: luống 1 là cây đang chăm, các luống sau là những chậu đã nở
+  const cn=careNow();let fl="";
+  M.plots.forEach((p,i)=>{let f=null;if(i===0)f=`hoa_${cn.type}_${cn.gd}`;else if(i<=cn.pots)f=`hoa_${FL3[(i-1)%6]}_gd5`;
+    if(f)fl+=sprite(f,p,fk*1.05,p[1],"m-fl",SC3.flower.anchor,256);});
+  const Z=M.zones,lbl=["khach","bep","sangtao","anh","em","gac","vuon","hopthu","cafe","dao"];
+  const cen=pts=>{let x=0,y=0;pts.forEach(p=>{x+=p[0];y+=p[1];});return[x/pts.length,y/pts.length];};
+  const zname=k2=>k2==="anh"?"Phòng "+N(S.meta.chars&&S.meta.chars[0]==="em"?1:0):k2==="em"?"Phòng "+N(S.meta.chars&&S.meta.chars[0]==="em"?0:1):Z[k2].name;
+  const pres=ME===null?"":isHere(o)?`<span class="live"></span>${N(o)} cũng đang ở nhà`:stOf(o)==="ngu"?`${N(o)} đi ngủ rồi`:stOf(o)==="ban"?`${N(o)} đang bận`:PRES(o)?`${N(o)} ghé lần cuối ${ago(PRES(o).last)}`:`${N(o)} chưa ghé nhà`;
+  return`<div class="world t-${t}" aria-label="Bản đồ ngôi nhà">
+    <div class="sky" aria-hidden="true">${[1,2,3].map(i=>`<img class="cloud c${i}" src="${A3("may_"+i)}" alt="">`).join("")}</div>
+    <div class="wstage w3fit" data-w="${M.size[0]}"><div class="wcanvas" style="width:${M.size[0]}px;height:${M.size[1]}px">
+      <img class="wbg" src="${A3("ban_do_"+t)}" alt="Ngôi nhà Góc Nhỏ của ${N(0)} và ${N(1)}" draggable="false">
+      ${fl}${chars}
+      <div class="msign" style="left:${M.sign[0]}px;top:${M.sign[1]}px">Góc Nhỏ</div>
+      <svg class="zones" viewBox="0 0 ${M.size[0]} ${M.size[1]}" aria-hidden="false">${Object.entries(Z).map(([k2,z])=>`<polygon points="${z.poly.map(p=>p.join(",")).join(" ")}" data-zone="${k2}" tabindex="0" role="link" aria-label="${esc(zname(k2))}"><title>${esc(zname(k2))}</title></polygon>`).join("")}</svg>
+      ${lbl.map(k2=>{const c=cen(Z[k2].poly),top=Math.min(...Z[k2].poly.map(p=>p[1]));const y=["vuon","hopthu","cafe","dao"].includes(k2)?top-6:top+34;return`<span class="zlbl" style="left:${c[0]}px;top:${y}px">${esc(zname(k2))}</span>`;}).join("")}
+    </div></div>
+    ${fx()}
+    ${dayN?`<div class="w-day"><b>${dayN}</b><span>ngày bên nhau</span></div>`:""}
+    <div class="w-time">${BUOI_TXT[t]}${raining()?" · trời mưa":""}</div>
+    ${ME!==null?`<p class="w-pres">${pres}</p>`:""}
+  </div>
+  <p class="sc-hint">Chạm vào một phòng để vào. Phòng khách là nơi hai đứa và bé mèo hay ở.</p>`;
+}
+function bindWorld(root){
+  fit3();
+  root.querySelectorAll("[data-zone]").forEach(z=>{const go=()=>zoneGo(z.dataset.zone);z.addEventListener("click",go);z.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});});
+}
+function zoneGo(k){
+  const map={khach:"phong-khach",bep:"tu-lanh",sangtao:"truyen",gac:"tu-dien",vuon:"khu-vuon",hopthu:"thu",cafe:"hom-nay",ben:"vuong-quoc",dao:"vuong-quoc"};
+  if(map[k]){location.hash=map[k];return;}
+  // phòng riêng: của mình thì mở trạng thái, của bạn ấy thì xem bạn ấy đang làm gì
+  const owner=(S.meta.chars||["anh","em"])[0]===k?0:1;
+  if(owner===ME){location.hash="phong-khach";setTimeout(()=>{const s=$("myStatus");if(s)s.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"center"});},350);}
+  else{const s=stOf(owner);toast(s==="ngu"?N(owner)+" đang ngủ trong phòng, suỵt...":s==="ban"?N(owner)+" đang bận trong phòng":isHere(owner)?N(owner)+" đang ở phòng khách kìa":"Phòng của "+N(owner)+" đang trống");}
+}
+
+/* --- thú cưng --- */
+const PET_TXT={moi:"",vui:"đang vui lắm",ok:"đang chơi một mình",doi:"đói rồi, cho bé ăn đi",ban:"lấm lem rồi, tắm cho bé nhé",buon:"đang nhớ người ở xa",ngu:"đang ngủ say",cho:"đang chờ ở cửa vì có tin nhắn mới"};
+const PET_COL={trang:"Trắng",cam:"Cam mướp",xam:"Xám xanh"};
+const BUB={
+  vui:`<path d="M12 20C5.5 15.5 3 12.3 3 8.9 3 6.3 5 4.5 7.3 4.5c1.8 0 3.3 1 4.7 2.7 1.4-1.7 2.9-2.7 4.7-2.7C19 4.5 21 6.3 21 8.9c0 3.4-2.5 6.6-9 11.1z" fill="#FF6FA5"/>`,
+  doi:`<path d="M3.5 11h17a8.5 7 0 01-17 0z" fill="#7CC3F2"/><path d="M3.5 11h17" stroke-width="2"/>`,
+  ban:`<circle cx="8" cy="13" r="4" fill="#C99B6D"/><circle cx="14" cy="10" r="4.5" fill="#E8C9A0"/><circle cx="16.5" cy="15" r="3" fill="#C99B6D"/>`,
+  buon:`<path d="M12 4c3 4.5 5 7.2 5 9.8a5 5 0 01-10 0C7 11.2 9 8.5 12 4z" fill="#7CC3F2"/>`,
+  ngu:`<path d="M6 7h6l-6 7h6M14 4h5l-5 5h5" fill="none" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`,
+  cho:`<rect x="3" y="6" width="18" height="12" rx="2" fill="#FFFFFF"/><path d="M3.5 7l8.5 6 8.5-6" fill="none" stroke-width="1.8"/><circle cx="17" cy="15" r="2.2" fill="#FF6FA5" stroke="none"/>`
+};
+function petState(){
+  const p=S.pet&&S.pet.main;if(!p)return"moi";
+  const h=new Date().getHours(),now=Date.now(),hrs=k=>p[k]&&p[k].at?(now-new Date(p[k].at))/3600e3:999;
+  if(h>=22||h<6)return"ngu";
+  if(hrs("fed")>12)return"doi";
+  if(hrs("bath")>48)return"ban";
+  if(ME!==null&&waiting().fridgeNew)return"cho";
+  const o=OTHER(),po=PRES(o);if(o!==null&&po&&now-new Date(po.last)>36*3600e3)return"buon";
+  if(Math.min(hrs("fed"),hrs("bath"),hrs("pat"))<3)return"vui";
+  return"ok";
+}
+function petAct(kind){
+  const p=Object.assign({},S.pet.main||{});const last=p[kind]&&p[kind].at?(Date.now()-new Date(p[kind].at))/60e3:1e9;
+  const cool={fed:120,bath:12*60,pat:1}[kind];
+  if(last<cool){toast(kind==="fed"?"Bé vừa ăn no rồi, chút nữa nhé":kind==="bath"?"Bé vừa tắm xong, thơm phức rồi":"Từ từ thôi");return;}
+  p[kind]={at:nowIso(),by:ME};put("pet",p);petHop=Date.now();
+  toast({fed:"Đã cho "+esc(p.name)+" ăn. Bé no căng bụng rồi",bath:"Tắm xong, "+esc(p.name)+" thơm tho sạch sẽ",pat:esc(p.name)+" dụi đầu vào tay bạn"}[kind]);
+  try{navigator.vibrate&&navigator.vibrate(12);}catch(e){}
+}
+let petHop=0;
+function petCardHTML(){
+  if(ME===null)return"";
+  const p=S.pet&&S.pet.main;
+  if(!p)return`<section class="blk" id="petCard"><div><h2 class="v3h">Nuôi chung một bé mèo</h2><p class="v3sub">Bé ở phòng khách, đói thì đòi ăn, lâu không tắm thì lấm lem, ai lâu không về thì bé nhớ.</p></div>
+    <form class="formcard" id="petNew"><label class="field">Tên bé<input id="pet-name" maxlength="16" placeholder="Ví dụ: Bánh Bao" required></label>
+      <div class="field">Màu lông<div class="seg">${Object.entries(PET_COL).map(([k,v],i)=>`<label><input type="radio" name="petcol" value="${k}" ${i?"":"checked"}><span>${v}</span></label>`).join("")}</div></div>
+      <div class="petpick">${Object.keys(PET_COL).map(k=>`<img src="${A3("thu_meo_"+k+"_ngoi")}" alt="Mèo ${PET_COL[k]}">`).join("")}</div>
+      <button class="btn btn-main">Đón bé về nhà</button></form></section>`;
+  const s=petState(),line=k=>p[k]&&p[k].at?`${N(p[k].by)} · ${ago(p[k].at)}`:"chưa có";
+  return`<section class="blk" id="petCard"><div><h2 class="v3h">${esc(p.name)} ${PET_TXT[s]}</h2><p class="v3sub">Mèo ${PET_COL[p.color]||""} của ${N(0)} và ${N(1)}</p></div>
+    <div class="petcard"><img class="petimg${Date.now()-petHop<1500?" hop":""}" src="${A3(`thu_meo_${p.color||"trang"}_${s==="ngu"?"nam":s==="vui"?"vui":"ngoi"}`)}" alt="">
+      <ul class="petlog"><li><b>Cho ăn</b><span>${line("fed")}</span></li><li><b>Tắm</b><span>${line("bath")}</span></li><li><b>Vuốt ve</b><span>${line("pat")}</span></li></ul></div>
+    <div class="row petbtns"><button class="btn btn-main btn-small" data-pet="fed">Cho ăn</button><button class="btn btn-ghost btn-small" data-pet="bath">Tắm</button><button class="btn btn-ghost btn-small" data-pet="pat">Vuốt ve</button></div></section>`;
+}
+
+/* --- phòng khách --- */
+let radioOn=false,waveMe=0;
+function jarState(){if(openDate())return"mo";const n=available([]).length;return n>=18?"day":n>=8?"nua":"it";}
+function latestPhoto(){const all=["museum","places","dict"].flatMap(c=>list(c)).filter(x=>x.photos&&x.photos.length);all.sort((a,b)=>(a.date||"")<(b.date||"")?-1:1);const x=all.pop();return x?x.photos[0]:null;}
+function roomHTML(){
+  if(!SC3)return`<p class="quiet">Đang mở phòng khách...</p>`;
+  const R=SC3.room,L=R.layers,t=buoi(),o=OTHER(),k=R.ppm/SC3.char.ppm*1.3;
+  const st0=parseDay(S.meta.startDate),dayN=st0?Math.round((dayStart(new Date())-st0)/864e5)+1:null;
+  const lay=(n,z,act,label)=>{const b=L[n];const img=`<img src="${A3(n)}" alt="" draggable="false">`;
+    return act?`<button type="button" class="lay hot" data-r="${act}" aria-label="${label}" style="${PX(b[0],b[1],b[2]-b[0],b[3]-b[1],z)}">${img}</button>`:`<span class="lay" style="${PX(b[0],b[1],b[2]-b[0],b[3]-b[1],z)}">${img}</span>`;};
+  const w=ME!==null?waiting():{},notes=!!(w.fridgeNew||list("taps").some(x=>x.to===ME&&Date.now()-new Date(x.at)<864e5));
+  const ph=latestPhoto();
+  let html=lay("pk_sofa",R.layers.pk_sofa[3],"sofa","Sofa đôi: ngồi cạnh nhau")+lay("pk_khung_anh",3,"anh","Khung ảnh: mở bảo tàng kỷ niệm")+lay("pk_lich",3,"lich","Lịch đếm ngày")
+    +lay(notes?"pk_bang_ghim_giay":"pk_bang_ghim_trong",3,"ghim","Bảng ghim: gửi một cái chạm")+lay(radioOn?"pk_radio_phat":"pk_radio_tat",R.layers.pk_radio_tat[3],"radio","Đài radio: bài hát của hai đứa")
+    +lay("pk_hu_"+jarState(),R.layers.pk_hu_day[3],"hu","Hũ hẹn hò: bốc thăm")+(raining()?lay("pk_cuaso_mua",4,null):"");
+  // chữ số trên lịch + ảnh trong khung (dán theo mặt tường)
+  html+=`<div class="onwall cal" style="transform:${quadM(R.lichQuad,130,100)}"><b>${dayN||"?"}</b><span>${dayN?"ngày":"thêm ngày"}</span></div>`;
+  html+=`<div class="onwall photo" style="transform:${quadM(R.anhQuad,140,100)}">${ph?`<img src="${esc(ph)}" alt="">`:`<i>♥</i>`}</div>`;
+  if(radioOn)html+=`<div class="notes" style="left:${R.radioTop[0]}px;top:${R.radioTop[1]}px" aria-hidden="true"><i>♪</i><i>♫</i><i>♪</i></div>`;
+  // nhân vật
+  if(ME!==null){
+    const seat=i=>R.ghe[CH(i)==="anh"?0:1];
+    const meSit=sits(ME),oSit=sits(o),oHere=isHere(o),oSt=stOf(o);
+    const mePose=meSit?"ngoi":Date.now()-waveMe<1600?"vaytay":stOf(ME)==="ngu"?"ngu":"dung";
+    const mePt=meSit?seat(ME):R.dung[0];
+    html+=`<button type="button" class="chr" data-rme="1" aria-label="${N(ME)}" style="z-index:${Math.round(meSit?R.layers.pk_sofa[3]+6:mePt[1])}">${sprite(`nv_${CH(ME)}_${mePose}`,mePt,k,null)}<span class="ctag c-${CH(ME)}" style="left:${mePt[0]}px;top:${mePt[1]+8}px">${N(ME)}</span></button>`;
+    if(oSt!=="ngu"||oHere){
+      const oPt=oSit?seat(o):R.dung[1],oPose=oSit?"ngoi":oHere?"vaytay":"dung";
+      html+=`<button type="button" class="chr${oHere?"":" ghost"}" data-rhug="1" aria-label="Ôm ${N(o)}" style="z-index:${Math.round(oSit?R.layers.pk_sofa[3]+(CH(o)==="em"?7:5):oPt[1])}">${sprite(`nv_${CH(o)}_${oPose}`,oPt,k,null)}<span class="ctag c-${CH(o)}" style="left:${oPt[0]}px;top:${oPt[1]+8}px">${N(o)}${oHere?"":`<small> · ${oSt==="ban"?"đang bận":"đi vắng"}</small>`}</span></button>`;
+    }
+  }
+  const pet=S.pet&&S.pet.main;
+  if(pet){const s=petState();html+=`<button type="button" class="chr pet${Date.now()-petHop<1500?" hop":""}" data-rpet="1" aria-label="${esc(pet.name)}" style="z-index:${Math.round(R.thu[1])}">${sprite(`thu_meo_${pet.color||"trang"}_${s==="ngu"?"nam":s==="vui"?"vui":"ngoi"}`,R.thu,k*0.95,null)}
+    ${BUB[s]?`<span class="bubble" style="left:${R.thu[0]}px;top:${R.thu[1]-150}px"><svg viewBox="0 0 24 24" stroke="#1D2B4F" stroke-width="1.6">${BUB[s]}</svg></span>`:""}</button>`;}
+  return`<div class="room3d t-${t}"><div class="w3fit rstage" data-w="${R.size[0]}"><div class="wcanvas" style="width:${R.size[0]}px;height:${R.size[1]}px">
+      <img class="wbg" src="${A3("phong_khach_"+t)}" alt="Phòng khách" draggable="false">${html}</div></div>${fx()}</div>`;
+}
+function renderRoom(){
+  const root=$("tab-room");if(!root)return;
+  const o=OTHER();
+  if(ME===null){root.innerHTML=`<a class="back" href="#nha">‹ Bản đồ</a>`;return;}
+  const myS=stOf(ME),sit=sits(ME);
+  root.innerHTML=`<div class="tab-head"><div><a class="back" href="#nha">‹ Bản đồ ngôi nhà</a><h2>Phòng khách</h2><p>Chạm vào ${N(o)} để ôm, vào sofa để ngồi cạnh nhau, vào hũ để bốc thăm.</p></div></div>
+    ${roomHTML()}
+    <div class="room-acts"><button type="button" class="btn ${sit?"btn-ghost":"btn-main"} btn-small" data-r="sofa">${sit?"Đứng dậy":"Ngồi xuống sofa"}</button>
+      <button type="button" class="btn btn-ghost btn-small" data-r="hu">Mở hũ hẹn hò</button></div>
+    <section class="blk" id="tapBox"><div><h2 class="v3h">Gửi ${N(o)} một cái chạm</h2></div><div class="taps">${Object.entries(TAPS).map(([k2,v])=>`<button type="button" data-tap="${k2}">${ICON.heart}${v[0]}</button>`).join("")}</div></section>
+    <section class="blk" id="myStatus"><div><h2 class="v3h">Bạn đang làm gì?</h2><p class="v3sub">${N(o)} sẽ thấy bạn ở đâu trên bản đồ ngôi nhà.</p></div>
+      <div class="seg">${[["","Rảnh, ở nhà"],["ban","Đang bận"],["ngu","Đi ngủ rồi"]].map(([v,l])=>`<label><input type="radio" name="mystat" value="${v}" ${myS===v?"checked":""}><span>${l}</span></label>`).join("")}</div></section>
+    ${petCardHTML()}`;
+  fit3();
+  root.querySelectorAll("[data-tap]").forEach(b=>b.onclick=()=>sendTap(b.dataset.tap));
+  root.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>roomAct(b.dataset.r));
+  root.querySelectorAll('input[name="mystat"]').forEach(r=>r.onchange=()=>{setMine({st:r.value,stAt:nowIso(),sit:r.value?false:sits(ME)});toast(r.value==="ngu"?"Chúc ngủ ngon. "+S.meta.names[o]+" sẽ thấy bạn đang ngủ":r.value==="ban"?"Đã báo là bạn đang bận":"Bạn đang rảnh ở nhà");});
+  const me=root.querySelector("[data-rme]");if(me)me.onclick=()=>{waveMe=Date.now();schedule();setTimeout(schedule,1700);};
+  const hug=root.querySelector("[data-rhug]");if(hug)hug.onclick=()=>{const b=tapCool;sendTap("hug");if(tapCool!==b)floatHeart(hug);};
+  const pt=root.querySelector("[data-rpet]");if(pt)pt.onclick=()=>petAct("pat");
+  root.querySelectorAll("[data-pet]").forEach(b=>b.onclick=()=>petAct(b.dataset.pet));
+  const pn=$("petNew");if(pn)pn.onsubmit=e=>{e.preventDefault();const name=$("pet-name").value.trim()||"Bánh Bao",c=(pn.querySelector('input[name="petcol"]:checked')||{}).value||"trang";
+    put("pet",{id:"main",name,color:c,born:nowIso(),by:ME,fed:{at:nowIso(),by:ME}});toast("Chào mừng "+name+" về nhà!");};
+}
+function floatHeart(el){const r=el.getBoundingClientRect(),h=document.createElement("span");h.className="flyheart";h.textContent="♥";h.style.left=(r.left+r.width/2)+"px";h.style.top=(r.top+10)+"px";document.body.appendChild(h);setTimeout(()=>h.remove(),1300);}
+function roomAct(a){
+  if(a==="sofa"){const s=!sits(ME);setMine({sit:s,sitAt:nowIso()});const o=OTHER();toast(s?(sits(o)?"Hai đứa ngồi cạnh nhau rồi":"Đã ngồi xuống sofa, chờ "+S.meta.names[o]+" ngồi cạnh"):"Đã đứng dậy");return;}
+  if(a==="hu"){location.hash="hom-nay";return;}
+  if(a==="lich"){location.hash="nha";setTimeout(()=>{const d=$("dates");if(d)d.scrollIntoView({behavior:reduced()?"auto":"smooth"});},350);return;}
+  if(a==="anh"){location.hash="bao-tang";return;}
+  if(a==="ghim"){const t=$("tapBox");if(t)t.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"center"});return;}
+  if(a==="radio"){radioOn=!radioOn;schedule();if(radioOn){if(S.meta.song)window.open(S.meta.song,"_blank","noopener");else toast("Thêm link bài hát của hai đứa trong Cài đặt nhé");}return;}
+}
+
+/* --- vườn 3D trong tab Khu vườn --- */
+function carePlant3D(){const c=careNow();return`<img class="plant3d${c.wilt&&c.gd!=="heo"?" wilt":""}" src="${A3(`hoa_${c.type}_${c.gd}`)}" alt="${FL3N[c.type]}, ${c.stage}/10 ngày">`;}
+function sill3D(pots){return Array.from({length:pots},(_,i)=>`<span><img src="${A3(`hoa_${FL3[i%6]}_gd5`)}" alt="${FL3N[FL3[i%6]]}"></span>`).join("");}
+
+/* --- biểu tượng điều hướng theo brief: viền xanh than, đang chọn tô màu của mình --- */
+const NAV_IC={
+  nha:`<path class="w" d="M5 11.5h14V20a1 1 0 01-1 1H6a1 1 0 01-1-1z"/><path class="a" d="M2.8 12L12 4l9.2 8z"/><rect class="p" x="15.4" y="4.6" width="2.8" height="4.4" rx=".6"/><rect class="p" x="10" y="15" width="4" height="6" rx="1"/>`,
+  hen:`<rect class="a" x="7" y="2.8" width="10" height="3.4" rx="1.2"/><path class="w" d="M7.4 6.2h9.2a2.6 2.6 0 012.6 2.6V18a3 3 0 01-3 3H7.8a3 3 0 01-3-3V8.8a2.6 2.6 0 012.6-2.6z"/><rect class="p" x="8" y="13.5" width="4.4" height="2.4" rx=".6" transform="rotate(-14 10 14.7)"/><rect class="g" x="12" y="15.6" width="4.4" height="2.4" rx=".6" transform="rotate(10 14 16.8)"/><rect class="y" x="9.6" y="10" width="4.4" height="2.4" rx=".6" transform="rotate(6 11.8 11.2)"/>`,
+  vuon:`<path class="g" d="M12 13C11.4 8.6 8.6 6.4 4.6 6.6c.2 4 2.8 6.4 7.4 6.4z"/><path class="g" d="M12 12.6c.6-4.2 3.4-6.4 7.4-6.2-.2 4-2.8 6.2-7.4 6.2z"/><path d="M12 13v2.5" stroke-width="1.6"/><path class="a" d="M6 14.8h12l-1.5 6.2H7.5z"/>`,
+  gui:`<rect class="a" x="2.6" y="5.6" width="18.8" height="13.4" rx="2.4"/><path d="M3.4 7l8.6 6.2L20.6 7" fill="none" stroke-width="1.6"/><path class="p" d="M17.6 17.4c-1.9-1.3-2.6-2.1-2.6-3 0-.7.5-1.2 1.2-1.2.6 0 1 .3 1.4.8.4-.5.8-.8 1.4-.8.7 0 1.2.5 1.2 1.2 0 .9-.7 1.7-2.6 3z"/>`,
+  choi:`<path class="a" d="M6.5 8h11a4 4 0 013.9 4.8l-.8 4a2.4 2.4 0 01-4.2 1l-1.6-2h-5.6l-1.6 2a2.4 2.4 0 01-4.2-1l-.8-4A4 4 0 016.5 8z"/><path d="M7.5 11v3.2M5.9 12.6h3.2" stroke-width="1.6"/><circle class="p" cx="16.6" cy="11.6" r="1.1"/><circle class="g" cx="18.4" cy="13.6" r="1.1"/><path class="y" d="M17 2.6l3 3-4.6 4.6-3-3z"/>`,
+  ky:`<path class="a" d="M4.6 4.2h12.6a2.2 2.2 0 012.2 2.2V21H7a2.4 2.4 0 01-2.4-2.4z"/><path class="w" d="M4.6 18.6A2.4 2.4 0 017 16.2h12.4V21H7a2.4 2.4 0 01-2.4-2.4z"/><path class="y" d="M12 6.6l1.2 2.5 2.7.4-2 1.9.5 2.7-2.4-1.3-2.4 1.3.5-2.7-2-1.9 2.7-.4z"/>`
+};
+function navIcons(){document.querySelectorAll("nav.tabs a[data-group]").forEach(a=>{const s=a.querySelector(".nic svg");if(s&&NAV_IC[a.dataset.group]&&!s.dataset.v8){s.innerHTML=NAV_IC[a.dataset.group];s.dataset.v8=1;}});document.body.dataset.me=ME===null?"":CH(ME);}
+
+/* --- nối vào app --- */
+NAVG[0].tabs.push("phong-khach");TABS.push("phong-khach");TABNAME["phong-khach"]="Phòng khách";
+const _rv3=renderV3;renderV3=function(){_rv3();renderRoom();navIcons();wxRefresh();};
+const _fillS=fillSettings;fillSettings=function(){_fillS();const so=$("set-song");if(so)so.value=S.meta.song||"";const ci=$("set-city");if(ci)ci.value=S.meta.city||"";};
+$("saveSettings").addEventListener("click",()=>{const so=$("set-song"),ci=$("set-city");const patch={song:so?so.value.trim():"",city:ci?ci.value:""};if(patch.song&&!/^https?:\/\//i.test(patch.song))patch.song="https://"+patch.song;if(patch.song!==(S.meta.song||"")||patch.city!==(S.meta.city||""))putMeta(patch);},true);
+setInterval(()=>{if(!document.hidden)schedule();},5*60e3); // đổi buổi trong ngày
+
+loadLocal();route();renderAll();cloudInit();initDb();startV3();bindBackup();netState();
 </script>
 
 </body></html>
