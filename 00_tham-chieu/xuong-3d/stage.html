@@ -1,5 +1,0 @@
-<!doctype html><html><body style="margin:0;background:#888"><script type="importmap">{"imports":{"three":"./three/build/three.module.js","three/addons/":"./three/examples/jsm/"}}</script>
-<script type="module">
-const m=new URLSearchParams(location.search).get('m')||'jobs.js';
-import('./'+m+'?v='+Date.now()).then(mod=>{window.JOBS=mod.jobs;window.ready=true;}).catch(e=>{window.loadErr=String(e.stack||e);window.ready=true;});
-</script></body></html>

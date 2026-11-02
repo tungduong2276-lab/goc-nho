@@ -1,12 +1,41 @@
-# Cập nhật lên bản mới (bản 8 · thế giới 3D)
+# Cập nhật lên bản mới (bản 10 · đợt 4)
 
-Bản này giữ nguyên toàn bộ dữ liệu và Rules cũ. Không cần dán lại `firestore.rules`, không cần sửa `firebase-config.js`.
+Dữ liệu và Rules giữ nguyên, không cần dán lại `firestore.rules`.
 
-1. Trong repo `goc-nho` trên GitHub, bấm **Add file → Upload files**.
-2. Kéo vào: `index.html`, `sw.js`, `manifest.webmanifest`, 4 file icon (`icon-192.png`, `icon-512.png`, `icon-1024.png`, `apple-touch-icon.png`) và **cả thư mục `assets`** (bên trong có thư mục `3d`) → **Commit changes**.
-3. Có thể xoá các file cũ không còn dùng trong `assets`: `phong-khach.webp` và các file `nv_...webp` nằm ngay trong `assets`. Thư mục `assets/3d` thì giữ nguyên.
-4. Đợi 1–2 phút rồi mở app. Bấm **Mở bản mới** khi app báo có bản mới.
-5. Icon trên màn hình chính có thể vẫn là chậu cây cũ. Muốn đổi sang ngôi nhà mới thì xoá app khỏi màn hình chính rồi thêm lại (dữ liệu không mất vì nằm trên Firebase).
+Lần này thư mục `assets/3d` có gần 600 file, mà trang GitHub chỉ cho kéo 100 file mỗi lần. Cách dễ nhất là dùng **GitHub Desktop** (miễn phí, không giới hạn số file):
+
+1. Tải GitHub Desktop ở **desktop.github.com**, đăng nhập tài khoản GitHub.
+2. **File → Clone repository** → chọn `goc-nho` → chọn một thư mục trên máy → **Clone**.
+3. Mở thư mục vừa clone. Chép đè toàn bộ nội dung thư mục `goc-nho-app` (bản 10) vào đó, nhưng **giữ nguyên file `firebase-config.js` cũ**.
+4. Quay lại GitHub Desktop: gõ vài chữ vào ô **Summary** (ví dụ "Bản 10") → **Commit to main** → **Push origin**.
+5. Đợi 1–2 phút, mở app, bấm **Mở bản mới**.
+
+Nếu vẫn muốn dùng trang web GitHub thì kéo thư mục `assets/3d` làm 6 lần, mỗi lần dưới 100 file.
+
+**Bản 10 có gì mới**
+- **Đảo vương quốc 3D:** 17 công trình thật sự dựng trên đảo nổi giữa biển. Đường đá tự nối với nhau, có cư dân bánh bao đi lại, gà mổ thóc cạnh ruộng, vịt bơi ở hồ, thuyền buồm chạy quanh đảo. Ban đêm cửa sổ và đèn sáng lên.
+- **Nâng cấp công trình lên cấp 2:** một người trả xu bắt đầu nâng cấp, người kia góp tay. Công trình cấp 2 to đẹp hơn và cho thêm 50% dân số, hạnh phúc.
+- **Quán cà phê ven biển:** hũ thẻ to, bảng menu phấn ghi vài trò trong hũ, ban đêm quầy kéo rèm.
+- **Bến thuyền:** chạm thuyền là hai đứa chèo sang đảo vương quốc.
+- **Lễ hội tự trang trí:** Tết, Trung thu, Valentine, Noel, sinh nhật mỗi người, ngày kỷ niệm (và mỗi mốc 100 ngày). Ngôi nhà và phòng khách tự đổi trang trí. Đêm Tết và đêm kỷ niệm có pháo hoa, Trung thu có trăng tròn. Noel và sinh nhật thì nhân vật tự đội mũ hợp dịp nếu chưa chọn mũ.
+- **Thêm 5 loài thú:** chó Shiba, thỏ, chim cánh cụt, ếch đội lá sen, gấu trúc đỏ. Đổi loài, màu lông, tên ở phần thú cưng trong phòng khách.
+- **Thêm 6 loại hoa:** cẩm chướng, hoa baby, lan hồ điệp, hoa giấy, lưu ly, mai vàng.
+- **Sticker mới:** 30 sticker cũ được vẽ lại, thêm 12 sticker cảm xúc của chính hai nhân vật.
+- **12 huy hiệu tự mở khoá:** 100 ngày, 1 năm, buổi hẹn thứ 10 và 50, bông hoa đầu tiên, khu vườn đầy, 100 mẩu giấy nhắn, truyện 20 đoạn, bức tranh đầu tiên, lâu đài, 10 kho báu, 30 ngày chăm thú liên tiếp. Xem ở gác kỷ niệm, hoặc chạm kệ huy hiệu trong phòng Anh.
+- **Sửa lỗi:** ở bản 9, bấm bếp trong phòng Bếp có thể làm app báo lỗi. Bản này đã sửa.
+
+## Bản 9
+
+**Bản 9 có gì mới**
+- **Phối đồ:** vào phòng của mình (chạm phòng trên bản đồ, hoặc chạm tủ đồ / bàn trang điểm) để chọn kiểu tóc, màu tóc, áo/váy, quần/giày, mũ và phụ kiện. Người kia thấy ngay, ở mọi phòng và trên bản đồ.
+- **Tâm trạng hôm nay:** vui, cười to, ngượng, nhớ, dỗi, ngạc nhiên, buồn ngủ. Khuôn mặt nhân vật đổi theo. Đi ngủ thì nhân vật nhắm mắt.
+- **5 phòng mới mở được từ bản đồ:**
+  - **Bếp:** chạm tủ lạnh để đọc lời nhắn. Chạm bếp để nấu cho nhau: nồi bốc hơi, bàn ăn bày món, người kia nhận được một cái chạm.
+  - **Phòng của mỗi người:** chạm giường là "đi ngủ rồi", chạm bàn làm việc là "đang bận", chạm tủ đồ để phối đồ. Phòng Em có kệ cây trưng các chậu hoa đã nở.
+  - **Góc sáng tạo:** giá vẽ và máy đánh chữ đổi theo việc đang làm dở. Tranh vẽ xong được phơi lên dây.
+  - **Gác kỷ niệm:** rương kho báu, album, tủ trưng bày, bản đồ ghim, hộp thời gian, từ điển. Món nào cũng chạm được.
+
+## Bản 8
 
 **Bản 8 có gì mới**
 - **Trang Nhà là ngôi nhà búp bê 3D** trên đảo giữa biển. Chạm phòng nào thì vào phòng đó: phòng khách, bếp (tủ lạnh), góc sáng tạo (truyện tiếp sức), gác kỷ niệm (từ điển), vườn chung, hộp thư (thư hẹn giờ), quán cà phê (hũ hẹn hò), bến thuyền và đảo (vương quốc).
@@ -112,7 +141,7 @@ Từ giờ mở app bằng biểu tượng ngôi nhà nhỏ trên màn hình ch�
 - **App báo "Chưa kết nối Firebase":** file `firebase-config.js` chưa được điền, hoặc chưa được tải lên cùng `index.html`.
 - **Báo "Firebase từ chối truy cập":** chưa dán quy tắc ở bước 1.7, hoặc dán chưa xong mà quên bấm Publish.
 - **Đăng nhập báo lỗi ngay:** kiểm tra lại bước 1.5 (bật Email/Password).
-- **Sửa code xong mà điện thoại chưa thấy bản mới:** mở app, đợi thanh "Góc Nhỏ có bản mới rồi" rồi bấm Mở bản mới. Nếu tự sửa code, nhớ tăng số phiên bản ở dòng `const CACHE = "goc-nho-v8"` trong `sw.js` (ví dụ thành v9).
+- **Sửa code xong mà điện thoại chưa thấy bản mới:** mở app, đợi thanh "Góc Nhỏ có bản mới rồi" rồi bấm Mở bản mới. Nếu tự sửa code, nhớ tăng số phiên bản ở dòng `const CACHE = "goc-nho-v10"` trong `sw.js` (ví dụ thành v11).
 - **Quên mật khẩu:** ở màn hình đăng nhập, gõ email rồi bấm **Quên mật khẩu?**. Firebase sẽ gửi thư đặt lại mật khẩu.
 
 ## Ghép nhà: các tình huống hay gặp
