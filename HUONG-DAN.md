@@ -1,4 +1,15 @@
-# Cài "Hũ Hẹn Hò" thành app riêng trên điện thoại
+# Cập nhật bản mới (đã cài app từ trước)
+
+Làm 2 việc, khoảng 5 phút:
+
+1. **Dán lại Rules.** Vào Firebase → Firestore → tab **Rules** → xoá hết → dán toàn bộ nội dung file `firestore.rules` mới → bấm **Publish**. Thiếu bước này thì nút Rời nhà và Chuyển nhà sẽ báo "Firebase từ chối".
+2. **Tải code mới lên GitHub.** Trong repo `goc-nho`, bấm **Add file → Upload files**, kéo vào: `index.html`, `sw.js`, `HUONG-DAN.md`, `firestore.rules` và **cả thư mục `assets`** → **Commit changes**. Đợi 1–2 phút, rồi đóng hẳn app trên điện thoại và mở lại 1–2 lần.
+
+Không cần sửa `firebase-config.js`, dữ liệu cũ giữ nguyên.
+
+---
+
+# Cài "Góc Nhỏ" thành app riêng trên điện thoại
 
 Mất khoảng 20–30 phút, làm trên máy tính sẽ dễ nhất. Tất cả đều miễn phí.
 
@@ -9,6 +20,7 @@ Thư mục này gồm:
 | `index.html` | Toàn bộ app |
 | `firebase-config.js` | Nơi bạn dán cấu hình Firebase (bước 1) |
 | `firestore.rules` | Quy tắc bảo mật, dán vào Firebase (bước 1) |
+| thư mục `assets` | Hình nhân vật và căn phòng |
 | `manifest.webmanifest`, `sw.js`, các file `.png` | Giúp app cài được lên màn hình chính và mở được khi mạng yếu |
 
 ---
@@ -87,3 +99,13 @@ Từ giờ mở app bằng biểu tượng chậu cây trên màn hình chính. 
 - **Đăng nhập báo lỗi ngay:** kiểm tra lại bước 1.5 (bật Email/Password).
 - **Sửa code xong mà điện thoại chưa thấy bản mới:** đóng hẳn app rồi mở lại 1–2 lần.
 - **Quên mật khẩu:** ở màn hình đăng nhập, gõ email rồi bấm **Quên mật khẩu?**. Firebase sẽ gửi thư đặt lại mật khẩu.
+
+## Ghép nhà: các tình huống hay gặp
+
+- **Cả hai lỡ cùng tạo nhà:** chỉ một người cần chuyển, nên là người chưa thêm gì nhiều. Ở trang Nhà, dưới mã nhà, bấm **"Bạn ấy cũng lỡ tạo nhà rồi? Vào nhà của bạn ấy"**, nhập mã nhà của người kia, rồi bấm **Chuyển nhà**. Không cần tạo tài khoản mới. Muốn mang dữ liệu theo, bấm **Tải bản sao lưu** trước khi chuyển, sang nhà mới thì vào **Cài đặt → Nhập bản sao lưu**.
+- **Muốn rời nhà:** vào **Cài đặt → Rời nhà**. Người kia vẫn ở lại và giữ toàn bộ dữ liệu. Muốn quay lại thì nhập lại đúng mã nhà cũ; app tự nhận lại đúng vai của bạn, không bị lẫn với người kia.
+- **Nhà chỉ còn một người mà người đó rời đi:** nhà bị bỏ trống, mã nhà bị xoá luôn để không ai khác vào được. Dữ liệu trong đó không lấy lại được, nên nhớ tải bản sao lưu trước.
+- **Một người mất tài khoản (quên email, mất mật khẩu không lấy lại được):** người còn lại vào **Cài đặt** → bấm **"... mất tài khoản?"** → **Mời tài khoản cũ ra**. Người kia tạo tài khoản mới, nhập mã nhà là vào lại đúng chỗ cũ, dữ liệu còn nguyên.
+- **Nhập mã báo "không tìm thấy":** kiểm tra lại từng chữ. Mã không phân biệt chữ hoa/thường, có dấu cách cũng được.
+- **Nhập mã báo "đã đủ hai người":** nhà đó đã có hai người. Một người phải Rời nhà trước.
+- **Đổi ai là cậu bé, ai là cô bé trong căn phòng:** **Cài đặt → Nhân vật trong nhà**.

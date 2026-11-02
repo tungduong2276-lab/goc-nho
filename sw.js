@@ -1,5 +1,5 @@
 // Lưu sẵn khung app để mở được cả khi mạng chập chờn. Dữ liệu do Firebase tự đồng bộ.
-const CACHE = "hu-hen-ho-v1";
+const CACHE = "goc-nho-v3";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./firebase-config.js", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 const CDN = ["www.gstatic.com", "fonts.googleapis.com", "fonts.gstatic.com"];
 

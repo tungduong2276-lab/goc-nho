@@ -1,5 +1,5 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="theme-color" content="#E8558A"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon-192.png"><link rel="apple-touch-icon" href="./apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Hũ Hẹn Hò"></head><body>
-<title>Hũ Hẹn Hò</title>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><meta name="theme-color" content="#7CC3F2"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon-192.png"><link rel="apple-touch-icon" href="./apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Góc Nhỏ"></head><body>
+<title>Góc Nhỏ</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -745,6 +745,158 @@ details.fold summary{font-size:17px}
 .invite .btn{align-self:flex-start;background:#fff;color:#B8366A}
 
 
+/* ---- v6 · Góc Nhỏ: trắng + xanh trời, điểm hồng và lá, viền navy dày ---- */
+:root{
+  --bg:#EAF5FF; --dot:rgba(62,140,214,.13); --surface:#FFFFFF; --petal:#FFE6F0; --petal-2:#FFC2D8;
+  --ink:#1D2B4F; --muted:#5B6B8A; --line:#C9DFF3;
+  --pink:#FF6FA5; --pink-ink:#FFFFFF; --pink-deep:#D93A7B; --leaf:#2FA463; --leaf-soft:#DAF3E3;
+  --pot:#FF9DC2; --blush:#FFA3C4; --heart:#FF5C93;
+  --sky:#7CC3F2; --sky-soft:#D8EEFF; --edge:#1D2B4F; --pop:#1D2B4F;
+  --glass:rgba(124,195,242,.22); --glass-edge:rgba(29,43,79,.55);
+  --g1:#FF6FA5; --g2:#2FA463; --g3:#F08A4B; --g4:#7A6BE0; --g5:#2F8FD8; --g6:#8C93A8;
+  --grass:#D6F2CF; --grass-2:#BFE8B4;
+  --display:"Baloo 2","Nunito",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101A33; --dot:rgba(124,195,242,.09); --surface:#18244A; --petal:#3A2145; --petal-2:#5C2E5E;
+  --ink:#EAF4FF; --muted:#A9BBD8; --line:#2C3C66;
+  --pink:#FF7FB0; --pink-ink:#1A0F24; --pink-deep:#FFA1C6; --leaf:#6FD99A; --leaf-soft:#18392A;
+  --pot:#E98AB0; --blush:#FF92BA; --heart:#FF7FB0;
+  --sky:#5FAFE6; --sky-soft:#1C3358; --edge:#6F92D6; --pop:#060C1E;
+  --glass:rgba(95,175,230,.12); --glass-edge:rgba(234,244,255,.45);
+  --g1:#FF7FB0; --g2:#6FD99A; --g3:#F5A27A; --g4:#AFA2FF; --g5:#7CC3F2; --g6:#B5BCD0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101A33; --dot:rgba(124,195,242,.09); --surface:#18244A; --petal:#3A2145; --petal-2:#5C2E5E;
+  --ink:#EAF4FF; --muted:#A9BBD8; --line:#2C3C66;
+  --pink:#FF7FB0; --pink-ink:#1A0F24; --pink-deep:#FFA1C6; --leaf:#6FD99A; --leaf-soft:#18392A;
+  --pot:#E98AB0; --blush:#FF92BA; --heart:#FF7FB0;
+  --sky:#5FAFE6; --sky-soft:#1C3358; --edge:#6F92D6; --pop:#060C1E;
+  --glass:rgba(95,175,230,.12); --glass-edge:rgba(234,244,255,.45);
+  --g1:#FF7FB0; --g2:#6FD99A; --g3:#F5A27A; --g4:#AFA2FF; --g5:#7CC3F2; --g6:#B5BCD0; color-scheme:dark}
+
+body{background-image:radial-gradient(var(--dot) 2.4px,transparent 2.8px),radial-gradient(var(--dot) 2.4px,transparent 2.8px)}
+h1{color:var(--pink);font-size:34px;text-shadow:2px 2px 0 var(--pop);-webkit-text-stroke:1.2px var(--pop);paint-order:stroke fill;letter-spacing:.005em}
+h1 .hrt{color:var(--leaf);-webkit-text-stroke:0;text-shadow:none}
+.sub{color:var(--ink);font-weight:800}
+.rituals h2,section h2,.v3h,.tab-head h2{color:var(--ink)}
+.tab-head h2{font-family:var(--display);font-weight:800;font-size:27px;line-height:1.1;margin:0}
+
+/* thẻ: viền navy dày + bóng cứng */
+.rit,.season-block,.formcard,.plant-card,.card3,.duo,.charter,.dcard,.tl li,.wish,.dict article,.exhibit,.ticket,.sheet,.who,.gift,.prop,.const li,.hall-col,.bpanel,.shop,.book,.story-old,.drawing,.fridge,.empty,.law,.letter,.envelope,details.fold,.closed-note,.places li,.gcard,.sill,.draw-theme,.waiting,.hidden-note,.todo li,.unlock,.flowerbed{
+  border:2.5px solid var(--edge)!important;box-shadow:4px 4px 0 var(--pop)!important;border-radius:20px}
+.rit::after,.season-block::after,.formcard::after,.plant-card::after,.ticket::after{border:2px dashed var(--line);inset:7px;border-radius:14px}
+.formcard{border-color:var(--edge)!important}
+.dict article{border-left-width:2.5px!important}
+.dict article::before{content:"";display:block;height:6px;margin:-14px -16px 10px;border-radius:17px 17px 0 0;background:var(--sky)}
+.dict article:nth-child(3n+2)::before{background:var(--leaf)}.dict article:nth-child(3n)::before{background:var(--pink)}
+.exhibit{border-radius:8px!important}
+.duo{background:var(--surface)}
+.duo::before{background:var(--sky-soft)}
+.duo::after{content:"";position:absolute;left:-30px;bottom:-30px;width:110px;height:110px;border-radius:50%;background:var(--leaf-soft);z-index:0}
+.duo>*{z-index:1}
+.duo-n b{color:var(--pink);-webkit-text-stroke:1.5px var(--pop);paint-order:stroke fill;text-shadow:3px 3px 0 var(--pop)}
+.dcard.start{background:var(--petal)!important}
+.dcard.bday{background:var(--sky-soft)}
+.dcard.bday b{color:var(--g5)}
+.todo li.hot{background:var(--sky-soft)}
+.todo .ic{background:var(--surface);border:2px solid var(--edge)}
+
+/* nút */
+.btn{border:2.5px solid var(--edge)!important;font-weight:800;transition:transform .08s,box-shadow .08s}
+.btn-main{background:var(--pink);color:var(--pink-ink);box-shadow:3px 3px 0 var(--pop)!important;text-shadow:1px 1px 0 rgba(29,43,79,.35)}
+.btn-main.btn-small{box-shadow:3px 3px 0 var(--pop)!important}
+.btn-main:hover{background:color-mix(in srgb,var(--pink) 88%,#fff)}
+.btn-main:active,.btn-ghost:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--pop)!important}
+.btn-ghost{background:var(--surface);color:var(--ink);box-shadow:3px 3px 0 var(--pop)!important}
+.btn-big{background:var(--leaf);font-size:23px}
+.icon-btn{border:2.5px solid var(--edge);box-shadow:3px 3px 0 var(--pop);color:var(--ink);font-weight:800}
+.linkish{color:var(--pink-deep);text-decoration-color:var(--pink)}
+
+/* điều hướng */
+nav.tabs a{border:2.5px solid var(--edge);color:var(--ink);background:var(--surface);box-shadow:2px 2px 0 var(--pop)}
+nav.tabs a::before{background:var(--leaf);opacity:1}
+nav.tabs a[aria-current="page"]{background:var(--sky);border-color:var(--edge);color:#10203F;box-shadow:3px 3px 0 var(--pop)}
+nav.tabs a[aria-current="page"]::before{background:var(--pink)}
+nav.subtabs{border-bottom:2.5px solid var(--line)}
+nav.subtabs a{color:var(--muted)}
+nav.subtabs a[aria-current="page"]{color:var(--ink);border-bottom:4px solid var(--pink);border-radius:2px}
+.ktabs{border:2.5px solid var(--edge);box-shadow:3px 3px 0 var(--pop)}
+.ktabs button[aria-selected="true"]{background:var(--sky);color:#10203F}
+.gtabs{border:2.5px solid var(--edge);box-shadow:3px 3px 0 var(--pop)}
+.gtabs button[aria-pressed="true"]{background:var(--sky);color:#10203F}
+
+/* viên, chip, ô nhập */
+.days{border:2.5px solid var(--edge);color:var(--ink);box-shadow:2px 2px 0 var(--pop)}
+.days span{color:var(--muted)}
+.chip{border:2px solid currentColor}
+.pill{border:2px solid var(--edge);background:var(--sky-soft)}
+.pill.g{background:var(--leaf-soft)}.pill.y{background:#FFF1B8;color:#3B2E00}
+.field input,.field textarea,.field select{border:2.5px solid var(--line);background:var(--surface)}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--sky);box-shadow:0 0 0 3px var(--sky-soft)}
+.seg span{border:2px solid var(--edge);color:var(--ink)}
+.seg input:checked+span{background:var(--sky);border-color:var(--edge);color:#10203F;box-shadow:2px 2px 0 var(--pop)}
+.taps button{border:2.5px solid var(--edge);background:var(--surface);color:var(--ink);box-shadow:2px 2px 0 var(--pop)}
+.taps button:nth-of-type(2n){background:var(--sky-soft)}
+.taps button:nth-of-type(3n){background:var(--petal)}
+.stickers button,.mdi button,.sitem{border:2px solid var(--edge)}
+.stickers button[aria-pressed="true"],.mdi button[aria-pressed="true"]{background:var(--sky-soft);box-shadow:2px 2px 0 var(--pop)}
+.file-btn{border:2.5px dashed var(--edge);background:var(--sky-soft);color:var(--ink)}
+.toast{background:var(--ink);color:var(--bg);border:2.5px solid var(--pink);box-shadow:4px 4px 0 var(--pink)}
+.stamp{color:var(--leaf);border-color:var(--leaf)}
+
+/* hũ */
+.jar .lid{background:var(--sky);border:2.5px solid var(--edge)}
+.jar .lid::after{background:var(--edge);opacity:.9}
+.jar .body{border:3px solid var(--edge);background:var(--glass)}
+
+/* các khối màu đặc */
+.banner,.picked-card,.invite{background:var(--pink)!important;color:#fff;border:2.5px solid var(--edge);box-shadow:4px 4px 0 var(--pop)}
+.banner b,.picked-card b,.invite b{text-shadow:1px 1px 0 rgba(29,43,79,.4)}
+.invite .code{background:#fff;color:#1D2B4F;border:2.5px solid #1D2B4F}
+.invite .btn{background:#fff!important;color:#1D2B4F}
+.hunt{background:#24407A;border:2.5px solid var(--edge);box-shadow:4px 4px 0 var(--pop)}
+.wrapped{background:#2F7FC8}
+.secret{background:#1D2B4F;color:#EAF5FF}
+.secret .btn{background:#EAF5FF;color:#1D2B4F}
+.charter{border-color:var(--edge)!important}
+.charter h3{color:var(--g5)}
+.kstats div{border:2px solid var(--line)}
+.kstats b{color:var(--pink-deep)}
+.rank .bar{border:2px solid var(--edge);height:12px}
+.rank .bar i{background:var(--leaf)}
+.isle-host{border:2.5px solid var(--edge);box-shadow:4px 4px 0 var(--pop)}
+.note{border:2px solid var(--edge);box-shadow:3px 3px 0 var(--pop)}
+.fridge{background:var(--sky-soft)}
+.gate .gbox h1{font-size:40px}
+
+
+/* ---------- v6: căn phòng có Anh và Em ---------- */
+.scene{position:relative;z-index:1;width:min(100%,400px);margin:-6px auto 0;aspect-ratio:747/771;user-select:none;-webkit-user-select:none}
+.sc-room{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;transition:filter .6s}
+.scene.night .sc-room{filter:brightness(.7) saturate(.85)}
+.scene.night::after{content:"";position:absolute;left:21%;top:17%;width:12%;height:14%;border-radius:8px;background:radial-gradient(circle,rgba(255,214,107,.55),transparent 70%);pointer-events:none}
+.sc-ch{position:absolute;height:30%;transform:translate(-50%,-97%);background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sc-ch img{height:100%;width:auto;display:block;animation:scbob 3.4s ease-in-out infinite;transform-origin:50% 100%;pointer-events:none}
+.sc-ch img.flip{scale:-1 1}
+.sc-ch.ghost img{opacity:.42;filter:grayscale(.4)}
+.sc-ch.hop img{animation:schop .45s ease 2}
+.sc-ch:focus-visible{outline:3px solid var(--pink);outline-offset:4px;border-radius:12px}
+.sc-tag{position:absolute;top:calc(100% - 4px);left:50%;transform:translateX(-50%);white-space:nowrap;font:800 11px/1.5 var(--body);color:var(--ink);background:var(--surface);border:2px solid var(--edge);border-radius:999px;padding:0 8px}
+.sc-tag.c-anh{background:var(--sky-soft)}.sc-tag.c-em{background:var(--petal)}
+.sc-tag small{font-weight:700;color:var(--muted);font-size:10px}
+.sc-day{position:absolute;left:3%;top:3%;z-index:5;background:var(--surface);border:2.5px solid var(--edge);border-radius:16px;box-shadow:3px 3px 0 var(--edge);padding:6px 10px 5px;text-align:center;line-height:1}
+.sc-day b{display:block;font-family:var(--display);font-size:26px;color:var(--pink-deep);font-variant-numeric:tabular-nums}
+.sc-day span{font-size:10px;font-weight:800;color:var(--muted)}
+.sc-hint{position:relative;z-index:1;text-align:center;margin:2px 0 0;font-size:13px;color:var(--muted);font-weight:700}
+.sc-heart{position:absolute;z-index:9;width:26px;height:26px;pointer-events:none;animation:scfly 1.3s ease-out forwards}
+.sc-heart path{fill:var(--heart,#FF6FA5);stroke:var(--edge);stroke-width:1.6}
+@keyframes scbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.6%)}}
+@keyframes schop{0%,100%{transform:translateY(0)}40%{transform:translateY(-12%)}}
+@keyframes scfly{0%{opacity:0;transform:translate(-50%,0) scale(.5)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-90px) scale(1.15)}}
+@media (prefers-reduced-motion:reduce){.sc-ch img,.sc-ch.hop img{animation:none}.sc-heart{animation-duration:.01s}}
+.duo .duo-top{position:relative;z-index:1}
+
+
 .standalone #meField{display:none}
 .gate{position:fixed;inset:0;z-index:80;background-color:var(--bg);background-image:radial-gradient(var(--dot) 2.2px,transparent 2.6px);background-size:28px 28px;overflow:auto;display:flex;justify-content:center;align-items:flex-start;
   padding:calc(36px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(36px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
@@ -760,6 +912,14 @@ body.gated{overflow:hidden}
 .gcard{background:var(--surface);border-radius:20px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
 .gcard b{font-family:var(--display);font-size:18px;color:var(--pink-deep)}
 .gerr{color:var(--pink-deep);font-weight:800;background:var(--petal);border-radius:12px;padding:8px 12px;text-align:left}
+.gnote{background:var(--sky-soft);border:2px solid var(--edge);border-radius:14px;padding:10px 12px;text-align:left;font-weight:700}
+.sw-box{background:var(--surface);color:var(--ink);border:2.5px solid var(--edge);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;text-align:left}
+.sw-box p{margin:0}
+.invite .sw-open{color:#fff;text-decoration-color:#fff;align-self:flex-start;text-align:left}
+.sw-box .linkish{color:var(--pink-deep)}
+.btn-danger{background:var(--pink-deep);color:#fff;border:2.5px solid var(--edge);box-shadow:3px 3px 0 var(--edge)}
+.btn-danger:disabled{opacity:.6}
+#acctBox .bk{display:flex;flex-direction:column;gap:8px}
 
 </style>
 
@@ -768,7 +928,7 @@ body.gated{overflow:hidden}
     <div class="brand">
       <span id="headMascot"></span>
       <div>
-        <h1>Hũ Hẹn Hò<span class="hrt" aria-hidden="true">♥</span></h1>
+        <h1>Góc Nhỏ<span class="hrt" aria-hidden="true">♥</span></h1>
         <p class="sub" id="couple">Anh &amp; Em</p>
       </div>
     </div>
@@ -787,6 +947,9 @@ body.gated{overflow:hidden}
     </div>
     <div class="field" id="meField">Điện thoại này của
       <div class="seg" id="set-me"></div>
+    </div>
+    <div class="field">Nhân vật trong nhà
+      <div class="seg" id="set-chars"></div>
     </div>
     <div class="row">
       <label class="field">Ngày bắt đầu yêu<input id="set-start" type="date"></label>
@@ -1712,13 +1875,16 @@ function fillSettings(){
   $("set-name1").value=S.meta.names[0];$("set-name2").value=S.meta.names[1];
   $("set-start").value=S.meta.startDate||"";$("set-b1").value=(S.meta.bday||[])[0]||"";$("set-b2").value=(S.meta.bday||[])[1]||"";
   $("lbl-b1").firstChild.textContent="Sinh nhật "+S.meta.names[0];$("lbl-b2").firstChild.textContent="Sinh nhật "+S.meta.names[1];
+  const cs=(S.meta.chars||["anh","em"]).join();
+  $("set-chars").innerHTML=[["anh,em",N(0)+" là cậu bé, "+N(1)+" là cô bé"],["em,anh",N(0)+" là cô bé, "+N(1)+" là cậu bé"]].map(([v,t])=>`<label><input type="radio" name="setchars" value="${v}" ${cs===v?"checked":""}><span>${t}</span></label>`).join("");
   $("set-me").innerHTML=[0,1].map(i=>`<label><input type="radio" name="setme" id="sm-${i}" value="${i}" ${ME===i?"checked":""}><span>${N(i)}</span></label>`).join("");
   $("syncRule").textContent=MODE==="db"?"Đang đồng bộ qua Firebase: mọi thay đổi hiện ngay trên máy của cả hai.":"Đang lưu trên máy này. Để dùng chung hai điện thoại, mở trang qua claude.ai và chia sẻ cho người kia với quyền chỉnh sửa.";
 }
 $("openSettings").onclick=()=>{if(window.HHH_ACCT)window.HHH_ACCT($("acctBox"));const il=$("bkImportLbl");if(il)il.hidden=!window.HHH_STANDALONE&&MODE!=="local";const s=$("settings");s.hidden=!s.hidden;$("openSettings").setAttribute("aria-expanded",String(!s.hidden));if(!s.hidden)fillSettings();};
 $("saveSettings").onclick=()=>{
   const m=document.querySelector('input[name="setme"]:checked');if(m){ME=+m.value;lsSet("hu-hen-ho-me",String(ME));}
-  putMeta({names:[$("set-name1").value.trim()||"Anh",$("set-name2").value.trim()||"Em"],startDate:$("set-start").value,bday:[$("set-b1").value,$("set-b2").value]});
+  const ch=document.querySelector('input[name="setchars"]:checked');
+  putMeta({chars:ch?ch.value.split(","):(S.meta.chars||["anh","em"]),names:[$("set-name1").value.trim()||"Anh",$("set-name2").value.trim()||"Em"],startDate:$("set-start").value,bday:[$("set-b1").value,$("set-b2").value]});
   $("settings").hidden=true;$("openSettings").setAttribute("aria-expanded","false");toast("Đã lưu cài đặt");rerender();
 };
 $("resetBtn").onclick=()=>{$("resetConfirm").hidden=false;};
@@ -2027,7 +2193,8 @@ function renderHome(){
   if(w.fridgeNew)todos.push(`<li><span class="ic">${ICON.note}</span><span class="tx">${w.fridgeNew} mẩu giấy mới trên tủ lạnh</span><a class="btn btn-ghost btn-small" href="#tu-lanh">Đọc</a></li>`);
   const fd=feed(),up=upcoming(5),gifts=list("gifts"),treH=treasureHTML();
   root.innerHTML=`${inviteHTML()}<div class="duo">
-      <div class="duo-top">${dayN?`<div class="duo-n"><span class="lbl">Ngày thứ</span><b>${dayN}</b><span>bên nhau</span></div>`:""}
+      ${sceneHTML(dayN,here,pres)}
+      <div class="duo-top">
         <div class="duo-names"><h2>${N(0)} &amp; ${N(1)}</h2>
           ${dayN?`<p class="quiet">Từ ${fmtDate(S.meta.startDate+"T12:00:00")}</p>`:`<button class="linkish" data-opensettings="1">Thêm ngày bắt đầu hẹn hò để đếm ngày</button>`}
           <p class="pres">${here?`<i class="live"></i>${N(o)} cũng đang mở app`:pres?`${N(o)} ghé lần cuối ${ago(pres.last)}`:`${N(o)} chưa ghé app`}</p></div></div>
@@ -2043,6 +2210,7 @@ function renderHome(){
       <div class="card3"><ul class="cd">${up.map(e=>`<li class="${e.k===0?"today":""}"><div class="cd-n"><b>${e.k===0?"Hôm nay":e.k}</b>${e.k?"<span>ngày nữa</span>":""}</div><div class="cd-t"><b>${esc(e.title)}</b><span>${fmtDate(e.date)}</span></div>${gifts.some(g=>g.key===e.key&&!g.opened)?`<span class="giftmark" title="Có hộp quà cho ngày này">${ICON.gift}</span>`:"<span></span>"}</li>`).join("")}</ul></div>
       ${giftsHTML()}</section>`;
   root.querySelectorAll("[data-tap]").forEach(b=>b.onclick=()=>sendTap(b.dataset.tap));
+  bindScene(root);
   root.querySelectorAll("[data-water]").forEach(b=>b.onclick=water);
   root.querySelectorAll("[data-jump]").forEach(b=>b.onclick=e=>{e.preventDefault();const t=$(b.dataset.jump);if(t)t.scrollIntoView({behavior:reduced()?"auto":"smooth"});});
   const os=root.querySelector("[data-opensettings]");if(os)os.onclick=()=>{datesEdit=true;rerender();const d=$("dates");if(d)d.scrollIntoView({behavior:reduced()?"auto":"smooth"});};
@@ -2684,25 +2852,65 @@ function bindBackup(){
         if(o.meta)putMeta(Object.assign({},o.meta));
         Object.entries(o.data).forEach(([c,docs])=>{if(!COLS.includes(c)||!docs)return;Object.values(docs).forEach(d=>{if(d&&d.id)put(c,d);});});
         b.hidden=true;toast("Đã nhập dữ liệu từ bản sao lưu");rerender();};
-    }catch(e){toast("File này không phải bản sao lưu của Hũ Hẹn Hò.");}};
+    }catch(e){toast("File này không phải bản sao lưu của Góc Nhỏ.");}};
 }
+
+/* ---------- v6: căn phòng có Anh và Em ---------- */
+const CH=i=>(S.meta.chars||["anh","em"])[i]==="em"?"em":"anh";
+// ảnh gốc: dáng "34sau" của cô bé đang đi chéo lên bên phải, lật lại cho cùng hướng cửa sổ
+const POSE_FLIP={em_34sau:true};
+const charImg=(i,pose)=>{const k=CH(i)+"_"+pose;return`<img src="assets/nv_${k}.webp" alt="" draggable="false"${POSE_FLIP[k]?' class="flip"':""}>`;};
+function sceneHTML(dayN,here,pres){
+  const o=OTHER(),h=new Date().getHours(),night=h>=19||h<5;
+  const op=here?{pose:"vaytay",x:63,y:69}:{pose:"34sau",x:28,y:62};
+  const oState=here?"":`<small> · ${pres?"đi vắng":"chưa ghé"}</small>`;
+  const ch=(i,p,cls,attr,label)=>`<button type="button" class="sc-ch ${cls}" style="left:${p.x}%;top:${p.y}%;z-index:${p.y}" ${attr} aria-label="${label}">${charImg(i,p.pose)}<span class="sc-tag c-${CH(i)}">${N(i)}${i===o?oState:""}</span></button>`;
+  return`<div class="scene${night?" night":""}" id="scene">
+      <img class="sc-room" src="assets/phong-khach.webp" alt="Phòng khách của ${N(0)} và ${N(1)}" draggable="false">
+      ${dayN?`<div class="sc-day"><b>${dayN}</b><span>ngày bên nhau</span></div>`:""}
+      ${ch(o,op,pres?"":"ghost",'data-schug="1"',"Ôm "+N(o))}
+      ${ch(ME,{pose:"34truoc",x:43,y:80},"",'data-scme="1"',N(ME))}
+    </div>
+    <p class="sc-hint">${here?`${N(o)} đang ở nhà. Chạm vào ${N(o)} để ôm một cái.`:`Chạm vào ${N(o)} để gửi một cái ôm.`}</p>`;
+}
+function scHeart(btn){
+  const sc=$("scene");if(!sc||!btn)return;const r=sc.getBoundingClientRect(),b=btn.getBoundingClientRect();
+  const el=document.createElementNS("http://www.w3.org/2000/svg","svg");el.setAttribute("viewBox","0 0 24 24");el.setAttribute("class","sc-heart");
+  el.innerHTML='<path d="M12 21C5 16 2 12.5 2 8.6 2 5.5 4.4 3.5 7 3.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 2.6 0 5 2 5 5.1 0 3.9-3 7.4-10 12.4z"/>';
+  el.style.left=(b.left-r.left+b.width/2)+"px";el.style.top=(b.top-r.top)+"px";sc.appendChild(el);setTimeout(()=>el.remove(),1400);
+}
+function scHop(btn){if(!btn)return;btn.classList.remove("hop");void btn.offsetWidth;btn.classList.add("hop");setTimeout(()=>btn.classList.remove("hop"),1000);}
+function bindScene(root){
+  const o=root.querySelector("[data-schug]"),m=root.querySelector("[data-scme]");
+  if(o)o.onclick=()=>{const before=tapCool;sendTap("hug");if(tapCool!==before){scHeart(o);scHop(m);}};
+  if(m)m.onclick=()=>{const img=m.querySelector("img");if(!img||m.dataset.w)return;m.dataset.w=1;const old=img.src;img.src="assets/nv_"+CH(ME)+"_vaytay.webp";scHop(m);
+    setTimeout(()=>{img.src=old;delete m.dataset.w;},1600);};
+}
+
 const inviteHTML=()=>window.HHH_INVITE?window.HHH_INVITE():"";
 
+["anh","em"].forEach(c=>["vaytay","34sau","34truoc"].forEach(p=>{const i=new Image();i.src="assets/nv_"+c+"_"+p+".webp";}));
 
 /* ================= bản app riêng: Firebase ================= */
-const CLOUD={uid:null,email:"",cid:null,code:"",members:[],fs:null};
+const CLOUD={uid:null,email:"",cid:null,code:"",members:[],roles:{},fs:null};
 let cloudResolve;CLOUD.ready=new Promise(r=>{cloudResolve=r;});
 const AUTH_ERR={"auth/invalid-email":"Email chưa đúng định dạng.","auth/email-already-in-use":"Email này đã có tài khoản. Chuyển sang Đăng nhập nhé.","auth/weak-password":"Mật khẩu cần ít nhất 6 ký tự.",
   "auth/invalid-credential":"Email hoặc mật khẩu chưa đúng.","auth/invalid-login-credentials":"Email hoặc mật khẩu chưa đúng.","auth/user-not-found":"Chưa có tài khoản với email này.","auth/wrong-password":"Mật khẩu chưa đúng.",
-  "auth/too-many-requests":"Thử sai nhiều lần quá. Đợi vài phút rồi thử lại nhé.","auth/network-request-failed":"Không có mạng. Kiểm tra kết nối rồi thử lại.","auth/missing-password":"Nhập mật khẩu trước đã."};
-const errMsg=e=>AUTH_ERR[e&&e.code]||(e&&e.code==="permission-denied"?"Firebase từ chối truy cập. Kiểm tra lại phần Rules trong Firestore theo hướng dẫn.":"Có lỗi xảy ra"+(e&&e.code?" ("+e.code+")":"")+". Thử lại nhé.");
-let gateMode="login",gateState="loading",gateErr="";
+  "auth/too-many-requests":"Thử sai nhiều lần quá. Đợi vài phút rồi thử lại nhé.","auth/network-request-failed":"Không có mạng. Kiểm tra kết nối rồi thử lại.","auth/missing-password":"Nhập mật khẩu trước đã.",
+  "no-code":"Không tìm thấy nhà với mã này. Kiểm tra lại từng chữ nhé.","bad-code":"Mã nhà gồm đúng 6 ký tự, ví dụ H7K2QP.",
+  "full":"Mã này không vào được nữa: nhà đã đủ hai người, hoặc đã bị bỏ trống.","own":"Đây là mã nhà của chính bạn. Hãy nhập mã nhà của bạn ấy.",
+  "paired":"Bạn đang ở chung nhà với một người khác. Muốn sang nhà mới thì Rời nhà trước (trong Cài đặt).","offline":"Cần có mạng để làm việc này. Kiểm tra kết nối rồi thử lại."};
+const errMsg=e=>AUTH_ERR[e&&e.code]||(e&&e.code==="permission-denied"?"Firebase từ chối thao tác này. Có thể bạn chưa cập nhật phần Rules mới trong Firestore (xem HUONG-DAN.md, mục Rules).":"Có lỗi xảy ra"+(e&&e.code?" ("+e.code+")":"")+". Thử lại nhé.");
+const normCode=raw=>String(raw||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+const FV=()=>firebase.firestore.FieldValue;
+let gateMode="login",gateState="loading",gateErr="",gateNote="";
 function showGate(state,e){gateState=state;gateErr=e?errMsg(e):"";renderGate();}
 function hideGate(){const g=$("gate");if(g)g.hidden=true;document.body.classList.remove("gated");}
 function renderGate(){
   let g=$("gate");if(!g){g=document.createElement("div");g.id="gate";g.className="gate";document.body.appendChild(g);}
   g.hidden=false;document.body.classList.add("gated");
   const err=gateErr?`<p class="gerr" role="alert">${esc(gateErr)}</p>`:"";
+  const note=gateNote?`<p class="gnote">${esc(gateNote)}</p>`:"";
   let body="";
   if(gateState==="config")body=`<h2>Chưa kết nối Firebase</h2><p>Mở file <b>firebase-config.js</b> và dán cấu hình Firebase của bạn vào, rồi tải lại trang. Các bước có trong file HUONG-DAN.md.</p>`;
   else if(gateState==="loading")body=`<h2>Đang mở nhà của hai đứa...</h2><p class="quiet">Chờ một chút nhé.</p>`;
@@ -2711,12 +2919,12 @@ function renderGate(){
       <label class="field">Mật khẩu<input id="g-pass" type="password" autocomplete="${gateMode==="login"?"current-password":"new-password"}" minlength="6" required></label>
       ${err}<button class="btn btn-main">${gateMode==="login"?"Đăng nhập":"Tạo tài khoản"}</button>
       ${gateMode==="login"?`<button type="button" class="linkish" id="gForgot">Quên mật khẩu?</button>`:`<p class="quiet" style="margin:0">Mỗi người tạo một tài khoản riêng, rồi ghép vào cùng một nhà bằng mã.</p>`}</form>`;
-  else if(gateState==="pair")body=`<h2>Chào bạn!</h2><p>Một người tạo nhà mới, người còn lại nhập mã nhà để vào cùng.</p>${err}
-    <div class="gcard"><b>Mình tạo nhà trước</b><button class="btn btn-main" id="gCreate" type="button">Tạo nhà mới</button></div>
-    <form class="gcard" id="gJoin"><b>Bạn ấy đã tạo nhà rồi</b><label class="field">Mã nhà<input id="g-code" maxlength="6" autocapitalize="characters" autocomplete="off" placeholder="Ví dụ: H7K2QP" required></label><button class="btn btn-ghost">Vào nhà</button></form>
+  else if(gateState==="pair")body=`<h2>Chào bạn!</h2>${note}<p><b>Chỉ một người tạo nhà.</b> Người còn lại nhập mã nhà để vào ở cùng. Nếu bạn ấy đã gửi mã cho bạn, đừng tạo nhà mới.</p>${err}
+    <form class="gcard" id="gJoin"><b>Bạn ấy đã tạo nhà rồi</b><label class="field">Mã nhà của bạn ấy<input id="g-code" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Ví dụ: H7K2QP" required></label><button class="btn btn-main">Vào nhà</button></form>
+    <div class="gcard"><b>Chưa ai tạo nhà</b><p class="quiet" style="margin:0">Tạo nhà rồi gửi mã cho bạn ấy.</p><button class="btn btn-ghost" id="gCreate" type="button">Tạo nhà mới</button></div>
     <button type="button" class="linkish" id="gOut">Đăng xuất (${esc(CLOUD.email)})</button>`;
-  else body=`<h2>Có lỗi rồi</h2>${err}<button class="btn btn-main" type="button" onclick="location.reload()">Tải lại</button>`;
-  g.innerHTML=`<div class="gbox"><div class="glogo">${mascot(1)}</div><h1>Hũ Hẹn Hò<span class="hrt" aria-hidden="true">♥</span></h1>${body}</div>`;
+  else body=`<h2>Có lỗi rồi</h2>${err}<button class="btn btn-main" type="button" onclick="location.reload()">Tải lại</button><button type="button" class="linkish" id="gOut">Đăng xuất</button>`;
+  g.innerHTML=`<div class="gbox"><div class="glogo">${mascot(1)}</div><h1>Góc Nhỏ<span class="hrt" aria-hidden="true">♥</span></h1>${body}</div>`;
   g.querySelectorAll("[data-gm]").forEach(b=>b.onclick=()=>{gateMode=b.dataset.gm;gateErr="";renderGate();});
   const f=$("gForm");if(f)f.onsubmit=async e=>{e.preventDefault();const em=$("g-email").value.trim(),pw=$("g-pass").value;const btn=f.querySelector(".btn-main");btn.disabled=true;
     try{if(gateMode==="login")await firebase.auth().signInWithEmailAndPassword(em,pw);else await firebase.auth().createUserWithEmailAndPassword(em,pw);}
@@ -2724,40 +2932,158 @@ function renderGate(){
   const fg=$("gForgot");if(fg)fg.onclick=async()=>{const em=$("g-email").value.trim();if(!em){gateErr="Nhập email trước, rồi bấm Quên mật khẩu.";renderGate();return;}
     try{await firebase.auth().sendPasswordResetEmail(em);gateErr="";toast("Đã gửi email đặt lại mật khẩu. Kiểm tra hộp thư nhé.");}catch(err){gateErr=errMsg(err);renderGate();$("g-email").value=em;}};
   const gc=$("gCreate");if(gc)gc.onclick=async()=>{gc.disabled=true;try{await createCouple();}catch(err){showGate("pair",err);}};
-  const gj=$("gJoin");if(gj)gj.onsubmit=async e=>{e.preventDefault();try{await joinCouple($("g-code").value);}catch(err){if(err&&err.code==="no-code"){gateErr="Không tìm thấy nhà với mã này. Kiểm tra lại từng chữ nhé.";renderGate();}else if(err&&err.code==="full"){gateErr="Nhà này đã đủ hai người rồi.";renderGate();}else showGate("pair",err);}};
-  const go=$("gOut");if(go)go.onclick=()=>firebase.auth().signOut();
+  const gj=$("gJoin");if(gj)gj.onsubmit=async e=>{e.preventDefault();const v=$("g-code").value,btn=gj.querySelector("button");btn.disabled=true;
+    try{await joinCouple(v);}catch(err){gateErr=errMsg(err);renderGate();const ic=$("g-code");if(ic)ic.value=v;}};
+  const go=$("gOut");if(go)go.onclick=signOutAll;
 }
 const genCode=()=>{const A="ABCDEFGHJKMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<6;i++)s+=A[Math.floor(Math.random()*A.length)];return s;};
+function needOnline(){if(navigator.onLine===false)throw{code:"offline"};}
+
 async function createCouple(){
+  needOnline();
   const fs=CLOUD.fs,ref=fs.collection("couples").doc();let code=genCode();
-  await ref.set({members:[CLOUD.uid],code,createdAt:new Date().toISOString()});
+  await ref.set({members:[CLOUD.uid],roles:{[CLOUD.uid]:0},code,createdAt:new Date().toISOString()});
   try{await fs.doc("codes/"+code).set({cid:ref.id});}catch(e){code=genCode();await ref.update({code});await fs.doc("codes/"+code).set({cid:ref.id});}
   await fs.doc("users/"+CLOUD.uid).set({couple:ref.id});
   await enterCouple(ref.id);
 }
+// Vào nhà bằng mã. Nếu đang ở một mình trong nhà khác, vào nhà mới trước rồi mới rời nhà cũ,
+// để lỡ vào không được thì vẫn còn nguyên nhà cũ.
 async function joinCouple(raw){
-  const fs=CLOUD.fs,code=String(raw||"").trim().toUpperCase();
-  const c=await fs.doc("codes/"+code).get();if(!c.exists)throw{code:"no-code"};
+  needOnline();
+  const fs=CLOUD.fs,code=normCode(raw);
+  if(code.length!==6)throw{code:"bad-code"};
+  const c=await fs.doc("codes/"+code).get({source:"server"});if(!c.exists)throw{code:"no-code"};
   const cid=c.data().cid;
-  try{await fs.doc("couples/"+cid).update({members:firebase.firestore.FieldValue.arrayUnion(CLOUD.uid)});}
+  if(cid===CLOUD.cid)throw{code:"own"};
+  if(CLOUD.cid&&CLOUD.members.length>1)throw{code:"paired"};
+  try{await fs.doc("couples/"+cid).update({members:FV().arrayUnion(CLOUD.uid)});}
   catch(e){if(e&&e.code==="permission-denied")throw{code:"full"};throw e;}
+  const old=CLOUD.cid,oldCode=CLOUD.code;
   await fs.doc("users/"+CLOUD.uid).set({couple:cid});
+  if(old){try{await leaveDoc(old,oldCode,true);}catch(e){}await resetLocal();location.reload();return;}
   await enterCouple(cid);
 }
+async function leaveDoc(cid,code,alone){
+  const fs=CLOUD.fs;
+  // nhà chỉ còn mình mình: xoá mã trước, để không ai dùng mã cũ vào được nhà bỏ trống
+  if(alone&&code){try{await fs.doc("codes/"+code).delete();}catch(e){}}
+  await fs.doc("couples/"+cid).update({members:FV().arrayRemove(CLOUD.uid),["roles."+CLOUD.uid]:FV().delete()});
+}
+async function leaveCouple(){
+  needOnline();
+  await leaveDoc(CLOUD.cid,CLOUD.code,CLOUD.members.length<=1);
+  await CLOUD.fs.doc("users/"+CLOUD.uid).set({couple:null});
+  await resetLocal();location.reload();
+}
+// Bạn ấy mất tài khoản: người còn lại mời tài khoản cũ ra để tài khoản mới vào được.
+async function removePartner(){
+  needOnline();
+  const other=CLOUD.members.find(m=>m!==CLOUD.uid);if(!other)return;
+  await CLOUD.fs.doc("couples/"+CLOUD.cid).update({members:[CLOUD.uid],["roles."+other]:FV().delete()});
+}
+async function resetLocal(){
+  ["hu-hen-ho-me",typeof LKEY!=="undefined"?LKEY:"","v3-fridge-seen"].forEach(k=>{try{if(k)localStorage.removeItem(k);}catch(e){}});
+  lsSet("hu-hen-ho-migrated","1");
+  try{await CLOUD.fs.terminate();await CLOUD.fs.clearPersistence();}catch(e){}
+}
+async function signOutAll(){await resetLocal();try{await firebase.auth().signOut();}catch(e){}location.reload();}
+
+// Vai cố định cho mỗi tài khoản (0 hoặc 1), để rời nhà rồi vào lại không bị đổi chỗ với người kia.
+async function ensureRole(cid,d){
+  const fs=CLOUD.fs,members=d.members||[];let roles=Object.assign({},d.roles||{});
+  if(roles[CLOUD.uid]===0||roles[CLOUD.uid]===1)return roles;
+  if(!d.roles){members.forEach((m,i)=>{roles[m]=i;});if(!(CLOUD.uid in roles))roles[CLOUD.uid]=members.length;}
+  else{const used=members.filter(m=>m!==CLOUD.uid).map(m=>roles[m]);roles[CLOUD.uid]=used.includes(0)?1:0;}
+  const clean={};members.forEach(m=>{if(roles[m]===0||roles[m]===1)clean[m]=roles[m];});
+  try{await fs.doc("couples/"+cid).update({roles:clean});}catch(e){}
+  return clean;
+}
+const myRole=()=>{const r=CLOUD.roles[CLOUD.uid];return r===0||r===1?r:Math.max(0,CLOUD.members.indexOf(CLOUD.uid));};
+let partnerSeen=false;
 async function enterCouple(cid){
-  const fs=CLOUD.fs;CLOUD.cid=cid;
-  const s=await fs.doc("couples/"+cid).get();const d=s.data()||{};
-  CLOUD.members=d.members||[];CLOUD.code=d.code||"";ME=CLOUD.members.indexOf(CLOUD.uid);lsSet("hu-hen-ho-me",String(ME));
-  fs.doc("couples/"+cid).onSnapshot(x=>{if(!x.exists)return;const v=x.data();CLOUD.members=v.members||[];CLOUD.code=v.code||"";const i=CLOUD.members.indexOf(CLOUD.uid);if(i>=0)ME=i;schedule();},()=>{});
+  const fs=CLOUD.fs;let s;
+  try{s=await fs.doc("couples/"+cid).get();}catch(e){if(e&&e.code==="permission-denied")s=null;else throw e;}
+  if(!s||!s.exists||!(s.data().members||[]).includes(CLOUD.uid)){
+    try{await fs.doc("users/"+CLOUD.uid).set({couple:null});}catch(e){}
+    gateNote="Tài khoản này không còn ở trong nhà cũ nữa (có thể đã rời nhà trên máy khác). Vào lại bằng mã nhà nhé.";showGate("pair");return;}
+  const d=s.data();CLOUD.cid=cid;
+  CLOUD.roles=await ensureRole(cid,d);CLOUD.members=d.members||[];CLOUD.code=d.code||"";
+  ME=myRole();lsSet("hu-hen-ho-me",String(ME));partnerSeen=CLOUD.members.length>1;
+  fs.doc("couples/"+cid).onSnapshot(x=>{
+    if(!x.exists){location.reload();return;}
+    const v=x.data(),m=v.members||[];
+    if(!m.includes(CLOUD.uid)){resetLocal().then(()=>location.reload());return;}
+    if(partnerSeen&&m.length<2)toast("Bạn ấy đã rời nhà. Gửi lại mã nhà nếu muốn ở chung tiếp.");
+    if(!partnerSeen&&m.length>1)toast("Bạn ấy đã vào nhà rồi!");
+    partnerSeen=m.length>1;
+    CLOUD.members=m;CLOUD.code=v.code||"";CLOUD.roles=v.roles||CLOUD.roles;ME=myRole();schedule();if(acctBox&&acctBox.isConnected&&!acctStep)drawAcct();
+  },e=>{if(e&&e.code==="permission-denied")resetLocal().then(()=>location.reload());});
   hideGate();rerender();
   const base="couples/"+cid+"/";
   cloudResolve({collection:p=>fs.collection(base+p),doc:p=>fs.doc(base+p)});
 }
-window.HHH_INVITE=()=>CLOUD.cid&&CLOUD.members.length<2?`<div class="invite"><b>Gửi mã nhà này cho bạn ấy</b><span>Bạn ấy cài app, tạo tài khoản, chọn "Vào nhà" rồi nhập mã:</span><span class="code">${esc(CLOUD.code)}</span><button type="button" class="btn btn-small" data-copycode="1">Sao chép mã</button></div>`:"";
-document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-copycode]");if(!b)return;
-  try{navigator.clipboard.writeText(CLOUD.code).then(()=>toast("Đã sao chép mã nhà"),()=>toast("Mã nhà: "+CLOUD.code));}catch(err){toast("Mã nhà: "+CLOUD.code);}});
-window.HHH_ACCT=box=>{if(!box)return;box.innerHTML=`<div class="bk"><div class="lbl">Tài khoản</div><p class="quiet" style="margin:0">Đang đăng nhập: <b>${esc(CLOUD.email)}</b>${CLOUD.code?` · Mã nhà: <b>${esc(CLOUD.code)}</b>`:""}</p><div class="row"><button class="btn btn-ghost btn-small" type="button" id="acctOut">Đăng xuất</button></div></div>`;
-  $("acctOut").onclick=()=>firebase.auth().signOut().then(()=>location.reload());};
+
+/* --- thẻ mời + chuyển sang nhà của bạn ấy (khi lỡ cả hai cùng tạo nhà) --- */
+let swOpen=false,swCode="",swAsk=false,swErr="",swBusy=false;
+window.HHH_INVITE=()=>{
+  if(!CLOUD.cid||CLOUD.members.length>1)return"";
+  return`<div class="invite"><b>Gửi mã nhà này cho bạn ấy</b><span>Bạn ấy cài app, tạo tài khoản, chọn "Vào nhà" rồi nhập mã:</span><span class="code">${esc(CLOUD.code)}</span><button type="button" class="btn btn-small" data-copycode="1">Sao chép mã</button>
+    ${switchHTML()}</div>`;
+};
+function switchHTML(){
+  if(!swOpen)return`<button type="button" class="linkish sw-open" data-swopen="1">Bạn ấy cũng lỡ tạo nhà rồi? Vào nhà của bạn ấy</button>`;
+  if(swAsk)return`<div class="sw-box" role="alertdialog" aria-label="Xác nhận chuyển nhà"><p><b>Chuyển sang nhà có mã ${esc(swCode)}?</b></p>
+    <p>Nhà hiện tại (mã ${esc(CLOUD.code)}) sẽ bị bỏ lại. Những gì bạn đã thêm ở đây không đi theo. Muốn mang theo, tải bản sao lưu trước, sang nhà mới thì vào Cài đặt chọn "Nhập bản sao lưu".</p>
+    ${swErr?`<p class="gerr" role="alert">${esc(swErr)}</p>`:""}
+    <div class="row"><button type="button" class="btn btn-main btn-small" data-swgo="1" ${swBusy?"disabled":""}>${swBusy?"Đang chuyển...":"Chuyển nhà"}</button><button type="button" class="btn btn-ghost btn-small" data-swbk="1">Tải bản sao lưu</button><button type="button" class="linkish" data-swno="1">Thôi</button></div></div>`;
+  return`<form class="sw-box" data-swform="1"><p class="quiet" style="margin:0">Chỉ cần một người chuyển. Ai chưa thêm gì nhiều thì người đó chuyển sang nhà người kia.</p>
+    <label class="field">Mã nhà của bạn ấy<input id="sw-code" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Ví dụ: H7K2QP" required></label>
+    ${swErr?`<p class="gerr" role="alert">${esc(swErr)}</p>`:""}
+    <div class="row"><button class="btn btn-main btn-small">Tiếp tục</button><button type="button" class="linkish" data-swno="1">Thôi</button></div></form>`;
+}
+document.addEventListener("click",async e=>{
+  const t=e.target.closest&&e.target.closest("[data-copycode],[data-swopen],[data-swno],[data-swgo],[data-swbk],[data-lv],[data-rp]");if(!t)return;
+  if(t.dataset.copycode){try{navigator.clipboard.writeText(CLOUD.code).then(()=>toast("Đã sao chép mã nhà"),()=>toast("Mã nhà: "+CLOUD.code));}catch(err){toast("Mã nhà: "+CLOUD.code);}return;}
+  if(t.dataset.swopen){swOpen=true;swAsk=false;swErr="";rerender();setTimeout(()=>{const i=$("sw-code");if(i)i.focus();},50);return;}
+  if(t.dataset.swno){swOpen=false;swAsk=false;swErr="";rerender();return;}
+  if(t.dataset.swbk){if(typeof saveBackup==="function")saveBackup();return;}
+  if(t.dataset.swgo){swBusy=true;swErr="";rerender();
+    try{await joinCouple(swCode);}catch(err){swBusy=false;swErr=errMsg(err);if(["no-code","bad-code","own"].includes(err&&err.code))swAsk=false;rerender();}return;}
+  if("lv" in t.dataset){acctStep=t.dataset.lv;acctErr="";drawAcct();
+    if(acctStep==="go"){try{await leaveCouple();}catch(err){acctStep="ask";acctErr=errMsg(err);drawAcct();}}return;}
+  if(t.dataset.rp){acctStep=t.dataset.rp==="go"?"":"rp";acctErr="";drawAcct();
+    if(t.dataset.rp==="go"){try{await removePartner();toast("Đã mời tài khoản cũ ra. Gửi mã nhà cho bạn ấy để vào bằng tài khoản mới.");}catch(err){acctStep="rp";acctErr=errMsg(err);}drawAcct();}return;}
+});
+document.addEventListener("submit",e=>{const f=e.target;if(!f.dataset||!f.dataset.swform)return;e.preventDefault();
+  const v=normCode($("sw-code").value);
+  if(v.length!==6){swErr=errMsg({code:"bad-code"});rerender();return;}
+  if(v===CLOUD.code){swErr=errMsg({code:"own"});rerender();return;}
+  swCode=v;swAsk=true;swErr="";rerender();});
+
+/* --- tài khoản trong Cài đặt: đăng xuất, rời nhà --- */
+let acctBox=null,acctStep="",acctErr="";
+window.HHH_ACCT=box=>{if(!box)return;acctBox=box;acctStep="";acctErr="";drawAcct();};
+function drawAcct(){
+  const box=acctBox;if(!box)return;
+  const alone=CLOUD.members.length<2,o=typeof OTHER==="function"&&OTHER()!==null?N(OTHER()):"bạn ấy";
+  let step="";
+  if(acctStep==="ask"||acctStep==="go")step=`<div class="sw-box" role="alertdialog" aria-label="Xác nhận rời nhà">
+      ${alone?`<p><b>Nhà này chỉ có mình bạn.</b> Rời đi thì nhà và mọi thứ trong đó sẽ không vào lại được nữa. Tải bản sao lưu trước nếu muốn giữ.</p>`
+             :`<p><b>Rời nhà?</b> ${o} vẫn ở lại và giữ toàn bộ dữ liệu. Muốn quay lại, đăng nhập rồi nhập lại mã nhà <b>${esc(CLOUD.code)}</b>.</p>`}
+      ${acctErr?`<p class="gerr" role="alert">${esc(acctErr)}</p>`:""}
+      <div class="row"><button type="button" class="btn btn-danger btn-small" data-lv="go" ${acctStep==="go"?"disabled":""}>${acctStep==="go"?"Đang rời...":"Rời nhà"}</button><button type="button" class="btn btn-ghost btn-small" data-swbk="1">Tải bản sao lưu</button><button type="button" class="linkish" data-lv="">Thôi</button></div></div>`;
+  else if(acctStep==="rp")step=`<div class="sw-box" role="alertdialog" aria-label="Mời tài khoản cũ ra"><p><b>Chỉ dùng khi ${o} không đăng nhập được tài khoản cũ nữa.</b> Tài khoản cũ sẽ bị mời ra khỏi nhà, dữ liệu vẫn giữ nguyên. Sau đó ${o} tạo tài khoản mới và nhập mã <b>${esc(CLOUD.code)}</b> để vào lại đúng chỗ của mình.</p>
+      ${acctErr?`<p class="gerr" role="alert">${esc(acctErr)}</p>`:""}
+      <div class="row"><button type="button" class="btn btn-danger btn-small" data-rp="go">Mời tài khoản cũ ra</button><button type="button" class="linkish" data-rp="no">Thôi</button></div></div>`;
+  box.innerHTML=`<div class="bk"><div class="lbl">Tài khoản và nhà</div>
+    <p class="quiet" style="margin:0">Đang đăng nhập: <b>${esc(CLOUD.email)}</b><br>Mã nhà: <b>${esc(CLOUD.code)}</b> · ${alone?"chưa có ai vào cùng":"đang ở cùng "+o}</p>
+    <div class="row"><button class="btn btn-ghost btn-small" type="button" id="acctOut">Đăng xuất</button><button class="btn btn-ghost btn-small" type="button" data-lv="ask">Rời nhà</button></div>
+    ${!alone&&acctStep!=="rp"?`<button type="button" class="linkish" data-rp="ask" style="align-self:flex-start">${o} mất tài khoản?</button>`:""}
+    ${step}</div>`;
+  $("acctOut").onclick=signOutAll;
+}
+
 function cloudInit(){
   document.body.classList.add("standalone");
   const cfg=window.FIREBASE_CONFIG;
