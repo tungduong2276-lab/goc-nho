@@ -10,6 +10,7 @@ on:
       - "package.json"
       - "playwright.config.mjs"
       - ".github/workflows/garden-browser.yml"
+      - ".gitignore"
   push:
     branches:
       - "fix/**"
