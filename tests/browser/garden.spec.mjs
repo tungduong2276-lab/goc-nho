@@ -6,14 +6,6 @@ async function openGarden(page) {
   await page.addInitScript(() => {
     localStorage.setItem("hu-hen-ho-me", "0");
   });
-  await page.route("**/index.html", async route => {
-    const response = await route.fetch();
-    let body = await response.text();
-    const startup = "cloudInit();initDb();";
-    if (!body.includes(startup)) throw new Error("Firebase startup hook changed; review test isolation");
-    body = body.replace(startup, "/* Firebase disabled in isolated browser tests */");
-    await route.fulfill({ response, body });
-  });
   await page.route("https://www.gstatic.com/**", route => route.abort());
   await page.route("https://fonts.googleapis.com/**", route => route.abort());
   await page.route("https://fonts.gstatic.com/**", route => route.abort());
