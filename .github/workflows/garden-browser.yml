@@ -1,0 +1,32 @@
+name: Garden browser regressions
+
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - "assets/3d/**"
+      - "scripts/**"
+      - "tests/browser/**"
+      - "package.json"
+      - "playwright.config.mjs"
+      - ".github/workflows/garden-browser.yml"
+  push:
+    branches:
+      - main
+      - "fix/**"
+
+permissions:
+  contents: read
+
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
