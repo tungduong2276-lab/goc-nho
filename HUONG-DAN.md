@@ -1,4 +1,16 @@
-# Cập nhật lên bản mới (bản 10 · đợt 4)
+# Bản 11 · tab Khu vườn 3D
+
+Bản này được đẩy thẳng lên GitHub, không cần tải file. Đợi 1–2 phút, mở app, bấm **Mở bản mới**. Dữ liệu và Rules giữ nguyên.
+
+**Bản 11 có gì mới**
+- **Tab Khu vườn là một khu vườn 3D**, cùng kiểu với các phòng trong nhà, tự đổi theo bình minh, ban ngày, hoàng hôn, ban đêm.
+- **Chậu lớn giữa vườn** là cây chăm hằng ngày. Chạm chậu hoặc bình tưới để tưới: bình nghiêng rót nước, cây rung rinh.
+- **Hai luống chữ L, mỗi ô là một mùa hẹn hò:** cây của mùa đang đi lớn dần theo số buổi, hết mùa thì nở thành loài hoa theo số tim trung bình. Chạm một ô để xem lại mùa đó.
+- **Kệ chậu** trưng 8 chậu đã nở gần nhất. **Bảng gỗ** ghi mùa đang đi và số buổi.
+- **Hộp hạt giống** mở nắp, lấp lánh khi hết mùa: chạm để viết lá thưởng.
+- **Xích đu:** chạm để ngồi, người kia đang ở trong app sẽ thấy bạn ngồi đó.
+
+# Bản 10 · đợt 4
 
 Dữ liệu và Rules giữ nguyên, không cần dán lại `firestore.rules`.
 

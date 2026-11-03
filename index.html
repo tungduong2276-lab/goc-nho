@@ -1163,6 +1163,37 @@ nav.tabs a[aria-current="page"] .nic{background:color-mix(in srgb,var(--acc) 22%
 .badge.locked img{opacity:.55}.badge.locked figcaption{color:var(--muted)}
 @media (prefers-reduced-motion:reduce){.walker,.peck,.sail,.fx-fire i,.kgz .gt.sel{animation:none}}
 
+/* v11 · tab Khu vườn 3D */
+.garden3d .rstage{aspect-ratio:1170/880}
+.garden3d .rstage .wcanvas{top:calc(-170px * var(--k,.3333))}
+.garden3d .gfl.sel img{filter:drop-shadow(0 0 0 #fff) drop-shadow(0 0 14px #fff) drop-shadow(0 0 6px #FF6FA5)}
+.garden3d .gfl.growing img{animation:gsway 3.6s ease-in-out infinite;transform-origin:50% 86%}
+.garden3d .gcare img{transform-origin:50% 86%;animation:gsway 4.2s ease-in-out infinite}
+.garden3d .gcare.wilt img{filter:saturate(.55) brightness(.95)}
+.garden3d .gcare.drink img{animation:gdrink .6s ease 2}
+.garden3d .glow img{animation:gglow 1.8s ease-in-out infinite}
+.garden3d.t-dem .gfl.sel img{filter:brightness(.8) drop-shadow(0 0 14px #fff) drop-shadow(0 0 6px #FF6FA5)}
+@keyframes gsway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
+@keyframes gdrink{0%,100%{transform:scale(1)}40%{transform:scale(1.06,.95)}70%{transform:scale(.97,1.05)}}
+@keyframes gglow{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 16px #FFD66B)}}
+.drops.g3{inset:auto;width:160px;height:260px;z-index:2100}
+.drops.g3 i{width:26px;height:36px;top:0;animation-name:gdrop;animation-duration:1.2s}
+@keyframes gdrop{0%{opacity:0;transform:translateY(-20px)}20%{opacity:1}100%{opacity:0;transform:translateY(220px)}}
+.onwall.gsign{width:200px;height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#1D2B4F;line-height:1.1;text-align:center}
+.onwall.gsign b{font:800 38px/1 var(--display);color:#D93A7B}
+.onwall.gsign span{font:800 19px/1.2 var(--body)}
+.onwall.gsign i{font-style:normal;font-size:15px;letter-spacing:1px;color:#FF6FA5}
+.onwall.gsign i em{font-style:normal;color:#E7D3BD}
+.room3d.garden3d.t-dem .onwall.gsign{filter:brightness(.8)}
+.garden3d .gplant{pointer-events:none}
+.garden3d .gplant .ghit{position:absolute;left:30%;right:30%;top:32%;bottom:8%;pointer-events:auto;border-radius:40%}
+.garden3d .gcare .ghit{left:28%;right:28%;top:30%;bottom:-16%}
+.gcare-card{background:var(--surface);border-radius:22px;padding:16px 18px;box-shadow:0 8px 22px -16px rgba(232,85,138,.6)}
+.gcare-card .cans{margin-top:0}
+.gcare-card.thirsty .gstatus,.gcare-card.wilt .gstatus{color:var(--pink-deep)}
+.gstatus{margin:0;font-weight:700}
+.gchips{display:flex;gap:8px;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){.garden3d .gfl img,.garden3d .gcare img,.garden3d .glow img,.drops.g3{animation:none}}
 </style>
 
 <div class="wrap" id="app">
@@ -3956,6 +3987,114 @@ document.addEventListener("click",e=>{const u=e.target.closest&&e.target.closest
 
 const _rv3c=renderV3;renderV3=function(){_rv3c();setTimeout(badgeCheck,0);};
 {const _sc=setInterval(()=>{if(SC3&&SC3.kg){realmSig=null;clearInterval(_sc);schedule();}},300);}
+
+/* ================= v11 · tab Khu vườn 3D ================= */
+// Mỗi mùa hẹn hò (10 buổi) là một ô trên hai luống chữ L. Chậu lớn giữa vườn là cây chăm hằng ngày.
+const BLOOM_FL={lotus:"sen",sakura:"anhdao",hydrangea:"camtucau",daisy:"cuc",tulip:"tulip",lavender:"oaihuong"};
+const seasonGd=n=>n>=10?"gd5":n>=7?"gd4":n>=3?"gd3":n>=1?"gd2":"gd1";
+const gSits=i=>{const p=PRES(i);return !!p&&!!p.gsitAt&&Date.now()-new Date(p.gsitAt)<2*3600e3&&(i===ME||isHere(i));};
+const leafOwed=()=>{if(ME===null)return false;const mine=(S.meta.custom||[]).filter(c=>c.unlock&&c.by===ME).length;return completedSeasons()>mine;};
+function gardenItemState(k){
+  if(k==="binhtuoi")return Date.now()-justWatered<1800?"tuoi":"nghi";
+  if(k==="hopgiong")return leafOwed()?"mo":"dong";
+  return SC3.rooms.khu_vuon.items[k].st[0];
+}
+function seasonPlant(s){
+  const sd=seasonData(s),done=s<=completedSeasons(),n=sd.part.filter(h=>h.closed).length;
+  const type=sd.rated.length?(BLOOM_FL[sd.kind]||"anhdao"):"anhdao";
+  return{sd,done,n,type,gd:done?"gd5":seasonGd(n)};
+}
+function gardenSceneHTML(){
+  const Rm=SC3.rooms.khu_vuon,t=buoi(),k=Rm.ppm/SC3.rig.ppm*1.3,fk=Rm.ppm/SC3.flower.ppm,FA=SC3.flower.anchor,o=OTHER();
+  const btn=(attrs,label,x,y,w,h,z,img,cls="")=>`<button type="button" class="lay hot ${cls}" ${attrs} aria-label="${esc(label)}" style="${PX(x,y,w,h,z)}"><img src="${A3(img)}" alt="" draggable="false"></button>`;
+  const plantAt=(file,p,s,z,attrs,label,cls)=>btn(attrs,label,p[0]-FA[0]*s,p[1]-FA[1]*s,256*s,256*s,z,file,"gplant "+cls).replace("</button>",`<i class="ghit"></i></button>`);
+  let html="";
+  // đồ vật chạm được
+  for(const [key,it] of Object.entries(Rm.items)){const st=gardenItemState(key),n=key+"_"+st,b=Rm.layers[n];if(!b)continue;
+    const z=key==="binhtuoi"&&st==="tuoi"?2000:b[3];
+    html+=btn(`data-gi="${key}"`,it.label,b[0],b[1],b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,key==="hopgiong"&&st==="mo"?"glow":"");}
+  // luống: mỗi mùa một ô, mùa đang đi lớn dần theo số buổi
+  const cur=curSeason();
+  for(let s=Math.max(1,cur-9);s<=cur;s++){const P=seasonPlant(s),p=Rm.spots.luong[(s-1)%10];
+    const label=P.done?`Mùa ${s}: ${BLOOMS[P.sd.kind].name.toLowerCase()}, ${P.sd.avg.toFixed(1)} tim`:`Mùa ${s} đang lớn: ${P.n}/10 buổi`;
+    html+=plantAt(`hoa_${P.type}_${P.gd}`,p,fk*1.7,p[1],`data-gs="${s}"`,label,`gfl${gardenSel===s?" sel":""}${P.done?"":" growing"}`);}
+  // chậu lớn: cây chăm hằng ngày
+  const cn=careNow(),cp=Rm.spots.cay[0];
+  html+=plantAt(`hoa_${cn.type}_${cn.gd}`,cp,fk*3,cp[1]+1,`data-gi="cay"`,`${FL3N[cn.type]}, ${cn.stage}/10 ngày đủ nước. Chạm để tưới`,`gcare${cn.wilt&&cn.gd!=="heo"?" wilt":""}${Date.now()-justWatered<1800?" drink":""}`);
+  // kệ: những chậu đã nở gần nhất
+  const kb=Rm.layers.ke_trong||[0,0,0,0],kp=Rm.spots.ke,show=Math.min(kp.length,cn.pots),first=cn.pots-show;
+  for(let j=0;j<show;j++){const i=first+j,ty=FL3[i%FL3.length],p=kp[j];html+=sprite(`hoa_${ty}_gd5`,p,fk*1.05,kb[3]+2+(j<4?0:10)+j,"",FA,256);}
+  // bảng mùa
+  const sdc=seasonData(cur),nc=sdc.part.filter(h=>h.closed).length;
+  html+=`<div class="onwall gsign" style="z-index:${(Rm.layers.bang_trong||[0,0,0,900])[3]+1};transform:${quadM(Rm.spots.bangQuad,200,120)}"><b>Mùa ${cur}</b><span>${nc}/10 buổi hẹn</span><i>${"♥".repeat(nc)}<em>${"♥".repeat(10-nc)}</em></i></div>`;
+  // người trong vườn
+  if(ME!==null){const sp=Rm.spots.dung,seat=Rm.spots.ghe,gz=(Rm.layers.ghe_trong||[0,0,0,800])[3]+6;
+    [ME].concat(isHere(o)?[o]:[]).forEach((i,j)=>{const sit=gSits(i),pt=sit?seat[CH(i)==="anh"?0:1]:sp[j];
+      const pose=sit?"ngoi":i===ME&&(Date.now()-waveMe<1600||Date.now()-justWatered<1800)?"vaytay":"dung";
+      html+=`<span class="chr" style="z-index:${Math.round(sit?gz:pt[1])}">${charStack(i,pose,pt,k,null)}<span class="ctag c-${CH(i)}" style="left:${pt[0]}px;top:${pt[1]+8}px">${N(i)}</span></span>`;});}
+  const sky=Date.now()-justWatered<1800?`<div class="drops g3" style="left:${cp[0]-80}px;top:${cp[1]-260}px">${[20,48,76,104,132].map((x,i)=>`<i style="left:${x}px;animation-delay:${i*.12}s"></i>`).join("")}</div>`:"";
+  return`<div class="room3d garden3d t-${t}"><div class="w3fit rstage" data-w="1170"><div class="wcanvas" style="width:1170px;height:1170px">
+    <img class="wbg" src="${A3("khu_vuon_"+t)}" alt="Khu vườn của ${N(0)} và ${N(1)}" draggable="false">${html}${sky}</div></div>${fx()}</div>`;
+}
+function gardenTap(key){
+  if(key==="cay"||key==="binhtuoi"){
+    if(ME===null){toast('Chọn "Điện thoại này của ai" ở mục Nhà để tưới cây.');return;}
+    if(waterOf(dkey(),ME)){toast(waterOf(dkey(),OTHER())?"Hôm nay cả hai đã tưới rồi. Mai tưới tiếp nhé":"Bạn tưới rồi. Chờ "+S.meta.names[OTHER()]+" tưới nữa là hôm nay được tính");return;}
+    water();setTimeout(schedule,1900);return;}
+  if(key==="hopgiong"){
+    if(leafOwed()){const u=$("gUnlock");if(u){u.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"center"});setTimeout(()=>{const n=$("unl-name");if(n)n.focus({preventScroll:true});},350);}return;}
+    const left=10-(closedCount()%10);toast(ME===null?"Hộp hạt giống mở khi hai bạn đi hết một mùa":`Hộp hạt giống mở khi hết mùa, còn ${left} buổi hẹn nữa. Mỗi người được viết một lá mới`);return;}
+  if(key==="ghe"){if(ME===null)return;const on=!gSits(ME);setMine({gsitAt:on?nowIso():null});
+    toast(on?(gSits(OTHER())?"Hai đứa ngồi xích đu cạnh nhau":"Đã ngồi xích đu. Chờ "+S.meta.names[OTHER()]+" ra ngồi cùng"):"Đã đứng dậy");return;}
+  if(key==="ke"){const p=careNow().pots;toast(p?`${p} chậu đã nở${p>8?". Kệ chỉ trưng 8 chậu gần nhất, tất cả đều ở kệ cây phòng Em":""}`:"Kệ còn trống. Cây chăm hằng ngày nở hoa sẽ được đặt lên đây");return;}
+  if(key==="mua"||key==="bang"){gardenSel=null;rerender();const b=$("gSeason");if(b)b.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});return;}
+}
+renderCare=function(){
+  const root=$("tab-care");if(!root)return;
+  const head=`<div class="tab-head"><div><h2>Khu vườn</h2><p>Chạm bình tưới hoặc chậu lớn để tưới cây hôm nay. Mỗi ô trên luống là một mùa hẹn hò, chạm để xem lại.</p></div></div>`;
+  if(!SC3||!SC3.rooms||!SC3.rooms.khu_vuon||!SC3.rig){root.innerHTML=head+`<p class="quiet">Đang mở khu vườn...</p>`;return;}
+  const cs=careStats(),cn=careNow(),wilt=cn.wilt,thirsty=cs.dry===2;
+  const status=cs.today[0]&&cs.today[1]?"Hôm nay cả hai đã tưới. Cây lớn thêm một chút rồi."
+    :(cs.today[0]||cs.today[1])?`Mới có ${N(cs.today[0]?0:1)} tưới. Chờ ${N(cs.today[0]?1:0)} tưới nữa thì hôm nay mới tính.`
+    :wilt?"Mấy hôm rồi không ai tưới, cây rũ cả lá. Tưới đi để cây tươi lại nhé."
+    :thirsty?"Cây hơi khát rồi đó."
+    :"Mỗi người tưới một lần mỗi ngày. Chỉ ngày nào cả hai cùng tưới thì cây mới lớn.";
+  const can=w=>{const rec=waterOf(dkey(),w);
+    return `<div class="can${rec?" done":""}">${ICON.drop}<div><b>${N(w)}</b><span>${rec?"đã tưới lúc "+hhmm(rec.at):"chưa tưới hôm nay"}</span></div>${w===ME&&!rec?`<button class="btn btn-main btn-small" data-gi="binhtuoi">Tưới cây</button>`:""}</div>`;};
+  root.innerHTML=head+gardenSceneHTML()+`
+    <section class="blk gcare-card${wilt?" wilt":thirsty?" thirsty":""}"><div><h2 class="v3h">Cây chăm hằng ngày · ${FL3N[cn.type]}</h2><p class="v3sub">${cn.stage}/10 ngày đủ nước. Đủ 10 ngày thì nở hoa và được đặt lên kệ.</p></div>
+      <p class="gstatus">${status}</p>
+      ${ME===null?`<p class="quiet">Chọn "Điện thoại này của ai" ở mục Nhà để tưới cây.</p>`:""}
+      <div class="cans">${can(0)}${can(1)}</div>
+      <div class="stat"><span><b>${cs.streak}</b> ngày liền cùng tưới</span><span><b>${cs.bothCount}</b> ngày đủ nước</span><span><b>${cn.pots}</b> chậu đã nở</span></div></section>`;
+  root.querySelectorAll("[data-gi]").forEach(b=>b.onclick=()=>gardenTap(b.dataset.gi));
+  root.querySelectorAll("[data-gs]").forEach(b=>b.onclick=()=>{const s=+b.dataset.gs;gardenSel=gardenSel===s?null:s;rerender();
+    const t=$("gSeason");if(t&&gardenSel)t.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});});
+  if(!$("v-khu-vuon").hidden){fit3();setTimeout(fit3,30);}
+};
+renderGarden=function(){
+  const root=$("tab-garden");if(!root)return;
+  const cs=completedSeasons(),cur=curSeason(),sd=seasonData(cur),stage=sd.part.filter(h=>h.closed).length,lvl=mascotLevel();
+  const stageText=stage===0?"Mới gieo hạt. Buổi hẹn đầu tiên của mùa sẽ giúp hạt nảy mầm.":stage<7?`Cây đã lên ${stage} buổi. Còn ${10-stage} buổi nữa là nở hoa.`:stage<10?`Đã có nụ! Còn ${10-stage} buổi nữa là nở hoa.`:"Đã nở hoa!";
+  const sel=gardenSel&&gardenSel<=cs?seasonData(gardenSel):null;
+  const chips=cur>10?`<div class="gchips">${Array.from({length:cs},(_,i)=>i+1).map(s=>`<button type="button" class="btn ${gardenSel===s?"btn-main":"btn-ghost"} btn-small" data-gs2="${s}">Mùa ${s}</button>`).join("")}</div>`:"";
+  root.innerHTML=`${leafOwed()?`<div class="unlock" id="gUnlock"><h3>Hộp hạt giống đã mở: ${N(ME)} được viết 1 lá mới</h3><p>Phần thưởng hết mùa. Lá của bạn sẽ vào hũ và có thể được bốc từ buổi sau.</p>
+      <label class="field">Tên trò<input id="unl-name" maxlength="40"></label><label class="field">Cách chơi<textarea id="unl-desc" rows="3" maxlength="300"></textarea></label>
+      <p class="err" id="unl-err" hidden>Điền tên và cách chơi trước đã.</p><div><button class="btn btn-main btn-small" id="unlAdd">Thả lá vào hũ</button></div></div>`:""}
+    <section class="blk" id="gSeason">
+      ${sel?`<div><h2 class="v3h">Ô luống mùa ${sel.s}</h2><p class="v3sub">${BLOOMS[sel.kind].name} · <button type="button" class="linkish" data-gs2="0">Quay lại mùa đang đi</button></p></div>${seasonBlock(sel)}`
+      :`<div><h2 class="v3h">Mùa ${cur} trên luống</h2><p class="v3sub">${stageText}${sd.rated.length?` Tim trung bình ${sd.avg.toFixed(1)}: hứa hẹn nở thành ${BLOOMS[sd.kind].name.toLowerCase()}.`:""}</p></div>
+        ${sd.part.length?seasonBlock(sd):`<p class="empty">Chưa có buổi hẹn nào trong mùa này. Bốc một lá ở hũ hẹn hò để gieo hạt.</p>`}
+        <p class="quiet">Chậu Mầm đang ở cấp ${lvl+1}${lvl<3?`, lên cấp sau ${[5,15,30][lvl]-closedCount()} buổi hẹn nữa`:""}.${cs?` Đã có ${cs} ô hoa nở trên luống.`:""}</p>`}
+      ${chips}
+    </section>`;
+  root.querySelectorAll("[data-gs2]").forEach(b=>b.onclick=()=>{const s=+b.dataset.gs2;gardenSel=s||null;rerender();});
+  root.querySelectorAll("[data-wrapped]").forEach(b=>b.onclick=()=>openWrapped(+b.dataset.wrapped));
+  const u=$("unlAdd");if(u)u.onclick=()=>{const name=$("unl-name").value.trim(),desc=$("unl-desc").value.trim();if(!name||!desc){$("unl-err").hidden=false;return;}
+    const n=Math.max(...allGames().map(g=>g.n))+1;$("unl-name").value="";$("unl-desc").value="";
+    putMeta({custom:(S.meta.custom||[]).concat([{n,g:"dac",name,desc,aux:[],by:ME,unlock:true}])});toast("Lá số "+n+" đã vào hũ");rerender();};
+};
+window.addEventListener("hashchange",()=>{if(location.hash==="#khu-vuon")setTimeout(fit3,0);});
 
 loadLocal();route();renderAll();cloudInit();initDb();startV3();bindBackup();netState();
 </script>
