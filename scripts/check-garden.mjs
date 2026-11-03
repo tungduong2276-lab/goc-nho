@@ -90,8 +90,8 @@ assert.ok(!/root\.querySelectorAll\(\"\[data-gchar\]\"\)\.forEach\(b=>b\.onclick
 assert.ok(/else if\(hit\.dataset\.gchar\)[\s\S]*?sendTap\(\"hug\"\)/.test(appCode), "character tap still uses existing TAPS workflow");
 assert.ok(/touchPresence=function\([\s\S]*?\{quiet:true\}\)/.test(appCode), "automatic presence heartbeat is excluded from save indicator");
 assert.ok(/failedDbWrites=new Map\(\)/.test(appCode) && /retryFailedDbWrites\(\)/.test(appCode), "failed writes have an explicit retry path");
-assert.ok(/DB\.collection\(col\)\.doc\(obj\.id\)\.set\(data\)/.test(appCode), "existing collection/document write path is retained");
-assert.ok(/DB\.doc\(\"meta\/main\"\)\.set\(data\)/.test(appCode), "existing meta document path is retained");
+assert.ok(/const ref=DB\.collection\(col\)\.doc\(obj\.id\)/.test(appCode) && /ref\.set\(data\)/.test(appCode), "existing collection/document write path is retained");
+assert.ok(/const ref=DB\.doc\(\"meta\/main\"\)/.test(appCode) && /ref\.set\(data\)/.test(appCode), "existing meta document path is retained");
 
 console.log("PASS guide/gallery/Firebase wiring assertions");
 console.log("PASS inline JavaScript syntax");
