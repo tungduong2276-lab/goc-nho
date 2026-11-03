@@ -2660,7 +2660,7 @@ function renderDraw(){
       <p class="quiet">Bạn vẽ nửa trên. Nhớ để vài nét chạm xuống mép dưới để ${N(o)} nối tiếp.</p>`;
     $("themeRe").onclick=()=>{drawTheme=pick(DRAW_THEMES.filter(t=>t!==drawTheme));const b=stEl.querySelector("b");if(b)b.textContent=drawTheme;};}
   else if(mode==="wait")stEl.innerHTML=`<div class="draw-theme"><span class="lbl">Đề</span><b>${esc(act.theme)}</b></div>
-      <p class="waiting">${mascot(mascotLevel())}<span>Đang chờ ${N(o)} vẽ nửa dưới. Bức tranh sẽ lật ra khi ${N(o)} vẽ xong.</span></p>
+      <p class="waiting">${mascot(mascotLevel())}<span>${act.done&&!isDoneDrawing(act)?`Bức này thiếu ảnh nửa dưới nên chưa thể đưa vào Phòng tranh. Hãy nhờ ${N(o)} vẽ lại nửa dưới.`:`Đang chờ ${N(o)} vẽ nửa dưới. Bức tranh sẽ lật ra khi ${N(o)} vẽ xong.`}</span></p>
       <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap"><img class="mytop" src="${act.top}" alt="Nửa trên bạn đã vẽ"><button type="button" class="linkish" id="drawCancel">${drawCancel?"Bấm lần nữa để bỏ bức này":"Bỏ bức này"}</button></div>`;
   else stEl.innerHTML=`<div class="draw-theme"><span class="lbl">Đề</span><b>${esc(act.theme)}</b></div>
       <p class="quiet">${N(o)} đã vẽ xong nửa trên. Bạn chỉ được thấy mép dưới của nó. Vẽ tiếp từ những nét đó rồi lật tranh.</p>`;
