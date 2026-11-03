@@ -5,7 +5,7 @@ import * as F from './furn.js';
 import { buildChar } from './chars.js';
 import { buildCat } from './pet.js';
 
-export const MAP = { w: 1170, h: 2532, ppm: 64, target: [0.2, 1.2, 0.6], shift: [0, -40] };
+export const MAP = { w: 1170, h: 2532, ppm: 57, target: [0.2, 1.2, 0.6], shift: [0, -40] };
 const FH = 3.2;           // chiều cao tầng
 const HZ0 = -5.7, HZ1 = -2.5; // nhà nằm z ∈ [HZ0, HZ1]
 const ROOMS = {
@@ -53,6 +53,33 @@ function lampPost(on) { const g = G(); piece(rcyl(0.05, 0.07, 1.6, 0.02, 10), C.
 function fence(len, axis = 'x') { const g = G(); const n = Math.round(len / 0.45); for (let i = 0; i <= n; i++) { const p = -len / 2 + i * len / n; piece(rbox(0.12, 0.55, 0.08, 0.03), C.white, { pos: axis === 'x' ? [p, 0.28, 0] : [0, 0.28, p], parent: g }); } piece(rbox(axis === 'x' ? len : 0.05, 0.07, axis === 'x' ? 0.05 : len, 0.02), C.white, { pos: [0, 0.38, 0], parent: g }); return g; }
 function mailbox(flag) { const g = G(); piece(rbox(0.08, 0.9, 0.08, 0.03), C.woodD, { pos: [0, 0.45, 0], parent: g }); piece(rbox(0.3, 0.3, 0.5, 0.12), C.sky, { pos: [0, 1.0, 0], parent: g }); piece(rbox(0.04, flag ? 0.3 : 0.06, flag ? 0.06 : 0.25, 0.015), C.pink, { pos: [0.17, flag ? 1.2 : 1.0, -0.05], parent: g }); return g; }
 function tree(r = 1.0, col = C.leaf, blossom = false) { const g = G(); piece(rcyl(0.14, 0.2, 1.1, 0.05, 12), C.woodD, { pos: [0, 0.55, 0], parent: g }); [[0, 1.55, 0, r], [0.45 * r, 1.3, 0.2 * r, r * 0.7], [-0.4 * r, 1.35, -0.1, r * 0.7], [0.1, 1.9, -0.25 * r, r * 0.6]].forEach(([x, y, z, rr]) => piece(sphere(rr, 18, 12), blossom ? C.pinkL : col, { pos: [x, y, z], parent: g })); if (blossom) for (let i = 0; i < 8; i++) piece(sphere(0.07, 8, 6), C.white, { noOutline: true, pos: [Math.cos(i) * r * 0.8, 1.5 + Math.sin(i * 3) * 0.4, Math.sin(i) * r * 0.8], parent: g }); return g; }
+// Cây cảnh riêng biệt theo loài, có thể tái dùng làm asset khi mở chế độ custom.
+function floweringTree(kind, size = 1) {
+  const g = G();
+  const palettes = {
+    hoagiay: [0xD74F96, 0xF48CB5, 0xFFFFFF],
+    hoasua: [0xF7F2D7, 0xFFFFFF, 0xD9E6A4],
+    anhdao: [0xF6A7CA, 0xFFD2E2, 0xFFF1F6],
+    phuong: [0xF46D4B, 0xFFB06D, 0xFFDD91]
+  };
+  const colors = palettes[kind] || palettes.anhdao;
+  piece(rcyl(0.11, 0.19, 1.7, 0.035, 10), C.woodD, { pos: [0, 0.85, 0], parent: g });
+  for (let i = 0; i < 5; i++) {
+    const a = i * 2.399, radius = 0.52 + (i % 2) * 0.19;
+    const x = Math.cos(a) * radius, z = Math.sin(a) * radius;
+    piece(rcyl(0.055, 0.075, 0.95, 0.025, 7), C.woodD, { pos: [x * 0.43, 1.52, z * 0.43], rot: [Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.52], parent: g });
+    piece(sphere(0.68, 14, 10), kind === 'hoasua' ? C.leaf : C.leafL, { pos: [x, 1.85 + (i % 3) * 0.17, z], parent: g });
+    for (let j = 0; j < 7; j++) {
+      const theta = j * 2.4 + i, u = Math.cos(theta), v = Math.sin(theta);
+      piece(sphere(kind === 'hoasua' ? 0.10 : 0.17, 8, 6), colors[(i+j)%3], {
+        pos: [x + u * 0.55, 1.86 + (i%3)*0.17 + v*0.37, z + Math.sin(theta*1.3)*0.48],
+        parent: g, noOutline: true
+      });
+    }
+  }
+  g.scale.setScalar(size);
+  return g;
+}
 function bush(r = 0.35, col = C.leafL) { const g = G(); piece(sphere(r, 14, 10).scale(1, 0.8, 1), col, { pos: [0, r * 0.7, 0], parent: g }); return g; }
 function stone(r = 0.3) { const g = G(); piece(rcyl(r, r, 0.06, 0.03, 16), C.stone, { pos: [0, 0.03, 0], parent: g, cast: false }); return g; }
 function flowerTuft(col) { const g = G(); for (let i = 0; i < 5; i++) { const a = i * 1.3; piece(rcyl(0.01, 0.01, 0.28, 0.004, 4), C.leafD, { noOutline: true, pos: [Math.cos(a) * 0.15, 0.14, Math.sin(a) * 0.15], parent: g }); piece(sphere(0.07, 10, 8), col, { pos: [Math.cos(a) * 0.15, 0.3, Math.sin(a) * 0.15], parent: g }); } return g; }
@@ -164,6 +191,15 @@ function house(time) {
   g.add(at(chest(false), -3.6, FH * 2, -4.5)); g.add(at(vitrine(), -1.6, FH * 2, -5.3)); g.add(at(armchair(), -0.2, FH * 2, -3.7, -0.4));
   // cầu thang (góc sáng tạo lên)
   const st = F.stairs(8); st.scale.set(0.8, 0.95, 0.85); g.add(at(st, -5.45, 0.05, -2.8)); // dọc tường trái
+  // Nới rộng mặt bằng nhà, giữ chiều cao và đồ nội thất nguyên kích thước.
+  // Tăng diện tích trống thực sự, không phóng to mọi đồ vật.
+  const midX = (X0 + X1) / 2, midZ = cz;
+  for (const child of g.children) {
+    child.position.x = midX + (child.position.x - midX) * 1.16;
+    child.position.z = midZ + (child.position.z - midZ) * 1.24;
+    child.scale.x *= 1.16;
+    child.scale.z *= 1.24;
+  }
   return g;
 }
 
@@ -182,11 +218,16 @@ function island(time) {
   g.add(at(mailbox(true), -0.2, 0.04, 6.0)); g.add(at(nameSign(), -2.4, 0.04, 5.6)); g.add(at(lampPost(night || time === 'chieu'), -0.15, 0.04, 2.6));
   // vườn chung 4 × 3 luống (bên phải)
   for (let i = 0; i < 4; i++) for (let k = 0; k < 3; k++) { const x = 1.3 + i * 1.25, z = 0.2 + k * 1.25; g.add(at(bedPlot(), x, 0.04, z)); }
-  g.add(at(swing(), 4.9, 0.04, 4.6, 0)); g.add(at(tree(1.05), 5.3, 0.04, -4.5)); g.add(at(tree(0.75, C.leafL, true), -5.2, 0.04, -0.6));
+  g.add(at(swing(), 4.9, 0.04, 4.6, 0));
+  g.add(at(floweringTree('anhdao', 0.72), 5.35, 0.04, -4.6));
+  g.add(at(floweringTree('hoasua', 0.68), -5.35, 0.04, -0.6));
+  g.add(at(floweringTree('hoagiay', 0.58), -5.4, 0.04, 1.1));
+  g.add(at(floweringTree('phuong', 0.52), 5.5, 0.04, -1.8));
   [[5.6, -2.2], [-5.6, 2.4], [3.2, -1.6], [5.7, 2.9]].forEach(([x, z]) => g.add(at(bush(0.38), x, 0.04, z)));
   [[-3.0, -1.6, C.lilac], [-4.3, -1.9, C.pinkL], [0.5, -1.7, C.white]].forEach(([x, z, c]) => g.add(at(flowerTuft(c), x, 0.04, z)));
   // quán cà phê ven biển (trước-trái)
   g.add(at(kiosk(), -4.9, 0.04, 3.4, 0));
+  g.scale.set(1.18, 1, 1.18);
   return g;
 }
 
@@ -226,7 +267,7 @@ export const jobs = {
     const out = [];
     for (const t of ['sang', 'ngay', 'chieu', 'dem']) out.push({ file: `ban_do_${t}@3x.png`, data: shoot(mapScene(t), cam()) });
     const c = cam(), Z = {};
-    for (const [k, r] of Object.entries(ROOMS)) Z[k] = { name: r.name, go: r.go, poly: zone(c, r.x0, r.x1, r.y + 0.05, r.y + (k === 'gac' ? 2.2 : FH - 0.1), HZ0, HZ1), floor: toPx(c, (r.x0 + r.x1) / 2, r.y + 0.06, (HZ0 + HZ1) / 2 + 0.6) };
+    for (const [k, r] of Object.entries(ROOMS)) { const hx = x => -1.2 + (x + 1.2) * 1.16, hz = z => -4.1 + (z + 4.1) * 1.24; Z[k] = { name: r.name, go: r.go, poly: zone(c, hx(r.x0), hx(r.x1), r.y + 0.05, r.y + (k === 'gac' ? 2.2 : FH - 0.1), hz(HZ0), hz(HZ1)), floor: toPx(c, hx((r.x0 + r.x1) / 2), r.y + 0.06, hz((HZ0 + HZ1) / 2 + 0.6)) }; }
     Z.vuon = { name: 'Vườn chung', go: 'khu-vuon', poly: zone(c, 0.7, 5.7, 0, 0.5, -0.4, 3.3) };
     Z.hopthu = { name: 'Hộp thư', go: 'thu', poly: zone(c, -0.6, 0.3, 0, 1.4, 5.6, 6.4) };
     Z.cafe = { name: 'Quán cà phê', go: 'hom-nay', poly: zone(c, -5.9, -3.9, 0, 2.2, 2.9, 3.9) };
