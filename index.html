@@ -500,6 +500,9 @@ nav.subtabs a .ct:empty{display:none}
 .taps button:active{transform:scale(.94)}
 .taps .lbl{width:100%}
 
+.newsbar{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);background:var(--sky-soft,var(--petal));border:2.5px solid var(--edge,var(--pink));border-radius:999px;padding:8px 16px;font-size:14px;box-shadow:3px 3px 0 var(--pop,transparent)}
+.newsbar .ic{width:22px;height:22px;display:grid;place-items:center}.newsbar .ic svg{width:18px;height:18px}
+.newsbar b{flex:1;min-width:0}.newsbar span:last-child{font-weight:800;color:var(--pink-deep)}
 .todo{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .todo li{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:18px;padding:10px 12px 10px 14px;border:2px solid var(--line);font-weight:700;min-width:0}
 .todo li.hot{border-color:var(--pink);background:color-mix(in srgb,var(--petal) 55%,var(--surface))}
@@ -2522,8 +2525,9 @@ function renderHome(){
   if(w.storyDone)todos.push(`<li><span class="ic">${ICON.pen}</span><span class="tx">${N(o)} đã khép lại một câu chuyện</span><a class="btn btn-ghost btn-small" href="#truyen">Đọc</a></li>`);
   if(w.drawDone)todos.push(`<li class="hot"><span class="ic">${ICON.pen}</span><span class="tx">${N(o)} đã lật bức tranh của hai đứa</span><a class="btn btn-main btn-small" href="#ve">Xem tranh</a></li>`);
   const fd=feed(),up=upcoming(5),gifts=list("gifts"),treH=treasureHTML();
-  root.innerHTML=`${inviteHTML()}${worldMapHTML()}
-    <section class="blk" aria-label="Việc của bạn"><div><h2 class="v3h">Việc của bạn hôm nay</h2></div>
+  const pend=todos.length-(w.water?1:0);
+  root.innerHTML=`${inviteHTML()}${pend>0?`<a class="newsbar" href="#nha" data-jump="todos"><span class="ic">${ICON.note}</span><b>${pend} việc đang chờ bạn</b><span>Xem ›</span></a>`:""}${worldMapHTML()}
+    <section class="blk" id="todos" aria-label="Việc của bạn"><div><h2 class="v3h">Việc của bạn hôm nay</h2></div>
       ${todos.length?`<ul class="todo">${todos.join("")}</ul>`:`<p class="alldone">Xong hết rồi. Ghé tủ lạnh dán một mẩu giấy cho ${N(o)} không?</p>`}</section>
     ${treH}
     <section class="blk"><div><h2 class="v3h">Dấu vết của ${N(o)}</h2><p class="v3sub">Những gì ${N(o)} đã làm trong 7 ngày qua</p></div>
