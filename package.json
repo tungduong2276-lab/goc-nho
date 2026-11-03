@@ -5,9 +5,13 @@
   "scripts": {
     "test:static": "node scripts/check-garden.mjs",
     "test:browser": "playwright test",
-    "test": "npm run test:static && npm run test:browser"
+    "test": "npm run test:static && npm run test:browser",
+    "test:firebase": "firebase emulators:exec --project demo-goc-nho-safety --only firestore \"node --test tests/firebase/*.test.mjs\""
   },
   "devDependencies": {
-    "@playwright/test": "1.55.0"
+    "@playwright/test": "1.55.0",
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase": "^11.10.0",
+    "firebase-tools": "^14.15.0"
   }
 }
