@@ -3510,7 +3510,7 @@ function netState(){
   const off=navigator.onLine===false,b=$("syncBox");if(!b)return;
   b.classList.toggle("offline",off);
   if(off)setSync("Đang ngoại tuyến · có mạng sẽ tự đồng bộ",false);
-  else if(MODE==="db")setSync(dbReady?"Đồng bộ giữa hai máy":"Đang kết nối...",dbReady);
+  else if(MODE==="db"){if(dbReady)refreshDbWriteStatus();else setSync("Đang kết nối...",false);}
 }
 window.addEventListener("online",netState);window.addEventListener("offline",netState);
 (()=>{
