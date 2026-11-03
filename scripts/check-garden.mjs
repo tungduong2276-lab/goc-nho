@@ -27,7 +27,7 @@ assert.match(appCode, /const hit=ev\.detail===0\?origin:nearestGardenHit\(/, "ke
 assert.match(appCode, /data-hit-priority="4"[^>]*aria-label=/, "characters have a higher-priority hit target");
 assert.match(appCode, /class="ghit gchar-hit" aria-hidden="true"/, "character body has a real DOM hit area");
 assert.match(appCode, /priority>bestPriority\|\|\(priority===bestPriority&&d<bestD\)/, "overlapping hit areas use explicit priority before distance");
-assert.match(html, /\.garden3d \.chr \.gchar-hit\{position:absolute;display:block;left:-70px;top:-225px;width:140px;height:210px/, "character hit area has a non-zero body-sized rectangle");
+assert.match(html, /\.garden3d \.chr \.cstack \.gchar-hit\{position:absolute;display:block;left:16%;top:4%;width:68%;height:92%/, "character hit area is positioned relative to the rendered sprite");
 
 assert.match(html, /\.garden3d \.gobj\[data-gi="ghe"\] \.ghit\{left:0;right:0;top:25%;bottom:0\}/, "swing target covers the seat area");
 
