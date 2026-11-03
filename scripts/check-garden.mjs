@@ -47,6 +47,29 @@ expectTarget("center of seed box", (layers.hopgiong_dong[0] + layers.hopgiong_do
 expectTarget("center of swing seat", 321, 585, "ghe");
 expectTarget("center of watering can", (layers.binhtuoi_nghi[0] + layers.binhtuoi_nghi[2]) / 2, (layers.binhtuoi_nghi[1] + layers.binhtuoi_nghi[3]) / 2, "binhtuoi");
 
+function targetsForStates(waterState, seedState) {
+  const water = layers["binhtuoi_" + waterState];
+  const seed = layers["hopgiong_" + seedState];
+  const replacements = [
+    { dataset: { hitX: String((water[0] + water[2]) / 2), hitY: String((water[1] + water[3]) / 2), gi: "binhtuoi" } },
+    { dataset: { hitX: String((seed[0] + seed[2]) / 2), hitY: String((seed[1] + seed[3]) / 2), gi: "hopgiong" } }
+  ];
+  return [...targets.filter(t => !["binhtuoi", "hopgiong"].includes(t.dataset.gi)), ...replacements];
+}
+const activeTargets = targetsForStates("tuoi", "mo");
+const activeWater = layers.binhtuoi_tuoi;
+expectTargetWith(activeTargets, "watering can during water animation",
+  (activeWater[0] + activeWater[2]) / 2, (activeWater[1] + activeWater[3]) / 2, "binhtuoi");
+const openSeed = layers.hopgiong_mo;
+expectTargetWith(activeTargets, "open seed box while watering can animates",
+  (openSeed[0] + openSeed[2]) / 2, (openSeed[1] + openSeed[3]) / 2, "hopgiong");
+function expectTargetWith(list, name, x, y, expected) {
+  const got = nearestGardenHit(x, y, list);
+  const key = got?.dataset.gi || (got?.dataset.gs ? "flower" + got.dataset.gs : null);
+  assert.equal(key, expected, name + " resolves to the intended garden object");
+  console.log("PASS tap routing: " + name + " -> " + expected);
+}
+
 function pxAt360(width, height) { return [width * 360 / 1170, height * 360 / 1170]; }
 function checkMinTarget(label, width, height) {
   const [w, h] = pxAt360(width, height);
