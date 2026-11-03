@@ -34,12 +34,9 @@ test("the watering button in the care card is actionable", async ({ page }) => {
 
 test("a pointer tap on the board opens the seasonal gallery, not a neighboring object", async ({ page }) => {
   await openGarden(page);
-  const hit = page.locator(".garden3d button[data-gi='bang'] .ghit");
-  const point = await hit.evaluate(el => {
-    const r = el.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-  });
-  await page.mouse.click(point.x, point.y);
+  const board = page.locator(".garden3d button[data-gi='bang']");
+  await expect(board).toBeVisible();
+  await board.click();
   await expect(page.locator("#gGallery")).toBeVisible();
 });
 
