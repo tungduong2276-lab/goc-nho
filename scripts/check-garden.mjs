@@ -84,6 +84,12 @@ assert.match(sw,/\.\/assets\/3d\/living-motion\.js/, "living motion runtime is p
 assert.match(motion,/prefers-reduced-motion:\s*reduce/, "motion layer respects reduced-motion preferences");
 assert.match(motion,/document\.addEventListener\("pointerdown"/, "motion layer responds to real pointer input");
 assert.match(motion,/gnCharacterIdle|gnFlowerIdle|gnPetReact/, "motion layer defines character, plant, and pet behavior");
+assert.match(html,/function houseRoomNavHTML\(active\)/,"house has one shared room directory renderer");
+assert.match(html,/\$\{worldMapHTML\(\)\}\$\{houseRoomNavHTML\(""\)\}/,"house overview connects exterior map to the room directory");
+assert.match(html,/\$\{roomSceneHTML\(r\)\}\$\{houseRoomNavHTML\(tab\)\}/,"each interior room links to the other rooms");
+for (const image of ["phong_khach_ngay","bep_ngay","phong_anh_ngay","phong_em_ngay","sang_tao_ngay","gac_ngay"]) assert.ok(html.includes(image),"room directory reuses existing 3D art: "+image);
+assert.match(html,/prefers-reduced-motion:reduce\)\{\.house-room-card[\s\S]*?animation:none\}/,"room navigation respects reduced-motion");
+
 assert.doesNotMatch(motion,/(?:firebase|Firestore|localStorage|sessionStorage)\s*[.(]/i, "motion layer does not touch user data or Firebase");
 
 assert.match(appCode, /const ref=DB\.collection\(col\)\.doc\(obj\.id\)/, "existing collection/document write path is retained");
