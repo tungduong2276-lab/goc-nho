@@ -51,7 +51,7 @@ test("the real swing seat center is inside the swing target", async ({ page }) =
     // Midpoint of the two seat positions in assets/3d/scene.json.
     return { x: r.left + 347.45 * scale, y: r.top + 655.4 * scale };
   });
-  console.log("SWING_DIAG", await page.evaluate(({x,y}) => ({me:localStorage.getItem("hu-hen-ho-me"),tapPoint:{x,y},targets:[...document.querySelectorAll(".garden3d [data-hit-x][data-hit-y]")].map(el=>({tag:el.tagName,gi:el.dataset.gi,gchar:el.dataset.gchar,priority:el.dataset.hitPriority,hit:(el.querySelector(".ghit")||el).getBoundingClientRect().toJSON(),center:[el.dataset.hitX,el.dataset.hitY]})),atPoint:document.elementsFromPoint(x,y).slice(0,8).map(el=>({tag:el.tagName,cls:el.className,gi:el.dataset.gi,gchar:el.dataset.gchar}))})),point);
+  console.log("SWING_DIAG", await page.evaluate(({x,y}) => ({me:localStorage.getItem("hu-hen-ho-me"),tapPoint:{x,y},targets:[...document.querySelectorAll(".garden3d [data-hit-x][data-hit-y]")].map(el=>({tag:el.tagName,gi:el.dataset.gi,gchar:el.dataset.gchar,priority:el.dataset.hitPriority,hit:(el.querySelector(".ghit")||el).getBoundingClientRect().toJSON(),center:[el.dataset.hitX,el.dataset.hitY]})),atPoint:document.elementsFromPoint(x,y).slice(0,8).map(el=>({tag:el.tagName,cls:el.className,gi:el.dataset.gi,gchar:el.dataset.gchar}))}),point));
   await page.mouse.click(point.x, point.y);
   await expect(page.locator("#tab-care .g-swing button")).toHaveText("Đứng dậy");
 });
@@ -68,8 +68,7 @@ test("keyboard activation acts on the focused scene button, not the nearest coor
 test("a pointer tap on the character sends exactly one hug at 390px and 360px", async ({ page }) => {
   for (const [index, width] of [390, 360].entries()) {
     await page.setViewportSize({ width, height: 844 });
-    await page.goto("/index.html#khu-vuon");
-    await expect(page.locator(".garden3d")).toBeVisible();
+    await openGarden(page);
     const hit = page.locator(".garden3d .chr[data-gchar] .gchar-hit");
     console.log("CHAR_DIAG", await page.evaluate(() => ({me:localStorage.getItem("hu-hen-ho-me"),chars:document.querySelectorAll(".garden3d .chr[data-gchar]").length,care:document.querySelector("#tab-care")?.innerText?.slice(0,300),allHit:[...document.querySelectorAll(".garden3d [data-hit-x][data-hit-y]")].map(el=>({gi:el.dataset.gi,gchar:el.dataset.gchar,hit:el.querySelector(".ghit")?.getBoundingClientRect().toJSON()}))})));
     await expect(hit).toBeVisible();
