@@ -115,3 +115,6 @@ export const jobs = { khu_vuon: async () => {
   out.push({ file: `${id}_meta`, meta: { title: SCENE.title, ppm: PPM, size: [W, W], items: Object.fromEntries(Object.entries(SCENE.items).map(([k, it]) => [k, { st: it.st, go: it.go, label: it.label }])), spots } });
   return out;
 } };
+
+// Bản 12 dùng lại các món dựng sẵn này.
+export { sea, ripples, fence, lampPost, tree, bush, stone, tuft, grass };
