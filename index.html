@@ -1192,7 +1192,7 @@ nav.tabs a[aria-current="page"] .nic{background:color-mix(in srgb,var(--acc) 22%
 .garden3d .gobj .ghit{position:absolute;display:block;inset:0;pointer-events:auto;border-radius:16px;touch-action:manipulation}
 .garden3d .gobj[data-gi="binhtuoi"] .ghit{left:-55%;right:-55%;top:-25%;bottom:-25%}
 .garden3d .gobj[data-gi="hopgiong"] .ghit{left:-22%;right:-22%;top:-38%;bottom:-38%}
-.garden3d .gobj[data-gi="ghe"] .ghit{left:5%;right:35%;top:5%;bottom:45%}
+.garden3d .gobj[data-gi="ghe"] .ghit{left:0;right:0;top:25%;bottom:0}
 .garden3d .gobj[data-gi="ke"] .ghit{left:4%;right:4%;top:4%;bottom:4%}
 .garden3d .gobj[data-gi="bang"] .ghit{inset:0}
 @keyframes gTapPulse{0%{opacity:.95;transform:scale(.88)}100%{opacity:0;transform:scale(1.14)}}
@@ -1546,7 +1546,7 @@ function putMeta(patch){
 
 function setSync(text,on){if(navigator.onLine===false&&on){text="Đang ngoại tuyến · có mạng sẽ tự đồng bộ";on=false;}$("syncBox").classList.toggle("offline",navigator.onLine===false);$("syncText").textContent=text;$("syncBox").classList.toggle("off",!on);}
 window.addEventListener("online",()=>{retryFailedDbWrites();refreshDbWriteStatus();});
-$("syncBox").addEventListener("click",retryFailedDbWrites);
+document.getElementById("syncBox").addEventListener("click",retryFailedDbWrites);
 async function initDb(){
   const db=await CLOUD.ready;if(!db)return;
   DB=db;UID=CLOUD.uid;
@@ -4074,7 +4074,7 @@ function gardenSceneHTML(){
   // đồ vật chạm được
   for(const [key,it] of Object.entries(Rm.items)){const st=gardenItemState(key),n=key+"_"+st,b=Rm.layers[n];if(!b)continue;
     const z=key==="binhtuoi"&&st==="tuoi"?2000:b[3];
-    const hx=key==="ghe"?321:(b[0]+b[2])/2,hy=key==="ghe"?585:(b[1]+b[3])/2;
+    const hx=key==="ghe"?(Rm.spots.ghe[0][0]+Rm.spots.ghe[1][0])/2:(b[0]+b[2])/2,hy=key==="ghe"?(Rm.spots.ghe[0][1]+Rm.spots.ghe[1][1])/2:(b[1]+b[3])/2;
     html+=btn(`data-gi="${key}" data-hit-x="${hx}" data-hit-y="${hy}"`,it.label,b[0],b[1],b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,`gobj gobj-${key} ${key==="hopgiong"&&st==="mo"?"glow":""}`,true);}
   // luống: mỗi mùa một ô, mùa đang đi lớn dần theo số buổi
   const cur=curSeason();
@@ -4099,9 +4099,22 @@ function gardenSceneHTML(){
   return`<div class="room3d garden3d t-${t}"><div class="w3fit rstage" data-w="1170"><div class="wcanvas" style="width:1170px;height:1170px">
     <img class="wbg" src="${A3("khu_vuon_"+t)}" alt="Khu vườn của ${N(0)} và ${N(1)}" draggable="false">${html}${sky}</div></div>${fx()}</div>`;
 }
-function nearestGardenHit(x,y,targets){
+function nearestGardenHit(clientX,clientY,targets,canvas){
+  const canvasRect=canvas.getBoundingClientRect(),scale=canvasRect.width/1170;
+  if(!scale)return null;
+  // Chỉ so sánh các vùng hit thực sự phủ lên điểm chạm. Không được chọn
+  // một vật thể ở xa chỉ vì tâm của nó gần hơn tâm các vùng đang bị chạm.
+  const candidates=targets.filter(el=>{
+    const area=el.querySelector(".ghit")||el,r=area.getBoundingClientRect();
+    return clientX>=r.left&&clientX<=r.right&&clientY>=r.top&&clientY<=r.bottom;
+  });
   let best=null,bestD=Infinity;
-  for(const el of targets){const dx=x-Number(el.dataset.hitX),dy=y-Number(el.dataset.hitY),d=dx*dx+dy*dy;if(d<bestD){best=el;bestD=d;}}
+  for(const el of candidates){
+    const cx=canvasRect.left+Number(el.dataset.hitX)*scale;
+    const cy=canvasRect.top+Number(el.dataset.hitY)*scale;
+    const dx=clientX-cx,dy=clientY-cy,d=dx*dx+dy*dy;
+    if(d<bestD){best=el;bestD=d;}
+  }
   return best;
 }
 function gardenTap(key){
@@ -4138,6 +4151,10 @@ renderCare=function(){
       <div class="cans">${can(0)}${can(1)}</div>
       <div class="stat"><span><b>${cs.streak}</b> ngày liền cùng tưới</span><span><b>${cs.bothCount}</b> ngày đủ nước</span><span><b>${cn.pots}</b> chậu đã nở</span></div></section>`;
 
+  // Nút tưới trong thẻ chăm cây nằm ngoài canvas; cần binding riêng.
+  root.querySelectorAll(".gcare-card [data-gi]").forEach(b=>b.addEventListener("click",ev=>{
+    ev.preventDefault();ev.stopPropagation();gardenTap(b.dataset.gi);
+  }));
   const guideHTML = "<section class=\"g-guide blk\" aria-label=\"Hướng dẫn tương tác\">" +
     "<div class=\"g-guide-head\"><div><b>🌷 Chơi cùng khu vườn</b><span>Chạm vào đồ vật và nhân vật để tạo tương tác.</span></div>" +
     "<button type=\"button\" class=\"linkish\" data-g-guide-toggle>"+(gardenGuideOpen?"Ẩn hướng dẫn":"Cách chơi")+"</button></div>" +
@@ -4176,10 +4193,12 @@ renderCare=function(){
     const origin=ev.target.closest&&ev.target.closest("[data-hit-x][data-hit-y]");
     if(!origin)return;
     ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
-    const rect=canvas.getBoundingClientRect(),scale=rect.width/1170;
-    if(!scale)return;
-    const x=(ev.clientX-rect.left)/scale,y=(ev.clientY-rect.top)/scale;
-    const hit=nearestGardenHit(x,y,Array.from(canvas.querySelectorAll("[data-hit-x][data-hit-y]")));
+    // Enter/Space và click hỗ trợ truy cập không có tọa độ con trỏ đáng tin cậy:
+    // giữ đúng nút đang được kích hoạt, không chạy bộ phân giải theo tọa độ.
+    const hit=ev.detail===0?origin:nearestGardenHit(
+      ev.clientX,ev.clientY,
+      Array.from(canvas.querySelectorAll("[data-hit-x][data-hit-y]")),canvas
+    );
     if(!hit)return;
     if(hit.dataset.gi)gardenTap(hit.dataset.gi);
     else if(hit.dataset.gs){gardenSel=+hit.dataset.gs;gardenGalleryOpen=gardenSel<=completedSeasons();rerender();setTimeout(()=>{const target=$(gardenGalleryOpen?"gGallery":"gSeason");if(target)target.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});},60);}
