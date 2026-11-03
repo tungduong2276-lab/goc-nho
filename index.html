@@ -4289,8 +4289,10 @@ function nearestGardenHit(clientX,clientY,targets,canvas){
   });
   let best=null,bestD=Infinity,bestPriority=-Infinity;
   for(const el of candidates){
-    const cx=canvasRect.left+Number(el.dataset.hitX)*scale;
-    const cy=canvasRect.top+Number(el.dataset.hitY)*scale;
+    // Nhân vật có lớp sprite chuyển động; dùng tâm hitbox thực tế thay vì tọa độ tĩnh.
+    const live=el.matches(".chr[data-gchar]")?el.querySelector(".gchar-hit")?.getBoundingClientRect():null;
+    const cx=live?live.left+live.width/2:canvasRect.left+Number(el.dataset.hitX)*scale;
+    const cy=live?live.top+live.height/2:canvasRect.top+Number(el.dataset.hitY)*scale;
     const dx=clientX-cx,dy=clientY-cy,d=dx*dx+dy*dy;
     const priority=Number(el.dataset.hitPriority||0);
     if(priority>bestPriority||(priority===bestPriority&&d<bestD)){best=el;bestD=d;bestPriority=priority;}
