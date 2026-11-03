@@ -12,15 +12,15 @@
   style.id = "gn-living-motion";
   style.textContent = `
     /* Ambient life: restrained, asynchronous motion instead of synchronized wobble. */
-    .room3d .chr .cstack,
-    .garden3d .chr .cstack {
+    .room3d .chr .cstack img,
+    .garden3d .chr .cstack img {
       transform-origin: 50% 94%;
       animation: gnCharacterIdle 5.2s ease-in-out infinite;
       animation-delay: var(--gn-delay, 0s);
       will-change: transform;
     }
-    .room3d .chr:nth-of-type(2) .cstack,
-    .garden3d .chr:nth-of-type(2) .cstack { animation-duration: 5.8s; }
+    .room3d .chr:nth-of-type(2) .cstack img,
+    .garden3d .chr:nth-of-type(2) .cstack img { animation-duration: 5.8s; }
     .room3d .chr.pet img {
       transform-origin: 50% 92%;
       animation: gnPetIdle 4.6s ease-in-out infinite;
@@ -154,7 +154,7 @@
       100% { opacity: 0; transform: translate(calc(-50% + var(--gn-dx)),calc(-50% + var(--gn-dy))) scale(1.15) rotate(18deg); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .room3d .chr .cstack,.garden3d .chr .cstack,.room3d .chr.pet img,
+      .room3d .chr .cstack img,.garden3d .chr .cstack img,.room3d .chr.pet img,
       .world .m-ch,.world .m-fl,.garden3d .gfl img,.garden3d .gcare img,
       .gn-motion-active.lay.hot img,.gn-motion-active.chr .cstack img,
       .gn-motion-active.chr > img,.gn-motion-water img,.gn-motion-flower img,
