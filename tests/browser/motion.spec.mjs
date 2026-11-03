@@ -28,10 +28,21 @@ test("touching a 3D object produces a physical response and contextual particles
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   });
   await page.mouse.move(point.x, point.y);
+  // Particle nodes are short-lived and may be removed when the garden rerenders.
+  // Observe creation rather than asserting they still exist after the reaction.
+  await page.evaluate(() => {
+    window.__gnBurstSeen = 0;
+    new MutationObserver(records => {
+      for (const record of records) for (const node of record.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        window.__gnBurstSeen += node.matches?.(".gn-burst") ? node.querySelectorAll("i").length : node.querySelectorAll?.(".gn-burst i").length || 0;
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  });
   await page.mouse.down();
   await expect(board).toHaveClass(/gn-motion-active/);
   await expect(board).toHaveClass(/gn-motion-toggle/);
-  await expect(page.locator(".garden3d .wcanvas .gn-burst i")).toHaveCount(3);
+  await expect.poll(() => page.evaluate(() => window.__gnBurstSeen)).toBeGreaterThanOrEqual(3);
   await page.mouse.up();
   await expect(page.locator("#gGallery")).toBeVisible();
 });
