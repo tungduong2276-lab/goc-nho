@@ -179,4 +179,12 @@ Open blockers:
 Next safe action:
 ```
 
-**Current handoff as of 2026-11-03:** roadmap documented; no milestone M0–M8 implemented by writing this file. PR #10 merged. PR #9 open at last verification. Revalidate all live status before acting.
+**Current handoff as of 2026-11-03 (M0 working branch, not main):**
+
+- Main verified at `7008a7a7278aee443efc5f2593939e38538e881a`; pending branches must be compared against the latest main before merge.
+- PR #9 weather regression was patched at `c50890b`; Actions run #61 passed; regenerated 3D map assets committed at `2e8cf10`. Still Draft and requires visual geometry/hitbox review and consistency with main.
+- PR #12 (`chore/m0-firebase-safety-audit`) now includes a source-only Firebase audit, `firebase.json` for isolated emulator use, `tests/firebase/firestore-rules.test.mjs`, an `npm run test:firebase` command wired into `npm test`, and a staging-only backup/restore runbook.
+- Latest CI for PR #12 at initial handoff: Actions run #65 in progress, not yet evidence of success; check latest run before merge. A separate workflow file was not created.
+- Firebase Rules were not changed or deployed; no production connection, backup, migration, deletion or data write. Actual staging export/restore, authorization review, two-client synchronization, room geometry and UI tests remain incomplete.
+- PR #13 holds the M7 twelve-theme game expansion proposal only; no premature game implementation or Firebase schema changes.
+- Next safe action: inspect PR #12 CI outcome, correct emulator test failures if present, validate fixture-only two-client updates, then staging backup/restore; no merge until gates pass.
