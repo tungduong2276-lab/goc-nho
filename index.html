@@ -1245,6 +1245,20 @@ nav.tabs a[aria-current="page"] .nic{background:color-mix(in srgb,var(--acc) 22%
 .room-tab .room3d,#tab-room .room3d{animation:houseRoomEnter .32s cubic-bezier(.2,.75,.25,1) both}
 @keyframes houseRoomEnter{from{opacity:.55;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.house-room-card,.house-room-thumb img,.room-tab .room3d,#tab-room .room3d{transition:none;animation:none}}
+/* Thời tiết cảnh nhà: lớp phủ phi tương tác, không che vùng chạm phòng. */
+.house-weather{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding:14px;border:2px solid var(--line);border-radius:20px;background:var(--surface)}
+.house-weather>div:first-child{display:grid;gap:3px}.house-weather small{font-size:12px;color:var(--muted)}
+.house-weather-options{display:flex;gap:6px;flex-wrap:wrap}
+.house-weather-btn{border:1px solid var(--line);border-radius:999px;padding:8px 11px;background:var(--surface);color:var(--ink);font:inherit;font-size:12px;cursor:pointer}
+.house-weather-btn.active{background:var(--petal);border-color:var(--pink);font-weight:800}
+.world[data-weather="mua"] .wcanvas::after,.world[data-weather="tuyet"] .wcanvas::after,.world[data-weather="hoa"] .wcanvas::after{content:"";position:absolute;inset:0;z-index:80;pointer-events:none;opacity:.72;background-size:110px 160px;animation:house-fall 7s linear infinite}
+.world[data-weather="mua"] .wcanvas::after{background-image:repeating-linear-gradient(105deg,transparent 0 28px,rgba(95,156,207,.5) 29px 31px,transparent 32px 66px);background-size:110px 140px;animation-duration:2.5s;opacity:.25}
+.world[data-weather="tuyet"] .wcanvas::after{background-image:radial-gradient(circle,#fff 0 3px,transparent 4px),radial-gradient(circle,#fff 0 2px,transparent 3px);background-position:0 0,35px 60px}
+.world[data-weather="hoa"] .wcanvas::after{background-image:radial-gradient(ellipse,#f5a3ca 0 4px,transparent 5px),radial-gradient(ellipse,#ffd5e9 0 3px,transparent 4px);background-position:0 0,40px 60px}
+.world[data-weather="may"] .sky{opacity:.8;filter:grayscale(.3)}
+.world[data-weather="nang"] .sky{opacity:.8}
+@keyframes house-fall{from{background-position:0 0,35px 60px}to{background-position:40px 640px,75px 700px}}
+@media(prefers-reduced-motion:reduce){.world[data-weather] .wcanvas::after{animation:none}}
 /* v12 · tab Gửi nhau 3D */
 .guinhau .rstage{aspect-ratio:1170/840}
 .guinhau .rstage .wcanvas{top:calc(-160px * var(--k,.3333))}
@@ -2674,7 +2688,7 @@ function renderHome(){
   if(w.drawDone)todos.push(`<li class="hot"><span class="ic">${ICON.pen}</span><span class="tx">${N(o)} đã lật bức tranh của hai đứa</span><a class="btn btn-main btn-small" href="#ve">Xem tranh</a></li>`);
   const fd=feed(),up=upcoming(5),gifts=list("gifts"),treH=treasureHTML();
   const pend=todos.length-(w.water?1:0);
-  root.innerHTML=`${inviteHTML()}${pend>0?`<a class="newsbar" href="#nha" data-jump="todos"><span class="ic">${ICON.note}</span><b>${pend} việc đang chờ bạn</b><span>Xem ›</span></a>`:""}${worldMapHTML()}${houseRoomNavHTML("")}
+  root.innerHTML=`${inviteHTML()}${pend>0?`<a class="newsbar" href="#nha" data-jump="todos"><span class="ic">${ICON.note}</span><b>${pend} việc đang chờ bạn</b><span>Xem ›</span></a>`:""}${houseWeatherHTML()}${worldMapHTML()}${houseRoomNavHTML("")}
     <section class="blk" id="todos" aria-label="Việc của bạn"><div><h2 class="v3h">Việc của bạn hôm nay</h2></div>
       ${todos.length?`<ul class="todo">${todos.join("")}</ul>`:`<p class="alldone">Xong hết rồi. Ghé tủ lạnh dán một mẩu giấy cho ${N(o)} không?</p>`}</section>
     ${treH}
@@ -2686,6 +2700,7 @@ function renderHome(){
       ${giftsHTML()}</section>`;
   root.querySelectorAll("[data-tap]").forEach(b=>b.onclick=()=>sendTap(b.dataset.tap));
   bindWorld(root);
+  bindHouseWeather(root);
   root.querySelectorAll("[data-water]").forEach(b=>b.onclick=water);
   root.querySelectorAll("[data-jump]").forEach(b=>b.onclick=e=>{e.preventDefault();const t=$(b.dataset.jump);if(t)t.scrollIntoView({behavior:reduced()?"auto":"smooth"});});
   const os=root.querySelector("[data-opensettings]");if(os)os.onclick=()=>{datesEdit=true;rerender();const d=$("dates");if(d)d.scrollIntoView({behavior:reduced()?"auto":"smooth"});};
@@ -3693,6 +3708,21 @@ function placeOnMap(i){
   if(isHere(i))return{pt:[M.khach[0]+64,M.khach[1]+37],pose:"vaytay",st:"o-nha"};
   return{pt:M[who],pose:"dung",st:"vang"};
 }
+// Thời tiết của ngôi nhà là chế độ cảnh do người dùng chọn, không phải dự báo thực tế.
+const HOUSE_WEATHER = {nang:['☀️','Nắng nhẹ'],may:['☁️','Nhiều mây'],mua:['🌧️','Mưa'],tuyet:['❄️','Tuyết'],hoa:['🌸','Hoa rơi']};
+let houseWeather = (()=>{try{const v=localStorage.getItem('goc-nho-house-weather');return HOUSE_WEATHER[v]?v:'nang';}catch(e){return 'nang';}})();
+function houseWeatherHTML(){
+  return `<section class="house-weather" aria-label="Thời tiết trang trí"><div><b>Thời tiết ở Góc Nhỏ</b><small>Chọn hiệu ứng cho ngôi nhà · không phải thời tiết thực tế</small></div><div class="house-weather-options">${Object.entries(HOUSE_WEATHER).map(([id,w])=>`<button type="button" data-house-weather="${id}" aria-pressed="${houseWeather===id}" class="house-weather-btn${houseWeather===id?' active':''}">${w[0]} ${w[1]}</button>`).join('')}</div></section>`;
+}
+function bindHouseWeather(root){
+  root.querySelectorAll('[data-house-weather]').forEach(b=>b.onclick=()=>{
+    const next=b.dataset.houseWeather;if(!HOUSE_WEATHER[next])return;
+    houseWeather=next;try{localStorage.setItem('goc-nho-house-weather',next);}catch(e){}
+    root.querySelectorAll('[data-house-weather]').forEach(el=>{el.classList.toggle('active',el.dataset.houseWeather===next);el.setAttribute('aria-pressed',String(el.dataset.houseWeather===next));});
+    const scene=root.querySelector('.world');if(scene)scene.dataset.weather=next;
+  });
+}
+
 function worldMapHTML(){
   if(!SC3)return`<div class="world w-loading"><p class="quiet">Đang mở ngôi nhà...</p></div>`;
   const M=SC3.map,t=buoi(),o=OTHER(),k=M.ppm/SC3.char.ppm,fk=M.plotPpm/SC3.flower.ppm;
@@ -3709,7 +3739,7 @@ function worldMapHTML(){
   const cen=pts=>{let x=0,y=0;pts.forEach(p=>{x+=p[0];y+=p[1];});return[x/pts.length,y/pts.length];};
   const zname=k2=>k2==="anh"?"Phòng "+N(S.meta.chars&&S.meta.chars[0]==="em"?1:0):k2==="em"?"Phòng "+N(S.meta.chars&&S.meta.chars[0]==="em"?0:1):Z[k2].name;
   const pres=ME===null?"":isHere(o)?`<span class="live"></span>${N(o)} cũng đang ở nhà`:stOf(o)==="ngu"?`${N(o)} đi ngủ rồi`:stOf(o)==="ban"?`${N(o)} đang bận`:PRES(o)?`${N(o)} ghé lần cuối ${ago(PRES(o).last)}`:`${N(o)} chưa ghé nhà`;
-  return`<div class="world t-${t}" aria-label="Bản đồ ngôi nhà">
+  return`<div class="world t-${t}" data-weather="${houseWeather}" aria-label="Bản đồ ngôi nhà">
     <div class="sky" aria-hidden="true">${[1,2,3].map(i=>`<img class="cloud c${i}" src="${A3("may_"+i)}" alt="">`).join("")}</div>
     <div class="wstage w3fit" data-w="${M.size[0]}"><div class="wcanvas" style="width:${M.size[0]}px;height:${M.size[1]}px">
       <img class="wbg" src="${A3("ban_do_"+t)}" alt="Ngôi nhà Góc Nhỏ của ${N(0)} và ${N(1)}" draggable="false">
