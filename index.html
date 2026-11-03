@@ -4165,7 +4165,6 @@ renderCare=function(){
     (flowers.length ? "<div class=\"g-gallery-grid\">"+flowers.map(f=>"<button type=\"button\" class=\"g-gallery-item\" data-g-gallery-season=\""+f.s+"\" aria-pressed=\""+(gardenSel===f.s)+"\"><img src=\""+A3("hoa_"+(BLOOM_FL[f.kind]||"anhdao")+"_gd5")+"\" alt=\""+BLOOMS[f.kind].name+"\" loading=\"lazy\"><b>Mùa "+f.s+"</b><span>"+BLOOMS[f.kind].name+"</span><small>"+f.avg.toFixed(1)+" ♥</small></button>").join("")+"</div>"
       : "<p class=\"empty\">Bông hoa đầu tiên sẽ xuất hiện sau khi hai bạn hoàn thành mùa hẹn đầu tiên.</p>")+"</section>";
   root.insertAdjacentHTML("beforeend",galleryHTML);
-  root.querySelectorAll("[data-gchar]").forEach(b=>b.onclick=()=>{if(ME===null){toast('Chọn "Điện thoại này của ai" ở mục Nhà trước nhé.');return;}sendTap("hug");});
   root.querySelectorAll("[data-g-swing]").forEach(b=>b.onclick=()=>gardenTap("ghe"));
   root.querySelectorAll("[data-g-guide-toggle]").forEach(b=>b.onclick=()=>{gardenGuideOpen=!gardenGuideOpen;rerender();});
   root.querySelectorAll("[data-g-guide-close]").forEach(b=>b.onclick=()=>{gardenGuideOpen=false;lsSet("gn-garden-guide-v1","1");rerender();});
