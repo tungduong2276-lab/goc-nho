@@ -78,12 +78,18 @@ assert.doesNotMatch(appCode,/có mạng sẽ tự đồng bộ/,"offline copy do
 assert.match(appCode,/data-gi="cay"[^\x60]*data-hit-priority="3"/,"large daily pot has priority over overlapping seed-box hit region");
 assert.match(appCode,/key==="hopgiong"\?1/,"seed box uses lower hit priority than the daily pot");
 assert.match(html,/\.garden3d \.gcare \.ghit\{left:15%;right:15%;top:38%;bottom:4%\}/,"daily pot hit area covers the pot body");
-assert.match(sw,/const CACHE = "goc-nho-v13"/,"service-worker cache version is bumped for the new app shell");
+assert.match(sw,/const CACHE = "goc-nho-v14"/,"service-worker cache version is bumped for the new app shell");
 assert.match(html,/assets\/3d\/living-motion\.js/, "living motion runtime is loaded after the app");
 assert.match(sw,/\.\/assets\/3d\/living-motion\.js/, "living motion runtime is precached for offline startup");
 assert.match(motion,/prefers-reduced-motion:\s*reduce/, "motion layer respects reduced-motion preferences");
 assert.match(motion,/document\.addEventListener\("pointerdown"/, "motion layer responds to real pointer input");
 assert.match(motion,/gnCharacterIdle|gnFlowerIdle|gnPetReact/, "motion layer defines character, plant, and pet behavior");
+assert.match(html,/function houseRoomNavHTML\(active\)/,"house has one shared room directory renderer");
+assert.match(html,/\$\{worldMapHTML\(\)\}\$\{houseRoomNavHTML\(""\)\}/,"house overview connects exterior map to the room directory");
+assert.match(html,/\$\{roomSceneHTML\(r\)\}\$\{houseRoomNavHTML\(tab\)\}/,"each interior room links to the other rooms");
+for (const image of ["phong_khach_ngay","bep_ngay","phong_anh_ngay","phong_em_ngay","sang_tao_ngay","gac_ngay"]) assert.ok(html.includes(image),"room directory reuses existing 3D art: "+image);
+assert.match(html,/prefers-reduced-motion:reduce\)\{\.house-room-card[\s\S]*?animation:none\}/,"room navigation respects reduced-motion");
+
 assert.doesNotMatch(motion,/(?:firebase|Firestore|localStorage|sessionStorage)\s*[.(]/i, "motion layer does not touch user data or Firebase");
 
 assert.match(appCode, /const ref=DB\.collection\(col\)\.doc\(obj\.id\)/, "existing collection/document write path is retained");

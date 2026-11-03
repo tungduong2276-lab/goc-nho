@@ -1223,6 +1223,24 @@ nav.tabs a[aria-current="page"] .nic{background:color-mix(in srgb,var(--acc) 22%
 .gstatus{margin:0;font-weight:700}
 .gchips{display:flex;gap:8px;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){.garden3d .gfl img,.garden3d .gcare img,.garden3d .glow img,.drops.g3{animation:none}}
+
+/* A small room directory keeps the dollhouse feeling like one connected home. */
+.house-rooms{background:var(--surface);border:2px solid var(--line);border-radius:22px;padding:14px 12px 12px;box-shadow:0 8px 22px -18px rgba(29,43,79,.42)}
+.house-rooms-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:0 3px 10px}
+.house-rooms-head .v3h{margin:0}.house-rooms-head .v3sub{margin:3px 0 0}
+.house-room-strip{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(116px,34%);gap:9px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x mandatory;scrollbar-width:thin;overscroll-behavior-inline:contain}
+.house-room-card{min-width:0;display:flex;flex-direction:column;gap:4px;padding:6px;text-decoration:none;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:16px;scroll-snap-align:start;transition:transform .18s,border-color .18s,box-shadow .18s}
+.house-room-card:active{transform:scale(.97)}
+.house-room-card:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.house-room-card.active,.house-room-card[aria-current=page]{border-color:var(--pink);background:var(--petal);box-shadow:0 3px 0 var(--petal-2)}
+.house-room-thumb{display:block;aspect-ratio:1.35;overflow:hidden;border-radius:10px;background:var(--petal)}
+.house-room-thumb img{width:100%;height:100%;display:block;object-fit:cover;object-position:center 56%;transition:transform .25s}
+.house-room-card:hover .house-room-thumb img{transform:scale(1.045)}
+.house-room-title{font:800 14px/1.15 var(--display);color:var(--pink-deep)}
+.house-room-note{font-size:11px;line-height:1.25;font-weight:700;color:var(--muted)}
+.room-tab .room3d,#tab-room .room3d{animation:houseRoomEnter .32s cubic-bezier(.2,.75,.25,1) both}
+@keyframes houseRoomEnter{from{opacity:.55;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.house-room-card,.house-room-thumb img,.room-tab .room3d,#tab-room .room3d{transition:none;animation:none}}
 </style>
 
 <div class="wrap" id="app">
@@ -2604,7 +2622,7 @@ function renderHome(){
   if(w.realm&&w.realm.length)todos.push(`<li><span class="ic">${ICON.crown}</span><span class="tx">${N(o)} đã đặt móng ${w.realm.map(b=>(BLD[b.type]||{t:"công trình"}).t.toLowerCase()).join(", ")}<small>Cần bạn góp tay mới xây xong</small></span><a class="btn btn-ghost btn-small" href="#vuong-quoc" data-kvmap="1">Góp tay</a></li>`);
   if(w.fridgeNew)todos.push(`<li><span class="ic">${ICON.note}</span><span class="tx">${w.fridgeNew} mẩu giấy mới trên tủ lạnh</span><a class="btn btn-ghost btn-small" href="#tu-lanh">Đọc</a></li>`);
   const fd=feed(),up=upcoming(5),gifts=list("gifts"),treH=treasureHTML();
-  root.innerHTML=`${inviteHTML()}${worldMapHTML()}
+  root.innerHTML=`${inviteHTML()}${worldMapHTML()}${houseRoomNavHTML("")}
     <section class="blk" aria-label="Việc của bạn"><div><h2 class="v3h">Việc của bạn hôm nay</h2></div>
       ${todos.length?`<ul class="todo">${todos.join("")}</ul>`:`<p class="alldone">Xong hết rồi. Ghé tủ lạnh dán một mẩu giấy cho ${N(o)} không?</p>`}</section>
     ${treH}
@@ -3855,6 +3873,22 @@ function roomHTML(){ // phòng khách, giờ dùng nhân vật nhiều lớp
 // --- 5 phòng mới ---
 const ROOM_TAB={bep:"bep","phong-anh":"phong_anh","phong-em":"phong_em","goc-sang-tao":"sang_tao",gac:"gac"};
 const ROOM_HINT={bep:"Chạm tủ lạnh để đọc lời nhắn, chạm bếp để nấu cho nhau.",phong_anh:"Giường để đi ngủ, bàn làm việc để báo đang bận, tủ đồ để phối đồ.",phong_em:"Giường để đi ngủ, bàn trang điểm để phối đồ, kệ cây trưng những chậu hoa đã nở.",sang_tao:"Giá vẽ mở vẽ tiếp sức, máy đánh chữ mở truyện tiếp sức. Tranh vẽ xong được phơi trên dây.",gac:"Rương kho báu, album hẹn hò, tủ trưng bày, bản đồ, hộp thời gian và từ điển của hai đứa."};
+const HOUSE_ROOMS=[
+  {id:"phong-khach",title:"Phòng khách",image:"phong_khach_ngay",note:"Nơi hai đứa quây quần"},
+  {id:"bep",title:"Bếp",image:"bep_ngay",note:"Cùng nấu món ngon"},
+  {id:"phong-anh",title:"Phòng Anh",image:"phong_anh_ngay",note:"Góc riêng của Anh"},
+  {id:"phong-em",title:"Phòng Em",image:"phong_em_ngay",note:"Góc riêng của Em"},
+  {id:"goc-sang-tao",title:"Góc sáng tạo",image:"sang_tao_ngay",note:"Vẽ và viết cùng nhau"},
+  {id:"gac",title:"Gác kỷ niệm",image:"gac_ngay",note:"Cất giữ chuyện của hai đứa"}
+];
+function houseRoomNavHTML(active){
+  return `<section class="house-rooms" aria-label="Các phòng trong nhà">
+    <div class="house-rooms-head"><div><h2 class="v3h">Các phòng trong nhà</h2><p class="v3sub">Chọn một cánh cửa để ghé thăm từng góc nhỏ.</p></div><a class="linkish" href="#nha">Toàn cảnh nhà</a></div>
+    <div class="house-room-strip">${HOUSE_ROOMS.map(r=>`<a class="house-room-card${active===r.id?" active":""}" href="#${r.id}" ${active===r.id?'aria-current="page"':""}>
+      <span class="house-room-thumb"><img src="${A3(r.image)}" alt="" draggable="false"></span><span class="house-room-title">${r.title}</span><span class="house-room-note">${r.note}</span>
+    </a>`).join("")}</div></section>`;
+}
+
 let wardOpen=false,flashObj={};
 const cookingAt=()=>{let t=0;[0,1].forEach(i=>{const p=PRES(i);if(p&&p.cookAt)t=Math.max(t,new Date(p.cookAt).getTime());});return t;};
 const roomOwner=r=>r==="phong_anh"?ownerOf("anh"):r==="phong_em"?ownerOf("em"):null;
@@ -3917,7 +3951,7 @@ function renderRooms(){
       else extra=`<p class="quiet">${N(own)} ${stOf(own)==="ngu"?"đang ngủ, suỵt...":stOf(own)==="ban"?"đang bận việc":isHere(own)?"đang ở nhà":"đang đi vắng"}.</p>`;}
     if(r==="sang_tao")extra=`<div class="room-acts"><a class="btn btn-main btn-small" href="#ve">Vẽ tiếp sức</a><a class="btn btn-ghost btn-small" href="#truyen">Truyện tiếp sức</a></div>`;
     if(r==="gac")extra=`<div class="room-acts gac-links"><a class="btn btn-ghost btn-small" href="#tu-dien">Từ điển</a><a class="btn btn-ghost btn-small" href="#bao-tang">Bảo tàng</a><a class="btn btn-ghost btn-small" href="#ban-do">Bản đồ</a><a class="btn btn-ghost btn-small" href="#thu">Hộp thời gian</a></div>`;
-    root.innerHTML=`<div class="tab-head"><div><a class="back" href="#nha">‹ Bản đồ ngôi nhà</a><h2>${esc(title)}</h2><p>${ROOM_HINT[r]}</p></div></div>${roomSceneHTML(r)}${extra}`;
+    root.innerHTML=`<div class="tab-head"><div><a class="back" href="#nha">‹ Bản đồ ngôi nhà</a><h2>${esc(title)}</h2><p>${ROOM_HINT[r]}</p></div></div>${roomSceneHTML(r)}${houseRoomNavHTML(tab)}${extra}`;
     fit3();
     root.querySelectorAll("[data-ri]").forEach(b=>b.onclick=()=>roomItem(r,b.dataset.ri));
     root.querySelectorAll('input[name="mystat2"]').forEach(x=>x.onchange=()=>{setMine({st:x.value,stAt:nowIso(),sit:false});toast(x.value==="ngu"?"Chúc ngủ ngon":x.value==="ban"?"Đã báo là bạn đang bận":"Bạn đang rảnh ở nhà");});
@@ -4134,7 +4168,7 @@ function gardenSceneHTML(){
   for(const [key,it] of Object.entries(Rm.items)){const st=gardenItemState(key),n=key+"_"+st,b=Rm.layers[n];if(!b)continue;
     const z=key==="binhtuoi"&&st==="tuoi"?2000:b[3];
     const hx=key==="ghe"?(Rm.spots.ghe[0][0]+Rm.spots.ghe[1][0])/2:(b[0]+b[2])/2,hy=key==="ghe"?(Rm.spots.ghe[0][1]+Rm.spots.ghe[1][1])/2:(b[1]+b[3])/2;
-    html+=btn(`data-gi="${key}" data-hit-x="${hx}" data-hit-y="${hy}" data-hit-priority="${key==="bang"?3:key==="binhtuoi"?1:key==="hopgiong"?1:2}"`,it.label,b[0],b[1],b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,`gobj gobj-${key} ${key==="hopgiong"&&st==="mo"?"glow":""}`,true);}
+    html+=btn(`data-gi="${key}" data-hit-x="${hx}" data-hit-y="${hy}" data-hit-priority="${key==="ghe"?5:key==="bang"?3:key==="binhtuoi"?1:key==="hopgiong"?1:2}"`,it.label,b[0],b[1],b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,`gobj gobj-${key} ${key==="hopgiong"&&st==="mo"?"glow":""}`,true);}
   // luống: mỗi mùa một ô, mùa đang đi lớn dần theo số buổi
   const cur=curSeason();
   for(let s=Math.max(1,cur-9);s<=cur;s++){const P=seasonPlant(s),p=Rm.spots.luong[(s-1)%10];
