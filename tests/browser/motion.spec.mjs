@@ -23,8 +23,8 @@ test("3D garden characters and flowers have independent idle motion", async ({ p
 test("touching a 3D object produces a physical response and contextual particles", async ({ page }) => {
   await openGarden(page);
   const board = page.locator(".garden3d button[data-gi='bang']");
-  const point = await board.evaluate(el => {
-    const r = el.getBoundingClientRect();
+  const point = await board.locator(".ghit").evaluate(hit => {
+    const r = hit.getBoundingClientRect();
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   });
   await page.mouse.move(point.x, point.y);
