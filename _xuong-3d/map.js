@@ -273,7 +273,8 @@ export const jobs = {
     Z.cafe = { name: 'Quán cà phê', go: 'hom-nay', poly: zone(c, -5.9, -3.9, 0, 2.2, 2.9, 3.9) };
     Z.ben = { name: 'Bến thuyền', go: 'vuong-quoc', poly: zone(c, 2.3, 3.7, -1.6, -0.8, 6.6, 11.6) };
     Z.dao = { name: 'Đảo vương quốc', go: 'vuong-quoc', poly: zone(c, 4.7, 8.3, -2.4, 0.8, 10.7, 14.3) };
-    out.push({ file: 'ban_do_meta', meta: { size: [MAP.w, MAP.h], ppm: MAP.ppm, zones: Z, sign: toPx(c, -2.4, 0.83, 5.65), anh: toPx(c, -4.6, FH + 0.06, -3.4), em: toPx(c, 1.6, FH + 0.06, -3.4), khach: toPx(c, -0.2, 0.06, -3.3), thu: toPx(c, -2.2, 0.06, -3.0), pet_door: toPx(c, -1.6, 0.04, -1.6), plots: (() => { const a = []; for (let k = 0; k < 3; k++) for (let i = 0; i < 4; i++) a.push(toPx(c, 1.3 + i * 1.25, 0.32, 0.2 + k * 1.25)); return a; })(), plotPpm: MAP.ppm } });
+    const roomPos = (x, y, z) => toPx(c, -1.2 + (x + 1.2) * 1.16, y, -4.1 + (z + 4.1) * 1.24);
+    out.push({ file: 'ban_do_meta', meta: { size: [MAP.w, MAP.h], ppm: MAP.ppm, zones: Z, sign: toPx(c, -2.4, 0.83, 5.65), anh: roomPos(-4.6, FH + 0.06, -3.4), em: roomPos(1.6, FH + 0.06, -3.4), khach: roomPos(-0.2, 0.06, -3.3), thu: roomPos(-2.2, 0.06, -3.0), pet_door: roomPos(-1.6, 0.04, -1.6), plots: (() => { const a = []; for (let k = 0; k < 3; k++) for (let i = 0; i < 4; i++) a.push(toPx(c, 1.3 + i * 1.25, 0.32, 0.2 + k * 1.25)); return a; })(), plotPpm: MAP.ppm } });
     return out;
   },
   may: async () => { // mây rời để trôi
