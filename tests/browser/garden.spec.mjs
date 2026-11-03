@@ -45,11 +45,9 @@ test("a pointer tap on the board opens the seasonal gallery, not a neighboring o
 
 test("the real swing seat center is inside the swing target", async ({ page }) => {
   await openGarden(page);
-  const point = await page.locator(".garden3d .wcanvas").evaluate(canvas => {
-    const r = canvas.getBoundingClientRect();
-    const scale = r.width / 1170;
-    // Midpoint of the two seat positions in assets/3d/scene.json.
-    return { x: r.left + 347.45 * scale, y: r.top + 655.4 * scale };
+  const point = await page.locator(".garden3d button[data-gi='ghe'] .ghit").evaluate(hit => {
+    const r = hit.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   });
   await page.mouse.click(point.x, point.y);
   await expect(page.locator("#tab-care .g-swing button")).toHaveText("Đứng dậy");

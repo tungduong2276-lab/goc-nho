@@ -1,6 +1,6 @@
 // Lưu sẵn khung app để mở được cả khi mạng chập chờn. Dữ liệu do Firebase tự đồng bộ.
 // Mỗi lần sửa app, tăng số phiên bản dưới đây để điện thoại nhận bản mới.
-const CACHE = "goc-nho-v12";
+const CACHE = "goc-nho-v14";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest", "./firebase-config.js",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png",
@@ -38,7 +38,8 @@ const SHELL = [
   "./assets/3d/pk_radio_phat.webp",
   "./assets/3d/pk_radio_tat.webp",
   "./assets/3d/pk_sofa.webp",
-  "./assets/3d/scene.json"
+  "./assets/3d/scene.json",
+  "./assets/3d/living-motion.js"
 ];
 const CDN = ["www.gstatic.com", "fonts.googleapis.com", "fonts.gstatic.com"];
 
