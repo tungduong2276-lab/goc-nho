@@ -12,7 +12,7 @@ async function openGarden(page) {
 
 test("3D garden characters and flowers have independent idle motion", async ({ page }) => {
   await openGarden(page);
-  const character = page.locator(".garden3d .chr[data-gchar] .cstack").first();
+  const character = page.locator(".garden3d .chr[data-gchar] .cstack img").first();
   const flower = page.locator(".garden3d .gfl img").first();
   await expect(character).toBeVisible();
   await expect(flower).toBeVisible();
@@ -43,7 +43,7 @@ test("reduced-motion preference disables continuous animation and particle burst
   });
   const page = await context.newPage();
   await openGarden(page);
-  const character = page.locator(".garden3d .chr[data-gchar] .cstack").first();
+  const character = page.locator(".garden3d .chr[data-gchar] .cstack img").first();
   await expect.poll(() => character.evaluate(el => getComputedStyle(el).animationName)).toBe("none");
   const board = page.locator(".garden3d button[data-gi='bang']");
   const point = await board.evaluate(el => {
