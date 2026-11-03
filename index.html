@@ -3724,7 +3724,7 @@ function bindHouseWeather(root){
 }
 
 function worldMapHTML(){
-  if(!SC3)return`<div class="world w-loading"><p class="quiet">Đang mở ngôi nhà...</p></div>`;
+  if(!SC3)return`<div class="world w-loading" data-weather="${houseWeather}" aria-label="Bản đồ ngôi nhà đang tải"><p class="quiet">Đang mở ngôi nhà...</p></div>`;
   const M=SC3.map,t=buoi(),o=OTHER(),k=M.ppm/SC3.char.ppm,fk=M.plotPpm/SC3.flower.ppm;
   const st=parseDay(S.meta.startDate),dayN=st?Math.round((dayStart(new Date())-st)/864e5)+1:null;
   let chars="";
