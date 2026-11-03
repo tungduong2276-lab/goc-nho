@@ -64,19 +64,24 @@ test("keyboard activation acts on the focused scene button, not the nearest coor
   await expect(page.locator("#tab-care .g-swing button")).toHaveText("Ngồi lên xích đu");
 });
 
-test("a pointer tap on the character sends exactly one hug", async ({ page }) => {
-  await openGarden(page);
-  const hit = page.locator(".garden3d .chr[data-gchar] .gchar-hit");
-  await expect(hit).toBeVisible();
-  const point = await hit.evaluate(el => {
-    const r = el.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-  });
-  await page.mouse.click(point.x, point.y);
-  await expect(page.locator(".toast")).toContainText("Đã gửi");
-  const taps = await page.evaluate(() => JSON.parse(localStorage.getItem("hu-hen-ho-v2") || "{}").taps || {});
-  expect(Object.keys(taps)).toHaveLength(1);
-  expect(Object.values(taps)[0].kind).toBe("hug");
+test("a pointer tap on the character sends exactly one hug at 390px and 360px", async ({ page }) => {
+  for (const [index, width] of [390, 360].entries()) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/index.html#khu-vuon");
+    await expect(page.locator(".garden3d")).toBeVisible();
+    const hit = page.locator(".garden3d .chr[data-gchar] .gchar-hit");
+    await expect(hit).toBeVisible();
+    const point = await hit.evaluate(el => {
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    await page.mouse.click(point.x, point.y);
+    await expect(page.locator(".toast")).toContainText("Đã gửi");
+    const taps = await page.evaluate(() => JSON.parse(localStorage.getItem("hu-hen-ho-v2") || "{}").taps || {});
+    const sent = Object.values(taps);
+    expect(sent).toHaveLength(index + 1);
+    expect(sent.every(t => t.kind === "hug")).toBeTruthy();
+  }
 });
 
 test("board hit target wins over the neighboring watering-can expansion across viewports", async ({ page }) => {
