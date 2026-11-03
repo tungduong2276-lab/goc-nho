@@ -47,6 +47,16 @@ const mergedMeta=mergeMetaForWrite(
   {custom:[{n:8,name:"Cũ"},{n:9,name:"Trò mới trên máy này"}],pending:{n:9}}
 );
 assert.equal(mergedMeta.names[0],"Anh","unrelated remote profile fields survive retry");
+const mergedNames=mergeMetaForWrite(
+  {names:["Tên vừa đổi trên máy kia","Tên thứ hai"]},
+  {names:["Tên mới trên máy này","Tên thứ hai"],__base:{names:["Tên cũ","Tên thứ hai"]}}
+);
+assert.deepEqual(Array.from(mergedNames.names),["Tên mới trên máy này","Tên thứ hai"],"unchanged profile-array entries do not overwrite remote values");
+const mergedBirthdays=mergeMetaForWrite(
+  {bday:["01-01","02-02"]},
+  {bday:["01-01","03-03"],__base:{bday:["01-01","02-02"]}}
+);
+assert.deepEqual(Array.from(mergedBirthdays.bday),["01-01","03-03"],"only intentionally changed birthday slots are applied");
 assert.equal(mergedMeta.song,"remote","unrelated remote metadata survives retry");
 assert.ok(mergedMeta.custom.some(x=>x.name==="Trò của thiết bị kia"),"remote custom game is preserved");
 assert.ok(mergedMeta.custom.some(x=>x.name==="Trò mới trên máy này"&&x.n!==9),"conflicting custom game receives a free number");
