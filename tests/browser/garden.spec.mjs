@@ -68,11 +68,9 @@ test("a pointer tap on the character sends a hug at 390px and 360px", async ({ b
     await openGarden(page);
     const hit = page.locator(".garden3d .chr[data-gchar] .gchar-hit");
     await expect(hit).toBeVisible();
-    const point = await hit.evaluate(el => {
-      const r = el.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-    });
-    await page.mouse.click(point.x, point.y);
+    // The character is animated; a cached point may fall outside its moving hitbox.
+    // Locator.click still sends a real pointer event, using the current live geometry.
+    await hit.click();
     await expect(page.locator(".toast")).toContainText("Đã gửi");
     const taps = await page.evaluate(() => JSON.parse(localStorage.getItem("hu-hen-ho-v2") || "{}").taps || {});
     const sent = Object.values(taps);
