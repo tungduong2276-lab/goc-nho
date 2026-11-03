@@ -57,3 +57,37 @@ test("reduced-motion preference disables continuous animation and particle burst
   await page.mouse.up();
   await context.close();
 });
+
+
+async function openHouse(page) {
+  await page.addInitScript(() => localStorage.setItem("hu-hen-ho-me", "0"));
+  await page.route("https://www.gstatic.com/**", route => route.abort());
+  await page.route("https://fonts.googleapis.com/**", route => route.abort());
+  await page.route("https://fonts.gstatic.com/**", route => route.abort());
+  await page.goto("/index.html#nha");
+  await expect(page.locator(".world")).toBeVisible();
+  await expect(page.locator(".house-room-strip")).toBeVisible();
+}
+
+test("house overview connects the exterior to all six existing room scenes", async ({ page }) => {
+  await openHouse(page);
+  const cards = page.locator(".house-room-card");
+  await expect(cards).toHaveCount(6);
+  await expect(cards.filter({ hasText: "Phòng khách" })).toBeVisible();
+  await expect(cards.filter({ hasText: "Bếp" })).toBeVisible();
+  const broken = await cards.locator("img").evaluateAll(images => images.filter(img => !img.complete || img.naturalWidth === 0).map(img => img.getAttribute("src")));
+  expect(broken).toEqual([]);
+});
+
+test("room directory navigates between interiors and marks the current room", async ({ page }) => {
+  await openHouse(page);
+  await page.locator('.house-room-card[href="#bep"]').click();
+  await expect(page).toHaveURL(/#bep$/);
+  await expect(page.locator("#tab-bep .room3d")).toBeVisible();
+  await expect(page.locator('#tab-bep .house-room-card[aria-current="page"]')).toHaveAttribute("href", "#bep");
+
+  await page.locator('#tab-bep .house-room-card[href="#phong-em"]').click();
+  await expect(page).toHaveURL(/#phong-em$/);
+  await expect(page.locator("#tab-phong-em .room3d")).toBeVisible();
+  await expect(page.locator('#tab-phong-em .house-room-card[aria-current="page"]')).toHaveAttribute("href", "#phong-em");
+});
