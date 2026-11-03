@@ -52,14 +52,14 @@
       animation: gnObjectPress .62s cubic-bezier(.2,.85,.25,1.25) both;
       transform-origin: 50% 88%;
     }
-    .gn-motion-active.chr .cstack,
+    .gn-motion-active.chr .cstack img,
     .gn-motion-active.chr > img {
       animation: gnCharacterReact .72s cubic-bezier(.2,.9,.25,1.3) both;
       transform-origin: 50% 94%;
     }
     .gn-motion-water img { animation: gnWaterCan .82s ease-in-out both !important; }
     .gn-motion-flower img { animation: gnFlowerReact .82s cubic-bezier(.2,.8,.2,1.2) both !important; }
-    .gn-motion-hug .cstack { animation: gnHugReact .9s cubic-bezier(.2,.9,.25,1.25) both !important; }
+    .gn-motion-hug .cstack img { animation: gnHugReact .9s cubic-bezier(.2,.9,.25,1.25) both !important; }
     .gn-motion-swing img { animation: gnSwingReact .85s ease-in-out both !important; }
     .gn-motion-pet img { animation: gnPetReact .9s cubic-bezier(.2,.9,.25,1.25) both !important; }
     .gn-motion-toggle img { animation: gnToggleReact .55s ease-out both !important; }
@@ -156,9 +156,9 @@
     @media (prefers-reduced-motion: reduce) {
       .room3d .chr .cstack,.garden3d .chr .cstack,.room3d .chr.pet img,
       .world .m-ch,.world .m-fl,.garden3d .gfl img,.garden3d .gcare img,
-      .gn-motion-active.lay.hot img,.gn-motion-active.chr .cstack,
+      .gn-motion-active.lay.hot img,.gn-motion-active.chr .cstack img,
       .gn-motion-active.chr > img,.gn-motion-water img,.gn-motion-flower img,
-      .gn-motion-hug .cstack,.gn-motion-swing img,.gn-motion-pet img,
+      .gn-motion-hug .cstack img,.gn-motion-swing img,.gn-motion-pet img,
       .gn-motion-toggle img,.gn-burst i { animation: none !important; }
       .gn-burst { display: none !important; }
     }
