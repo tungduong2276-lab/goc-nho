@@ -135,3 +135,36 @@ test("SECURITY GAP: both members can read nested unreleased gift payload under c
   const result = await assertSucceeds(getDoc(ref(BOB, path)));
   assert.equal(result.data().payload, "SYNTHETIC_SECRET_NEVER_USE_REAL_DATA");
 });
+
+test("two simulated members converge when writing distinct Firestore documents", async () => {
+  const alicePath = `${couple()}/shared/alice-write`;
+  const bobPath = `${couple()}/shared/bob-write`;
+  // Separate authenticated clients write simultaneously; neither uses production data.
+  await Promise.all([
+    assertSucceeds(setDoc(ref(ALICE, alicePath), { from: ALICE, revision: 1 })),
+    assertSucceeds(setDoc(ref(BOB, bobPath), { from: BOB, revision: 1 })),
+  ]);
+  const [seenByBob, seenByAlice] = await Promise.all([
+    assertSucceeds(getDoc(ref(BOB, alicePath))),
+    assertSucceeds(getDoc(ref(ALICE, bobPath))),
+  ]);
+  assert.equal(seenByBob.data().from, ALICE);
+  assert.equal(seenByAlice.data().from, BOB);
+});
+
+test("KNOWN RISK: stale whole-document set overwrites the other partner's field", async () => {
+  const path = `${couple()}/shared/stale-document`;
+  await env.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), path), { left: "old", right: "old" });
+  });
+  const [viewA, viewB] = await Promise.all([
+    assertSucceeds(getDoc(ref(ALICE, path))),
+    assertSucceeds(getDoc(ref(BOB, path))),
+  ]);
+  await assertSucceeds(setDoc(ref(ALICE, path), { ...viewA.data(), left: "new-A" }));
+  await assertSucceeds(setDoc(ref(BOB, path), { ...viewB.data(), right: "new-B" }));
+  const final = await assertSucceeds(getDoc(ref(ALICE, path)));
+  // Mirrors current put(col,obj) behavior. M1 must use revisions/transactions.
+  assert.equal(final.data().left, "old");
+  assert.equal(final.data().right, "new-B");
+});
