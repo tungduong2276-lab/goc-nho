@@ -3925,7 +3925,7 @@ function charStack(i,pose,pt,scale,z,cls="",o={}){
 
 // --- bản đồ: nhân vật nhiều lớp, khu nào cũng vào được phòng ---
 function worldMapHTML(){
-  if(!SC3||!SC3.rig)return`<div class="world w-loading"><p class="quiet">Đang mở ngôi nhà...</p></div>`;
+  if(!SC3||!SC3.rig)return`<div class="world w-loading" data-weather="${houseWeather}" aria-label="Bản đồ ngôi nhà đang tải"><p class="quiet">Đang mở ngôi nhà...</p></div>`;
   const M=SC3.map,t=buoi(),o=OTHER(),k=M.ppm/SC3.rig.ppm,fk=M.plotPpm/SC3.flower.ppm;
   const st=parseDay(S.meta.startDate),dayN=st?Math.round((dayStart(new Date())-st)/864e5)+1:null;
   let chars="";
@@ -3936,7 +3936,7 @@ function worldMapHTML(){
   const Z=M.zones,lbl=["khach","bep","sangtao","anh","em","gac","vuon","hopthu","cafe","dao"];
   const cen=pts=>{let x=0,y=0;pts.forEach(p=>{x+=p[0];y+=p[1];});return[x/pts.length,y/pts.length];};
   const pres=ME===null?"":isHere(o)?`<span class="live"></span>${N(o)} cũng đang ở nhà`:stOf(o)==="ngu"?`${N(o)} đi ngủ rồi`:stOf(o)==="ban"?`${N(o)} đang bận`:PRES(o)?`${N(o)} ghé lần cuối ${ago(PRES(o).last)}`:`${N(o)} chưa ghé nhà`;
-  return`<div class="world t-${t}" aria-label="Bản đồ ngôi nhà">
+  return`<div class="world t-${t}" data-weather="${houseWeather}" aria-label="Bản đồ ngôi nhà">
     <div class="sky" aria-hidden="true">${[1,2,3].map(i=>`<img class="cloud c${i}" src="${A3("may_"+i)}" alt="">`).join("")}</div>
     <div class="wstage w3fit" data-w="${M.size[0]}"><div class="wcanvas" style="width:${M.size[0]}px;height:${M.size[1]}px">
       <img class="wbg" src="${A3("ban_do_"+t)}" alt="Ngôi nhà Góc Nhỏ của ${N(0)} và ${N(1)}" draggable="false">
