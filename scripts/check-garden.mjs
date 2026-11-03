@@ -6,6 +6,7 @@ import { dirname, resolve } from "node:path";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const html = readFileSync(resolve(root, "index.html"), "utf8");
+const sw = readFileSync(resolve(root, "sw.js"), "utf8");
 const scene = JSON.parse(readFileSync(resolve(root, "assets/3d/scene.json"), "utf8"));
 const scriptTag = html.lastIndexOf("<script");
 const scriptOpen = html.indexOf(">", scriptTag) + 1;
@@ -66,6 +67,11 @@ const resetMerge=mergeMetaForWrite(
   {custom:[],__base:{custom:[]}}
 );
 assert.equal(resetMerge.custom[0].name,"Trò mới vừa thêm trên thiết bị kia","a stale reset retry does not erase a custom game added remotely");
+const resetMerge=mergeMetaForWrite(
+  {custom:[{n:12,name:"Trò mới vừa thêm trên thiết bị kia"}]},
+  {custom:[],__base:{custom:[]}}
+);
+assert.equal(resetMerge.custom[0].name,"Trò mới vừa thêm trên thiết bị kia","a stale reset retry does not erase a custom game added remotely");
 assert.match(appCode,/DB\.runTransaction\(async tx=>\{[\s\S]*?tx\.get\(ref\)[\s\S]*?tx\.set\(ref,mergeMetaForWrite\(latest,payload\)\)/,"meta retry reads latest Firestore state inside a transaction");
 assert.match(appCode,/window\.addEventListener\("online",refreshDbWriteStatus\)/,"network recovery does not automatically retry failed writes");
 assert.match(appCode,/else if\(MODE==="db"\)\{if\(dbReady\)refreshDbWriteStatus\(\);else setSync\("Đang kết nối...",false);\}/,"online status refresh preserves a pending manual-retry warning");
@@ -73,6 +79,7 @@ assert.doesNotMatch(appCode,/window\.addEventListener\("online",\(\)=>\{retryFai
 assert.match(appCode,/data-gi="cay"[^\x60]*data-hit-priority="3"/,"large daily pot has priority over overlapping seed-box hit region");
 assert.match(appCode,/key==="hopgiong"\?1/,"seed box uses lower hit priority than the daily pot");
 assert.match(appCode,/\.garden3d \.gcare \.ghit\{left:15%;right:15%;top:38%;bottom:4%\}/,"daily pot hit area covers the pot body");
+assert.match(sw,/const CACHE = "goc-nho-v12"/,"service-worker cache version is bumped for the new app shell");
 
 assert.match(appCode, /const ref=DB\.collection\(col\)\.doc\(obj\.id\)/, "existing collection/document write path is retained");
 assert.match(appCode, /const ref=DB\.doc\("meta\/main"\)/, "existing meta document path is retained");

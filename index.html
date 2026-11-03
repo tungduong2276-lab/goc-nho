@@ -1541,8 +1541,16 @@ function del(col,id){
 }
 function mergeMetaPatchQueue(older,newer){
   const out=Object.assign({},clone(older||{}),clone(newer||{}));
+  if(older&&older.__base)out.__base=clone(older.__base);
   for(const key of ["looks","swaps","extraSwaps"]){
     if(older&&older[key]&&newer&&newer[key])out[key]=Object.assign({},clone(older[key]),clone(newer[key]));
+  }
+  for(const key of ["names","bday","chars"]){
+    if(older&&Array.isArray(older[key])&&newer&&Array.isArray(newer[key])){
+      const merged=clone(older[key]),base=(newer.__base||{})[key]||[];
+      for(let i=0;i<newer[key].length;i++)if(JSON.stringify(newer[key][i])!==JSON.stringify(base[i]))merged[i]=clone(newer[key][i]);
+      out[key]=merged;
+    }
   }
   if(older&&Array.isArray(older.custom)&&newer&&Array.isArray(newer.custom))out.custom=older.custom.concat(newer.custom);
   return out;
@@ -1550,8 +1558,13 @@ function mergeMetaPatchQueue(older,newer){
 function mergeMetaForWrite(latest,patch){
   const out=Object.assign({},clone(latest||{})),p=clone(patch||{});
   for(const [key,value] of Object.entries(p)){
-    if(key==="custom"&&Array.isArray(value)){
-      if(!value.length){out.custom=[];continue;}
+    if(key==="__base")continue;
+    if(["names","bday","chars"].includes(key)&&Array.isArray(value)&&Array.isArray((p.__base||{})[key])){
+      const merged=Array.isArray(out[key])?out[key].slice():[],base=p.__base[key];
+      for(let i=0;i<value.length;i++)if(JSON.stringify(value[i])!==JSON.stringify(base[i]))merged[i]=value[i];
+      out[key]=merged;
+    }else if(key==="custom"&&Array.isArray(value)){
+      if(!value.length){const baseCustom=(p.__base||{}).custom;if(!Array.isArray(baseCustom)||JSON.stringify(out.custom||[])===JSON.stringify(baseCustom))out.custom=[];continue;}
       const merged=Array.isArray(out.custom)?clone(out.custom):[],seen=new Set();
       for(const item of value){
         const fingerprint=JSON.stringify(item);if(seen.has(fingerprint))continue;seen.add(fingerprint);
@@ -1576,8 +1589,9 @@ function mergeMetaForWrite(latest,patch){
 }
 let failedMetaPatch=null;
 function putMeta(patch){
-  const changes={};
-  for(const [key,value] of Object.entries(patch||{}))if(JSON.stringify(value)!==JSON.stringify(S.meta[key]))changes[key]=clone(value);
+  const base=clone(S.meta),changes={};
+  for(const [key,value] of Object.entries(patch||{}))if(JSON.stringify(value)!==JSON.stringify(base[key]))changes[key]=clone(value);
+  if(Object.keys(changes).length)changes.__base=base;
   Object.assign(S.meta,patch);if(MODE!=="db")return saveLocal();
   if(!Object.keys(changes).length)return Promise.resolve();
   failedMetaPatch=mergeMetaPatchQueue(failedMetaPatch,changes);
