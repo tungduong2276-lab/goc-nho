@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { Script } from "node:vm";
+import { Script, runInNewContext } from "node:vm";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
@@ -37,6 +37,27 @@ const seatCenter = [(seat[0][0] + seat[1][0]) / 2, (seat[0][1] + seat[1][1]) / 2
 assert.match(appCode, /Rm\.spots\.ghe\[0\]\[0\].*Rm\.spots\.ghe\[1\]\[0\]/, "swing target center derives from actual scene seat coordinates");
 assert.ok(seatCenter[0] > 300 && seatCenter[0] < 400 && seatCenter[1] > 600 && seatCenter[1] < 700, "swing center is within the seat region");
 
+const mergeStart=appCode.indexOf("function mergeMetaForWrite(latest,patch){");
+const mergeEnd=appCode.indexOf("\nlet failedMetaPatch=null;",mergeStart);
+assert.ok(mergeStart>=0&&mergeEnd>mergeStart,"meta merge helper exists");
+const mergeSource=appCode.slice(mergeStart,mergeEnd);
+const mergeMetaForWrite=runInNewContext(mergeSource+"; mergeMetaForWrite", { clone:v=>JSON.parse(JSON.stringify(v)) });
+const mergedMeta=mergeMetaForWrite(
+  {names:["Anh","Em"],bday:["2000-01-01","2001-02-02"],custom:[{n:8,name:"Cũ"},{n:9,name:"Trò của thiết bị kia"}],song:"remote"},
+  {custom:[{n:8,name:"Cũ"},{n:9,name:"Trò mới trên máy này"}],pending:{n:9}}
+);
+assert.equal(mergedMeta.names[0],"Anh","unrelated remote profile fields survive retry");
+assert.equal(mergedMeta.song,"remote","unrelated remote metadata survives retry");
+assert.ok(mergedMeta.custom.some(x=>x.name==="Trò của thiết bị kia"),"remote custom game is preserved");
+assert.ok(mergedMeta.custom.some(x=>x.name==="Trò mới trên máy này"&&x.n!==9),"conflicting custom game receives a free number");
+assert.equal(mergedMeta.pending.n,10,"pending draw follows the remapped custom game");
+assert.match(appCode,/DB\.runTransaction\(async tx=>\{[\s\S]*?tx\.get\(ref\)[\s\S]*?tx\.set\(ref,mergeMetaForWrite\(latest,payload\)\)/,"meta retry reads latest Firestore state inside a transaction");
+assert.match(appCode,/window\.addEventListener\("online",refreshDbWriteStatus\)/,"network recovery does not automatically retry failed writes");
+assert.doesNotMatch(appCode,/window\.addEventListener\("online",\(\)=>\{retryFailedDbWrites\(\)/,"no automatic retry on online event");
+assert.match(appCode,/data-gi="cay"[^\x60]*data-hit-priority="3"/,"large daily pot has priority over overlapping seed-box hit region");
+assert.match(appCode,/key==="hopgiong"\?1/,"seed box uses lower hit priority than the daily pot");
+assert.match(appCode,/\.garden3d \.gcare \.ghit\{left:15%;right:15%;top:38%;bottom:4%\}/,"daily pot hit area covers the pot body");
+
 assert.match(appCode, /const ref=DB\.collection\(col\)\.doc\(obj\.id\)/, "existing collection/document write path is retained");
 assert.match(appCode, /const ref=DB\.doc\("meta\/main"\)/, "existing meta document path is retained");
 assert.match(appCode, /touchPresence=function\([\s\S]*?\{quiet:true\}\)/, "automatic presence heartbeat remains quiet");
@@ -46,5 +67,7 @@ console.log("PASS startup temporal-dead-zone regression guard");
 console.log("PASS care-card watering binding");
 console.log("PASS pointer hit-region and keyboard activation guards");
 console.log("PASS swing target geometry guard");
+console.log("PASS latest-state transactional meta retry and merge preservation");
+console.log("PASS manual-only retry and garden pot hit priority");
 console.log("PASS existing Firebase write paths retained");
 console.log("Note: actual browser event routing is covered by npm run test:browser; this static check does not simulate pointer events.");

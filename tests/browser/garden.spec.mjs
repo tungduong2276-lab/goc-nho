@@ -101,3 +101,28 @@ test("board hit target wins over the neighboring watering-can expansion across v
     }
   }
 });
+
+test("daily pot wins over the overlapping seed-box hit region at both phone widths", async ({ browser }) => {
+  for (const width of [390, 360]) {
+    for (const fx of [0.15, 0.5, 0.85]) {
+      const context = await browser.newContext({ viewport: { width, height: 844 } });
+      const page = await context.newPage();
+      await openGarden(page);
+      const overlap = await page.evaluate(() => {
+        const pot = document.querySelector(".garden3d button.gcare .ghit")?.getBoundingClientRect();
+        const seed = document.querySelector('.garden3d button[data-gi="hopgiong"] .ghit')?.getBoundingClientRect();
+        if (!pot || !seed) return null;
+        const left = Math.max(pot.left, seed.left), right = Math.min(pot.right, seed.right);
+        const top = Math.max(pot.top, seed.top), bottom = Math.min(pot.bottom, seed.bottom);
+        if (right <= left || bottom <= top) return null;
+        return { left, right, top, bottom };
+      });
+      expect(overlap, "daily pot and seed-box hit regions should overlap in the reported collision area").not.toBeNull();
+      const point = { x: overlap.left + (overlap.right - overlap.left) * fx, y: overlap.top + (overlap.bottom - overlap.top) * 0.55 };
+      await page.mouse.click(point.x, point.y);
+      await expect(page.locator(".toast")).toContainText("Đã tưới");
+      await expect(page.locator("#tab-care .gcare-card")).toContainText("đã tưới lúc");
+      await context.close();
+    }
+  }
+});

@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "index.html"
+      - "sw.js"
       - "assets/3d/**"
       - "scripts/**"
       - "docs/garden-two-device-test.md"

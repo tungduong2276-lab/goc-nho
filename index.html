@@ -1216,7 +1216,7 @@ nav.tabs a[aria-current="page"] .nic{background:color-mix(in srgb,var(--acc) 22%
 .g-gallery-item span,.g-gallery-item small{font-size:12px;color:var(--muted);font-weight:700;text-align:center}
 @media (prefers-reduced-motion:reduce){.garden3d .lay.hot.tap-flash::after{animation:none;opacity:.5}}
 .garden3d .gplant .ghit{position:absolute;left:15%;right:15%;top:18%;bottom:-5%;pointer-events:auto;border-radius:40%;touch-action:manipulation}
-.garden3d .gcare .ghit{left:30%;right:31%;top:54%;bottom:5%}
+.garden3d .gcare .ghit{left:15%;right:15%;top:38%;bottom:4%}
 .gcare-card{background:var(--surface);border-radius:22px;padding:16px 18px;box-shadow:0 8px 22px -16px rgba(232,85,138,.6)}
 .gcare-card .cans{margin-top:0}
 .gcare-card.thirsty .gstatus,.gcare-card.wilt .gstatus{color:var(--pink-deep)}
@@ -1539,14 +1539,58 @@ function del(col,id){
   const ref=DB.collection(col).doc(id),key=col+"/"+id;
   return trackDbWrite(ref.delete(),key,{retry:()=>ref.delete()});
 }
+function mergeMetaPatchQueue(older,newer){
+  const out=Object.assign({},clone(older||{}),clone(newer||{}));
+  for(const key of ["looks","swaps","extraSwaps"]){
+    if(older&&older[key]&&newer&&newer[key])out[key]=Object.assign({},clone(older[key]),clone(newer[key]));
+  }
+  if(older&&Array.isArray(older.custom)&&newer&&Array.isArray(newer.custom))out.custom=older.custom.concat(newer.custom);
+  return out;
+}
+function mergeMetaForWrite(latest,patch){
+  const out=Object.assign({},clone(latest||{})),p=clone(patch||{});
+  for(const [key,value] of Object.entries(p)){
+    if(key==="custom"&&Array.isArray(value)){
+      if(!value.length){out.custom=[];continue;}
+      const merged=Array.isArray(out.custom)?clone(out.custom):[],seen=new Set();
+      for(const item of value){
+        const fingerprint=JSON.stringify(item);if(seen.has(fingerprint))continue;seen.add(fingerprint);
+        const same=merged.find(x=>Number(x.n)===Number(item.n));
+        if(!same){merged.push(item);continue;}
+        if(JSON.stringify(same)===fingerprint)continue;
+        const nextN=Math.max(0,...merged.map(x=>Number(x.n)||0))+1;
+        merged.push(Object.assign({},item,{n:nextN}));
+        if(p.pending&&Number(p.pending.n)===Number(item.n))p.pending.n=nextN;
+      }
+      out.custom=merged;
+    }else if(["looks","swaps","extraSwaps"].includes(key)&&value&&typeof value==="object"&&!Array.isArray(value)){
+      const merged=Object.assign({},out[key]||{});
+      for(const [sub,v] of Object.entries(value)){
+        if((key==="swaps"||key==="extraSwaps")&&Number.isFinite(Number(v))&&Number.isFinite(Number(merged[sub])))merged[sub]=Math.max(Number(merged[sub]),Number(v));
+        else merged[sub]=v;
+      }
+      out[key]=merged;
+    }else out[key]=value;
+  }
+  return out;
+}
+let failedMetaPatch=null;
 function putMeta(patch){
+  const changes={};
+  for(const [key,value] of Object.entries(patch||{}))if(JSON.stringify(value)!==JSON.stringify(S.meta[key]))changes[key]=clone(value);
   Object.assign(S.meta,patch);if(MODE!=="db")return saveLocal();
-  const ref=DB.doc("meta/main"),data=clone(S.meta);
-  return trackDbWrite(ref.set(data),"meta/main",{retry:()=>ref.set(data)});
+  if(!Object.keys(changes).length)return Promise.resolve();
+  failedMetaPatch=mergeMetaPatchQueue(failedMetaPatch,changes);
+  const ref=DB.doc("meta/main"),key="meta/main",payload=clone(failedMetaPatch);
+  const write=()=>DB.runTransaction(async tx=>{
+    const snap=await tx.get(ref),latest=snap.exists?snap.data():defaultMeta();
+    tx.set(ref,mergeMetaForWrite(latest,payload));
+  }).then(result=>{if(JSON.stringify(failedMetaPatch)===JSON.stringify(payload))failedMetaPatch=null;return result;});
+  return trackDbWrite(write(),key,{retry:write});
 }
 
-function setSync(text,on){if(navigator.onLine===false&&on){text="Đang ngoại tuyến · có mạng sẽ tự đồng bộ";on=false;}$("syncBox").classList.toggle("offline",navigator.onLine===false);$("syncText").textContent=text;$("syncBox").classList.toggle("off",!on);}
-window.addEventListener("online",()=>{retryFailedDbWrites();refreshDbWriteStatus();});
+function setSync(text,on){if(navigator.onLine===false&&on){text="Đang ngoại tuyến · thay đổi sẽ chờ kết nối";on=false;}$("syncBox").classList.toggle("offline",navigator.onLine===false);$("syncText").textContent=text;$("syncBox").classList.toggle("off",!on);}
+window.addEventListener("online",refreshDbWriteStatus);
 document.getElementById("syncBox").addEventListener("click",retryFailedDbWrites);
 async function initDb(){
   const db=await CLOUD.ready;if(!db)return;
@@ -4076,7 +4120,7 @@ function gardenSceneHTML(){
   for(const [key,it] of Object.entries(Rm.items)){const st=gardenItemState(key),n=key+"_"+st,b=Rm.layers[n];if(!b)continue;
     const z=key==="binhtuoi"&&st==="tuoi"?2000:b[3];
     const hx=key==="ghe"?(Rm.spots.ghe[0][0]+Rm.spots.ghe[1][0])/2:(b[0]+b[2])/2,hy=key==="ghe"?(Rm.spots.ghe[0][1]+Rm.spots.ghe[1][1])/2:(b[1]+b[3])/2;
-    html+=btn(`data-gi="${key}" data-hit-x="${hx}" data-hit-y="${hy}" data-hit-priority="${key==="bang"?3:key==="binhtuoi"?1:2}"`,it.label,b[0],b[1],b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,`gobj gobj-${key} ${key==="hopgiong"&&st==="mo"?"glow":""}`,true);}
+    html+=btn(`data-gi="${key}" data-hit-x="${hx}" data-hit-y="${hy}" data-hit-priority="${key==="bang"?3:key==="binhtuoi"?1:key==="hopgiong"?1:2}"`,it.label,b[0],b[1],b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,`gobj gobj-${key} ${key==="hopgiong"&&st==="mo"?"glow":""}`,true);}
   // luống: mỗi mùa một ô, mùa đang đi lớn dần theo số buổi
   const cur=curSeason();
   for(let s=Math.max(1,cur-9);s<=cur;s++){const P=seasonPlant(s),p=Rm.spots.luong[(s-1)%10];
@@ -4084,7 +4128,7 @@ function gardenSceneHTML(){
     html+=plantAt(`hoa_${P.type}_${P.gd}`,p,fk*1.7,p[1],`data-gs="${s}" data-hit-x="${p[0]}" data-hit-y="${p[1]-70}"`,label,`gfl${gardenSel===s?" sel":""}${P.done?"":" growing"}`);}
   // chậu lớn: cây chăm hằng ngày
   const cn=careNow(),cp=Rm.spots.cay[0];
-  html+=plantAt(`hoa_${cn.type}_${cn.gd}`,cp,fk*3,cp[1]+1,`data-gi="cay" data-hit-x="${cp[0]}" data-hit-y="${cp[1]-55}"`,`${FL3N[cn.type]}, ${cn.stage}/10 ngày đủ nước. Chạm để tưới`,`gcare${cn.wilt&&cn.gd!=="heo"?" wilt":""}${Date.now()-justWatered<1800?" drink":""}`);
+  html+=plantAt(`hoa_${cn.type}_${cn.gd}`,cp,fk*3,cp[1]+1,`data-gi="cay" data-hit-x="${cp[0]}" data-hit-y="${cp[1]-55}" data-hit-priority="3"`,`${FL3N[cn.type]}, ${cn.stage}/10 ngày đủ nước. Chạm để tưới`,`gcare${cn.wilt&&cn.gd!=="heo"?" wilt":""}${Date.now()-justWatered<1800?" drink":""}`);
   // kệ: những chậu đã nở gần nhất
   const kb=Rm.layers.ke_trong||[0,0,0,0],kp=Rm.spots.ke,show=Math.min(kp.length,cn.pots),first=cn.pots-show;
   for(let j=0;j<show;j++){const i=first+j,ty=FL3[i%FL3.length],p=kp[j];html+=sprite(`hoa_${ty}_gd5`,p,fk*1.05,kb[3]+2+(j<4?0:10)+j,"",FA,256);}
