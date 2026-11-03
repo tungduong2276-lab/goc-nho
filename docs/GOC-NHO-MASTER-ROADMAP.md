@@ -188,3 +188,12 @@ Next safe action:
 - **Open:** PR #9 (house/weather, enlarged overall map but not each room interior; needs visual renders/hitbox confirmation and reconciliation with main), PR #12 (draft broad M0 work, partially extracted through PRs #14/#15), PR #4 (old drawing gallery fix not reconciled with latest main).
 - **Remaining M0 blockers:** staging-only export/restore proof, live deployed Rules inventory/rollback, two-client offline/reconnect plus stale version tests, M1 feature flag conventions and independent visual 3D review. See `docs/M0-FIREBASE-SAFETY-AUDIT.md` and `docs/M0-STAGING-BACKUP-RUNBOOK.md`.
 - **Next safe action:** validate staging backup/restore with synthetic data and admin authorization; resolve PR #9 geometry/visual inspection before persistent 3D placements. Do not merge unverified code or run tests against live couple data.
+
+### Handoff update — 2026-11-03, M0 continuation (PR #18, pending)
+
+- Main last confirmed at `961182c6d5b13e1aa6843d057c87879110d63ae8` (PR #16 merged). Recheck HEAD before further work.
+- PR #18 `test/m0-concurrent-field-updates`: added synthetic same-document field-patch convergence, invitation-code collision, immutable-join and malformed-document permission tests; expanded CI triggers for Firebase paths and added Java 21; documented feature flags and outstanding gates. **Not merged; latest CI must be checked.**
+- PR #17 `test/pr9-weather-persistence-regression`: both decorative weather regression tests passed in CI #89, but the full suite failed 2/17 unrelated garden interaction cases (character hug, gallery activation). **Not merged.**
+- Production data/Rules: untouched; deployed Rules, Auth/App Check and actual staging export/restore remain unverified.
+- **M0 remains incomplete** until real staging-only export/restore, authorized deployment inventory, offline/reconnect and stale revision testing, and PR #9 visual geometry review.
+- Next safe action: review latest CI for PR #18, diagnose browser failures on PR #17, and arrange authorized isolated staging project validation. Do not start persistent M1 furniture writes yet.
