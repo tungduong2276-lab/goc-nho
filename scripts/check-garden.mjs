@@ -76,6 +76,7 @@ assert.match(appCode,/DB\.runTransaction\(async tx=>\{[\s\S]*?tx\.get\(ref\)[\s\
 assert.match(appCode,/window\.addEventListener\("online",refreshDbWriteStatus\)/,"network recovery does not automatically retry failed writes");
 assert.match(appCode,/else if\(MODE==="db"\)\{if\(dbReady\)refreshDbWriteStatus\(\);else setSync\("Đang kết nối...",false);\}/,"online status refresh preserves a pending manual-retry warning");
 assert.doesNotMatch(appCode,/window\.addEventListener\("online",\(\)=>\{retryFailedDbWrites\(\)/,"no automatic retry on online event");
+assert.doesNotMatch(appCode,/có mạng sẽ tự đồng bộ/,"offline copy does not promise automatic retry of failed writes");
 assert.match(appCode,/data-gi="cay"[^\x60]*data-hit-priority="3"/,"large daily pot has priority over overlapping seed-box hit region");
 assert.match(appCode,/key==="hopgiong"\?1/,"seed box uses lower hit priority than the daily pot");
 assert.match(appCode,/\.garden3d \.gcare \.ghit\{left:15%;right:15%;top:38%;bottom:4%\}/,"daily pot hit area covers the pot body");
