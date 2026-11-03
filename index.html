@@ -2624,6 +2624,8 @@ function renderStory(){
 const DRAW_THEMES=["Một sinh vật chưa ai từng thấy","Hai đứa mình năm 80 tuổi","Thú cưng trong mơ","Ngôi nhà tương lai","Một cái cây biết nói","Người kia lúc đang ngủ","Siêu anh hùng hệ dễ thương","Robot làm vườn","Chậu cây có khuôn mặt","Một con mèo làm nghề bán trà sữa","Quái vật sợ ma","Bữa ăn hoàn hảo","Nàng tiên cá đi làm văn phòng","Chú chim mặc áo len"];
 const PAD_COLORS=["#4A2336","#E8558A","#4E9A64","#E07B4F","#8A6BD1","#3E8FC4"];
 let padKey=null,drawTheme=null,galSig=null,drawCancel=false;
+const isDrawImage=v=>typeof v==="string"&&/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(v);
+const isDoneDrawing=d=>!!(d&&d.done&&isDrawImage(d.top)&&isDrawImage(d.bottom));
 function buildPad(host,opts){
   host.innerHTML=`<div class="pad-wrap">${opts.edge?`<div class="edge" style="background-image:url('${opts.edge}')"></div>`:""}
     <canvas id="padCanvas" width="600" height="400" class="pad-canvas${opts.edge?" joined":""}" aria-label="Khung vẽ ${opts.edge?"nửa dưới":"nửa trên"}"></canvas>
@@ -2648,7 +2650,7 @@ function renderDraw(){
   const root=$("tab-draw");if(!root)return;
   if(!root.dataset.built){root.innerHTML=`<div class="tab-head"><div><h2>Vẽ tiếp sức</h2><p>Một người vẽ nửa trên rồi gửi đi. Người kia chỉ thấy vài nét ở mép dưới và vẽ tiếp nửa dưới. Lật ra mới thấy cả bức tranh.</p></div></div>
     <div id="draw-state" class="blk"></div><div id="draw-pad"></div><div id="draw-gal" class="blk"></div>`;root.dataset.built="1";}
-  const all=list("drawings").sort(byDate),act=all.filter(d=>!d.done).pop(),o=OTHER();
+  const all=list("drawings").sort(byDate),act=all.filter(d=>!isDoneDrawing(d)).pop(),o=OTHER();
   let mode,key;
   if(ME===null){mode="noid";key="noid";}else if(!act){mode="start";key="start";}else if(act.topBy===ME){mode="wait";key="wait";}else{mode="bottom";key="bottom-"+act.id;}
   const stEl=$("draw-state");
@@ -2658,7 +2660,7 @@ function renderDraw(){
       <p class="quiet">Bạn vẽ nửa trên. Nhớ để vài nét chạm xuống mép dưới để ${N(o)} nối tiếp.</p>`;
     $("themeRe").onclick=()=>{drawTheme=pick(DRAW_THEMES.filter(t=>t!==drawTheme));const b=stEl.querySelector("b");if(b)b.textContent=drawTheme;};}
   else if(mode==="wait")stEl.innerHTML=`<div class="draw-theme"><span class="lbl">Đề</span><b>${esc(act.theme)}</b></div>
-      <p class="waiting">${mascot(mascotLevel())}<span>Đang chờ ${N(o)} vẽ nửa dưới. Bức tranh sẽ lật ra khi ${N(o)} vẽ xong.</span></p>
+      <p class="waiting">${mascot(mascotLevel())}<span>${act.done&&!isDoneDrawing(act)?`Bức này thiếu ảnh nửa dưới nên chưa thể đưa vào Phòng tranh. Hãy nhờ ${N(o)} vẽ lại nửa dưới.`:`Đang chờ ${N(o)} vẽ nửa dưới. Bức tranh sẽ lật ra khi ${N(o)} vẽ xong.`}</span></p>
       <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap"><img class="mytop" src="${act.top}" alt="Nửa trên bạn đã vẽ"><button type="button" class="linkish" id="drawCancel">${drawCancel?"Bấm lần nữa để bỏ bức này":"Bỏ bức này"}</button></div>`;
   else stEl.innerHTML=`<div class="draw-theme"><span class="lbl">Đề</span><b>${esc(act.theme)}</b></div>
       <p class="quiet">${N(o)} đã vẽ xong nửa trên. Bạn chỉ được thấy mép dưới của nó. Vẽ tiếp từ những nét đó rồi lật tranh.</p>`;
@@ -2668,7 +2670,7 @@ function renderDraw(){
     else if(mode==="bottom")buildPad(host,{edge:act.top,send:"Lật tranh",onSend:url=>{const d=Object.assign({},S.drawings[act.id],{bottom:url,bottomBy:ME,bottomAt:nowIso(),done:true});put("drawings",d);padKey=null;rerender();
       showModal(`<h2>${esc(d.theme)}</h2><div class="reveal"><img src="${d.top}" alt="Nửa trên của ${N(d.topBy)}"><img src="${d.bottom}" alt="Nửa dưới của ${N(d.bottomBy)}"></div><p>Nửa trên: ${N(d.topBy)} · Nửa dưới: ${N(d.bottomBy)}</p>`,"Đẹp quá",null);}});
     else host.innerHTML="";}
-  const done=all.filter(d=>d.done).reverse(),sig=done.map(d=>d.id).join()+"|"+S.meta.names.join();
+  const done=all.filter(isDoneDrawing).reverse(),sig=done.map(d=>d.id).join()+"|"+S.meta.names.join();
   if(sig!==galSig){galSig=sig;$("draw-gal").innerHTML=done.length?`<h2 class="v3h">Phòng tranh (${done.length})</h2><div class="gal">${done.map(d=>`<figure class="drawing"><img src="${d.top}" alt="Nửa trên"><img src="${d.bottom}" alt="Nửa dưới"><figcaption>${esc(d.theme)}<small>${N(d.topBy)} vẽ trên · ${N(d.bottomBy)} vẽ dưới · ${fmtDate(d.bottomAt||d.date)}</small></figcaption></figure>`).join("")}</div>`:"";}
 }
 
