@@ -1187,8 +1187,14 @@ nav.tabs a[aria-current="page"] .nic{background:color-mix(in srgb,var(--acc) 22%
 .room3d.garden3d.t-dem .onwall.gsign{filter:brightness(.8)}
 .garden3d .gplant{pointer-events:none}
 .garden3d .lay.hot{overflow:visible;touch-action:manipulation}
-.garden3d .lay.hot::before{content:"";position:absolute;right:-7px;top:-7px;width:16px;height:16px;border:2px solid var(--pink);border-radius:50%;background:var(--surface);box-shadow:0 0 0 3px color-mix(in srgb,var(--pink) 18%,transparent);opacity:.88;pointer-events:none;z-index:3}
 .garden3d .lay.hot.tap-flash::after{content:"";position:absolute;inset:-9px;border:3px solid var(--pink);border-radius:22px;pointer-events:none;animation:gTapPulse .48s ease-out}
+.garden3d .gobj{pointer-events:none}
+.garden3d .gobj .ghit{position:absolute;display:block;inset:0;pointer-events:auto;border-radius:16px;touch-action:manipulation}
+.garden3d .gobj[data-gi="binhtuoi"] .ghit{left:-45%;right:-45%;top:-20%;bottom:-20%}
+.garden3d .gobj[data-gi="hopgiong"] .ghit{left:-22%;right:-22%;top:-35%;bottom:-35%}
+.garden3d .gobj[data-gi="ghe"] .ghit{left:5%;right:35%;top:5%;bottom:45%}
+.garden3d .gobj[data-gi="ke"] .ghit{left:4%;right:4%;top:4%;bottom:4%}
+.garden3d .gobj[data-gi="bang"] .ghit{inset:0}
 @keyframes gTapPulse{0%{opacity:.95;transform:scale(.88)}100%{opacity:0;transform:scale(1.14)}}
 .garden3d .chr{appearance:none;-webkit-appearance:none;touch-action:manipulation;text-align:initial;color:inherit}
 .garden3d .chr.tap-flash .cstack{filter:drop-shadow(0 0 9px var(--pink))}
@@ -1204,12 +1210,12 @@ nav.tabs a[aria-current="page"] .nic{background:color-mix(in srgb,var(--acc) 22%
 .g-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;margin-top:12px}
 .g-gallery-item{min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 5px;border:2px solid var(--line);border-radius:16px;background:var(--bg);font:inherit;color:var(--ink);cursor:pointer}
 .g-gallery-item[aria-pressed="true"]{border-color:var(--pink);background:var(--petal)}
-.g-gallery-item svg{width:54px;height:64px}
+.g-gallery-item img{width:76px;height:82px;object-fit:contain;display:block;pointer-events:none}
 .g-gallery-item b{font-family:var(--display);color:var(--pink-deep)}
 .g-gallery-item span,.g-gallery-item small{font-size:12px;color:var(--muted);font-weight:700;text-align:center}
 @media (prefers-reduced-motion:reduce){.garden3d .lay.hot.tap-flash::after{animation:none;opacity:.5}}
-.garden3d .gplant .ghit{position:absolute;left:15%;right:15%;top:18%;bottom:-5%;pointer-events:auto;border-radius:40%}
-.garden3d .gcare .ghit{left:14%;right:14%;top:15%;bottom:-22%}
+.garden3d .gplant .ghit{position:absolute;left:15%;right:15%;top:18%;bottom:-5%;pointer-events:auto;border-radius:40%;touch-action:manipulation}
+.garden3d .gcare .ghit{left:30%;right:31%;top:54%;bottom:5%}
 .gcare-card{background:var(--surface);border-radius:22px;padding:16px 18px;box-shadow:0 8px 22px -16px rgba(232,85,138,.6)}
 .gcare-card .cans{margin-top:0}
 .gcare-card.thirsty .gstatus,.gcare-card.wilt .gstatus{color:var(--pink-deep)}
@@ -1505,23 +1511,42 @@ function dbErr(e){
   else toast("Chưa lưu được, kiểm tra kết nối mạng rồi thử lại.");
 }
 let pendingDbWrites=0;
-const failedDbWrites=new Set();
+const failedDbWrites=new Map();
 function refreshDbWriteStatus(){
   if(MODE!=="db"||!dbReady)return;
   if(pendingDbWrites){setSync("Đang chờ Firebase xác nhận "+pendingDbWrites+" thay đổi...",false);return;}
-  if(failedDbWrites.size){setSync("Có thay đổi chưa lưu được · kiểm tra mạng",false);return;}
+  if(failedDbWrites.size){setSync("Chưa lưu được · chạm để thử lại",false);$("syncBox").title="Chạm để thử lưu lại các thay đổi bị từ chối";$("syncBox").style.cursor="pointer";return;}
+  $("syncBox").title="";$("syncBox").style.cursor="";
   setSync("Đã lưu · đồng bộ giữa hai máy",true);
 }
-function trackDbWrite(promise,key){
+function trackDbWrite(promise,key,opts={}){
+  if(opts.quiet)return Promise.resolve(promise).catch(()=>{});
   pendingDbWrites++;failedDbWrites.delete(key);refreshDbWriteStatus();
-  return promise.then(()=>{pendingDbWrites=Math.max(0,pendingDbWrites-1);failedDbWrites.delete(key);refreshDbWriteStatus();},e=>{pendingDbWrites=Math.max(0,pendingDbWrites-1);failedDbWrites.add(key);dbErr(e);refreshDbWriteStatus();});
+  return Promise.resolve(promise).then(()=>{pendingDbWrites=Math.max(0,pendingDbWrites-1);failedDbWrites.delete(key);refreshDbWriteStatus();},e=>{pendingDbWrites=Math.max(0,pendingDbWrites-1);failedDbWrites.set(key,opts.retry||null);dbErr(e);refreshDbWriteStatus();});
 }
-function put(col,obj){S[col][obj.id]=obj;if(MODE==="db")return trackDbWrite(DB.collection(col).doc(obj.id).set(clone(obj)),col+"/"+obj.id);return saveLocal();}
-function del(col,id){delete S[col][id];if(MODE==="db")return trackDbWrite(DB.collection(col).doc(id).delete(),col+"/"+id);return saveLocal();}
-function putMeta(patch){Object.assign(S.meta,patch);if(MODE==="db")return trackDbWrite(DB.doc("meta/main").set(clone(S.meta)),"meta/main");return saveLocal();}
+function retryFailedDbWrites(){
+  if(MODE!=="db"||navigator.onLine===false||!failedDbWrites.size)return;
+  for(const [key,retry] of Array.from(failedDbWrites.entries()))if(typeof retry==="function")trackDbWrite(retry(),key,{retry});
+}
+function put(col,obj,opts={}){
+  S[col][obj.id]=obj;if(MODE!=="db")return saveLocal();
+  const ref=DB.collection(col).doc(obj.id),data=clone(obj),key=col+"/"+obj.id;
+  return trackDbWrite(ref.set(data),key,Object.assign({},opts,{retry:()=>ref.set(data)}));
+}
+function del(col,id){
+  delete S[col][id];if(MODE!=="db")return saveLocal();
+  const ref=DB.collection(col).doc(id),key=col+"/"+id;
+  return trackDbWrite(ref.delete(),key,{retry:()=>ref.delete()});
+}
+function putMeta(patch){
+  Object.assign(S.meta,patch);if(MODE!=="db")return saveLocal();
+  const ref=DB.doc("meta/main"),data=clone(S.meta);
+  return trackDbWrite(ref.set(data),"meta/main",{retry:()=>ref.set(data)});
+}
 
 function setSync(text,on){if(navigator.onLine===false&&on){text="Đang ngoại tuyến · có mạng sẽ tự đồng bộ";on=false;}$("syncBox").classList.toggle("offline",navigator.onLine===false);$("syncText").textContent=text;$("syncBox").classList.toggle("off",!on);}
-window.addEventListener("online",refreshDbWriteStatus);
+window.addEventListener("online",()=>{retryFailedDbWrites();refreshDbWriteStatus();});
+$("syncBox").addEventListener("click",retryFailedDbWrites);
 async function initDb(){
   const db=await CLOUD.ready;if(!db)return;
   DB=db;UID=CLOUD.uid;
@@ -1946,7 +1971,7 @@ function renderWheel(){
 
 /* ================= garden ================= */
 let gardenSel=null;
-let gardenGuideOpen=!lsGet("gn-garden-guide-v1");
+let gardenGuideOpen=false;
 let gardenGalleryOpen=false;
 function seasonData(s){
   const part=hist().filter(h=>seasonOf(h.no)===s);
@@ -3465,7 +3490,7 @@ const stOf=i=>{const p=PRES(i);if(!p||!p.st)return"";if(Date.now()-new Date(p.st
 const sits=i=>{const p=PRES(i);return !!p&&!!p.sit&&Date.now()-new Date(p.sitAt||0)<3*3600e3&&(i===ME||isHere(i));};
 function setMine(patch){if(ME===null)return;const id="p"+ME,cur=S.presence[id]||{};put("presence",Object.assign({},cur,patch,{id,who:ME,last:nowIso()}));}
 // giữ trạng thái (bận, ngủ, ngồi sofa) khi cập nhật "đang mở app"
-touchPresence=function(){if(ME===null)return;const id="p"+ME,cur=S.presence[id];if(cur&&Date.now()-new Date(cur.last)<110e3)return;put("presence",Object.assign({},cur||{},{id,who:ME,last:nowIso()}));};
+touchPresence=function(){if(ME===null)return;const id="p"+ME,cur=S.presence[id];if(cur&&Date.now()-new Date(cur.last)<110e3)return;put("presence",Object.assign({},cur||{},{id,who:ME,last:nowIso()}),{quiet:true});};
 
 /* --- thời tiết thật ở cửa sổ (Open-Meteo, không cần tài khoản) --- */
 const CITIES={hn:["Hà Nội",21.03,105.85],hcm:["TP. Hồ Chí Minh",10.78,106.7],dn:["Đà Nẵng",16.05,108.2],hp:["Hải Phòng",20.86,106.68],hue:["Huế",16.46,107.6],ct:["Cần Thơ",10.03,105.78],dl:["Đà Lạt",11.94,108.44],nt:["Nha Trang",12.24,109.19]};
@@ -4043,22 +4068,22 @@ function seasonPlant(s){
 }
 function gardenSceneHTML(){
   const Rm=SC3.rooms.khu_vuon,t=buoi(),k=Rm.ppm/SC3.rig.ppm*1.3,fk=Rm.ppm/SC3.flower.ppm,FA=SC3.flower.anchor,o=OTHER();
-  const btn=(attrs,label,x,y,w,h,z,img,cls="",pad=0)=>`<button type="button" class="lay hot ${cls}" ${attrs} aria-label="${esc(label)}" style="${PX(x,y,w,h,z)}${pad?`box-sizing:content-box;padding:${pad}px;`:""}"><img src="${A3(img)}" alt="" draggable="false"></button>`;
+  const btn=(attrs,label,x,y,w,h,z,img,cls="",withHit=false)=>`<button type="button" class="lay hot ${cls}" ${attrs} aria-label="${esc(label)}" style="${PX(x,y,w,h,z)}"><img src="${A3(img)}" alt="" draggable="false">${withHit?`<i class="ghit"></i>`:""}</button>`;
   const plantAt=(file,p,s,z,attrs,label,cls)=>btn(attrs,label,p[0]-FA[0]*s,p[1]-FA[1]*s,256*s,256*s,z,file,"gplant "+cls).replace("</button>",`<i class="ghit"></i></button>`);
   let html="";
   // đồ vật chạm được
   for(const [key,it] of Object.entries(Rm.items)){const st=gardenItemState(key),n=key+"_"+st,b=Rm.layers[n];if(!b)continue;
     const z=key==="binhtuoi"&&st==="tuoi"?2000:b[3];
-    const pad=key==="binhtuoi"?34:key==="hopgiong"?26:key==="bang"?12:16;
-    html+=btn(`data-gi="${key}"`,it.label,b[0]-pad,b[1]-pad,b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,key==="hopgiong"&&st==="mo"?"glow":"",pad);}
+    const hx=key==="ghe"?321:(b[0]+b[2])/2,hy=key==="ghe"?570:(b[1]+b[3])/2;
+    html+=btn(`data-gi="${key}" data-hit-x="${hx}" data-hit-y="${hy}"`,it.label,b[0],b[1],b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,`gobj gobj-${key} ${key==="hopgiong"&&st==="mo"?"glow":""}`,true);}
   // luống: mỗi mùa một ô, mùa đang đi lớn dần theo số buổi
   const cur=curSeason();
   for(let s=Math.max(1,cur-9);s<=cur;s++){const P=seasonPlant(s),p=Rm.spots.luong[(s-1)%10];
     const label=P.done?`Mùa ${s}: ${BLOOMS[P.sd.kind].name.toLowerCase()}, ${P.sd.avg.toFixed(1)} tim`:`Mùa ${s} đang lớn: ${P.n}/10 buổi`;
-    html+=plantAt(`hoa_${P.type}_${P.gd}`,p,fk*1.7,p[1],`data-gs="${s}"`,label,`gfl${gardenSel===s?" sel":""}${P.done?"":" growing"}`);}
+    html+=plantAt(`hoa_${P.type}_${P.gd}`,p,fk*1.7,p[1],`data-gs="${s}" data-hit-x="${p[0]}" data-hit-y="${p[1]}"`,label,`gfl${gardenSel===s?" sel":""}${P.done?"":" growing"}`);}
   // chậu lớn: cây chăm hằng ngày
   const cn=careNow(),cp=Rm.spots.cay[0];
-  html+=plantAt(`hoa_${cn.type}_${cn.gd}`,cp,fk*3,cp[1]+1,`data-gi="cay"`,`${FL3N[cn.type]}, ${cn.stage}/10 ngày đủ nước. Chạm để tưới`,`gcare${cn.wilt&&cn.gd!=="heo"?" wilt":""}${Date.now()-justWatered<1800?" drink":""}`);
+  html+=plantAt(`hoa_${cn.type}_${cn.gd}`,cp,fk*3,cp[1]+1,`data-gi="cay" data-hit-x="${cp[0]}" data-hit-y="${cp[1]-55}"`,`${FL3N[cn.type]}, ${cn.stage}/10 ngày đủ nước. Chạm để tưới`,`gcare${cn.wilt&&cn.gd!=="heo"?" wilt":""}${Date.now()-justWatered<1800?" drink":""}`);
   // kệ: những chậu đã nở gần nhất
   const kb=Rm.layers.ke_trong||[0,0,0,0],kp=Rm.spots.ke,show=Math.min(kp.length,cn.pots),first=cn.pots-show;
   for(let j=0;j<show;j++){const i=first+j,ty=FL3[i%FL3.length],p=kp[j];html+=sprite(`hoa_${ty}_gd5`,p,fk*1.05,kb[3]+2+(j<4?0:10)+j,"",FA,256);}
@@ -4069,10 +4094,15 @@ function gardenSceneHTML(){
   if(ME!==null){const sp=Rm.spots.dung,seat=Rm.spots.ghe,gz=(Rm.layers.ghe_trong||[0,0,0,800])[3]+6;
     [ME].concat(isHere(o)?[o]:[]).forEach((i,j)=>{const sit=gSits(i),pt=sit?seat[CH(i)==="anh"?0:1]:sp[j];
       const pose=sit?"ngoi":i===ME&&(Date.now()-waveMe<1600||Date.now()-justWatered<1800)?"vaytay":"dung";
-      html+=`<button type="button" class="chr" data-gchar="${i}" aria-label="Gửi một cái ôm cho ${esc(S.meta.names[OTHER()])}" style="z-index:${Math.round(sit?gz:pt[1])}">${charStack(i,pose,pt,k,null)}<span class="ctag c-${CH(i)}" style="left:${pt[0]}px;top:${pt[1]+8}px">${N(i)}</span></button>`;});}
+      html+=`<button type="button" class="chr" data-gchar="${i}" data-hit-x="${pt[0]}" data-hit-y="${pt[1]-70}" aria-label="Gửi một cái ôm cho ${esc(S.meta.names[OTHER()])}" style="z-index:${Math.round(sit?gz:pt[1])}">${charStack(i,pose,pt,k,null)}<span class="ctag c-${CH(i)}" style="left:${pt[0]}px;top:${pt[1]+8}px">${N(i)}</span></button>`;});}
   const sky=Date.now()-justWatered<1800?`<div class="drops g3" style="left:${cp[0]-80}px;top:${cp[1]-260}px">${[20,48,76,104,132].map((x,i)=>`<i style="left:${x}px;animation-delay:${i*.12}s"></i>`).join("")}</div>`:"";
   return`<div class="room3d garden3d t-${t}"><div class="w3fit rstage" data-w="1170"><div class="wcanvas" style="width:1170px;height:1170px">
     <img class="wbg" src="${A3("khu_vuon_"+t)}" alt="Khu vườn của ${N(0)} và ${N(1)}" draggable="false">${html}${sky}</div></div>${fx()}</div>`;
+}
+function nearestGardenHit(x,y,targets){
+  let best=null,bestD=Infinity;
+  for(const el of targets){const dx=x-Number(el.dataset.hitX),dy=y-Number(el.dataset.hitY),d=dx*dx+dy*dy;if(d<bestD){best=el;bestD=d;}}
+  return best;
 }
 function gardenTap(key){
   if(key==="cay"||key==="binhtuoi"){
@@ -4086,8 +4116,8 @@ function gardenTap(key){
     if(ME===null){toast('Chọn "Điện thoại này của ai" ở mục Nhà để ngồi xích đu.');return;}
     const on=!gSits(ME);setMine({gsitAt:on?nowIso():null});schedule();
     toast(on?(gSits(OTHER())?"Hai đứa đã ngồi cạnh nhau trên xích đu ♥":"Bạn đã ngồi rồi. Khi người kia mở Khu vườn, họ có thể chạm xích đu để ngồi cùng."):"Bạn đã đứng dậy khỏi xích đu");return;}
-  if(key==="ke"){gardenGalleryOpen=true;rerender();setTimeout(()=>{const g=$("gGallery");if(g)g.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});},60);return;}
-  if(key==="mua"||key==="bang"){gardenSel=null;rerender();const b=$("gSeason");if(b)b.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});return;}
+  if(key==="ke"){toast("Kệ này trưng những chậu cây chăm hằng ngày đã nở. Bộ sưu tập mùa nằm ở bảng gỗ và luống hoa.");return;}
+  if(key==="mua"||key==="bang"){gardenGalleryOpen=true;rerender();setTimeout(()=>{const g=$("gGallery");if(g)g.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});},60);return;}
 }
 renderCare=function(){
   const root=$("tab-care");if(!root)return;
@@ -4113,11 +4143,11 @@ renderCare=function(){
     "<button type=\"button\" class=\"linkish\" data-g-guide-toggle>"+(gardenGuideOpen?"Ẩn hướng dẫn":"Cách chơi")+"</button></div>" +
     (gardenGuideOpen ? "<ul><li><b>🪴 Chậu lớn / bình tưới:</b> mỗi người tưới một lần mỗi ngày.</li>" +
       "<li><b>🌱 Luống hoa:</b> chạm một bông để xem lại mùa tương ứng.</li>" +
-      "<li><b>🌼 Kệ hoa:</b> mở bộ sưu tập tất cả hoa đã nở.</li>" +
+      "<li><b>🪴 Kệ chậu:</b> trưng những chậu cây chăm hằng ngày đã nở.</li><li><b>🌼 Bảng gỗ / luống hoa:</b> mở bộ sưu tập các mùa hẹn.</li>" +
       "<li><b>🪑 Xích đu:</b> chạm để ngồi; người kia có thể vào ngồi cạnh khi đang trực tuyến.</li>" +
       "<li><b>👫 Nhân vật:</b> chạm để gửi một cái ôm cho người kia.</li></ul>" +
       "<button type=\"button\" class=\"btn btn-ghost btn-small\" data-g-guide-close>Đã hiểu</button>" : "") + "</section>";
-  root.insertAdjacentHTML("afterbegin",guideHTML);
+  root.insertAdjacentHTML("beforeend",guideHTML);
   const mineSitting=ME!==null&&gSits(ME);
   const partnerSitting=ME!==null&&isHere(OTHER())&&gSits(OTHER());
   const swingNote=ME===null ? "Chọn danh tính của điện thoại trong mục Nhà để ngồi xích đu."
@@ -4132,7 +4162,7 @@ renderCare=function(){
   const galleryHTML="<section class=\"blk g-gallery\" id=\"gGallery\" "+(gardenGalleryOpen?"":"hidden")+">"+
     "<div class=\"g-gallery-head\"><div><h2 class=\"v3h\">Bộ sưu tập hoa</h2><p class=\"v3sub\">"+seasonCount+" mùa đã khép lại · mỗi bông hoa lưu một mùa của hai bạn.</p></div>"+
     "<button type=\"button\" class=\"linkish\" data-g-gallery-close>Đóng</button></div>"+
-    (flowers.length ? "<div class=\"g-gallery-grid\">"+flowers.map(f=>"<button type=\"button\" class=\"g-gallery-item\" data-g-gallery-season=\""+f.s+"\" aria-pressed=\""+(gardenSel===f.s)+"\">"+flowerSVG(f.kind)+"<b>Mùa "+f.s+"</b><span>"+BLOOMS[f.kind].name+"</span><small>"+f.avg.toFixed(1)+" ♥</small></button>").join("")+"</div>"
+    (flowers.length ? "<div class=\"g-gallery-grid\">"+flowers.map(f=>"<button type=\"button\" class=\"g-gallery-item\" data-g-gallery-season=\""+f.s+"\" aria-pressed=\""+(gardenSel===f.s)+"\"><img src=\""+A3("hoa_"+(BLOOM_FL[f.kind]||"anhdao")+"_gd5")+"\" alt=\""+BLOOMS[f.kind].name+"\" loading=\"lazy\"><b>Mùa "+f.s+"</b><span>"+BLOOMS[f.kind].name+"</span><small>"+f.avg.toFixed(1)+" ♥</small></button>").join("")+"</div>"
       : "<p class=\"empty\">Bông hoa đầu tiên sẽ xuất hiện sau khi hai bạn hoàn thành mùa hẹn đầu tiên.</p>")+"</section>";
   root.insertAdjacentHTML("beforeend",galleryHTML);
   root.querySelectorAll("[data-gchar]").forEach(b=>b.onclick=()=>{if(ME===null){toast('Chọn "Điện thoại này của ai" ở mục Nhà trước nhé.');return;}sendTap("hug");});
@@ -4142,9 +4172,20 @@ renderCare=function(){
   root.querySelectorAll("[data-g-gallery-close]").forEach(b=>b.onclick=()=>{gardenGalleryOpen=false;rerender();});
   root.querySelectorAll("[data-g-gallery-season]").forEach(b=>b.onclick=()=>{gardenSel=+b.dataset.gGallerySeason;rerender();const t=$("gSeason");if(t)t.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});});
   root.querySelectorAll(".garden3d .lay.hot,.garden3d .chr[data-gchar]").forEach(b=>b.addEventListener("pointerdown",()=>{b.classList.remove("tap-flash");void b.offsetWidth;b.classList.add("tap-flash");setTimeout(()=>b.classList.remove("tap-flash"),520);},{passive:true}));
-  root.querySelectorAll("[data-gi]").forEach(b=>b.onclick=()=>gardenTap(b.dataset.gi));
-  root.querySelectorAll("[data-gs]").forEach(b=>b.onclick=()=>{const s=+b.dataset.gs;gardenSel=gardenSel===s?null:s;rerender();
-    const t=$("gSeason");if(t&&gardenSel)t.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});});
+  const canvas=root.querySelector(".garden3d .wcanvas");
+  if(canvas)canvas.addEventListener("click",ev=>{
+    const origin=ev.target.closest&&ev.target.closest("[data-hit-x][data-hit-y]");
+    if(!origin)return;
+    ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+    const rect=canvas.getBoundingClientRect(),scale=rect.width/1170;
+    if(!scale)return;
+    const x=(ev.clientX-rect.left)/scale,y=(ev.clientY-rect.top)/scale;
+    const hit=nearestGardenHit(x,y,Array.from(canvas.querySelectorAll("[data-hit-x][data-hit-y]")));
+    if(!hit)return;
+    if(hit.dataset.gi)gardenTap(hit.dataset.gi);
+    else if(hit.dataset.gs){gardenSel=+hit.dataset.gs;gardenGalleryOpen=true;rerender();setTimeout(()=>{const g=$("gGallery");if(g)g.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});},60);}
+    else if(hit.dataset.gchar){if(ME===null)toast('Chọn "Điện thoại này của ai" ở mục Nhà trước nhé.');else sendTap("hug");}
+  });
   if(!$("v-khu-vuon").hidden){fit3();setTimeout(fit3,30);}
 };
 renderGarden=function(){
