@@ -6,6 +6,7 @@ on:
       - "index.html"
       - "assets/3d/**"
       - "scripts/**"
+      - "docs/garden-two-device-test.md"
       - "tests/browser/**"
       - "package.json"
       - "playwright.config.mjs"
