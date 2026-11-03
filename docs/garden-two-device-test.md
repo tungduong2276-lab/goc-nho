@@ -2,7 +2,7 @@
 
 ## Phạm vi
 
-Các thay đổi giao diện Khu vườn trong nhánh `feature/garden-interactions`. Bộ kiểm tra tự động hiện có kiểm thử hành vi của hàm chọn mục tiêu gần nhất bằng tọa độ lấy từ cấu hình cảnh thật, tính kích thước vùng chạm ở viewport 390px, kiểm tra đường dẫn ảnh hoa 3D, và xác nhận các luồng lưu hiện hữu. Đây vẫn chưa phải kiểm thử trình duyệt trên thiết bị thật.
+Các thay đổi giao diện Khu vườn trong nhánh `feature/garden-interactions`. Bộ kiểm tra tự động hiện có kiểm thử hành vi của hàm chọn mục tiêu gần nhất bằng tọa độ lấy từ cấu hình cảnh thật, tính kích thước vùng chạm ở viewport 360px, kiểm tra đường dẫn ảnh hoa 3D, và xác nhận các luồng lưu hiện hữu. Đây vẫn chưa phải kiểm thử trình duyệt trên thiết bị thật.
 
 ## An toàn dữ liệu
 
@@ -46,7 +46,7 @@ Dùng hai điện thoại thật, tốt nhất một iPhone Safari và một And
 | DUAL-07 | Chạm bảng gỗ, sau đó kệ chậu | Quan sát gallery và chậu | Bảng mở gallery mùa; kệ chỉ trưng chậu chăm hằng ngày, không mở gallery mùa |
 | DUAL-08 | Thực hiện một thao tác ghi trên staging khi mạng ổn định | Quan sát trạng thái đồng bộ | Hiện đang lưu, sau xác nhận trở về đã lưu/đồng bộ; heartbeat 15 giây không làm nhấp nháy |
 | DUAL-09 | Ngắt mạng A, thực hiện thao tác ghi thử trên staging, rồi nối mạng lại | Quan sát trạng thái của cả hai | Không báo đã lưu trước khi Firebase xác nhận; lỗi có thể chạm để thử lại; xác minh dữ liệu cuối cùng trên Firestore |
-| DUAL-10 | Chạm các mục ở cạnh nhau trên màn hình 360–390 CSS px | Lặp lại trên B | Chọn mục gần tâm ngón chạm nhất; không có vùng chạm chồng lấn gây kích hoạt nhầm |
+| DUAL-10 | Chạm các mục ở cạnh nhau trên màn hình 360 CSS px trở lên | Lặp lại trên B | Chọn mục gần tâm ngón chạm nhất; không có vùng chạm chồng lấn gây kích hoạt nhầm |
 
 ## Tiêu chí chấp nhận
 
