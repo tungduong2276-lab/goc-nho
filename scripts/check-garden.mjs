@@ -23,10 +23,10 @@ const layers = room.layers;
 const targets = [
   { key: "binhtuoi", x: (layers.binhtuoi_nghi[0] + layers.binhtuoi_nghi[2]) / 2, y: (layers.binhtuoi_nghi[1] + layers.binhtuoi_nghi[3]) / 2 },
   { key: "hopgiong", x: (layers.hopgiong_dong[0] + layers.hopgiong_dong[2]) / 2, y: (layers.hopgiong_dong[1] + layers.hopgiong_dong[3]) / 2 },
-  { key: "ghe", x: 321, y: 570 },
+  { key: "ghe", x: 321, y: 585 },
   { key: "ke", x: (layers.ke_trong[0] + layers.ke_trong[2]) / 2, y: (layers.ke_trong[1] + layers.ke_trong[3]) / 2 },
   { key: "bang", x: (layers.bang_trong[0] + layers.bang_trong[2]) / 2, y: (layers.bang_trong[1] + layers.bang_trong[3]) / 2 },
-  ...room.spots.luong.map((p, i) => ({ key: "flower" + (i + 1), x: p[0], y: p[1] })),
+  ...room.spots.luong.map((p, i) => ({ key: "flower" + (i + 1), x: p[0], y: p[1] - 70 })),
   { key: "cay", x: room.spots.cay[0][0], y: room.spots.cay[0][1] - 55 }
 ].map(t => ({ dataset: {
   hitX: String(t.x), hitY: String(t.y),
@@ -41,10 +41,10 @@ function expectTarget(name, x, y, expected) {
   console.log("PASS tap routing: " + name + " -> " + expected);
 }
 
-expectTarget("center of season bed 1", ...room.spots.luong[0], "flower1");
-expectTarget("center of season bed 2", ...room.spots.luong[1], "flower2");
+expectTarget("visual center of season bed 1", room.spots.luong[0][0], room.spots.luong[0][1] - 70, "flower1");
+expectTarget("visual center of season bed 2", room.spots.luong[1][0], room.spots.luong[1][1] - 70, "flower2");
 expectTarget("center of seed box", (layers.hopgiong_dong[0] + layers.hopgiong_dong[2]) / 2, (layers.hopgiong_dong[1] + layers.hopgiong_dong[3]) / 2, "hopgiong");
-expectTarget("center of swing seat", 321, 570, "ghe");
+expectTarget("center of swing seat", 321, 585, "ghe");
 expectTarget("center of watering can", (layers.binhtuoi_nghi[0] + layers.binhtuoi_nghi[2]) / 2, (layers.binhtuoi_nghi[1] + layers.binhtuoi_nghi[3]) / 2, "binhtuoi");
 
 function pxAt360(width, height) { return [width * 360 / 1170, height * 360 / 1170]; }
@@ -59,9 +59,13 @@ const careSize = 256 * (room.ppm / scene.flower.ppm) * 3;
 checkMinTarget("daily care plant", careSize * .39, careSize * .41);
 const box = (key) => layers[key];
 const dims = key => [box(key)[2] - box(key)[0], box(key)[3] - box(key)[1]];
+assert.match(html, /\.garden3d \.gplant \.ghit\{position:absolute;left:15%;right:15%;top:18%;bottom:-5%;pointer-events:auto;border-radius:40%;touch-action:manipulation\}/, "flower hit-area CSS is the tested geometry");
+assert.match(html, /\.garden3d \.gcare \.ghit\{left:30%;right:31%;top:54%;bottom:5%\}/, "daily care hit-area CSS is the tested geometry");
 assert.match(html, /\.garden3d \.gobj\[data-gi="binhtuoi"\] \.ghit\{left:-55%;right:-55%;top:-25%;bottom:-25%\}/, "watering hit-area CSS is the tested geometry");
 const [waterW, waterH] = dims("binhtuoi_nghi");
-checkMinTarget("watering can", waterW * 2.10, waterH * 1.50);
+checkMinTarget("watering can (rest state)", waterW * 2.10, waterH * 1.50);
+const [waterActiveW, waterActiveH] = dims("binhtuoi_tuoi");
+checkMinTarget("watering can (active state)", waterActiveW * 2.10, waterActiveH * 1.50);
 assert.match(html, /\.garden3d \.gobj\[data-gi="hopgiong"\] \.ghit\{left:-22%;right:-22%;top:-38%;bottom:-38%\}/, "seed hit-area CSS is the tested geometry");
 const [seedW, seedH] = dims("hopgiong_dong");
 checkMinTarget("seed box", seedW * 1.44, seedH * 1.76);
