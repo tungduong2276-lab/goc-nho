@@ -1,0 +1,64 @@
+name: Garden browser regressions
+
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - "sw.js"
+      - "assets/3d/**"
+      - "scripts/**"
+      - "docs/garden-two-device-test.md"
+      - "tests/browser/**"
+      - "package.json"
+      - "playwright.config.mjs"
+      - ".github/workflows/garden-browser.yml"
+      - ".gitignore"
+  push:
+    branches:
+      - "fix/**"
+
+permissions:
+  contents: write
+
+jobs:
+  chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - name: Render and validate updated 3D house geometry
+        if: github.event.pull_request.head.ref == 'feature/house-room-continuity'
+        run: |
+          npm install --no-save three@0.169.0
+          python3 -m pip install --break-system-packages Pillow
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/house-render.log 2>&1 &
+          node _xuong-3d/run.cjs map.js out_house bando
+          python3 scripts/pack-house-map.py
+      - name: Test app and house navigation
+        run: npm test
+      - name: Publish 3D preview for visual inspection
+        if: github.event.pull_request.head.ref == 'feature/house-room-continuity'
+        uses: actions/upload-artifact@v4
+        with:
+          name: house-3d-preview
+          path: out_house/ban_do_ngay@3x.png
+          retention-days: 7
+      - name: Commit validated house renders to PR branch
+        if: github.event.pull_request.head.ref == 'feature/house-room-continuity'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/3d/ban_do_sang.webp assets/3d/ban_do_ngay.webp assets/3d/ban_do_chieu.webp assets/3d/ban_do_dem.webp
+          if ! git diff --cached --quiet; then
+            git commit -m "Render: updated dollhouse exterior and connected rooms"
+            git push origin HEAD:feature/house-room-continuity
+          fi

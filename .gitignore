@@ -1,2 +1,7 @@
 .DS_Store
 _xuong-3d/three
+
+# Local dependencies and browser-test artifacts
+node_modules/
+test-results/
+playwright-report/

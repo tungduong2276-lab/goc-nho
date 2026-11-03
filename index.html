@@ -1190,14 +1190,61 @@ nav.tabs a[aria-current="page"] .nic{background:color-mix(in srgb,var(--acc) 22%
 .onwall.gsign i em{font-style:normal;color:#E7D3BD}
 .room3d.garden3d.t-dem .onwall.gsign{filter:brightness(.8)}
 .garden3d .gplant{pointer-events:none}
-.garden3d .gplant .ghit{position:absolute;left:30%;right:30%;top:32%;bottom:8%;pointer-events:auto;border-radius:40%}
-.garden3d .gcare .ghit{left:28%;right:28%;top:30%;bottom:-16%}
+.garden3d .lay.hot{overflow:visible;touch-action:manipulation}
+.garden3d .lay.hot.tap-flash::after{content:"";position:absolute;inset:-9px;border:3px solid var(--pink);border-radius:22px;pointer-events:none;animation:gTapPulse .48s ease-out}
+.garden3d .gobj{pointer-events:none}
+.garden3d .gobj .ghit{position:absolute;display:block;inset:0;pointer-events:auto;border-radius:16px;touch-action:manipulation}
+.garden3d .gobj[data-gi="binhtuoi"] .ghit{left:-55%;right:-55%;top:-25%;bottom:-25%}
+.garden3d .gobj[data-gi="hopgiong"] .ghit{left:-22%;right:-22%;top:-38%;bottom:-38%}
+.garden3d .gobj[data-gi="ghe"] .ghit{left:0;right:0;top:25%;bottom:0}
+.garden3d .gobj[data-gi="ke"] .ghit{left:4%;right:4%;top:4%;bottom:4%}
+.garden3d .gobj[data-gi="bang"] .ghit{inset:0}
+.garden3d .chr .cstack .gchar-hit{position:absolute;display:block;left:16%;top:4%;width:68%;height:92%;border-radius:48% 48% 36% 36%;pointer-events:auto;touch-action:manipulation}
+@keyframes gTapPulse{0%{opacity:.95;transform:scale(.88)}100%{opacity:0;transform:scale(1.14)}}
+.garden3d .chr{appearance:none;-webkit-appearance:none;touch-action:manipulation;text-align:initial;color:inherit}
+.garden3d .chr.tap-flash .cstack{filter:drop-shadow(0 0 9px var(--pink))}
+.g-guide,.g-gallery{background:var(--surface);border-radius:22px;padding:14px 16px;box-shadow:0 8px 22px -16px rgba(232,85,138,.6)}
+.g-guide-head,.g-gallery-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.g-guide-head>div,.g-gallery-head>div{display:flex;flex-direction:column;min-width:0}
+.g-guide-head b{font-family:var(--display);font-size:19px;color:var(--pink-deep)}
+.g-guide-head span,.g-gallery-head p{margin:0;color:var(--muted);font-size:13px;font-weight:600}
+.g-guide ul{margin:12px 0;padding-left:20px;display:flex;flex-direction:column;gap:7px;font-size:14px}
+.g-guide li::marker{color:var(--leaf)}
+.g-swing{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:2px dotted var(--line);font-size:13px;font-weight:700}
+.g-swing>span{flex:1 1 180px}
+.g-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;margin-top:12px}
+.g-gallery-item{min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 5px;border:2px solid var(--line);border-radius:16px;background:var(--bg);font:inherit;color:var(--ink);cursor:pointer}
+.g-gallery-item[aria-pressed="true"]{border-color:var(--pink);background:var(--petal)}
+.g-gallery-item img{width:76px;height:82px;object-fit:contain;display:block;pointer-events:none}
+.g-gallery-item b{font-family:var(--display);color:var(--pink-deep)}
+.g-gallery-item span,.g-gallery-item small{font-size:12px;color:var(--muted);font-weight:700;text-align:center}
+@media (prefers-reduced-motion:reduce){.garden3d .lay.hot.tap-flash::after{animation:none;opacity:.5}}
+.garden3d .gplant .ghit{position:absolute;left:15%;right:15%;top:18%;bottom:-5%;pointer-events:auto;border-radius:40%;touch-action:manipulation}
+.garden3d .gcare .ghit{left:15%;right:15%;top:38%;bottom:4%}
 .gcare-card{background:var(--surface);border-radius:22px;padding:16px 18px;box-shadow:0 8px 22px -16px rgba(232,85,138,.6)}
 .gcare-card .cans{margin-top:0}
 .gcare-card.thirsty .gstatus,.gcare-card.wilt .gstatus{color:var(--pink-deep)}
 .gstatus{margin:0;font-weight:700}
 .gchips{display:flex;gap:8px;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){.garden3d .gfl img,.garden3d .gcare img,.garden3d .glow img,.drops.g3{animation:none}}
+
+/* A small room directory keeps the dollhouse feeling like one connected home. */
+.house-rooms{background:var(--surface);border:2px solid var(--line);border-radius:22px;padding:14px 12px 12px;box-shadow:0 8px 22px -18px rgba(29,43,79,.42)}
+.house-rooms-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:0 3px 10px}
+.house-rooms-head .v3h{margin:0}.house-rooms-head .v3sub{margin:3px 0 0}
+.house-room-strip{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(116px,34%);gap:9px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x mandatory;scrollbar-width:thin;overscroll-behavior-inline:contain}
+.house-room-card{min-width:0;display:flex;flex-direction:column;gap:4px;padding:6px;text-decoration:none;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:16px;scroll-snap-align:start;transition:transform .18s,border-color .18s,box-shadow .18s}
+.house-room-card:active{transform:scale(.97)}
+.house-room-card:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+.house-room-card.active,.house-room-card[aria-current=page]{border-color:var(--pink);background:var(--petal);box-shadow:0 3px 0 var(--petal-2)}
+.house-room-thumb{display:block;aspect-ratio:1.35;overflow:hidden;border-radius:10px;background:var(--petal)}
+.house-room-thumb img{width:100%;height:100%;display:block;object-fit:cover;object-position:center 56%;transition:transform .25s}
+.house-room-card:hover .house-room-thumb img{transform:scale(1.045)}
+.house-room-title{font:800 14px/1.15 var(--display);color:var(--pink-deep)}
+.house-room-note{font-size:11px;line-height:1.25;font-weight:700;color:var(--muted)}
+.room-tab .room3d,#tab-room .room3d{animation:houseRoomEnter .32s cubic-bezier(.2,.75,.25,1) both}
+@keyframes houseRoomEnter{from{opacity:.55;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.house-room-card,.house-room-thumb img,.room-tab .room3d,#tab-room .room3d{transition:none;animation:none}}
 /* v12 · tab Gửi nhau 3D */
 .guinhau .rstage{aspect-ratio:1170/840}
 .guinhau .rstage .wcanvas{top:calc(-160px * var(--k,.3333))}
@@ -1495,11 +1542,101 @@ function dbErr(e){
   else if(c==="resource_exhausted"||c==="too_large"||c==="invalid_argument")toast("Chưa lưu được vì dữ liệu quá lớn. Thử bớt ảnh nhé.");
   else toast("Chưa lưu được, kiểm tra kết nối mạng rồi thử lại.");
 }
-function put(col,obj){S[col][obj.id]=obj;if(MODE==="db")DB.collection(col).doc(obj.id).set(clone(obj)).catch(dbErr);else saveLocal();}
-function del(col,id){delete S[col][id];if(MODE==="db")DB.collection(col).doc(id).delete().catch(dbErr);else saveLocal();}
-function putMeta(patch){Object.assign(S.meta,patch);if(MODE==="db")DB.doc("meta/main").set(clone(S.meta)).catch(dbErr);else saveLocal();}
+let pendingDbWrites=0;
+const failedDbWrites=new Map();
+function refreshDbWriteStatus(){
+  if(MODE!=="db"||!dbReady)return;
+  if(pendingDbWrites){setSync("Đang chờ Firebase xác nhận "+pendingDbWrites+" thay đổi...",false);return;}
+  if(failedDbWrites.size){setSync("Chưa lưu được · chạm để thử lại",false);$("syncBox").title="Chạm để thử lưu lại các thay đổi bị từ chối";$("syncBox").style.cursor="pointer";return;}
+  $("syncBox").title="";$("syncBox").style.cursor="";
+  setSync("Đã lưu · đồng bộ giữa hai máy",true);
+}
+function trackDbWrite(promise,key,opts={}){
+  if(opts.quiet)return Promise.resolve(promise).catch(()=>{});
+  pendingDbWrites++;failedDbWrites.delete(key);refreshDbWriteStatus();
+  return Promise.resolve(promise).then(()=>{pendingDbWrites=Math.max(0,pendingDbWrites-1);failedDbWrites.delete(key);refreshDbWriteStatus();},e=>{pendingDbWrites=Math.max(0,pendingDbWrites-1);failedDbWrites.set(key,opts.retry||null);dbErr(e);refreshDbWriteStatus();});
+}
+function retryFailedDbWrites(){
+  if(MODE!=="db"||navigator.onLine===false||!failedDbWrites.size)return;
+  for(const [key,retry] of Array.from(failedDbWrites.entries()))if(typeof retry==="function")trackDbWrite(retry(),key,{retry});
+}
+function put(col,obj,opts={}){
+  S[col][obj.id]=obj;if(MODE!=="db")return saveLocal();
+  const ref=DB.collection(col).doc(obj.id),data=clone(obj),key=col+"/"+obj.id;
+  return trackDbWrite(ref.set(data),key,Object.assign({},opts,{retry:()=>ref.set(data)}));
+}
+function del(col,id){
+  delete S[col][id];if(MODE!=="db")return saveLocal();
+  const ref=DB.collection(col).doc(id),key=col+"/"+id;
+  return trackDbWrite(ref.delete(),key,{retry:()=>ref.delete()});
+}
+function mergeMetaPatchQueue(older,newer){
+  const out=Object.assign({},clone(older||{}),clone(newer||{}));
+  if(older&&older.__base)out.__base=clone(older.__base);
+  for(const key of ["looks","swaps","extraSwaps"]){
+    if(older&&older[key]&&newer&&newer[key])out[key]=Object.assign({},clone(older[key]),clone(newer[key]));
+  }
+  for(const key of ["names","bday","chars"]){
+    if(older&&Array.isArray(older[key])&&newer&&Array.isArray(newer[key])){
+      const merged=clone(older[key]),base=(newer.__base||{})[key]||[];
+      for(let i=0;i<newer[key].length;i++)if(JSON.stringify(newer[key][i])!==JSON.stringify(base[i]))merged[i]=clone(newer[key][i]);
+      out[key]=merged;
+    }
+  }
+  if(older&&Array.isArray(older.custom)&&newer&&Array.isArray(newer.custom))out.custom=older.custom.concat(newer.custom);
+  return out;
+}
+function mergeMetaForWrite(latest,patch){
+  const out=Object.assign({},clone(latest||{})),p=clone(patch||{});
+  for(const [key,value] of Object.entries(p)){
+    if(key==="__base")continue;
+    if(["names","bday","chars"].includes(key)&&Array.isArray(value)&&Array.isArray((p.__base||{})[key])){
+      const merged=Array.isArray(out[key])?out[key].slice():[],base=p.__base[key];
+      for(let i=0;i<value.length;i++)if(JSON.stringify(value[i])!==JSON.stringify(base[i]))merged[i]=value[i];
+      out[key]=merged;
+    }else if(key==="custom"&&Array.isArray(value)){
+      if(!value.length){const baseCustom=(p.__base||{}).custom;if(!Array.isArray(baseCustom)||JSON.stringify(out.custom||[])===JSON.stringify(baseCustom))out.custom=[];continue;}
+      const merged=Array.isArray(out.custom)?clone(out.custom):[],seen=new Set();
+      for(const item of value){
+        const fingerprint=JSON.stringify(item);if(seen.has(fingerprint))continue;seen.add(fingerprint);
+        const same=merged.find(x=>Number(x.n)===Number(item.n));
+        if(!same){merged.push(item);continue;}
+        if(JSON.stringify(same)===fingerprint)continue;
+        const nextN=Math.max(0,...merged.map(x=>Number(x.n)||0))+1;
+        merged.push(Object.assign({},item,{n:nextN}));
+        if(p.pending&&Number(p.pending.n)===Number(item.n))p.pending.n=nextN;
+      }
+      out.custom=merged;
+    }else if(["looks","swaps","extraSwaps"].includes(key)&&value&&typeof value==="object"&&!Array.isArray(value)){
+      const merged=Object.assign({},out[key]||{});
+      for(const [sub,v] of Object.entries(value)){
+        if((key==="swaps"||key==="extraSwaps")&&Number.isFinite(Number(v))&&Number.isFinite(Number(merged[sub])))merged[sub]=Math.max(Number(merged[sub]),Number(v));
+        else merged[sub]=v;
+      }
+      out[key]=merged;
+    }else out[key]=value;
+  }
+  return out;
+}
+let failedMetaPatch=null;
+function putMeta(patch){
+  const base=clone(S.meta),changes={};
+  for(const [key,value] of Object.entries(patch||{}))if(JSON.stringify(value)!==JSON.stringify(base[key]))changes[key]=clone(value);
+  if(Object.keys(changes).length)changes.__base=base;
+  Object.assign(S.meta,patch);if(MODE!=="db")return saveLocal();
+  if(!Object.keys(changes).length)return Promise.resolve();
+  failedMetaPatch=mergeMetaPatchQueue(failedMetaPatch,changes);
+  const ref=DB.doc("meta/main"),key="meta/main",payload=clone(failedMetaPatch);
+  const write=()=>DB.runTransaction(async tx=>{
+    const snap=await tx.get(ref),latest=snap.exists?snap.data():defaultMeta();
+    tx.set(ref,mergeMetaForWrite(latest,payload));
+  }).then(result=>{if(JSON.stringify(failedMetaPatch)===JSON.stringify(payload))failedMetaPatch=null;return result;});
+  return trackDbWrite(write(),key,{retry:write});
+}
 
-function setSync(text,on){if(navigator.onLine===false&&on){text="Đang ngoại tuyến · có mạng sẽ tự đồng bộ";on=false;}$("syncBox").classList.toggle("offline",navigator.onLine===false);$("syncText").textContent=text;$("syncBox").classList.toggle("off",!on);}
+function setSync(text,on){if(navigator.onLine===false&&on){text="Đang ngoại tuyến · thay đổi sẽ chờ kết nối";on=false;}$("syncBox").classList.toggle("offline",navigator.onLine===false);$("syncText").textContent=text;$("syncBox").classList.toggle("off",!on);}
+window.addEventListener("online",refreshDbWriteStatus);
+document.getElementById("syncBox").addEventListener("click",retryFailedDbWrites);
 async function initDb(){
   const db=await CLOUD.ready;if(!db)return;
   DB=db;UID=CLOUD.uid;
@@ -1507,12 +1644,12 @@ async function initDb(){
   MODE="db";setSync("Đang tải dữ liệu chung...",false);
   let first=0,metaExists=false;const need=COLS.length+1;
   const t=setTimeout(()=>{if(first<need)setSync("Mạng chậm, vẫn đang kết nối...",false);},10000);
-  const onFirst=()=>{first++;if(first===need){clearTimeout(t);dbReady=true;setSync("Đồng bộ giữa hai máy",true);migrate(localCopy,metaExists);}};
+  const onFirst=()=>{first++;if(first===need){clearTimeout(t);dbReady=true;refreshDbWriteStatus();migrate(localCopy,metaExists);}};
   let metaFirst=true;
   DB.doc("meta/main").onSnapshot(s=>{
     if(s.exists){metaExists=true;S.meta=Object.assign(defaultMeta(),clone(s.data()));}
     if(metaFirst){metaFirst=false;onFirst();}
-    else if(dbReady)setSync("Đồng bộ giữa hai máy",true);
+    else if(dbReady)refreshDbWriteStatus();
     schedule();
   },()=>setSync("Mất kết nối, đang thử lại...",false));
   COLS.forEach(c=>{let f=true;
@@ -1924,6 +2061,8 @@ function renderWheel(){
 
 /* ================= garden ================= */
 let gardenSel=null;
+let gardenGuideOpen=false;
+let gardenGalleryOpen=false;
 function seasonData(s){
   const part=hist().filter(h=>seasonOf(h.no)===s);
   const rated=part.filter(h=>h.rating);
@@ -2535,7 +2674,7 @@ function renderHome(){
   if(w.drawDone)todos.push(`<li class="hot"><span class="ic">${ICON.pen}</span><span class="tx">${N(o)} đã lật bức tranh của hai đứa</span><a class="btn btn-main btn-small" href="#ve">Xem tranh</a></li>`);
   const fd=feed(),up=upcoming(5),gifts=list("gifts"),treH=treasureHTML();
   const pend=todos.length-(w.water?1:0);
-  root.innerHTML=`${inviteHTML()}${pend>0?`<a class="newsbar" href="#nha" data-jump="todos"><span class="ic">${ICON.note}</span><b>${pend} việc đang chờ bạn</b><span>Xem ›</span></a>`:""}${worldMapHTML()}
+  root.innerHTML=`${inviteHTML()}${pend>0?`<a class="newsbar" href="#nha" data-jump="todos"><span class="ic">${ICON.note}</span><b>${pend} việc đang chờ bạn</b><span>Xem ›</span></a>`:""}${worldMapHTML()}${houseRoomNavHTML("")}
     <section class="blk" id="todos" aria-label="Việc của bạn"><div><h2 class="v3h">Việc của bạn hôm nay</h2></div>
       ${todos.length?`<ul class="todo">${todos.join("")}</ul>`:`<p class="alldone">Xong hết rồi. Ghé tủ lạnh dán một mẩu giấy cho ${N(o)} không?</p>`}</section>
     ${treH}
@@ -3488,8 +3627,8 @@ if("serviceWorker" in navigator)window.addEventListener("load",()=>{
 function netState(){
   const off=navigator.onLine===false,b=$("syncBox");if(!b)return;
   b.classList.toggle("offline",off);
-  if(off)setSync("Đang ngoại tuyến · có mạng sẽ tự đồng bộ",false);
-  else if(MODE==="db")setSync(dbReady?"Đồng bộ giữa hai máy":"Đang kết nối...",dbReady);
+  if(off)setSync("Đang ngoại tuyến · thay đổi sẽ chờ kết nối",false);
+  else if(MODE==="db"){if(dbReady)refreshDbWriteStatus();else setSync("Đang kết nối...",false);}
 }
 window.addEventListener("online",netState);window.addEventListener("offline",netState);
 (()=>{
@@ -3514,7 +3653,7 @@ const stOf=i=>{const p=PRES(i);if(!p||!p.st)return"";if(Date.now()-new Date(p.st
 const sits=i=>{const p=PRES(i);return !!p&&!!p.sit&&Date.now()-new Date(p.sitAt||0)<3*3600e3&&(i===ME||isHere(i));};
 function setMine(patch){if(ME===null)return;const id="p"+ME,cur=S.presence[id]||{};put("presence",Object.assign({},cur,patch,{id,who:ME,last:nowIso()}));}
 // giữ trạng thái (bận, ngủ, ngồi sofa) khi cập nhật "đang mở app"
-touchPresence=function(){if(ME===null)return;const id="p"+ME,cur=S.presence[id];if(cur&&Date.now()-new Date(cur.last)<110e3)return;put("presence",Object.assign({},cur||{},{id,who:ME,last:nowIso()}));};
+touchPresence=function(){if(ME===null)return;const id="p"+ME,cur=S.presence[id];if(cur&&Date.now()-new Date(cur.last)<110e3)return;put("presence",Object.assign({},cur||{},{id,who:ME,last:nowIso()}),{quiet:true});};
 
 /* --- thời tiết thật ở cửa sổ (Open-Meteo, không cần tài khoản) --- */
 const CITIES={hn:["Hà Nội",21.03,105.85],hcm:["TP. Hồ Chí Minh",10.78,106.7],dn:["Đà Nẵng",16.05,108.2],hp:["Hải Phòng",20.86,106.68],hue:["Huế",16.46,107.6],ct:["Cần Thơ",10.03,105.78],dl:["Đà Lạt",11.94,108.44],nt:["Nha Trang",12.24,109.19]};
@@ -3820,6 +3959,22 @@ function roomHTML(){ // phòng khách, giờ dùng nhân vật nhiều lớp
 // --- 5 phòng mới ---
 const ROOM_TAB={bep:"bep","phong-anh":"phong_anh","phong-em":"phong_em","goc-sang-tao":"sang_tao",gac:"gac"};
 const ROOM_HINT={bep:"Chạm tủ lạnh để đọc lời nhắn, chạm bếp để nấu cho nhau.",phong_anh:"Giường để đi ngủ, bàn làm việc để báo đang bận, tủ đồ để phối đồ.",phong_em:"Giường để đi ngủ, bàn trang điểm để phối đồ, kệ cây trưng những chậu hoa đã nở.",sang_tao:"Giá vẽ mở vẽ tiếp sức, máy đánh chữ mở truyện tiếp sức. Tranh vẽ xong được phơi trên dây.",gac:"Rương kho báu, album hẹn hò, tủ trưng bày, bản đồ, hộp thời gian và từ điển của hai đứa."};
+const HOUSE_ROOMS=[
+  {id:"phong-khach",title:"Phòng khách",image:"phong_khach_ngay",note:"Nơi hai đứa quây quần"},
+  {id:"bep",title:"Bếp",image:"bep_ngay",note:"Cùng nấu món ngon"},
+  {id:"phong-anh",title:"Phòng Anh",image:"phong_anh_ngay",note:"Góc riêng của Anh"},
+  {id:"phong-em",title:"Phòng Em",image:"phong_em_ngay",note:"Góc riêng của Em"},
+  {id:"goc-sang-tao",title:"Góc sáng tạo",image:"sang_tao_ngay",note:"Vẽ và viết cùng nhau"},
+  {id:"gac",title:"Gác kỷ niệm",image:"gac_ngay",note:"Cất giữ chuyện của hai đứa"}
+];
+function houseRoomNavHTML(active){
+  return `<section class="house-rooms" aria-label="Các phòng trong nhà">
+    <div class="house-rooms-head"><div><h2 class="v3h">Các phòng trong nhà</h2><p class="v3sub">Chọn một cánh cửa để ghé thăm từng góc nhỏ.</p></div><a class="linkish" href="#nha">Toàn cảnh nhà</a></div>
+    <div class="house-room-strip">${HOUSE_ROOMS.map(r=>`<a class="house-room-card${active===r.id?" active":""}" href="#${r.id}" ${active===r.id?'aria-current="page"':""}>
+      <span class="house-room-thumb"><img src="${A3(r.image)}" alt="" draggable="false"></span><span class="house-room-title">${r.title}</span><span class="house-room-note">${r.note}</span>
+    </a>`).join("")}</div></section>`;
+}
+
 let wardOpen=false,flashObj={};
 const cookingAt=()=>{let t=0;[0,1].forEach(i=>{const p=PRES(i);if(p&&p.cookAt)t=Math.max(t,new Date(p.cookAt).getTime());});return t;};
 const roomOwner=r=>r==="phong_anh"?ownerOf("anh"):r==="phong_em"?ownerOf("em"):null;
@@ -3882,7 +4037,7 @@ function renderRooms(){
       else extra=`<p class="quiet">${N(own)} ${stOf(own)==="ngu"?"đang ngủ, suỵt...":stOf(own)==="ban"?"đang bận việc":isHere(own)?"đang ở nhà":"đang đi vắng"}.</p>`;}
     if(r==="sang_tao")extra=`<div class="room-acts"><a class="btn btn-main btn-small" href="#ve">Vẽ tiếp sức</a><a class="btn btn-ghost btn-small" href="#truyen">Truyện tiếp sức</a></div>`;
     if(r==="gac")extra=`<div class="room-acts gac-links"><a class="btn btn-ghost btn-small" href="#tu-dien">Từ điển</a><a class="btn btn-ghost btn-small" href="#bao-tang">Bảo tàng</a><a class="btn btn-ghost btn-small" href="#ban-do">Bản đồ</a><a class="btn btn-ghost btn-small" href="#thu">Hộp thời gian</a></div>`;
-    root.innerHTML=`<div class="tab-head"><div><a class="back" href="#nha">‹ Bản đồ ngôi nhà</a><h2>${esc(title)}</h2><p>${ROOM_HINT[r]}</p></div></div>${roomSceneHTML(r)}${extra}`;
+    root.innerHTML=`<div class="tab-head"><div><a class="back" href="#nha">‹ Bản đồ ngôi nhà</a><h2>${esc(title)}</h2><p>${ROOM_HINT[r]}</p></div></div>${roomSceneHTML(r)}${houseRoomNavHTML(tab)}${extra}`;
     fit3();
     root.querySelectorAll("[data-ri]").forEach(b=>b.onclick=()=>roomItem(r,b.dataset.ri));
     root.querySelectorAll('input[name="mystat2"]').forEach(x=>x.onchange=()=>{setMine({st:x.value,stAt:nowIso(),sit:false});toast(x.value==="ngu"?"Chúc ngủ ngon":x.value==="ban"?"Đã báo là bạn đang bận":"Bạn đang rảnh ở nhà");});
@@ -4092,21 +4247,22 @@ function seasonPlant(s){
 }
 function gardenSceneHTML(){
   const Rm=SC3.rooms.khu_vuon,t=buoi(),k=Rm.ppm/SC3.rig.ppm*1.3,fk=Rm.ppm/SC3.flower.ppm,FA=SC3.flower.anchor,o=OTHER();
-  const btn=(attrs,label,x,y,w,h,z,img,cls="")=>`<button type="button" class="lay hot ${cls}" ${attrs} aria-label="${esc(label)}" style="${PX(x,y,w,h,z)}"><img src="${A3(img)}" alt="" draggable="false"></button>`;
+  const btn=(attrs,label,x,y,w,h,z,img,cls="",withHit=false)=>`<button type="button" class="lay hot ${cls}" ${attrs} aria-label="${esc(label)}" style="${PX(x,y,w,h,z)}"><img src="${A3(img)}" alt="" draggable="false">${withHit?`<i class="ghit"></i>`:""}</button>`;
   const plantAt=(file,p,s,z,attrs,label,cls)=>btn(attrs,label,p[0]-FA[0]*s,p[1]-FA[1]*s,256*s,256*s,z,file,"gplant "+cls).replace("</button>",`<i class="ghit"></i></button>`);
   let html="";
   // đồ vật chạm được
   for(const [key,it] of Object.entries(Rm.items)){const st=gardenItemState(key),n=key+"_"+st,b=Rm.layers[n];if(!b)continue;
     const z=key==="binhtuoi"&&st==="tuoi"?2000:b[3];
-    html+=btn(`data-gi="${key}"`,it.label,b[0],b[1],b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,key==="hopgiong"&&st==="mo"?"glow":"");}
+    const hx=key==="ghe"?(Rm.spots.ghe[0][0]+Rm.spots.ghe[1][0])/2:(b[0]+b[2])/2,hy=key==="ghe"?(Rm.spots.ghe[0][1]+Rm.spots.ghe[1][1])/2:(b[1]+b[3])/2;
+    html+=btn(`data-gi="${key}" data-hit-x="${hx}" data-hit-y="${hy}" data-hit-priority="${key==="bang"?4:key==="ghe"?4:key==="binhtuoi"?1:key==="hopgiong"?1:2}"`,it.label,b[0],b[1],b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,`gobj gobj-${key} ${key==="hopgiong"&&st==="mo"?"glow":""}`,true);}
   // luống: mỗi mùa một ô, mùa đang đi lớn dần theo số buổi
   const cur=curSeason();
   for(let s=Math.max(1,cur-9);s<=cur;s++){const P=seasonPlant(s),p=Rm.spots.luong[(s-1)%10];
     const label=P.done?`Mùa ${s}: ${BLOOMS[P.sd.kind].name.toLowerCase()}, ${P.sd.avg.toFixed(1)} tim`:`Mùa ${s} đang lớn: ${P.n}/10 buổi`;
-    html+=plantAt(`hoa_${P.type}_${P.gd}`,p,fk*1.7,p[1],`data-gs="${s}"`,label,`gfl${gardenSel===s?" sel":""}${P.done?"":" growing"}`);}
+    html+=plantAt(`hoa_${P.type}_${P.gd}`,p,fk*1.7,p[1],`data-gs="${s}" data-hit-x="${p[0]}" data-hit-y="${p[1]-70}"`,label,`gfl${gardenSel===s?" sel":""}${P.done?"":" growing"}`);}
   // chậu lớn: cây chăm hằng ngày
   const cn=careNow(),cp=Rm.spots.cay[0];
-  html+=plantAt(`hoa_${cn.type}_${cn.gd}`,cp,fk*3,cp[1]+1,`data-gi="cay"`,`${FL3N[cn.type]}, ${cn.stage}/10 ngày đủ nước. Chạm để tưới`,`gcare${cn.wilt&&cn.gd!=="heo"?" wilt":""}${Date.now()-justWatered<1800?" drink":""}`);
+  html+=plantAt(`hoa_${cn.type}_${cn.gd}`,cp,fk*3,cp[1]+1,`data-gi="cay" data-hit-x="${cp[0]}" data-hit-y="${cp[1]-55}" data-hit-priority="3"`,`${FL3N[cn.type]}, ${cn.stage}/10 ngày đủ nước. Chạm để tưới`,`gcare${cn.wilt&&cn.gd!=="heo"?" wilt":""}${Date.now()-justWatered<1800?" drink":""}`);
   // kệ: những chậu đã nở gần nhất
   const kb=Rm.layers.ke_trong||[0,0,0,0],kp=Rm.spots.ke,show=Math.min(kp.length,cn.pots),first=cn.pots-show;
   for(let j=0;j<show;j++){const i=first+j,ty=FL3[i%FL3.length],p=kp[j];html+=sprite(`hoa_${ty}_gd5`,p,fk*1.05,kb[3]+2+(j<4?0:10)+j,"",FA,256);}
@@ -4117,10 +4273,31 @@ function gardenSceneHTML(){
   if(ME!==null){const sp=Rm.spots.dung,seat=Rm.spots.ghe,gz=(Rm.layers.ghe_trong||[0,0,0,800])[3]+6;
     [ME].concat(isHere(o)?[o]:[]).forEach((i,j)=>{const sit=gSits(i),pt=sit?seat[CH(i)==="anh"?0:1]:sp[j];
       const pose=sit?"ngoi":i===ME&&(Date.now()-waveMe<1600||Date.now()-justWatered<1800)?"vaytay":"dung";
-      html+=`<span class="chr" style="z-index:${Math.round(sit?gz:pt[1])}">${charStack(i,pose,pt,k,null)}<span class="ctag c-${CH(i)}" style="left:${pt[0]}px;top:${pt[1]+8}px">${N(i)}</span></span>`;});}
+      html+=`<button type="button" class="chr" data-gchar="${i}" data-hit-x="${pt[0]}" data-hit-y="${pt[1]-80}" data-hit-priority="4" aria-label="Gửi một cái ôm cho ${esc(S.meta.names[OTHER()])}" style="z-index:${Math.round(sit?gz:pt[1])}">${charStack(i,pose,pt,k,null).replace("</span>",'<i class="ghit gchar-hit" aria-hidden="true"></i></span>')}<span class="ctag c-${CH(i)}" style="left:${pt[0]}px;top:${pt[1]+8}px">${N(i)}</span></button>`;});}
   const sky=Date.now()-justWatered<1800?`<div class="drops g3" style="left:${cp[0]-80}px;top:${cp[1]-260}px">${[20,48,76,104,132].map((x,i)=>`<i style="left:${x}px;animation-delay:${i*.12}s"></i>`).join("")}</div>`:"";
   return`<div class="room3d garden3d t-${t}"><div class="w3fit rstage" data-w="1170"><div class="wcanvas" style="width:1170px;height:1170px">
     <img class="wbg" src="${A3("khu_vuon_"+t)}" alt="Khu vườn của ${N(0)} và ${N(1)}" draggable="false">${html}${sky}</div></div>${fx()}</div>`;
+}
+function nearestGardenHit(clientX,clientY,targets,canvas){
+  const canvasRect=canvas.getBoundingClientRect(),scale=canvasRect.width/1170;
+  if(!scale)return null;
+  // Chỉ so sánh các vùng hit thực sự phủ lên điểm chạm. Không được chọn
+  // một vật thể ở xa chỉ vì tâm của nó gần hơn tâm các vùng đang bị chạm.
+  const candidates=targets.filter(el=>{
+    const area=el.querySelector(".ghit")||el,r=area.getBoundingClientRect();
+    return clientX>=r.left&&clientX<=r.right&&clientY>=r.top&&clientY<=r.bottom;
+  });
+  let best=null,bestD=Infinity,bestPriority=-Infinity;
+  for(const el of candidates){
+    // Nhân vật có lớp sprite chuyển động; dùng tâm hitbox thực tế thay vì tọa độ tĩnh.
+    const live=el.matches(".chr[data-gchar]")?el.querySelector(".gchar-hit")?.getBoundingClientRect():null;
+    const cx=live?live.left+live.width/2:canvasRect.left+Number(el.dataset.hitX)*scale;
+    const cy=live?live.top+live.height/2:canvasRect.top+Number(el.dataset.hitY)*scale;
+    const dx=clientX-cx,dy=clientY-cy,d=dx*dx+dy*dy;
+    const priority=Number(el.dataset.hitPriority||0);
+    if(priority>bestPriority||(priority===bestPriority&&d<bestD)){best=el;bestD=d;bestPriority=priority;}
+  }
+  return best;
 }
 function gardenTap(key){
   if(key==="cay"||key==="binhtuoi"){
@@ -4130,10 +4307,12 @@ function gardenTap(key){
   if(key==="hopgiong"){
     if(leafOwed()){const u=$("gUnlock");if(u){u.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"center"});setTimeout(()=>{const n=$("unl-name");if(n)n.focus({preventScroll:true});},350);}return;}
     const left=10-(closedCount()%10);toast(ME===null?"Hộp hạt giống mở khi hai bạn đi hết một mùa":`Hộp hạt giống mở khi hết mùa, còn ${left} buổi hẹn nữa. Mỗi người được viết một lá mới`);return;}
-  if(key==="ghe"){if(ME===null)return;const on=!gSits(ME);setMine({gsitAt:on?nowIso():null});
-    toast(on?(gSits(OTHER())?"Hai đứa ngồi xích đu cạnh nhau":"Đã ngồi xích đu. Chờ "+S.meta.names[OTHER()]+" ra ngồi cùng"):"Đã đứng dậy");return;}
-  if(key==="ke"){const p=careNow().pots;toast(p?`${p} chậu đã nở${p>8?". Kệ chỉ trưng 8 chậu gần nhất, tất cả đều ở kệ cây phòng Em":""}`:"Kệ còn trống. Cây chăm hằng ngày nở hoa sẽ được đặt lên đây");return;}
-  if(key==="mua"||key==="bang"){gardenSel=null;rerender();const b=$("gSeason");if(b)b.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});return;}
+  if(key==="ghe"){
+    if(ME===null){toast('Chọn "Điện thoại này của ai" ở mục Nhà để ngồi xích đu.');return;}
+    const on=!gSits(ME);setMine({gsitAt:on?nowIso():null});schedule();
+    toast(on?(gSits(OTHER())?"Hai đứa đã ngồi cạnh nhau trên xích đu ♥":"Bạn đã ngồi rồi. Khi người kia mở Khu vườn, họ có thể chạm xích đu để ngồi cùng."):"Bạn đã đứng dậy khỏi xích đu");return;}
+  if(key==="ke"){toast("Kệ này trưng những chậu cây chăm hằng ngày đã nở. Bộ sưu tập mùa nằm ở bảng gỗ và luống hoa.");return;}
+  if(key==="mua"||key==="bang"){gardenSel=null;gardenGalleryOpen=true;rerender();setTimeout(()=>{const g=$("gGallery");if(g)g.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});},60);return;}
 }
 renderCare=function(){
   const root=$("tab-care");if(!root)return;
@@ -4153,9 +4332,60 @@ renderCare=function(){
       ${ME===null?`<p class="quiet">Chọn "Điện thoại này của ai" ở mục Nhà để tưới cây.</p>`:""}
       <div class="cans">${can(0)}${can(1)}</div>
       <div class="stat"><span><b>${cs.streak}</b> ngày liền cùng tưới</span><span><b>${cs.bothCount}</b> ngày đủ nước</span><span><b>${cn.pots}</b> chậu đã nở</span></div></section>`;
-  root.querySelectorAll("[data-gi]").forEach(b=>b.onclick=()=>gardenTap(b.dataset.gi));
-  root.querySelectorAll("[data-gs]").forEach(b=>b.onclick=()=>{const s=+b.dataset.gs;gardenSel=gardenSel===s?null:s;rerender();
-    const t=$("gSeason");if(t&&gardenSel)t.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});});
+
+  // Nút tưới trong thẻ chăm cây nằm ngoài canvas; cần binding riêng.
+  root.querySelectorAll(".gcare-card [data-gi]").forEach(b=>b.addEventListener("click",ev=>{
+    ev.preventDefault();ev.stopPropagation();gardenTap(b.dataset.gi);
+  }));
+  const guideHTML = "<section class=\"g-guide blk\" aria-label=\"Hướng dẫn tương tác\">" +
+    "<div class=\"g-guide-head\"><div><b>🌷 Chơi cùng khu vườn</b><span>Chạm vào đồ vật và nhân vật để tạo tương tác.</span></div>" +
+    "<button type=\"button\" class=\"linkish\" data-g-guide-toggle>"+(gardenGuideOpen?"Ẩn hướng dẫn":"Cách chơi")+"</button></div>" +
+    (gardenGuideOpen ? "<ul><li><b>🪴 Chậu lớn / bình tưới:</b> mỗi người tưới một lần mỗi ngày.</li>" +
+      "<li><b>🌱 Luống hoa:</b> chạm một bông để xem lại mùa tương ứng.</li>" +
+      "<li><b>🪴 Kệ chậu:</b> trưng những chậu cây chăm hằng ngày đã nở.</li><li><b>🌼 Bảng gỗ / luống hoa:</b> mở bộ sưu tập các mùa hẹn.</li>" +
+      "<li><b>🪑 Xích đu:</b> chạm để ngồi; người kia có thể vào ngồi cạnh khi đang trực tuyến.</li>" +
+      "<li><b>👫 Nhân vật:</b> chạm để gửi một cái ôm cho người kia.</li></ul>" +
+      "<button type=\"button\" class=\"btn btn-ghost btn-small\" data-g-guide-close>Đã hiểu</button>" : "") + "</section>";
+  root.insertAdjacentHTML("beforeend",guideHTML);
+  const mineSitting=ME!==null&&gSits(ME);
+  const partnerSitting=ME!==null&&isHere(OTHER())&&gSits(OTHER());
+  const swingNote=ME===null ? "Chọn danh tính của điện thoại trong mục Nhà để ngồi xích đu."
+    : partnerSitting&&!mineSitting ? esc(N(OTHER()))+" đang ngồi chờ bạn trên xích đu."
+    : mineSitting&&partnerSitting ? "Hai bạn đang ngồi cạnh nhau ♥"
+    : mineSitting ? "Bạn đang ngồi. Người kia có thể chạm xích đu để tham gia."
+    : "Chạm xích đu trong khu vườn để ngồi, người kia sẽ thấy khi đang trực tuyến.";
+  const card=root.querySelector(".gcare-card");
+  if(card)card.insertAdjacentHTML("beforeend","<div class=\"g-swing\" role=\"status\"><span>"+swingNote+"</span><button type=\"button\" class=\"btn btn-ghost btn-small\" data-g-swing>"+(mineSitting?"Đứng dậy":"Ngồi lên xích đu")+"</button></div>");
+  const seasonCount=completedSeasons();
+  const flowers=Array.from({length:seasonCount},(_,i)=>seasonData(i+1));
+  const galleryHTML="<section class=\"blk g-gallery\" id=\"gGallery\" "+(gardenGalleryOpen?"":"hidden")+">"+
+    "<div class=\"g-gallery-head\"><div><h2 class=\"v3h\">Bộ sưu tập hoa</h2><p class=\"v3sub\">"+seasonCount+" mùa đã khép lại · mỗi bông hoa lưu một mùa của hai bạn.</p></div>"+
+    "<button type=\"button\" class=\"linkish\" data-g-gallery-close>Đóng</button></div>"+
+    (flowers.length ? "<div class=\"g-gallery-grid\">"+flowers.map(f=>"<button type=\"button\" class=\"g-gallery-item\" data-g-gallery-season=\""+f.s+"\" aria-pressed=\""+(gardenSel===f.s)+"\"><img src=\""+A3("hoa_"+(BLOOM_FL[f.kind]||"anhdao")+"_gd5")+"\" alt=\""+BLOOMS[f.kind].name+"\" loading=\"lazy\"><b>Mùa "+f.s+"</b><span>"+BLOOMS[f.kind].name+"</span><small>"+f.avg.toFixed(1)+" ♥</small></button>").join("")+"</div>"
+      : "<p class=\"empty\">Bông hoa đầu tiên sẽ xuất hiện sau khi hai bạn hoàn thành mùa hẹn đầu tiên.</p>")+"</section>";
+  root.insertAdjacentHTML("beforeend",galleryHTML);
+  root.querySelectorAll("[data-g-swing]").forEach(b=>b.onclick=()=>gardenTap("ghe"));
+  root.querySelectorAll("[data-g-guide-toggle]").forEach(b=>b.onclick=()=>{gardenGuideOpen=!gardenGuideOpen;rerender();});
+  root.querySelectorAll("[data-g-guide-close]").forEach(b=>b.onclick=()=>{gardenGuideOpen=false;lsSet("gn-garden-guide-v1","1");rerender();});
+  root.querySelectorAll("[data-g-gallery-close]").forEach(b=>b.onclick=()=>{gardenGalleryOpen=false;rerender();});
+  root.querySelectorAll("[data-g-gallery-season]").forEach(b=>b.onclick=()=>{gardenSel=+b.dataset.gGallerySeason;rerender();const t=$("gSeason");if(t)t.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});});
+  root.querySelectorAll(".garden3d .lay.hot,.garden3d .chr[data-gchar]").forEach(b=>b.addEventListener("pointerdown",()=>{b.classList.remove("tap-flash");void b.offsetWidth;b.classList.add("tap-flash");setTimeout(()=>b.classList.remove("tap-flash"),520);},{passive:true}));
+  const canvas=root.querySelector(".garden3d .wcanvas");
+  if(canvas)canvas.addEventListener("click",ev=>{
+    const origin=ev.target.closest&&ev.target.closest("[data-hit-x][data-hit-y]");
+    if(!origin)return;
+    ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+    // Enter/Space và click hỗ trợ truy cập không có tọa độ con trỏ đáng tin cậy:
+    // giữ đúng nút đang được kích hoạt, không chạy bộ phân giải theo tọa độ.
+    const hit=ev.detail===0?origin:nearestGardenHit(
+      ev.clientX,ev.clientY,
+      Array.from(canvas.querySelectorAll("[data-hit-x][data-hit-y]")),canvas
+    );
+    if(!hit)return;
+    if(hit.dataset.gi)gardenTap(hit.dataset.gi);
+    else if(hit.dataset.gs){gardenSel=+hit.dataset.gs;gardenGalleryOpen=gardenSel<=completedSeasons();rerender();setTimeout(()=>{const target=$(gardenGalleryOpen?"gGallery":"gSeason");if(target)target.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});},60);}
+    else if(hit.dataset.gchar){if(ME===null)toast('Chọn "Điện thoại này của ai" ở mục Nhà trước nhé.');else sendTap("hug");}
+  });
   if(!$("v-khu-vuon").hidden){fit3();setTimeout(fit3,30);}
 };
 renderGarden=function(){
@@ -4229,5 +4459,6 @@ window.addEventListener("hashchange",()=>{const r=GN_ROOT[location.hash];if(r)gn
 
 loadLocal();route();renderAll();cloudInit();initDb();startV3();bindBackup();netState();
 </script>
+<script src="./assets/3d/living-motion.js"></script>
 
 </body></html>

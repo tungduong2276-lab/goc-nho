@@ -1,0 +1,13 @@
+{
+  "name": "goc-nho",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:static": "node scripts/check-garden.mjs",
+    "test:browser": "playwright test",
+    "test": "npm run test:static && npm run test:browser"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0"
+  }
+}
