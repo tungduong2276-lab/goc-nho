@@ -4043,14 +4043,14 @@ function seasonPlant(s){
 }
 function gardenSceneHTML(){
   const Rm=SC3.rooms.khu_vuon,t=buoi(),k=Rm.ppm/SC3.rig.ppm*1.3,fk=Rm.ppm/SC3.flower.ppm,FA=SC3.flower.anchor,o=OTHER();
-  const btn=(attrs,label,x,y,w,h,z,img,cls="")=>`<button type="button" class="lay hot ${cls}" ${attrs} aria-label="${esc(label)}" style="${PX(x,y,w,h,z)}"><img src="${A3(img)}" alt="" draggable="false"></button>`;
+  const btn=(attrs,label,x,y,w,h,z,img,cls="",pad=0)=>`<button type="button" class="lay hot ${cls}" ${attrs} aria-label="${esc(label)}" style="${PX(x,y,w,h,z)}${pad?`box-sizing:content-box;padding:${pad}px;`:""}"><img src="${A3(img)}" alt="" draggable="false"></button>`;
   const plantAt=(file,p,s,z,attrs,label,cls)=>btn(attrs,label,p[0]-FA[0]*s,p[1]-FA[1]*s,256*s,256*s,z,file,"gplant "+cls).replace("</button>",`<i class="ghit"></i></button>`);
   let html="";
   // đồ vật chạm được
   for(const [key,it] of Object.entries(Rm.items)){const st=gardenItemState(key),n=key+"_"+st,b=Rm.layers[n];if(!b)continue;
     const z=key==="binhtuoi"&&st==="tuoi"?2000:b[3];
     const pad=key==="binhtuoi"?34:key==="hopgiong"?26:key==="bang"?12:16;
-    html+=btn(`data-gi="${key}"`,it.label,b[0]-pad,b[1]-pad,b[2]-b[0]+pad*2,b[3]-b[1]+pad*2,z,"khu_vuon_"+n,key==="hopgiong"&&st==="mo"?"glow":"");}
+    html+=btn(`data-gi="${key}"`,it.label,b[0]-pad,b[1]-pad,b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,key==="hopgiong"&&st==="mo"?"glow":"",pad);}
   // luống: mỗi mùa một ô, mùa đang đi lớn dần theo số buổi
   const cur=curSeason();
   for(let s=Math.max(1,cur-9);s<=cur;s++){const P=seasonPlant(s),p=Rm.spots.luong[(s-1)%10];
