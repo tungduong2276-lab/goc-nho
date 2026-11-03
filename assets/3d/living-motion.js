@@ -212,7 +212,7 @@
     else if (target.matches(".chr.pet")) target.classList.add("gn-motion-pet");
     else if (target.matches(".chr[data-gchar],.chr[data-rhug],.chr[data-rme]")) target.classList.add("gn-motion-hug");
     else if (target.matches('[data-gi="ghe"]')) target.classList.add("gn-motion-swing");
-    else if (target.matches("[data-ri]")) target.classList.add("gn-motion-toggle");
+    else if (target.matches("[data-ri],[data-gi=\"bang\"],[data-gi=\"hopgiong\"]")) target.classList.add("gn-motion-toggle");
     burst(target, x, y);
     window.setTimeout(() => target.classList.remove("gn-motion-active","gn-motion-water","gn-motion-flower","gn-motion-hug","gn-motion-swing","gn-motion-pet","gn-motion-toggle"), 1100);
   }
