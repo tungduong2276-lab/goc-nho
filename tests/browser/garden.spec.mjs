@@ -35,11 +35,10 @@ test("the watering button in the care card is actionable", async ({ page }) => {
 test("a pointer tap on the board opens the seasonal gallery, not a neighboring object", async ({ page }) => {
   await openGarden(page);
   const hit = page.locator(".garden3d button[data-gi='bang'] .ghit");
-  const point = await hit.evaluate(el => {
-    const r = el.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-  });
-  await page.mouse.click(point.x, point.y);
+  // Playwright's real pointer click waits for layout stability/actionability.
+  // A raw mouse click at a previously sampled box can miss while fit3() resizes.
+  // The nine-point coordinate regression below still checks actual hit geometry.
+  await hit.click();
   await expect(page.locator("#gGallery")).toBeVisible();
 });
 
