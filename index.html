@@ -1195,7 +1195,7 @@ nav.tabs a[aria-current="page"] .nic{background:color-mix(in srgb,var(--acc) 22%
 .garden3d .gobj[data-gi="ghe"] .ghit{left:0;right:0;top:25%;bottom:0}
 .garden3d .gobj[data-gi="ke"] .ghit{left:4%;right:4%;top:4%;bottom:4%}
 .garden3d .gobj[data-gi="bang"] .ghit{inset:0}
-.garden3d .chr .gchar-hit{position:absolute;display:block;left:-70px;top:-225px;width:140px;height:210px;border-radius:48%;pointer-events:auto;touch-action:manipulation}
+.garden3d .chr .cstack .gchar-hit{position:absolute;display:block;left:16%;top:4%;width:68%;height:92%;border-radius:48% 48% 36% 36%;pointer-events:auto;touch-action:manipulation}
 @keyframes gTapPulse{0%{opacity:.95;transform:scale(.88)}100%{opacity:0;transform:scale(1.14)}}
 .garden3d .chr{appearance:none;-webkit-appearance:none;touch-action:manipulation;text-align:initial;color:inherit}
 .garden3d .chr.tap-flash .cstack{filter:drop-shadow(0 0 9px var(--pink))}
@@ -4095,7 +4095,7 @@ function gardenSceneHTML(){
   if(ME!==null){const sp=Rm.spots.dung,seat=Rm.spots.ghe,gz=(Rm.layers.ghe_trong||[0,0,0,800])[3]+6;
     [ME].concat(isHere(o)?[o]:[]).forEach((i,j)=>{const sit=gSits(i),pt=sit?seat[CH(i)==="anh"?0:1]:sp[j];
       const pose=sit?"ngoi":i===ME&&(Date.now()-waveMe<1600||Date.now()-justWatered<1800)?"vaytay":"dung";
-      html+=`<button type="button" class="chr" data-gchar="${i}" data-hit-x="${pt[0]}" data-hit-y="${pt[1]-120}" data-hit-priority="4" aria-label="Gửi một cái ôm cho ${esc(S.meta.names[OTHER()])}" style="z-index:${Math.round(sit?gz:pt[1])}">${charStack(i,pose,pt,k,null)}<i class="ghit gchar-hit" aria-hidden="true"></i><span class="ctag c-${CH(i)}" style="left:${pt[0]}px;top:${pt[1]+8}px">${N(i)}</span></button>`;});}
+      html+=`<button type="button" class="chr" data-gchar="${i}" data-hit-x="${pt[0]}" data-hit-y="${pt[1]-80}" data-hit-priority="4" aria-label="Gửi một cái ôm cho ${esc(S.meta.names[OTHER()])}" style="z-index:${Math.round(sit?gz:pt[1])}">${charStack(i,pose,pt,k,null).replace("</span>",'<i class="ghit gchar-hit" aria-hidden="true"></i></span>')}<span class="ctag c-${CH(i)}" style="left:${pt[0]}px;top:${pt[1]+8}px">${N(i)}</span></button>`;});}
   const sky=Date.now()-justWatered<1800?`<div class="drops g3" style="left:${cp[0]-80}px;top:${cp[1]-260}px">${[20,48,76,104,132].map((x,i)=>`<i style="left:${x}px;animation-delay:${i*.12}s"></i>`).join("")}</div>`:"";
   return`<div class="room3d garden3d t-${t}"><div class="w3fit rstage" data-w="1170"><div class="wcanvas" style="width:1170px;height:1170px">
     <img class="wbg" src="${A3("khu_vuon_"+t)}" alt="Khu vườn của ${N(0)} và ${N(1)}" draggable="false">${html}${sky}</div></div>${fx()}</div>`;
