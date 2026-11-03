@@ -85,6 +85,36 @@ function roomBox(g, r, key) {
   const H = key === 'gac' ? 0.5 : FH - 0.12;
   piece(rbox(w, H, 0.16, 0.04), r.wall, { pos: [cx, y + H / 2 + 0.06, HZ0 - 0.08], parent: g, receive: true, emissive: r.wall, ei: 0.3 });
 }
+// Kiến trúc nhà búp bê: cửa thật, khung sổ và đường đi giữa các phòng.
+// Các vị trí phòng và vùng chạm không thay đổi để giữ tương thích scene.json.
+function doorway(g, x, y, z, accent = C.woodD) {
+  const w = 0.95, h = 1.9, thick = 0.13;
+  for (const side of [-1, 1]) piece(rbox(thick, h, 0.16, 0.035), C.white, { pos: [x + side * w / 2, y + h / 2, z], parent: g });
+  piece(rbox(w + thick, 0.15, 0.19, 0.035), C.white, { pos: [x, y + h, z], parent: g });
+  piece(rbox(w - 0.12, 0.07, 0.35, 0.02), accent, { pos: [x, y + 0.045, z + 0.07], parent: g, receive: true });
+  // Cánh cửa hé mở tạo cảm giác có thể bước qua, không chắn tầm nhìn căn phòng.
+  piece(rbox(0.08, 1.72, 0.68, 0.04), accent, { pos: [x - w / 2 + 0.08, y + 0.88, z - 0.18], rot: [0, -0.36, 0], parent: g });
+  piece(sphere(0.055, 10, 8), C.butter, { pos: [x - w / 2 + 0.12, y + 0.95, z + 0.14], parent: g });
+}
+function houseWindow(g, x, y, z, glow) {
+  piece(rbox(1.22, 1.12, 0.14, 0.07), C.white, { pos: [x, y, z], parent: g });
+  piece(rbox(1.0, 0.9, 0.04, 0.025), glow, { pos: [x, y, z + 0.085], parent: g, noOutline: true });
+  piece(rbox(0.085, 0.98, 0.1, 0.02), C.woodD, { pos: [x, y, z + 0.11], parent: g });
+  piece(rbox(1.08, 0.085, 0.1, 0.02), C.woodD, { pos: [x, y, z + 0.12], parent: g });
+  piece(rbox(1.4, 0.12, 0.35, 0.045), C.white, { pos: [x, y - 0.61, z + 0.2], parent: g });
+}
+function housePorch(g, x, z, night) {
+  piece(rbox(2.5, 0.16, 1.12, 0.06), C.wood, { pos: [x, 0.11, z], parent: g, receive: true });
+  for (const side of [-1, 1]) {
+    piece(rbox(0.14, 2.3, 0.14, 0.04), C.white, { pos: [x + side * 1.08, 1.23, z + 0.42], parent: g });
+    piece(rbox(0.34, 0.3, 0.34, 0.08), C.woodD, { pos: [x + side * 1.08, 0.28, z + 0.42], parent: g });
+  }
+  piece(rbox(2.62, 0.18, 1.35, 0.07), C.sky, { pos: [x, 2.42, z], parent: g });
+  for (const side of [-1, 1]) piece(rbox(0.08, 0.3, 0.08, 0.025), C.navy, { pos: [x + side * 0.84, 2.22, z + 0.5], parent: g });
+  piece(sphere(0.14, 12, 10), night ? C.butter : C.white, { pos: [x, 2.25, z + 0.48], parent: g, emissive: night ? C.butter : 0, ei: night ? 0.7 : 0 });
+  for (let i = 0; i < 3; i++) piece(rbox(2.1 - i * 0.2, 0.08, 0.25, 0.03), C.woodD, { pos: [x, 0.06 - i * 0.035, z + 0.63 + i * 0.23], parent: g });
+}
+
 function house(time) {
   const g = G(), night = time === 'dem' || time === 'chieu';
   const X0 = -6, X1 = 3.6, d = HZ1 - HZ0, cz = (HZ0 + HZ1) / 2;
@@ -100,12 +130,14 @@ function house(time) {
   piece(rbox(0.14, 0.5, d, 0.04), C.white, { pos: [-1.2, FH + 0.25, cz], parent: g });
   piece(rbox(0.2, FH, 0.2, 0.05), C.white, { pos: [X1 - 0.1, FH / 2, HZ1 - 0.1], parent: g });
   piece(rbox(0.2, FH, 0.2, 0.05), C.white, { pos: [X1 - 0.1, FH * 1.5, HZ1 - 0.1], parent: g });
-  // cửa sổ sáng trên tường sau
+  // Khung cửa sổ chia ô và bậu cửa cùng chất liệu với các phòng.
   const glow = night ? C.butter : 0xCFE8FA;
-  [[-4.4, 1.7], [2.1, 1.8], [-3.7, FH + 1.7], [1.4, FH + 1.7]].forEach(([x, y]) => {
-    piece(rbox(0.95, 0.85, 0.08, 0.04), C.white, { pos: [x, y, HZ0 + 0.02], parent: g });
-    piece(rbox(0.75, 0.65, 0.06, 0.02), glow, { pos: [x, y, HZ0 + 0.05], parent: g, noOutline: true, emissive: night ? C.butter : 0, ei: night ? 0.9 : 0 });
-  });
+  [[-4.4, 1.7], [2.1, 1.8], [-3.7, FH + 1.7], [1.4, FH + 1.7]].forEach(([x, y]) => houseWindow(g, x, y, HZ0 + 0.02, glow));
+  // Lối đi ở mặt cắt trước, không làm kín mặt tiền để vẫn nhìn thấy nội thất.
+  for (const [x, y] of [[-3, 0], [0.6, 0], [-1.2, FH]]) doorway(g, x, y, HZ1 - 0.04);
+  // Cửa chính và hiên nằm trước phòng khách, nhìn rõ từ bản đồ ngoài trời.
+  housePorch(g, -1.2, HZ1 + 0.52, night);
+  doorway(g, -1.2, 0, HZ1 + 0.04, C.wood);
   // mái gác: dốc sau + đầu hồi trái, cắt mặt trước
   const rw = 5.7, rcx = -1.9, ry0 = FH * 2, rise = 2.4, run = 1.4, ang = Math.atan2(rise, run), len = Math.hypot(rise, run) + 0.2;
   // mái chéo ngả ra sau: thấy mặt trong bằng gỗ, mép trên lợp xanh trời
