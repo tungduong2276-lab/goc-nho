@@ -48,7 +48,7 @@ const mergedMeta=mergeMetaForWrite(
 );
 assert.equal(mergedMeta.names[0],"Anh","unrelated remote profile fields survive retry");
 const mergedNames=mergeMetaForWrite(
-  {names:["Tên vừa đổi trên máy kia","Tên thứ hai"]},
+  {names:["Tên vừa đổi trên máy kia","Tên hai vừa đổi trên máy kia"]},
   {names:["Tên mới trên máy này","Tên thứ hai"],__base:{names:["Tên cũ","Tên thứ hai"]}}
 );
 assert.deepEqual(Array.from(mergedNames.names),["Tên mới trên máy này","Tên hai vừa đổi trên máy kia"],"unchanged profile-array entries do not overwrite remote values");
