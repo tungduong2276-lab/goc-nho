@@ -78,7 +78,7 @@ assert.doesNotMatch(appCode,/có mạng sẽ tự đồng bộ/,"offline copy do
 assert.match(appCode,/data-gi="cay"[^\x60]*data-hit-priority="3"/,"large daily pot has priority over overlapping seed-box hit region");
 assert.match(appCode,/key==="hopgiong"\?1/,"seed box uses lower hit priority than the daily pot");
 assert.match(html,/\.garden3d \.gcare \.ghit\{left:15%;right:15%;top:38%;bottom:4%\}/,"daily pot hit area covers the pot body");
-assert.match(sw,/const CACHE = "goc-nho-v13"/,"service-worker cache version is bumped for the new app shell");
+assert.match(sw,/const CACHE = "goc-nho-v14"/,"service-worker cache version is bumped for the new app shell");
 assert.match(html,/assets\/3d\/living-motion\.js/, "living motion runtime is loaded after the app");
 assert.match(sw,/\.\/assets\/3d\/living-motion\.js/, "living motion runtime is precached for offline startup");
 assert.match(motion,/prefers-reduced-motion:\s*reduce/, "motion layer respects reduced-motion preferences");
