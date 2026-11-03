@@ -179,4 +179,12 @@ Open blockers:
 Next safe action:
 ```
 
-**Current handoff as of 2026-11-03:** roadmap documented; no milestone M0–M8 implemented by writing this file. PR #10 merged. PR #9 open at last verification. Revalidate all live status before acting.
+**Current handoff as of 2026-11-03 — verified after PR #15:**
+
+- **Current main SHA at handoff:** `b9a0992b2edadc936a0e8171a62f3e67404a2112`.
+- **Merged:** PR #13 (M7 game theme design), PR #14 (corrected Firestore Rules membership wildcard; not a Firebase production deployment), PR #15 (isolated Firestore Emulator tests and `npm test` integration).
+- **CI evidence:** PR #15 Actions #87 passed 15/15 browser tests, 9/9 Emulator tests and static checks: https://github.com/tungduong2276-lab/goc-nho/actions/runs/41631762782.
+- **Firebase data/Rules impact:** no production reads/writes, migration or deployment performed during those PRs. Deployed production Rules version remains unverified. Nine Emulator tests include known-risk demonstrations of early gift reads and lost updates under `set()`; they do not establish security for unopened gifts or concurrent M1 placement.
+- **Open:** PR #9 (house/weather, enlarged overall map but not each room interior; needs visual renders/hitbox confirmation and reconciliation with main), PR #12 (draft broad M0 work, partially extracted through PRs #14/#15), PR #4 (old drawing gallery fix not reconciled with latest main).
+- **Remaining M0 blockers:** staging-only export/restore proof, live deployed Rules inventory/rollback, two-client offline/reconnect plus stale version tests, M1 feature flag conventions and independent visual 3D review. See `docs/M0-FIREBASE-SAFETY-AUDIT.md` and `docs/M0-STAGING-BACKUP-RUNBOOK.md`.
+- **Next safe action:** validate staging backup/restore with synthetic data and admin authorization; resolve PR #9 geometry/visual inspection before persistent 3D placements. Do not merge unverified code or run tests against live couple data.
