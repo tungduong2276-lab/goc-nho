@@ -4401,6 +4401,24 @@ renderCare=function(){
   root.querySelectorAll("[data-g-gallery-season]").forEach(b=>b.onclick=()=>{gardenSel=+b.dataset.gGallerySeason;rerender();const t=$("gSeason");if(t)t.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});});
   root.querySelectorAll(".garden3d .lay.hot,.garden3d .chr[data-gchar]").forEach(b=>b.addEventListener("pointerdown",()=>{b.classList.remove("tap-flash");void b.offsetWidth;b.classList.add("tap-flash");setTimeout(()=>b.classList.remove("tap-flash"),520);},{passive:true}));
   const canvas=root.querySelector(".garden3d .wcanvas");
+  // Keyboard activation must dispatch to the focused object, not a nearby
+  // pointer hit region. Prevent the browser's synthesized click from toggling
+  // the gallery a second time after the garden rerenders.
+  if(canvas)canvas.addEventListener("keydown",ev=>{
+    if(ev.key!=="Enter"&&ev.key!==" ")return;
+    const hit=ev.target.closest&&ev.target.closest("[data-hit-x][data-hit-y]");
+    if(!hit||!canvas.contains(hit))return;
+    ev.preventDefault();ev.stopPropagation();
+    if(hit.dataset.gi)gardenTap(hit.dataset.gi);
+    else if(hit.dataset.gs){
+      gardenSel=+hit.dataset.gs;
+      gardenGalleryOpen=gardenSel<=completedSeasons();
+      rerender();
+    }else if(hit.dataset.gchar){
+      if(ME===null)toast('Chọn "Điện thoại này của ai" ở mục Nhà trước nhé.');
+      else sendTap("hug");
+    }
+  });
   if(canvas)canvas.addEventListener("click",ev=>{
     const origin=ev.target.closest&&ev.target.closest("[data-hit-x][data-hit-y]");
     if(!origin)return;
