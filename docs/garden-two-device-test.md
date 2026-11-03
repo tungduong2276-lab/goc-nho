@@ -2,7 +2,7 @@
 
 ## Phạm vi và nhánh sửa lỗi
 
-Nhánh sửa lỗi `fix/garden-pr3-browser-regressions` được tách từ head của PR #3. Phạm vi lần này xử lý các lỗi được phát hiện khi chạy Chromium thật:
+Các thay đổi được thực hiện trực tiếp trên nhánh `feature/garden-interactions` của PR #3. Phạm vi lần này xử lý các lỗi được phát hiện khi chạy Chromium thật:
 
 - Tránh lỗi temporal dead zone của `$` làm dừng toàn bộ script khi tải trang.
 - Khôi phục nút **Tưới cây** trong thẻ chăm cây bên dưới cảnh.
@@ -30,11 +30,13 @@ npm test
 `npm test` chạy hai lớp:
 
 1. `npm run test:static` — kiểm tra cú pháp JavaScript nội tuyến và các điều kiện hồi quy quan trọng. Phần này không giả lập hình học hay sự kiện trình duyệt.
-2. `npm run test:browser` — Playwright chạy Chromium trên ứng dụng thực với viewport 390 × 844 CSS px, kiểm tra:
+2. `npm run test:browser` — Playwright chạy Chromium trên ứng dụng thực với viewport 390 × 844 CSS px; riêng kiểm thử nhân vật và bảng gỗ lặp lại ở 360px, kiểm tra:
    - Trang khởi động và không phát sinh `pageerror`.
    - Thẻ chăm cây có nút **Tưới cây** hoạt động.
    - Chạm vào vùng bảng gỗ mở đúng bộ sưu tập.
    - Chạm tâm ghế xích đu kích hoạt xích đu.
+   - Chạm vào thân nhân vật gửi đúng một cái ôm ở viewport 390px và 360px.
+   - Chạm lưới 9 điểm trên bảng gỗ ở cả hai viewport vẫn mở đúng gallery, không bị bình tưới chiếm sự kiện.
    - Nhấn Enter trên nút bảng gỗ kích hoạt chính nút đó, không bị chuyển thành xích đu.
 
 Server kiểm thử chỉ thay đổi nội dung HTML trong bộ nhớ khi phục vụ `index.html`, bỏ qua `cloudInit();initDb();`. File production không bị sửa bởi bước này. Workflow GitHub Actions `.github/workflows/garden-browser.yml` cài Chromium và chạy `npm test` cho các thay đổi liên quan.
@@ -67,6 +69,6 @@ Dùng hai điện thoại thật, tốt nhất một iPhone Safari và một And
 
 ## Trạng thái rà soát
 
-- Đã bổ sung bài kiểm thử Chromium thực tế và workflow CI; kết quả CI phải được kiểm tra sau khi workflow chạy.
+- GitHub Actions run #18 trên `ubuntu-24.04`: `npm test` PASS; static checks PASS và Playwright Chromium **7/7 PASS**.
 - Bộ kiểm thử trình duyệt không kết nối Firebase và không thể thay thế kiểm thử iOS Safari / Android Chrome trên thiết bị thật.
 - Chưa thực hiện DUAL-01…DUAL-10 trên hai điện thoại và Firebase staging. Chưa coi PR là sẵn sàng merge.
