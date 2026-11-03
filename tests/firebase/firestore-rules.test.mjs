@@ -168,3 +168,27 @@ test("KNOWN RISK: stale whole-document set overwrites the other partner's field"
   assert.equal(final.data().left, "old");
   assert.equal(final.data().right, "new-B");
 });
+
+test("M0 baseline: independent field updates from both members preserve both changes", async () => {
+  const path = `${couple()}/shared/field-patches`;
+  await env.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), path), {
+      left: "old", right: "old", untouched: "preserve",
+    });
+  });
+  // updateDoc applies field-level patches; unlike the current generic put/set,
+  // neither client replaces a stale snapshot of the entire document.
+  await Promise.all([
+    assertSucceeds(updateDoc(ref(ALICE, path), { left: "new-A" })),
+    assertSucceeds(updateDoc(ref(BOB, path), { right: "new-B" })),
+  ]);
+  const [seenByAlice, seenByBob] = await Promise.all([
+    assertSucceeds(getDoc(ref(ALICE, path))),
+    assertSucceeds(getDoc(ref(BOB, path))),
+  ]);
+  for (const snapshot of [seenByAlice, seenByBob]) {
+    assert.equal(snapshot.data().left, "new-A");
+    assert.equal(snapshot.data().right, "new-B");
+    assert.equal(snapshot.data().untouched, "preserve");
+  }
+});
