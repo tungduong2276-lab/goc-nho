@@ -4,6 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800;900&display=swap">
 <style>
+
 /* Layout: one phone-width column like a little garden notebook — a ribboned jar with a sprout mascot, the drawn ticket, stitched ritual cards, then the dictionary, museum, map and seasons. */
 :root{
   --bg:#FFF3F6; --dot:rgba(232,85,138,.10); --surface:#FFFFFF; --petal:#FFE4ED; --petal-2:#FFC8DA;
@@ -1254,6 +1255,26 @@ nav.tabs a[aria-current="page"] .nic{background:color-mix(in srgb,var(--acc) 22%
 .guinhau .gn-tag.on{background:#FF6FA5;color:#fff}
 .gbadge{position:absolute;transform:translate(-50%,-50%);min-width:62px;height:62px;padding:0 10px;box-sizing:border-box;border-radius:31px;background:#FF6FA5;color:#fff;border:4px solid #1D2B4F;font:800 34px/54px var(--body);text-align:center;box-shadow:4px 4px 0 #1D2B4F;pointer-events:none;animation:scbob 2.4s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.gbadge{animation:none}}
+/* Shared spacious design system for every non-house tab. Scoped to preserve 3D layers. */
+body:not([data-g="nha"]) .view:not([hidden]){width:100%;max-width:960px;margin-inline:auto;padding:clamp(10px,2.5vw,26px);box-sizing:border-box}
+body:not([data-g="nha"]) .view:not([hidden])>section,body:not([data-g="nha"]) .view:not([hidden])>div{min-width:0}
+body:not([data-g="nha"]) .view:not([hidden]) .tab-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin:12px 0 24px;padding:clamp(18px,3vw,30px);border-radius:24px;background:linear-gradient(135deg,var(--surface),var(--petal));border:1px solid var(--line)}
+body:not([data-g="nha"]) .view:not([hidden]) .tab-head h2{font-size:clamp(24px,4vw,34px);line-height:1.2;margin:0 0 6px}
+body:not([data-g="nha"]) .view:not([hidden]) .tab-head p{max-width:56ch;line-height:1.65}
+body:not([data-g="nha"]) .view:not([hidden]) :is(.formcard,.card,.guide,.item,.entry,.panel){max-width:100%;box-sizing:border-box}
+body:not([data-g="nha"]) .view:not([hidden]) :is(input,textarea,select){max-width:100%;box-sizing:border-box}
+body:not([data-g="nha"]) .view:not([hidden]) textarea{min-height:112px;line-height:1.6}
+body:not([data-g="nha"]) .view:not([hidden]) :is(button,.btn,a){touch-action:manipulation}
+body:not([data-g="nha"]) .view:not([hidden]) :is(.btn,button){min-height:38px}
+body:not([data-g="nha"]) nav.subtabs:not([hidden]){max-width:960px;margin-inline:auto;gap:8px;scroll-padding-inline:16px}
+body:not([data-g="nha"]) nav.subtabs a{border-radius:14px;padding:10px 14px;white-space:nowrap}
+body:not([data-g="nha"]) .view:not([hidden]) .section-intro{display:flex;align-items:center;gap:16px;padding:16px 20px;margin:0 0 20px;background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:0 7px 24px rgba(84,42,63,.045)}
+.section-intro-icon{font-size:32px;display:grid;place-items:center;width:58px;height:58px;flex:none;background:var(--petal);border-radius:18px}
+.section-intro h2{font:800 clamp(20px,3vw,26px)/1.2 var(--display);margin:0 0 5px;color:var(--ink)}
+.section-intro p{font-size:13px;color:var(--muted);line-height:1.5;margin:0}
+@media(min-width:800px){body:not([data-g="nha"]) .view:not([hidden]) .formcard{padding:26px}body:not([data-g="nha"]) .view:not([hidden]) .tab-head{margin-top:22px}}
+@media(max-width:480px){body:not([data-g="nha"]) .view:not([hidden]) .section-intro{padding:12px;gap:12px}.section-intro-icon{width:46px;height:46px;font-size:25px}body:not([data-g="nha"]) .view:not([hidden]) .tab-head{padding:16px}}
+
 </style>
 
 <div class="wrap" id="app">
@@ -2296,12 +2317,31 @@ let sched=false;function schedule(){if(sched)return;sched=true;requestAnimationF
 const NAVG=[{id:"nha",t:"Nhà",tabs:["nha"]},{id:"hen",t:"Hẹn hò",tabs:["hom-nay","nhat-ky","bo-luat"]},{id:"vuon",t:"Khu vườn",tabs:["khu-vuon"]},
   {id:"gui",t:"Gửi nhau",tabs:["tu-lanh","thu","uoc-mo"]},{id:"choi",t:"Chơi cùng",tabs:["truyen","ve","vuong-quoc"]},{id:"ky",t:"Kỷ niệm",tabs:["tu-dien","bao-tang","ban-do"]}];
 const TABNAME={nha:"Nhà","hom-nay":"Hũ hẹn hò","nhat-ky":"Nhật ký","bo-luat":"Bộ luật","khu-vuon":"Khu vườn","tu-lanh":"Tủ lạnh",thu:"Thư hẹn giờ","uoc-mo":"Ước mơ",truyen:"Truyện tiếp sức",ve:"Vẽ tiếp sức","vuong-quoc":"Vương quốc","tu-dien":"Từ điển","bao-tang":"Bảo tàng","ban-do":"Bản đồ"};
+const SECTION_INTROS={
+  hen:['💌','Hẹn hò','Những buổi hẹn, lời hứa và kỷ niệm của hai người.'],
+  vuon:['🌿','Khu vườn','Mỗi lần chăm sóc đều góp thêm sức sống cho góc vườn.'],
+  gui:['💝','Gửi nhau','Để lại một điều dịu dàng cho người kia tìm thấy.'],
+  choi:['🎲','Chơi cùng','Cùng viết, cùng vẽ và xây dựng thế giới của riêng mình.'],
+  ky:['📖','Kỷ niệm','Lưu giữ những điều đáng nhớ theo cách của hai người.']
+};
+function updateSectionIntro(tab,group){
+  const view=document.getElementById('v-'+tab);if(!view)return;
+  const existing=view.querySelector(':scope > .section-intro');
+  if(!SECTION_INTROS[group]){if(existing)existing.remove();return;}
+  const [emoji,title,description]=SECTION_INTROS[group];
+  if(existing){existing.querySelector('h2').textContent=title;return;}
+  const intro=document.createElement('header');intro.className='section-intro';
+  const pict=document.createElement('span');pict.className='section-intro-icon';pict.setAttribute('aria-hidden','true');pict.textContent=emoji;
+  const copy=document.createElement('div'),heading=document.createElement('h2'),para=document.createElement('p');
+  heading.textContent=title;para.textContent=description;copy.append(heading,para);intro.append(pict,copy);view.prepend(intro);
+}
 const groupOf=t=>NAVG.find(g=>g.tabs.includes(t))||NAVG[0];
 const TABS=NAVG.flatMap(g=>g.tabs);
 function route(){
   let t=location.hash.slice(1);if(t==="cac-mua")t="khu-vuon";if(!TABS.includes(t))t="nha";
   TABS.forEach(x=>{const v=$("v-"+x);if(v)v.hidden=x!==t;});
   const g=groupOf(t);
+  updateSectionIntro(t,g.id);
   document.querySelectorAll("nav.tabs a").forEach(a=>{a.setAttribute("aria-current",a.dataset.group===g.id?"page":"false");});
   const ga=document.querySelector('nav.tabs a[data-group="'+g.id+'"]');if(ga)ga.setAttribute("href","#"+t);
   document.querySelectorAll("nav.subtabs").forEach(n=>{n.hidden=n.dataset.group!==g.id;});
