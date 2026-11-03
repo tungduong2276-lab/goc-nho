@@ -179,4 +179,17 @@ Open blockers:
 Next safe action:
 ```
 
-**Current handoff as of 2026-11-03:** roadmap documented; no milestone M0–M8 implemented by writing this file. PR #10 merged. PR #9 open at last verification. Revalidate all live status before acting.
+**Current handoff as of 2026-11-03 (M0 working branch, not main):**
+
+- Main verified at `7008a7a7278aee443efc5f2593939e38538e881a`; pending branches must be compared against the latest main before merge.
+- PR #9 weather regression was patched at `c50890b`; Actions run #61 passed; regenerated 3D map assets committed at `2e8cf10`. Still Draft and requires visual geometry/hitbox review and consistency with main.
+- PR #12 (`chore/m0-firebase-safety-audit`) now includes a source-only Firebase audit, `firebase.json` for isolated emulator use, `tests/firebase/firestore-rules.test.mjs`, an `npm run test:firebase` command wired into `npm test`, and a staging-only backup/restore runbook.
+- Latest CI for PR #12 at initial handoff: Actions run #65 in progress, not yet evidence of success; check latest run before merge. A separate workflow file was not created.
+- Firebase Rules were not changed or deployed; no production connection, backup, migration, deletion or data write. Actual staging export/restore, authorization review, two-client synchronization, room geometry and UI tests remain incomplete.
+- PR #13 holds the M7 twelve-theme game expansion proposal only; no premature game implementation or Firebase schema changes.
+- **Security discovery confirmed:** initial M0 emulator CI #65 failed 1/7 tests because recursive wildcard Rules v2 could authorize an existing member to add a third member. Branch-only fix `9b96375` constrains nested match to `/{collection}/{document=**}`; CI #69 passed with the fix, but this is NOT deployed to production.
+- **Additional tests:** two-client synthetic Firestore convergence and stale `set()` overwrite demonstration added in `73c55ff`. CI runs #70/#71/#73 encountered intermittent existing garden pointer tests before reaching Firebase Emulator; pointer actionability improvements committed in `f38059d` and `72cde8a`. Last checked CI #74 was in progress; its result must be verified before calling M0 tests green.
+- **Collection source inventory:** 19 collection names under the existing couple path are listed in `docs/M0-FIREBASE-SAFETY-AUDIT.md` without inspecting live user data.
+- Next safe action: inspect the latest PR #12 CI and fix remaining failures without weakening assertions, then review Firebase Rules for compatibility and secure staging deployment. Obtain staging-only backup/restore verification before considering M0 done. No merge before the full gate.
+
+- **Update verified 2026-11-03:** PR #13 design-only M7 games merged to `main` at `112915e`; isolated security PR #14 merged at `9617ce8` (Rules fix and stabilized 3D browser pointer tests). M0 branch CI #77 succeeded: 15/15 browser and 9/9 Emulator tests. M0 remains unfinished: staging restore, live Rules verification, full two-client offline testing and geometry acceptance. PR #12 still Draft; its branch must be reconciled with the newer main before merge.
