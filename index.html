@@ -661,6 +661,7 @@ details.fold summary{font-size:17px}
 .szb{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;padding:0}
 .szb i{display:block;border-radius:50%;background:var(--ink)}
 .szb.on{border-color:var(--pink)}
+.imgbad{display:block;padding:18px 10px;text-align:center;font-size:13px;font-weight:700;color:var(--muted);background:var(--petal);border-radius:8px}
 .mytop{width:140px;max-width:100%;border-radius:10px;border:3px solid var(--petal);display:block}
 .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
 .drawing{margin:0;background:var(--surface);border-radius:8px;padding:8px 8px 6px;box-shadow:0 10px 22px -14px rgba(120,30,70,.45)}
@@ -1044,8 +1045,8 @@ body.sheet-open nav.tabs{display:none}
 .room3d.t-chieu .lay img,.room3d.t-chieu .spr{filter:sepia(.18) saturate(1.05)}
 .lay{position:absolute;display:block;padding:0;margin:0;border:0;background:none}
 .lay img{width:100%;height:100%;display:block;pointer-events:none}
-.lay.hot{cursor:pointer;-webkit-tap-highlight-color:transparent}
-.lay.hot:active img{transform:translateY(4px)}
+.lay.hot{cursor:pointer;-webkit-tap-highlight-color:transparent;pointer-events:none}
+.lay.hot.press img{transform:translateY(4px)}
 .lay.hot:focus-visible{outline:6px solid var(--pink);outline-offset:4px;border-radius:20px}
 .onwall{position:absolute;left:0;top:0;z-index:4;transform-origin:0 0;pointer-events:none;overflow:hidden}
 .onwall.cal{width:130px;height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;color:#1D2B4F}
@@ -1054,9 +1055,9 @@ body.sheet-open nav.tabs{display:none}
 .onwall.photo{width:140px;height:100px;background:#FFE6F0;display:grid;place-items:center}
 .onwall.photo img{width:100%;height:100%;object-fit:cover}
 .onwall.photo i{font-style:normal;font-size:46px;color:#FF6FA5}
-.notes{position:absolute;pointer-events:none;width:0;height:0}
-.notes i{position:absolute;font:900 40px/1 var(--body);color:#D93A7B;font-style:normal;-webkit-text-stroke:2px #1D2B4F;animation:note 2.4s ease-out infinite;opacity:0}
-.notes i:nth-child(2){animation-delay:.8s;color:#2FA463}.notes i:nth-child(3){animation-delay:1.6s;color:#7CC3F2}
+.radio-notes{position:absolute;pointer-events:none;width:0;height:0}
+.radio-notes i{position:absolute;font:900 40px/1 var(--body);color:#D93A7B;font-style:normal;-webkit-text-stroke:2px #1D2B4F;animation:note 2.4s ease-out infinite;opacity:0}
+.radio-notes i:nth-child(2){animation-delay:.8s;color:#2FA463}.radio-notes i:nth-child(3){animation-delay:1.6s;color:#7CC3F2}
 @keyframes note{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(40px,-110px) rotate(15deg)}}
 .chr{position:absolute;left:0;top:0;width:0;height:0;padding:0;border:0;background:none;overflow:visible;cursor:pointer}
 .chr .spr{pointer-events:auto;animation:scbob 3.4s ease-in-out infinite;transform-origin:50% 90%}
@@ -1100,7 +1101,7 @@ nav.tabs a[aria-current="page"] .nic{background:color-mix(in srgb,var(--acc) 22%
 
 /* màn hình chờ */
 .glogo .gsplash{width:min(260px,70%);display:block;margin:0 auto -6px;animation:none}
-@media (prefers-reduced-motion:reduce){.cloud,.fx-rain,.fx-snow,.notes i,.chr .spr,.bubble{animation:none}}
+@media (prefers-reduced-motion:reduce){.cloud,.fx-rain,.fx-snow,.radio-notes i,.chr .spr,.bubble{animation:none}}
 
 /* ---------- v9 · phối đồ + phòng mới ---------- */
 .room-tab{display:flex;flex-direction:column;gap:18px}
@@ -2083,7 +2084,7 @@ function renderWishes(){
 }
 
 /* ================= letters ================= */
-let showOwn={};
+let showOwn={},ldelArm=null;
 function letterUnlocked(l){
   if(l.unlockSeason)return completedSeasons()>=l.unlockSeason;
   if(l.unlockDate)return dayStart(new Date())>=parseDay(l.unlockDate);
@@ -2101,8 +2102,8 @@ function renderLetters(){
     const un=letterUnlocked(l),mine=meKnown&&l.from===ME;
     if(un||(mine&&showOwn[l.id]))return `<article class="letter"><div class="to">Gửi ${N(l.to)},</div><p>${esc(l.body)}</p><div class="from">${N(l.from)}</div>
       <div style="font-size:12px;color:var(--muted);font-weight:700;line-height:1.6">Viết ngày ${fmtDate(l.date)}${un?"":" · "+unlockText(l)}</div>
-      ${mine?`<div class="entry-actions">${!un?`<button class="linkish" data-lhide="${l.id}">Gấp thư lại</button>`:""}<button class="linkish" data-ldel="${l.id}">Xoá</button></div>`:""}</article>`;
-    return `<div class="envelope"><span class="seal">♥</span><div><b>Thư của ${N(l.from)} gửi ${N(l.to)}</b><span>${esc(unlockText(l))}</span>${mine?`<div class="entry-actions"><button class="linkish" data-lshow="${l.id}">Đọc lại thư mình viết</button><button class="linkish" data-ldel="${l.id}">Xoá</button></div>`:""}</div></div>`;
+      ${mine?`<div class="entry-actions">${!un?`<button class="linkish" data-lhide="${l.id}">Gấp thư lại</button>`:""}<button class="linkish" data-ldel="${l.id}">${ldelArm===l.id?"Bấm lần nữa để xoá":"Xoá"}</button></div>`:""}</article>`;
+    return `<div class="envelope"><span class="seal">♥</span><div><b>Thư của ${N(l.from)} gửi ${N(l.to)}</b><span>${esc(unlockText(l))}</span>${mine?`<div class="entry-actions"><button class="linkish" data-lshow="${l.id}">Đọc lại thư mình viết</button><button class="linkish" data-ldel="${l.id}">${ldelArm===l.id?"Bấm lần nữa để xoá":"Xoá"}</button></div>`:""}</div></div>`;
   };
   $("tab-letters").innerHTML=`<div class="tab-head"><div><h2>Thư hẹn giờ</h2><p>Viết thư cho nhau, nhưng chỉ mở được khi hết mùa hoặc đúng ngày đã hẹn.</p></div></div>
     ${meKnown?`<form class="formcard" id="letterForm"><h3>Viết thư cho ${N(1-ME)}</h3>
@@ -2120,7 +2121,7 @@ function renderLetters(){
     e.target.reset();toast("Đã niêm phong thư");rerender();};
   document.querySelectorAll("[data-lshow]").forEach(b=>b.onclick=()=>{showOwn[b.dataset.lshow]=true;rerender();});
   document.querySelectorAll("[data-lhide]").forEach(b=>b.onclick=()=>{showOwn[b.dataset.lhide]=false;rerender();});
-  document.querySelectorAll("[data-ldel]").forEach(b=>b.onclick=()=>{if(b.dataset.armed){del("letters",b.dataset.ldel);rerender();}else{b.dataset.armed=1;b.textContent="Bấm lần nữa để xoá";}});
+  document.querySelectorAll("[data-ldel]").forEach(b=>b.onclick=()=>{if(ldelArm===b.dataset.ldel){del("letters",ldelArm);ldelArm=null;}else ldelArm=b.dataset.ldel;rerender();});
 }
 
 /* ================= render loop ================= */
@@ -2157,7 +2158,7 @@ function route(){
   $("seasonRow").hidden=!(g.id==="hen"||g.id==="vuon");
   document.body.dataset.g=g.id;
   if(route.last&&route.last!==t)window.scrollTo(0,0);route.last=t;
-  if(t==="tu-lanh"){lsSet("v3-fridge-seen",new Date().toISOString());if(typeof navDots==="function")schedule();}
+  if(TAB_SEEN[t]||t==="thu"){markTabSeen(t);if(typeof navDots==="function")schedule();}
 }
 window.addEventListener("hashchange",route);
 $("drawBtn").onclick=drawNow;
@@ -2443,11 +2444,45 @@ function bindTreasure(root){
 function waiting(){
   if(ME===null)return{};const o=OTHER();
   const st=list("story").filter(s=>!s.done).sort(byDate).pop(),L=st?st.lines||[]:[];
-  const dr=list("drawings").filter(d=>!d.done).sort(byDate).pop();
+  const dr=activeDraw();
   return{water:!S.care[dkey()+"-"+ME],story:!!st&&L.length>0&&L[L.length-1].by!==ME,storyObj:st,
     draw:!!dr&&dr.topBy!==ME,kingdom:list("kingdom").filter(k=>k.status==="pending"&&k.by!==ME).length,
     realm:list("realm").filter(b=>!b.built&&b.by!==ME),hunt:!!myHunt(),gift:list("gifts").filter(g=>g.to===ME&&!g.opened&&giftReady(g)).length,
-    fridgeNew:list("fridge").filter(n=>n.by===o&&n.date>(lsGet("v3-fridge-seen")||"")).length};
+    fridgeNew:fridgeNewCount(o),
+    letterNew:list("letters").filter(l=>l.to===ME&&letterUnlocked(l)&&!letterSeen().includes(l.id)).length,
+    wishNew:list("wishes").filter(x=>x.by===o&&x.date>seenAt("wish")).length,
+    storyDone:list("story").filter(x=>x.done&&(x.doneAt||"")>seenAt("story")&&((x.lines||[])[(x.lines||[]).length-1]||{}).by===o).length,
+    drawDone:list("drawings").filter(d=>d.done&&d.topBy===ME&&d.bottomBy!==ME&&(d.bottomAt||d.date)>seenAt("draw")).length};
+}
+/* ---------- tin mới từ bạn ấy ---------- */
+const SEEN_KEY={fridge:"v3-fridge-seen",wish:"v3-wish-seen",story:"v3-story-seen",draw:"v3-draw-seen"};
+const seenAt=k=>lsGet(SEEN_KEY[k])||"";
+const markSeen=k=>lsSet(SEEN_KEY[k],nowIso());
+const letterSeen=()=>{try{return JSON.parse(lsGet("v3-letter-seen")||"[]");}catch(e){return[];}};
+function markLettersSeen(){if(ME===null)return;const ids=list("letters").filter(l=>l.to===ME&&letterUnlocked(l)).map(l=>l.id);lsSet("v3-letter-seen",JSON.stringify(Array.from(new Set(letterSeen().concat(ids)))));}
+function fridgeNewCount(o){const sn=seenAt("fridge");let c=0;list("fridge").forEach(n=>{if(n.by===o&&n.date>sn)c++;(n.replies||[]).forEach(r=>{if(r.by===o&&r.date>sn)c++;});});return c;}
+const TAB_SEEN={"tu-lanh":"fridge","uoc-mo":"wish",truyen:"story",ve:"draw"};
+function markTabSeen(t){if(TAB_SEEN[t])markSeen(TAB_SEEN[t]);if(t==="thu")markLettersSeen();}
+let newsPrev=null;
+function checkNews(){
+  if(ME===null||(MODE==="db"&&!dbReady))return;
+  const cur=location.hash.slice(1);
+  if(!lsGet("v3-news-init")){Object.keys(SEEN_KEY).forEach(k=>{if(k!=="fridge"||!lsGet(SEEN_KEY.fridge))markSeen(k);});markLettersSeen();lsSet("v3-news-init","1");}
+  markTabSeen(cur);
+  const w=waiting();
+  const now={fridge:w.fridgeNew,letter:w.letterNew,wish:w.wishNew,story:(w.story?1:0)+w.storyDone,draw:(w.draw?1:0)+w.drawDone};
+  const o=OTHER(),msg={fridge:`${N(o)} vừa dán hoặc đáp một mẩu giấy trên tủ lạnh`,letter:"Có một lá thư vừa mở được",wish:`${N(o)} vừa thêm một ước mơ`,story:w.storyDone?`${N(o)} vừa khép lại câu chuyện`:`${N(o)} vừa viết tiếp truyện, đến lượt bạn`,draw:w.drawDone?`${N(o)} vừa lật bức tranh của hai đứa`:`${N(o)} vừa vẽ nửa trên, đến lượt bạn`};
+  const tabOf={fridge:"tu-lanh",letter:"thu",wish:"uoc-mo",story:"truyen",draw:"ve"};
+  if(newsPrev&&!document.hidden){
+    const ups=Object.keys(now).filter(k=>now[k]>newsPrev[k]&&tabOf[k]!==cur);
+    if(ups.length&&!$("v3modal")){
+      const k=ups[0];
+      if(k==="draw"&&w.drawDone){const d=list("drawings").filter(x=>x.done&&x.topBy===ME&&x.bottomBy!==ME).sort(byAt("bottomAt")).pop();
+        if(d)showModal(`<h2>${esc(d.theme)}</h2><div class="reveal"><img src="${d.top}" alt="Nửa trên của ${N(d.topBy)}" ${IMGBAD}><img src="${d.bottom}" alt="Nửa dưới của ${N(d.bottomBy)}" ${IMGBAD}></div><p>${N(o)} vừa vẽ nửa dưới và lật tranh</p>`,"Đẹp quá",()=>markSeen("draw"));}
+      else toast(msg[k]);
+    }
+  }
+  newsPrev=now;
 }
 function feed(){
   const o=OTHER(),ev=[],add=(at,text,go)=>{if(at&&Date.now()-new Date(at)<7*864e5)ev.push({at,text,go});};
@@ -2481,7 +2516,11 @@ function renderHome(){
   if(w.draw)todos.push(`<li><span class="ic">${ICON.pen}</span><span class="tx">${N(o)} vẽ xong nửa trên, chờ bạn vẽ nửa dưới</span><a class="btn btn-ghost btn-small" href="#ve">Vẽ</a></li>`);
   if(w.kingdom)todos.push(`<li><span class="ic">${ICON.crown}</span><span class="tx">${w.kingdom} đề xuất đang chờ bạn duyệt</span><a class="btn btn-ghost btn-small" href="#vuong-quoc">Duyệt</a></li>`);
   if(w.realm&&w.realm.length)todos.push(`<li><span class="ic">${ICON.crown}</span><span class="tx">${N(o)} đã đặt móng ${w.realm.map(b=>(BLD[b.type]||{t:"công trình"}).t.toLowerCase()).join(", ")}<small>Cần bạn góp tay mới xây xong</small></span><a class="btn btn-ghost btn-small" href="#vuong-quoc" data-kvmap="1">Góp tay</a></li>`);
-  if(w.fridgeNew)todos.push(`<li><span class="ic">${ICON.note}</span><span class="tx">${w.fridgeNew} mẩu giấy mới trên tủ lạnh</span><a class="btn btn-ghost btn-small" href="#tu-lanh">Đọc</a></li>`);
+  if(w.fridgeNew)todos.push(`<li><span class="ic">${ICON.note}</span><span class="tx">${w.fridgeNew} tin mới trên tủ lạnh<small>Mẩu giấy hoặc lời đáp từ ${N(o)}</small></span><a class="btn btn-ghost btn-small" href="#tu-lanh">Đọc</a></li>`);
+  if(w.letterNew)todos.push(`<li class="hot"><span class="ic">${ICON.note}</span><span class="tx">${w.letterNew} lá thư đã mở được</span><a class="btn btn-main btn-small" href="#thu">Đọc</a></li>`);
+  if(w.wishNew)todos.push(`<li><span class="ic">${ICON.note}</span><span class="tx">${N(o)} thêm ${w.wishNew} ước mơ mới</span><a class="btn btn-ghost btn-small" href="#uoc-mo">Xem</a></li>`);
+  if(w.storyDone)todos.push(`<li><span class="ic">${ICON.pen}</span><span class="tx">${N(o)} đã khép lại một câu chuyện</span><a class="btn btn-ghost btn-small" href="#truyen">Đọc</a></li>`);
+  if(w.drawDone)todos.push(`<li class="hot"><span class="ic">${ICON.pen}</span><span class="tx">${N(o)} đã lật bức tranh của hai đứa</span><a class="btn btn-main btn-small" href="#ve">Xem tranh</a></li>`);
   const fd=feed(),up=upcoming(5),gifts=list("gifts"),treH=treasureHTML();
   root.innerHTML=`${inviteHTML()}${worldMapHTML()}
     <section class="blk" aria-label="Việc của bạn"><div><h2 class="v3h">Việc của bạn hôm nay</h2></div>
@@ -2544,7 +2583,7 @@ function noteHTML(n){
 }
 function renderFridge(){
   const root=$("tab-fridge");if(!root)return;
-  if(location.hash==="#tu-lanh"&&!document.hidden)lsSet("v3-fridge-seen",nowIso());
+  if(location.hash==="#tu-lanh"&&!document.hidden)markSeen("fridge");
   const notes=list("fridge").sort((a,b)=>b.date<a.date?-1:1),o=OTHER();
   root.innerHTML=`<div class="tab-head"><div><h2>Tủ lạnh nhắn nhủ</h2><p>Dán một mẩu giấy, một sticker hay một lời nhắn giọng nói cho nhau. Người kia thả tim hoặc đáp lại ngay trên mẩu giấy.</p></div></div>
     ${ME===null?`<p class="quiet">Chọn "Điện thoại này của ai" ở mục Nhà để dán giấy.</p>`:`<form class="formcard" id="frForm"><h3>Dán giấy cho ${N(o)}</h3>
@@ -2577,6 +2616,27 @@ function renderFridge(){
     put("fridge",{id:uid(),by:ME,text,color:frColor,sticker:frSticker,voice:frVoice?frVoice.url:null,dur:frVoice?frVoice.dur:0,date:nowIso(),hearts:[false,false],replies:[]});
     $("fr-text").value="";frVoice=null;frSticker=null;if(playing==="draft"&&player){player.pause();playing=null;}toast("Đã dán lên tủ lạnh");rerender();};
 }
+
+/* ---- chạm đồ vật trong phòng 3D: chỉ tính phần ảnh có nét vẽ, đồ nào nằm trên cùng thì nhận chạm ---- */
+const _layCv=new WeakMap();
+function layAlpha(img,u,v){
+  try{let c=_layCv.get(img);
+    if(!c){if(!img.complete||!img.naturalWidth)return null;c=document.createElement("canvas");c.width=img.naturalWidth;c.height=img.naturalHeight;
+      c.x=c.getContext("2d",{willReadFrequently:true});c.x.drawImage(img,0,0);_layCv.set(img,c);}
+    const px=Math.min(c.width-1,Math.max(0,Math.floor(u*c.width))),py=Math.min(c.height-1,Math.max(0,Math.floor(v*c.height)));
+    return c.x.getImageData(px,py,1,1).data[3];}catch(e){return null;}
+}
+document.addEventListener("click",e=>{
+  const cv=e.target.closest&&e.target.closest(".room3d .wcanvas");
+  if(!cv||e.target.closest(".chr")||e.target.closest(".lay"))return;
+  const x=e.clientX,y=e.clientY;
+  const ls=[...cv.querySelectorAll(".lay.hot")].map((el,i)=>({el,i,z:+el.style.zIndex||0})).sort((a,b)=>b.z-a.z||b.i-a.i);
+  for(const {el} of ls){
+    const r=el.getBoundingClientRect();if(x<r.left||x>r.right||y<r.top||y>r.bottom)continue;
+    const a=layAlpha(el.querySelector("img"),(x-r.left)/r.width,(y-r.top)/r.height);
+    if(a===null||a>30){el.classList.add("press");setTimeout(()=>el.classList.remove("press"),180);el.click();return;}
+  }
+});
 
 /* ---------- relay story ---------- */
 const STORY_START=["Ngày xưa, trên một sân thượng đầy cây, có một chậu cây biết nói.","Sáng hôm đó, hai đứa thức dậy và phát hiện mình đã đổi giọng cho nhau.","Con mèo nhà bên gõ cửa và nói: “Tôi cần hai người giúp một việc.”","Chiếc hũ hẹn hò bỗng rung lên và nhả ra một lá thăm màu vàng chưa ai từng thấy.","Năm 2085, hai cụ già ngồi trước hiên nhà và bắt đầu kể lại buổi hẹn đầu tiên.","Trên chuyến xe buýt cuối cùng của đêm, chỉ còn đúng hai hành khách.","Có một quán trà sữa chỉ mở cửa vào những đêm trời mưa.","Bản đồ kho báu được vẽ ở mặt sau một tờ hoá đơn trà chanh."];
@@ -2623,7 +2683,17 @@ function renderStory(){
 /* ---------- relay drawing ---------- */
 const DRAW_THEMES=["Một sinh vật chưa ai từng thấy","Hai đứa mình năm 80 tuổi","Thú cưng trong mơ","Ngôi nhà tương lai","Một cái cây biết nói","Người kia lúc đang ngủ","Siêu anh hùng hệ dễ thương","Robot làm vườn","Chậu cây có khuôn mặt","Một con mèo làm nghề bán trà sữa","Quái vật sợ ma","Bữa ăn hoàn hảo","Nàng tiên cá đi làm văn phòng","Chú chim mặc áo len"];
 const PAD_COLORS=["#4A2336","#E8558A","#4E9A64","#E07B4F","#8A6BD1","#3E8FC4"];
-let padKey=null,drawTheme=null,galSig=null,drawCancel=false;
+let padKey=null,drawTheme=null,galSig=null,drawCancel=false,galDel=null;
+// Bức đang dang dở: ưu tiên bức đang chờ MÌNH vẽ nửa dưới, để hai bức gửi gần nhau không bị bỏ sót.
+function activeDraw(){const un=list("drawings").filter(d=>!d.done).sort(byDate);return un.find(d=>ME!==null&&d.topBy!==ME)||un[un.length-1];}
+const IMGBAD=`onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'imgbad',textContent:'Ảnh nửa này bị lỗi, hãy vẽ lại bức này nhé'}))"`;
+function padExport(cv){
+  const ok=u=>typeof u==="string"&&/^data:image\/(jpeg|png);base64,.{300,}/.test(u);
+  let u=cv.toDataURL("image/jpeg",.8);
+  if(!ok(u))u=cv.toDataURL("image/png");
+  if(ok(u)&&u.length>420000)u=cv.toDataURL("image/jpeg",.55);
+  return ok(u)&&u.length<=420000?u:null;
+}
 function buildPad(host,opts){
   host.innerHTML=`<div class="pad-wrap">${opts.edge?`<div class="edge" style="background-image:url('${opts.edge}')"></div>`:""}
     <canvas id="padCanvas" width="600" height="400" class="pad-canvas${opts.edge?" joined":""}" aria-label="Khung vẽ ${opts.edge?"nửa dưới":"nửa trên"}"></canvas>
@@ -2642,13 +2712,13 @@ function buildPad(host,opts){
   host.querySelectorAll("[data-ps]").forEach(b=>b.onclick=()=>{size=+b.dataset.ps;host.querySelectorAll("[data-ps]").forEach(x=>x.classList.toggle("on",x===b));});
   $("padUndo").onclick=()=>{const h=hist.pop();if(h)ctx.putImageData(h,0,0);};
   $("padClear").onclick=()=>{hist.push(ctx.getImageData(0,0,600,400));ctx.fillStyle="#FFFFFF";ctx.fillRect(0,0,600,400);};
-  $("padSend").onclick=()=>{if(!dirty){toast("Vẽ vài nét trước đã nhé.");return;}opts.onSend(cv.toDataURL("image/jpeg",.8));};
+  $("padSend").onclick=()=>{if(!dirty){toast("Vẽ vài nét trước đã nhé.");return;}const url=padExport(cv);if(!url){toast("Máy này chưa xuất được hình vẽ. Thử vẽ lại hoặc tải lại trang nhé.");return;}opts.onSend(url);};
 }
 function renderDraw(){
   const root=$("tab-draw");if(!root)return;
   if(!root.dataset.built){root.innerHTML=`<div class="tab-head"><div><h2>Vẽ tiếp sức</h2><p>Một người vẽ nửa trên rồi gửi đi. Người kia chỉ thấy vài nét ở mép dưới và vẽ tiếp nửa dưới. Lật ra mới thấy cả bức tranh.</p></div></div>
     <div id="draw-state" class="blk"></div><div id="draw-pad"></div><div id="draw-gal" class="blk"></div>`;root.dataset.built="1";}
-  const all=list("drawings").sort(byDate),act=all.filter(d=>!d.done).pop(),o=OTHER();
+  const all=list("drawings").sort(byDate),act=activeDraw(),o=OTHER();
   let mode,key;
   if(ME===null){mode="noid";key="noid";}else if(!act){mode="start";key="start";}else if(act.topBy===ME){mode="wait";key="wait";}else{mode="bottom";key="bottom-"+act.id;}
   const stEl=$("draw-state");
@@ -2666,10 +2736,11 @@ function renderDraw(){
   if(key!==padKey){padKey=key;const host=$("draw-pad");
     if(mode==="start")buildPad(host,{send:"Gửi nửa trên",onSend:url=>{put("drawings",{id:uid(),theme:drawTheme,top:url,topBy:ME,topAt:nowIso(),date:nowIso(),done:false});drawTheme=null;padKey=null;toast("Đã gửi. Chờ "+S.meta.names[o]+" vẽ nửa dưới nhé.");rerender();}});
     else if(mode==="bottom")buildPad(host,{edge:act.top,send:"Lật tranh",onSend:url=>{const d=Object.assign({},S.drawings[act.id],{bottom:url,bottomBy:ME,bottomAt:nowIso(),done:true});put("drawings",d);padKey=null;rerender();
-      showModal(`<h2>${esc(d.theme)}</h2><div class="reveal"><img src="${d.top}" alt="Nửa trên của ${N(d.topBy)}"><img src="${d.bottom}" alt="Nửa dưới của ${N(d.bottomBy)}"></div><p>Nửa trên: ${N(d.topBy)} · Nửa dưới: ${N(d.bottomBy)}</p>`,"Đẹp quá",null);}});
+      showModal(`<h2>${esc(d.theme)}</h2><div class="reveal"><img src="${d.top}" alt="Nửa trên của ${N(d.topBy)}" ${IMGBAD}><img src="${d.bottom}" alt="Nửa dưới của ${N(d.bottomBy)}" ${IMGBAD}></div><p>Nửa trên: ${N(d.topBy)} · Nửa dưới: ${N(d.bottomBy)}</p>`,"Đẹp quá",null);}});
     else host.innerHTML="";}
-  const done=all.filter(d=>d.done).reverse(),sig=done.map(d=>d.id).join()+"|"+S.meta.names.join();
-  if(sig!==galSig){galSig=sig;$("draw-gal").innerHTML=done.length?`<h2 class="v3h">Phòng tranh (${done.length})</h2><div class="gal">${done.map(d=>`<figure class="drawing"><img src="${d.top}" alt="Nửa trên"><img src="${d.bottom}" alt="Nửa dưới"><figcaption>${esc(d.theme)}<small>${N(d.topBy)} vẽ trên · ${N(d.bottomBy)} vẽ dưới · ${fmtDate(d.bottomAt||d.date)}</small></figcaption></figure>`).join("")}</div>`:"";}
+  const done=all.filter(d=>d.done).reverse(),sig=done.map(d=>d.id).join()+"|"+S.meta.names.join()+"|"+galDel;
+  if(sig!==galSig){galSig=sig;$("draw-gal").innerHTML=done.length?`<h2 class="v3h">Phòng tranh (${done.length})</h2><div class="gal">${done.map(d=>`<figure class="drawing"><img src="${d.top}" alt="Nửa trên" ${IMGBAD}><img src="${d.bottom}" alt="Nửa dưới" ${IMGBAD}><figcaption>${esc(d.theme)}<small>${N(d.topBy)} vẽ trên · ${N(d.bottomBy)} vẽ dưới · ${fmtDate(d.bottomAt||d.date)}</small><button type="button" class="linkish" data-gdel="${d.id}">${galDel===d.id?"Bấm lần nữa để xoá":"Xoá"}</button></figcaption></figure>`).join("")}</div>`:"";
+    $("draw-gal").querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{if(galDel===b.dataset.gdel){del("drawings",galDel);galDel=null;}else galDel=b.dataset.gdel;galSig=null;rerender();});}
 }
 
 /* ---------- kingdom ---------- */
@@ -2699,9 +2770,11 @@ let kgKind=null,kgPicked=false,flagDraft={l:"ngang",c:[0,1,3],e:"heart"},kgWithd
 /* ---------- glue ---------- */
 function navDots(){
   const w=waiting(),set=(g,on)=>{const d=$("dot-"+g);if(d)d.hidden=!on;};
-  set("nha",!!(w.hunt||w.gift));set("vuon",!!w.water);set("choi",!!(w.story||w.draw||w.kingdom||(w.realm&&w.realm.length)));set("gui",!!w.fridgeNew);
+  set("nha",!!(w.hunt||w.gift));set("vuon",!!w.water);set("choi",!!(w.story||w.draw||w.storyDone||w.drawDone||w.kingdom||(w.realm&&w.realm.length)));set("gui",!!(w.fridgeNew||w.letterNew||w.wishNew));
+  const sub={"tu-lanh":w.fridgeNew,thu:w.letterNew,"uoc-mo":w.wishNew,truyen:(w.story?1:0)+(w.storyDone||0),ve:(w.draw?1:0)+(w.drawDone||0),"vuong-quoc":(w.kingdom||0)+((w.realm&&w.realm.length)||0)};
+  document.querySelectorAll("nav.subtabs a[data-tab]").forEach(a=>{const on=!!sub[a.dataset.tab]&&a.getAttribute("aria-current")!=="page";let d=a.querySelector(".sdot");if(on&&!d){d=document.createElement("i");d.className="ndot sdot";d.setAttribute("aria-label","Có tin mới");a.appendChild(d);}else if(!on&&d)d.remove();});
 }
-function renderV3(){renderHome();renderCare();renderFridge();renderStory();renderDraw();renderKingdom();hsRefresh();navDots();setTimeout(checkTaps,0);}
+function renderV3(){renderHome();renderCare();renderFridge();renderStory();renderDraw();renderKingdom();hsRefresh();navDots();setTimeout(checkTaps,0);setTimeout(checkNews,0);}
 function startV3(){
   setInterval(()=>{if(MODE==="db"&&dbReady&&!document.hidden)touchPresence();},15000);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden){if(MODE==="db"&&dbReady)touchPresence();schedule();}});
@@ -3577,7 +3650,7 @@ function roomHTML(){
   // chữ số trên lịch + ảnh trong khung (dán theo mặt tường)
   html+=`<div class="onwall cal" style="transform:${quadM(R.lichQuad,130,100)}"><b>${dayN||"?"}</b><span>${dayN?"ngày":"thêm ngày"}</span></div>`;
   html+=`<div class="onwall photo" style="transform:${quadM(R.anhQuad,140,100)}">${ph?`<img src="${esc(ph)}" alt="">`:`<i>♥</i>`}</div>`;
-  if(radioOn)html+=`<div class="notes" style="left:${R.radioTop[0]}px;top:${R.radioTop[1]}px" aria-hidden="true"><i>♪</i><i>♫</i><i>♪</i></div>`;
+  if(radioOn)html+=`<div class="radio-notes" style="left:${R.radioTop[0]}px;top:${R.radioTop[1]}px" aria-hidden="true"><i>♪</i><i>♫</i><i>♪</i></div>`;
   // nhân vật
   if(ME!==null){
     const seat=i=>R.ghe[CH(i)==="anh"?0:1];
@@ -3715,7 +3788,7 @@ function roomHTML(){ // phòng khách, giờ dùng nhân vật nhiều lớp
     +lay("pk_hu_"+jarState(),L.pk_hu_day[3],"hu","Hũ hẹn hò: bốc thăm")+(raining()?lay("pk_cuaso_mua",4,null):"");
   html+=`<div class="onwall cal" style="transform:${quadM(R.lichQuad,130,100)}"><b>${dayN||"?"}</b><span>${dayN?"ngày":"thêm ngày"}</span></div>`;
   html+=`<div class="onwall photo" style="transform:${quadM(R.anhQuad,140,100)}">${ph?`<img src="${esc(ph)}" alt="">`:`<i>♥</i>`}</div>`;
-  if(radioOn)html+=`<div class="notes" style="left:${R.radioTop[0]}px;top:${R.radioTop[1]}px" aria-hidden="true"><i>♪</i><i>♫</i><i>♪</i></div>`;
+  if(radioOn)html+=`<div class="radio-notes" style="left:${R.radioTop[0]}px;top:${R.radioTop[1]}px" aria-hidden="true"><i>♪</i><i>♫</i><i>♪</i></div>`;
   if(ME!==null){
     const seat=i=>R.ghe[CH(i)==="anh"?0:1];
     const meSit=sits(ME),oSit=sits(o),oHere=isHere(o),oSt=stOf(o);
