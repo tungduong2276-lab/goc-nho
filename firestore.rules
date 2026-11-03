@@ -46,8 +46,11 @@ service cloud.firestore {
           && request.resource.data.roles == resource.data.roles)
       );
 
-      // Toàn bộ dữ liệu trong nhà: chỉ hai thành viên đọc và ghi.
-      match /{document=**} {
+      // Chỉ các document TRONG subcollection thuộc nhà mới dùng quyền thành viên.
+      // Rules v2: {document=**} khớp cả 0 segment, vô tình bao phủ
+      // chính /couples/{cid} và vượt qua các ràng buộc membership ở trên.
+      // Bắt buộc có ít nhất một collection segment trước đệ quy.
+      match /{collection}/{document=**} {
         allow read, write: if request.auth != null
           && request.auth.uid in get(/databases/$(database)/documents/couples/$(cid)).data.members;
       }
