@@ -86,8 +86,7 @@ test("house overview connects the exterior to all six existing room scenes", asy
   await expect(cards).toHaveCount(6);
   await expect(cards.filter({ hasText: "Phòng khách" })).toBeVisible();
   await expect(cards.filter({ hasText: "Bếp" })).toBeVisible();
-  const broken = await cards.locator("img").evaluateAll(images => images.filter(img => !img.complete || img.naturalWidth === 0).map(img => img.getAttribute("src")));
-  expect(broken).toEqual([]);
+  await expect.poll(() => cards.locator("img").evaluateAll(images => images.every(img => img.complete && img.naturalWidth > 0))).toBe(true);
 });
 
 test("room directory navigates between interiors and marks the current room", async ({ page }) => {
