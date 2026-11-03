@@ -75,7 +75,7 @@ assert.doesNotMatch(appCode,/window\.addEventListener\("online",\(\)=>\{retryFai
 assert.doesNotMatch(appCode,/có mạng sẽ tự đồng bộ/,"offline copy does not promise automatic retry of failed writes");
 assert.match(appCode,/data-gi="cay"[^\x60]*data-hit-priority="3"/,"large daily pot has priority over overlapping seed-box hit region");
 assert.match(appCode,/key==="hopgiong"\?1/,"seed box uses lower hit priority than the daily pot");
-assert.match(appCode,/\.garden3d \.gcare \.ghit\{left:15%;right:15%;top:38%;bottom:4%\}/,"daily pot hit area covers the pot body");
+assert.match(html,/\.garden3d \.gcare \.ghit\{left:15%;right:15%;top:38%;bottom:4%\}/,"daily pot hit area covers the pot body");
 assert.match(sw,/const CACHE = "goc-nho-v12"/,"service-worker cache version is bumped for the new app shell");
 
 assert.match(appCode, /const ref=DB\.collection\(col\)\.doc\(obj\.id\)/, "existing collection/document write path is retained");
