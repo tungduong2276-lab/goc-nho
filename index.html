@@ -4074,13 +4074,13 @@ function gardenSceneHTML(){
   // đồ vật chạm được
   for(const [key,it] of Object.entries(Rm.items)){const st=gardenItemState(key),n=key+"_"+st,b=Rm.layers[n];if(!b)continue;
     const z=key==="binhtuoi"&&st==="tuoi"?2000:b[3];
-    const hx=key==="ghe"?321:(b[0]+b[2])/2,hy=key==="ghe"?570:(b[1]+b[3])/2;
+    const hx=key==="ghe"?321:(b[0]+b[2])/2,hy=key==="ghe"?585:(b[1]+b[3])/2;
     html+=btn(`data-gi="${key}" data-hit-x="${hx}" data-hit-y="${hy}"`,it.label,b[0],b[1],b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,`gobj gobj-${key} ${key==="hopgiong"&&st==="mo"?"glow":""}`,true);}
   // luống: mỗi mùa một ô, mùa đang đi lớn dần theo số buổi
   const cur=curSeason();
   for(let s=Math.max(1,cur-9);s<=cur;s++){const P=seasonPlant(s),p=Rm.spots.luong[(s-1)%10];
     const label=P.done?`Mùa ${s}: ${BLOOMS[P.sd.kind].name.toLowerCase()}, ${P.sd.avg.toFixed(1)} tim`:`Mùa ${s} đang lớn: ${P.n}/10 buổi`;
-    html+=plantAt(`hoa_${P.type}_${P.gd}`,p,fk*1.7,p[1],`data-gs="${s}" data-hit-x="${p[0]}" data-hit-y="${p[1]}"`,label,`gfl${gardenSel===s?" sel":""}${P.done?"":" growing"}`);}
+    html+=plantAt(`hoa_${P.type}_${P.gd}`,p,fk*1.7,p[1],`data-gs="${s}" data-hit-x="${p[0]}" data-hit-y="${p[1]-70}"`,label,`gfl${gardenSel===s?" sel":""}${P.done?"":" growing"}`);}
   // chậu lớn: cây chăm hằng ngày
   const cn=careNow(),cp=Rm.spots.cay[0];
   html+=plantAt(`hoa_${cn.type}_${cn.gd}`,cp,fk*3,cp[1]+1,`data-gi="cay" data-hit-x="${cp[0]}" data-hit-y="${cp[1]-55}"`,`${FL3N[cn.type]}, ${cn.stage}/10 ngày đủ nước. Chạm để tưới`,`gcare${cn.wilt&&cn.gd!=="heo"?" wilt":""}${Date.now()-justWatered<1800?" drink":""}`);
