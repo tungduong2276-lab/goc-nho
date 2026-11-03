@@ -1,3 +1,13 @@
+# Bản 12 · tab Gửi nhau 3D
+
+Bản này được đẩy thẳng lên GitHub, không cần tải file. Đợi 1–2 phút, mở app, bấm **Mở bản mới**. Dữ liệu và Rules giữ nguyên.
+
+**Bản 12 có gì mới**
+- **Ba tab con của Gửi nhau nằm trên một sân 3D**, đổi theo bình minh, ban ngày, hoàng hôn, ban đêm: **tủ lạnh** (giấy nhắn), **hộp thư** (thư hẹn giờ) và **lọ ước mơ**. Chạm vào vật nào là sang tab đó; vật của tab đang xem được viền sáng.
+- **Vật đổi theo dữ liệu thật:** tủ lạnh có thêm giấy khi hai bạn dán nhiều; hộp thư dựng cờ và thò thư ra khi có thư mới mở được; lọ ước mơ đầy sao dần theo số ước mơ chưa làm.
+- **Huy hiệu số tin mới** hiện trên vật: giấy hoặc lời đáp mới ở tủ lạnh, thư vừa mở được, ước mơ bạn ấy mới thêm.
+- Kèm các sửa lỗi ở bản trước: tủ lạnh đáp lại và gỡ giấy được, chạm đúng đồ vật trong phòng 3D, vẽ tiếp sức kiểm tra ảnh trước khi lưu, thanh nhắc việc ở đầu trang Nhà.
+
 # Bản 11 · tab Khu vườn 3D
 
 Bản này được đẩy thẳng lên GitHub, không cần tải file. Đợi 1–2 phút, mở app, bấm **Mở bản mới**. Dữ liệu và Rules giữ nguyên.

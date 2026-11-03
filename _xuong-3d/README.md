@@ -16,10 +16,11 @@ Mã dựng toàn bộ hình 3D trong `assets/3d`. App không dùng thư mục n�
 | `flora.js` | 12 loại hoa × 7 trạng thái |
 | `kingdom.js` | đảo vương quốc và 17 công trình |
 | `garden.js` | khu vườn (tab Khu vườn) |
+| `gui_nhau.js` | sân Gửi nhau: tủ lạnh, hộp thư, lọ ước mơ (tab Gửi nhau). Dùng lại hàng rào, cây, đèn từ `garden.js` |
 | `fest.js` | lớp phủ lễ hội |
 | `stickers.js`, `emo.py` | sticker, huy hiệu, sticker cảm xúc |
 | `brand.js` | icon app, màn hình chờ |
-| `pack*.py` | đổi sang WebP và ghi `assets/3d/scene.json` |
+| `pack*.py` | đổi sang WebP và ghi `assets/3d/scene.json` (`pack5.py` cho Gửi nhau) |
 | `v8_inject.js` … `v10_inject.js` | mã đã ghép vào `index.html` ở từng bản (để tham khảo) |
 
-**Còn lại (4 tab):** Hẹn hò, Gửi nhau, Chơi cùng, Kỷ niệm. Mỗi tab cần một cảnh 3D làm sân khấu và giao diện vẽ lại cùng kiểu với tab Nhà.
+**Còn lại (3 tab):** Hẹn hò, Chơi cùng, Kỷ niệm. Mỗi tab cần một cảnh 3D làm sân khấu và giao diện vẽ lại cùng kiểu với tab Nhà.
