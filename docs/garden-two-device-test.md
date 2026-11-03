@@ -22,9 +22,9 @@ node scripts/check-garden.mjs
 Bài test gọi trực tiếp hàm `nearestGardenHit` lấy từ mã ứng dụng và xác nhận:
 - Tâm luống mùa 1 chọn đúng mùa 1, không chọn cây chăm hằng ngày.
 - Tâm luống mùa 2 chọn đúng mùa 2, không chọn mùa 3.
-- Tâm hộp hạt giống chọn hộp hạt giống, không chọn xích đu.
+- Tâm hộp hạt giống chọn hộp hạt giống, không chọn xích đu; kiểm tra cả trạng thái hộp đóng/mở và bình tưới thường/đang tưới.
 - Tâm xích đu và bình tưới chọn đúng vật thể.
-- Các vùng chạm hoa, chậu chăm hằng ngày, bình tưới, hộp hạt, xích đu, kệ và bảng đạt tối thiểu 44 × 44 CSS px ở viewport 390px theo cấu hình và tỷ lệ CSS.
+- Các vùng chạm hoa, chậu chăm hằng ngày, bình tưới, hộp hạt, xích đu, kệ và bảng đạt tối thiểu 44 × 44 CSS px ở viewport 360px theo cấu hình và tỷ lệ CSS.
 - Hướng dẫn thu gọn, gallery mùa mở từ bảng/luống và dùng ảnh hoa 3D có sẵn; kệ chậu không mở gallery mùa.
 - Heartbeat hiện diện không tham gia trạng thái lưu; lỗi ghi có đường dẫn thử lại.
 - Cú pháp JavaScript nội tuyến hợp lệ và đường dẫn Firestore giữ nguyên.
@@ -61,5 +61,5 @@ Dùng hai điện thoại thật, tốt nhất một iPhone Safari và một And
 
 - Đã phân tích cú pháp JavaScript nội tuyến bằng V8.
 - Đã kiểm thử hàm chọn mục tiêu gần nhất với các tọa độ thực trong `scene.json`, gồm các trường hợp người dùng báo lỗi.
-- Đã tính kích thước vùng chạm theo kích thước cấu hình và tỷ lệ viewport 390px.
+- Đã tính kích thước vùng chạm theo kích thước cấu hình và tỷ lệ viewport 360px.
 - Chưa chạy trình duyệt thật trên iOS/Android và chưa có hai thiết bị Firebase staging để xác nhận DUAL-01…DUAL-10. Chưa coi PR là sẵn sàng merge.
