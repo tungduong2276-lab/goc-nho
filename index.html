@@ -1564,7 +1564,7 @@ function mergeMetaForWrite(latest,patch){
       for(let i=0;i<value.length;i++)if(JSON.stringify(value[i])!==JSON.stringify(base[i]))merged[i]=value[i];
       out[key]=merged;
     }else if(key==="custom"&&Array.isArray(value)){
-      if(!value.length){out.custom=[];continue;}
+      if(!value.length){const baseCustom=(p.__base||{}).custom;if(!Array.isArray(baseCustom)||JSON.stringify(out.custom||[])===JSON.stringify(baseCustom))out.custom=[];continue;}
       const merged=Array.isArray(out.custom)?clone(out.custom):[],seen=new Set();
       for(const item of value){
         const fingerprint=JSON.stringify(item);if(seen.has(fingerprint))continue;seen.add(fingerprint);
@@ -3523,7 +3523,7 @@ if("serviceWorker" in navigator)window.addEventListener("load",()=>{
 function netState(){
   const off=navigator.onLine===false,b=$("syncBox");if(!b)return;
   b.classList.toggle("offline",off);
-  if(off)setSync("Đang ngoại tuyến · có mạng sẽ tự đồng bộ",false);
+  if(off)setSync("Đang ngoại tuyến · thay đổi sẽ chờ kết nối",false);
   else if(MODE==="db")setSync(dbReady?"Đồng bộ giữa hai máy":"Đang kết nối...",dbReady);
 }
 window.addEventListener("online",netState);window.addEventListener("offline",netState);

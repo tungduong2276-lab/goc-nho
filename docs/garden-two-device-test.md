@@ -9,6 +9,7 @@ Các thay đổi được thực hiện trực tiếp trên nhánh `feature/gard
 - Chỉ dùng bộ phân giải tọa độ cho thao tác chuột/chạm; Enter/Space phải kích hoạt đúng nút đang focus.
 - Chỉ so sánh những vùng hit thực sự chứa điểm chạm, không chọn nhầm vật thể ở xa.
 - Mở rộng vùng hit xích đu quanh vị trí ghế thực trong `assets/3d/scene.json`.
+- Ưu tiên vùng chạm chậu chăm cây hơn hộp hạt giống khi hai vùng giao nhau; mở rộng vùng chạm vào thân chậu.
 
 ## An toàn dữ liệu
 
@@ -38,6 +39,7 @@ npm test
    - Chạm vào thân nhân vật gửi đúng một cái ôm ở viewport 390px và 360px.
    - Chạm lưới 9 điểm trên bảng gỗ ở cả hai viewport vẫn mở đúng gallery, không bị bình tưới chiếm sự kiện.
    - Nhấn Enter trên nút bảng gỗ kích hoạt chính nút đó, không bị chuyển thành xích đu.
+   - Chạm vào vùng giao nhau giữa chậu lớn và hộp hạt giống tại 390px và 360px phải tưới cây, không mở hộp hạt giống.
 
 Server kiểm thử chỉ thay đổi nội dung HTML trong bộ nhớ khi phục vụ `index.html`, bỏ qua `cloudInit();initDb();`. File production không bị sửa bởi bước này. Workflow GitHub Actions `.github/workflows/garden-browser.yml` cài Chromium và chạy `npm test` cho các thay đổi liên quan.
 
@@ -55,7 +57,7 @@ Dùng hai điện thoại thật, tốt nhất một iPhone Safari và một And
 | DUAL-06 | Chạm tâm luống mùa 1 và mùa 2 | Quan sát phần mùa bên dưới | Mỗi lần mở đúng mùa tương ứng, không kích hoạt tưới cây hoặc mùa kế bên |
 | DUAL-07 | Chạm bảng gỗ, sau đó kệ chậu | Quan sát gallery và chậu | Bảng mở gallery mùa; kệ chỉ trưng chậu chăm hằng ngày, không mở gallery mùa |
 | DUAL-08 | Thực hiện một thao tác ghi trên staging khi mạng ổn định | Quan sát trạng thái đồng bộ | Hiện đang lưu, sau xác nhận trở về đã lưu/đồng bộ; heartbeat chỉ ghi hiện diện khoảng 110 giây một lần khi cần |
-| DUAL-09 | Ngắt mạng A, thực hiện một thao tác ghi thử trên staging, rồi nối mạng lại | Quan sát trạng thái của cả hai | Không báo đã lưu trước khi Firebase xác nhận; lỗi có thể chạm để thử lại; xác minh dữ liệu cuối cùng trên Firestore |
+| DUAL-09 | Ngắt mạng A, thực hiện một thao tác ghi thử trên staging, rồi nối mạng lại | Quan sát trạng thái của cả hai | Không tự retry chỉ vì có mạng trở lại; người dùng chủ động chạm trạng thái đồng bộ. Khi retry `meta/main`, thao tác phải đọc tài liệu mới nhất trong transaction và chỉ áp dụng các trường thực sự thay đổi; dữ liệu mới của B không bị mất |
 | DUAL-10 | Chạm các mục ở cạnh nhau trên màn hình 360 CSS px trở lên | Lặp lại trên B | Chọn đúng vật thể dưới ngón tay; không có vùng chạm chồng lấn gây kích hoạt nhầm |
 
 ## Tiêu chí chấp nhận
@@ -64,11 +66,14 @@ Dùng hai điện thoại thật, tốt nhất một iPhone Safari và một And
 - Không có thao tác gallery hoặc hướng dẫn nào ghi lên Firestore.
 - Không có thay đổi schema, collection, document ID, hoặc Security Rules.
 - Các thao tác ghi hiển thị trạng thái đang chờ / lỗi thay vì luôn báo đồng bộ thành công.
+- Retry `meta/main` dùng transaction đọc dữ liệu mới nhất, hợp nhất patch thay đổi; mảng `custom` được hợp nhất để không làm mất trò mới từ thiết bị kia. Các mục hồ sơ không thay đổi trong lần thao tác không bị ghi đè.
+- Khi có mạng trở lại, ứng dụng không tự retry các ghi thất bại; người dùng chủ động bấm trạng thái đồng bộ.
 - Hai điện thoại nhận được thay đổi qua snapshot realtime và không tạo bản ghi trùng khi thao tác tưới cùng ngày.
 - Các kịch bản DUAL-01…DUAL-10 được thực hiện bằng Firebase staging, không dùng production.
 
 ## Trạng thái rà soát
 
-- GitHub Actions run #18 trên `ubuntu-24.04`: `npm test` PASS; static checks PASS và Playwright Chromium **7/7 PASS**.
+- GitHub Actions run #18 trên `ubuntu-24.04`: `npm test` PASS; static checks PASS và Playwright Chromium **7/7 PASS** (head trước các sửa đổi mới).
+- Các sửa đổi mới về transaction, vùng chạm chậu và cache đang chờ CI xác nhận trên head mới.
 - Bộ kiểm thử trình duyệt không kết nối Firebase và không thể thay thế kiểm thử iOS Safari / Android Chrome trên thiết bị thật.
 - Chưa thực hiện DUAL-01…DUAL-10 trên hai điện thoại và Firebase staging. Chưa coi PR là sẵn sàng merge.

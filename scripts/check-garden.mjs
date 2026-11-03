@@ -51,7 +51,7 @@ const mergedNames=mergeMetaForWrite(
   {names:["Tên vừa đổi trên máy kia","Tên thứ hai"]},
   {names:["Tên mới trên máy này","Tên thứ hai"],__base:{names:["Tên cũ","Tên thứ hai"]}}
 );
-assert.deepEqual(Array.from(mergedNames.names),["Tên mới trên máy này","Tên thứ hai"],"unchanged profile-array entries do not overwrite remote values");
+assert.deepEqual(Array.from(mergedNames.names),["Tên mới trên máy này","Tên hai vừa đổi trên máy kia"],"unchanged profile-array entries do not overwrite remote values");
 const mergedBirthdays=mergeMetaForWrite(
   {bday:["01-01","02-02"]},
   {bday:["01-01","03-03"],__base:{bday:["01-01","02-02"]}}
@@ -61,6 +61,11 @@ assert.equal(mergedMeta.song,"remote","unrelated remote metadata survives retry"
 assert.ok(mergedMeta.custom.some(x=>x.name==="Trò của thiết bị kia"),"remote custom game is preserved");
 assert.ok(mergedMeta.custom.some(x=>x.name==="Trò mới trên máy này"&&x.n!==9),"conflicting custom game receives a free number");
 assert.equal(mergedMeta.pending.n,10,"pending draw follows the remapped custom game");
+const resetMerge=mergeMetaForWrite(
+  {custom:[{n:12,name:"Trò mới vừa thêm trên thiết bị kia"}]},
+  {custom:[],__base:{custom:[]}}
+);
+assert.equal(resetMerge.custom[0].name,"Trò mới vừa thêm trên thiết bị kia","a stale reset retry does not erase a custom game added remotely");
 assert.match(appCode,/DB\.runTransaction\(async tx=>\{[\s\S]*?tx\.get\(ref\)[\s\S]*?tx\.set\(ref,mergeMetaForWrite\(latest,payload\)\)/,"meta retry reads latest Firestore state inside a transaction");
 assert.match(appCode,/window\.addEventListener\("online",refreshDbWriteStatus\)/,"network recovery does not automatically retry failed writes");
 assert.doesNotMatch(appCode,/window\.addEventListener\("online",\(\)=>\{retryFailedDbWrites\(\)/,"no automatic retry on online event");
