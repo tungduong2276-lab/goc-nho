@@ -73,7 +73,9 @@ Dùng hai điện thoại thật, tốt nhất một iPhone Safari và một And
 
 ## Trạng thái rà soát
 
-- GitHub Actions run #18 trên `ubuntu-24.04`: `npm test` PASS; static checks PASS và Playwright Chromium **7/7 PASS** (head trước các sửa đổi mới).
-- Các sửa đổi mới về transaction, vùng chạm chậu và cache đang chờ CI xác nhận trên head mới.
+- GitHub Actions run #18 là kết quả lịch sử trước các sửa đổi follow-up.
+- GitHub Actions run #30 trên `ubuntu-24.04`, head `d0cde3ec13b79bd696249052201a7c0320e28023`: **success**; `npm test` gồm static checks PASS và Playwright Chromium **8/8 PASS**.
+- `sw.js` hiện dùng cache version `goc-nho-v12`.
+- Chưa thực hiện DUAL-01…DUAL-10 trên Firebase staging; chưa kiểm thử iOS Safari / Android Chrome bằng thiết bị thật.
 - Bộ kiểm thử trình duyệt không kết nối Firebase và không thể thay thế kiểm thử iOS Safari / Android Chrome trên thiết bị thật.
 - Chưa thực hiện DUAL-01…DUAL-10 trên hai điện thoại và Firebase staging. Chưa coi PR là sẵn sàng merge.
