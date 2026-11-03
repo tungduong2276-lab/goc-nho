@@ -70,7 +70,7 @@ assert.equal(resetMerge.custom[0].name,"Trò mới vừa thêm trên thiết b�
 
 assert.match(appCode,/DB\.runTransaction\(async tx=>\{[\s\S]*?tx\.get\(ref\)[\s\S]*?tx\.set\(ref,mergeMetaForWrite\(latest,payload\)\)/,"meta retry reads latest Firestore state inside a transaction");
 assert.match(appCode,/window\.addEventListener\("online",refreshDbWriteStatus\)/,"network recovery does not automatically retry failed writes");
-assert.match(appCode,/else if\(MODE==="db"\)\{if\(dbReady\)refreshDbWriteStatus\(\);else setSync\("Đang kết nối...",false);\}/,"online status refresh preserves a pending manual-retry warning");
+assert.ok(appCode.includes('else if(MODE==="db"){if(dbReady)refreshDbWriteStatus();else setSync("Đang kết nối...",false);}'),"online status refresh preserves a pending manual-retry warning");
 assert.doesNotMatch(appCode,/window\.addEventListener\("online",\(\)=>\{retryFailedDbWrites\(\)/,"no automatic retry on online event");
 assert.doesNotMatch(appCode,/có mạng sẽ tự đồng bộ/,"offline copy does not promise automatic retry of failed writes");
 assert.match(appCode,/data-gi="cay"[^\x60]*data-hit-priority="3"/,"large daily pot has priority over overlapping seed-box hit region");
