@@ -47,11 +47,11 @@ expectTarget("center of seed box", (layers.hopgiong_dong[0] + layers.hopgiong_do
 expectTarget("center of swing seat", 321, 570, "ghe");
 expectTarget("center of watering can", (layers.binhtuoi_nghi[0] + layers.binhtuoi_nghi[2]) / 2, (layers.binhtuoi_nghi[1] + layers.binhtuoi_nghi[3]) / 2, "binhtuoi");
 
-function pxAt390(width, height) { return [width * 390 / 1170, height * 390 / 1170]; }
+function pxAt360(width, height) { return [width * 360 / 1170, height * 360 / 1170]; }
 function checkMinTarget(label, width, height) {
-  const [w, h] = pxAt390(width, height);
-  assert.ok(w >= 44 && h >= 44, label + " target must be at least 44x44 CSS px at 390px viewport");
-  console.log(`PASS touch size: ${label} ${w.toFixed(1)}x${h.toFixed(1)} CSS px at 390px`);
+  const [w, h] = pxAt360(width, height);
+  assert.ok(w >= 44 && h >= 44, label + " target must be at least 44x44 CSS px at 360px viewport");
+  console.log(`PASS touch size: ${label} ${w.toFixed(1)}x${h.toFixed(1)} CSS px at 360px`);
 }
 const flowerSize = 256 * (room.ppm / scene.flower.ppm) * 1.7;
 checkMinTarget("flower", flowerSize * .70, flowerSize * .87);
@@ -59,14 +59,19 @@ const careSize = 256 * (room.ppm / scene.flower.ppm) * 3;
 checkMinTarget("daily care plant", careSize * .39, careSize * .41);
 const box = (key) => layers[key];
 const dims = key => [box(key)[2] - box(key)[0], box(key)[3] - box(key)[1]];
+assert.match(html, /\.garden3d \.gobj\[data-gi="binhtuoi"\] \.ghit\{left:-55%;right:-55%;top:-25%;bottom:-25%\}/, "watering hit-area CSS is the tested geometry");
 const [waterW, waterH] = dims("binhtuoi_nghi");
 checkMinTarget("watering can", waterW * 2.10, waterH * 1.50);
+assert.match(html, /\.garden3d \.gobj\[data-gi="hopgiong"\] \.ghit\{left:-22%;right:-22%;top:-38%;bottom:-38%\}/, "seed hit-area CSS is the tested geometry");
 const [seedW, seedH] = dims("hopgiong_dong");
-checkMinTarget("seed box", seedW * 1.44, seedH * 1.70);
+checkMinTarget("seed box", seedW * 1.44, seedH * 1.76);
+assert.match(html, /\.garden3d \.gobj\[data-gi="ghe"\] \.ghit\{left:5%;right:35%;top:5%;bottom:45%\}/, "swing hit-area CSS is the tested geometry");
 const [swingW, swingH] = dims("ghe_trong");
 checkMinTarget("swing seat", swingW * .60, swingH * .50);
+assert.match(html, /\.garden3d \.gobj\[data-gi="ke"\] \.ghit\{left:4%;right:4%;top:4%;bottom:4%\}/, "shelf hit-area CSS is the tested geometry");
 const [shelfW, shelfH] = dims("ke_trong");
 checkMinTarget("plant shelf", shelfW * .92, shelfH * .92);
+assert.match(html, /\.garden3d \.gobj\[data-gi="bang"\] \.ghit\{inset:0\}/, "board hit-area CSS is the tested geometry");
 const [boardW, boardH] = dims("bang_trong");
 checkMinTarget("season board", boardW, boardH);
 
