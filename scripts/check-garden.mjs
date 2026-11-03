@@ -10,7 +10,7 @@ const sw = readFileSync(resolve(root, "sw.js"), "utf8");
 const motion = readFileSync(resolve(root, "assets/3d/living-motion.js"), "utf8");
 new Script(motion, { filename: "assets/3d/living-motion.js" });
 const scene = JSON.parse(readFileSync(resolve(root, "assets/3d/scene.json"), "utf8"));
-const scriptTag = html.lastIndexOf("<script");
+const scriptTag = html.lastIndexOf("<script>");
 const scriptOpen = html.indexOf(">", scriptTag) + 1;
 const scriptClose = html.indexOf("</script>", scriptOpen);
 assert.ok(scriptTag >= 0 && scriptClose > scriptOpen, "inline application script exists");
