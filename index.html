@@ -1195,6 +1195,7 @@ nav.tabs a[aria-current="page"] .nic{background:color-mix(in srgb,var(--acc) 22%
 .garden3d .gobj[data-gi="ghe"] .ghit{left:0;right:0;top:25%;bottom:0}
 .garden3d .gobj[data-gi="ke"] .ghit{left:4%;right:4%;top:4%;bottom:4%}
 .garden3d .gobj[data-gi="bang"] .ghit{inset:0}
+.garden3d .chr .gchar-hit{position:absolute;display:block;left:-70px;top:-225px;width:140px;height:210px;border-radius:48%;pointer-events:auto;touch-action:manipulation}
 @keyframes gTapPulse{0%{opacity:.95;transform:scale(.88)}100%{opacity:0;transform:scale(1.14)}}
 .garden3d .chr{appearance:none;-webkit-appearance:none;touch-action:manipulation;text-align:initial;color:inherit}
 .garden3d .chr.tap-flash .cstack{filter:drop-shadow(0 0 9px var(--pink))}
@@ -4075,7 +4076,7 @@ function gardenSceneHTML(){
   for(const [key,it] of Object.entries(Rm.items)){const st=gardenItemState(key),n=key+"_"+st,b=Rm.layers[n];if(!b)continue;
     const z=key==="binhtuoi"&&st==="tuoi"?2000:b[3];
     const hx=key==="ghe"?(Rm.spots.ghe[0][0]+Rm.spots.ghe[1][0])/2:(b[0]+b[2])/2,hy=key==="ghe"?(Rm.spots.ghe[0][1]+Rm.spots.ghe[1][1])/2:(b[1]+b[3])/2;
-    html+=btn(`data-gi="${key}" data-hit-x="${hx}" data-hit-y="${hy}"`,it.label,b[0],b[1],b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,`gobj gobj-${key} ${key==="hopgiong"&&st==="mo"?"glow":""}`,true);}
+    html+=btn(`data-gi="${key}" data-hit-x="${hx}" data-hit-y="${hy}" data-hit-priority="${key==="bang"?3:key==="binhtuoi"?1:2}"`,it.label,b[0],b[1],b[2]-b[0],b[3]-b[1],z,"khu_vuon_"+n,`gobj gobj-${key} ${key==="hopgiong"&&st==="mo"?"glow":""}`,true);}
   // luống: mỗi mùa một ô, mùa đang đi lớn dần theo số buổi
   const cur=curSeason();
   for(let s=Math.max(1,cur-9);s<=cur;s++){const P=seasonPlant(s),p=Rm.spots.luong[(s-1)%10];
@@ -4094,7 +4095,7 @@ function gardenSceneHTML(){
   if(ME!==null){const sp=Rm.spots.dung,seat=Rm.spots.ghe,gz=(Rm.layers.ghe_trong||[0,0,0,800])[3]+6;
     [ME].concat(isHere(o)?[o]:[]).forEach((i,j)=>{const sit=gSits(i),pt=sit?seat[CH(i)==="anh"?0:1]:sp[j];
       const pose=sit?"ngoi":i===ME&&(Date.now()-waveMe<1600||Date.now()-justWatered<1800)?"vaytay":"dung";
-      html+=`<button type="button" class="chr" data-gchar="${i}" data-hit-x="${pt[0]}" data-hit-y="${pt[1]-70}" aria-label="Gửi một cái ôm cho ${esc(S.meta.names[OTHER()])}" style="z-index:${Math.round(sit?gz:pt[1])}">${charStack(i,pose,pt,k,null)}<span class="ctag c-${CH(i)}" style="left:${pt[0]}px;top:${pt[1]+8}px">${N(i)}</span></button>`;});}
+      html+=`<button type="button" class="chr" data-gchar="${i}" data-hit-x="${pt[0]}" data-hit-y="${pt[1]-120}" data-hit-priority="4" aria-label="Gửi một cái ôm cho ${esc(S.meta.names[OTHER()])}" style="z-index:${Math.round(sit?gz:pt[1])}">${charStack(i,pose,pt,k,null)}<i class="ghit gchar-hit" aria-hidden="true"></i><span class="ctag c-${CH(i)}" style="left:${pt[0]}px;top:${pt[1]+8}px">${N(i)}</span></button>`;});}
   const sky=Date.now()-justWatered<1800?`<div class="drops g3" style="left:${cp[0]-80}px;top:${cp[1]-260}px">${[20,48,76,104,132].map((x,i)=>`<i style="left:${x}px;animation-delay:${i*.12}s"></i>`).join("")}</div>`:"";
   return`<div class="room3d garden3d t-${t}"><div class="w3fit rstage" data-w="1170"><div class="wcanvas" style="width:1170px;height:1170px">
     <img class="wbg" src="${A3("khu_vuon_"+t)}" alt="Khu vườn của ${N(0)} và ${N(1)}" draggable="false">${html}${sky}</div></div>${fx()}</div>`;
@@ -4108,12 +4109,13 @@ function nearestGardenHit(clientX,clientY,targets,canvas){
     const area=el.querySelector(".ghit")||el,r=area.getBoundingClientRect();
     return clientX>=r.left&&clientX<=r.right&&clientY>=r.top&&clientY<=r.bottom;
   });
-  let best=null,bestD=Infinity;
+  let best=null,bestD=Infinity,bestPriority=-Infinity;
   for(const el of candidates){
     const cx=canvasRect.left+Number(el.dataset.hitX)*scale;
     const cy=canvasRect.top+Number(el.dataset.hitY)*scale;
     const dx=clientX-cx,dy=clientY-cy,d=dx*dx+dy*dy;
-    if(d<bestD){best=el;bestD=d;}
+    const priority=Number(el.dataset.hitPriority||0);
+    if(priority>bestPriority||(priority===bestPriority&&d<bestD)){best=el;bestD=d;bestPriority=priority;}
   }
   return best;
 }
