@@ -3885,7 +3885,7 @@ function houseRoomNavHTML(active){
   return `<section class="house-rooms" aria-label="Các phòng trong nhà">
     <div class="house-rooms-head"><div><h2 class="v3h">Các phòng trong nhà</h2><p class="v3sub">Chọn một cánh cửa để ghé thăm từng góc nhỏ.</p></div><a class="linkish" href="#nha">Toàn cảnh nhà</a></div>
     <div class="house-room-strip">${HOUSE_ROOMS.map(r=>`<a class="house-room-card${active===r.id?" active":""}" href="#${r.id}" ${active===r.id?'aria-current="page"':""}>
-      <span class="house-room-thumb"><img src="${A3(r.image)}" alt="" loading="lazy" draggable="false"></span><span class="house-room-title">${r.title}</span><span class="house-room-note">${r.note}</span>
+      <span class="house-room-thumb"><img src="${A3(r.image)}" alt="" draggable="false"></span><span class="house-room-title">${r.title}</span><span class="house-room-note">${r.note}</span>
     </a>`).join("")}</div></section>`;
 }
 
