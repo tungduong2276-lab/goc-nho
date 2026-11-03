@@ -33,7 +33,7 @@
       transform-origin: 50% 90%;
       animation: gnFlowerIdle 6.4s ease-in-out infinite;
     }
-    .garden3d .gfl img {
+    .garden3d .gfl.growing img { animation: gnFlowerIdle 5.7s ease-in-out infinite !important; animation-delay: var(--gn-delay, 0s); transform-origin: 50% 88%; }\n    .garden3d .gfl img {
       transform-origin: 50% 88%;
       animation: gnFlowerIdle 5.7s ease-in-out infinite;
       animation-delay: var(--gn-delay, 0s);
