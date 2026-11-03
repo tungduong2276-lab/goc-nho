@@ -7,6 +7,8 @@ import { dirname, resolve } from "node:path";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const html = readFileSync(resolve(root, "index.html"), "utf8");
 const sw = readFileSync(resolve(root, "sw.js"), "utf8");
+const motion = readFileSync(resolve(root, "assets/3d/living-motion.js"), "utf8");
+new Script(motion, { filename: "assets/3d/living-motion.js" });
 const scene = JSON.parse(readFileSync(resolve(root, "assets/3d/scene.json"), "utf8"));
 const scriptTag = html.lastIndexOf("<script");
 const scriptOpen = html.indexOf(">", scriptTag) + 1;
@@ -76,7 +78,13 @@ assert.doesNotMatch(appCode,/có mạng sẽ tự đồng bộ/,"offline copy do
 assert.match(appCode,/data-gi="cay"[^\x60]*data-hit-priority="3"/,"large daily pot has priority over overlapping seed-box hit region");
 assert.match(appCode,/key==="hopgiong"\?1/,"seed box uses lower hit priority than the daily pot");
 assert.match(html,/\.garden3d \.gcare \.ghit\{left:15%;right:15%;top:38%;bottom:4%\}/,"daily pot hit area covers the pot body");
-assert.match(sw,/const CACHE = "goc-nho-v12"/,"service-worker cache version is bumped for the new app shell");
+assert.match(sw,/const CACHE = "goc-nho-v13"/,"service-worker cache version is bumped for the new app shell");
+assert.match(index,/assets\/3d\/living-motion\.js/, "living motion runtime is loaded after the app");
+assert.match(sw,/\.\/assets\/3d\/living-motion\.js/, "living motion runtime is precached for offline startup");
+assert.match(motion,/prefers-reduced-motion:\\s*reduce/, "motion layer respects reduced-motion preferences");
+assert.match(motion,/document\.addEventListener\("pointerdown"/, "motion layer responds to real pointer input");
+assert.match(motion,/gnCharacterIdle|gnFlowerIdle|gnPetReact/, "motion layer defines character, plant, and pet behavior");
+assert.doesNotMatch(motion,/firebase|Firestore|localStorage|sessionStorage/i, "motion layer does not touch user data or Firebase");
 
 assert.match(appCode, /const ref=DB\.collection\(col\)\.doc\(obj\.id\)/, "existing collection/document write path is retained");
 assert.match(appCode, /const ref=DB\.doc\("meta\/main"\)/, "existing meta document path is retained");
