@@ -84,7 +84,7 @@ assert.match(sw,/\.\/assets\/3d\/living-motion\.js/, "living motion runtime is p
 assert.match(motion,/prefers-reduced-motion:\s*reduce/, "motion layer respects reduced-motion preferences");
 assert.match(motion,/document\.addEventListener\("pointerdown"/, "motion layer responds to real pointer input");
 assert.match(motion,/gnCharacterIdle|gnFlowerIdle|gnPetReact/, "motion layer defines character, plant, and pet behavior");
-assert.doesNotMatch(motion,/(?:firebase|Firestore|localStorage|sessionStorage)\\s*[.(]/i, "motion layer does not touch user data or Firebase");
+assert.doesNotMatch(motion,/(?:firebase|Firestore|localStorage|sessionStorage)\s*[.(]/i, "motion layer does not touch user data or Firebase");
 
 assert.match(appCode, /const ref=DB\.collection\(col\)\.doc\(obj\.id\)/, "existing collection/document write path is retained");
 assert.match(appCode, /const ref=DB\.doc\("meta\/main"\)/, "existing meta document path is retained");
