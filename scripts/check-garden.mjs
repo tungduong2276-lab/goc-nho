@@ -81,7 +81,7 @@ assert.match(html,/\.garden3d \.gcare \.ghit\{left:15%;right:15%;top:38%;bottom:
 assert.match(sw,/const CACHE = "goc-nho-v13"/,"service-worker cache version is bumped for the new app shell");
 assert.match(index,/assets\/3d\/living-motion\.js/, "living motion runtime is loaded after the app");
 assert.match(sw,/\.\/assets\/3d\/living-motion\.js/, "living motion runtime is precached for offline startup");
-assert.match(motion,/prefers-reduced-motion:\\s*reduce/, "motion layer respects reduced-motion preferences");
+assert.match(motion,/prefers-reduced-motion:\s*reduce/, "motion layer respects reduced-motion preferences");
 assert.match(motion,/document\.addEventListener\("pointerdown"/, "motion layer responds to real pointer input");
 assert.match(motion,/gnCharacterIdle|gnFlowerIdle|gnPetReact/, "motion layer defines character, plant, and pet behavior");
 assert.doesNotMatch(motion,/firebase|Firestore|localStorage|sessionStorage/i, "motion layer does not touch user data or Firebase");
