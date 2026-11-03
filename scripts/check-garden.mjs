@@ -67,11 +67,7 @@ const resetMerge=mergeMetaForWrite(
   {custom:[],__base:{custom:[]}}
 );
 assert.equal(resetMerge.custom[0].name,"Trò mới vừa thêm trên thiết bị kia","a stale reset retry does not erase a custom game added remotely");
-const resetMerge=mergeMetaForWrite(
-  {custom:[{n:12,name:"Trò mới vừa thêm trên thiết bị kia"}]},
-  {custom:[],__base:{custom:[]}}
-);
-assert.equal(resetMerge.custom[0].name,"Trò mới vừa thêm trên thiết bị kia","a stale reset retry does not erase a custom game added remotely");
+
 assert.match(appCode,/DB\.runTransaction\(async tx=>\{[\s\S]*?tx\.get\(ref\)[\s\S]*?tx\.set\(ref,mergeMetaForWrite\(latest,payload\)\)/,"meta retry reads latest Firestore state inside a transaction");
 assert.match(appCode,/window\.addEventListener\("online",refreshDbWriteStatus\)/,"network recovery does not automatically retry failed writes");
 assert.match(appCode,/else if\(MODE==="db"\)\{if\(dbReady\)refreshDbWriteStatus\(\);else setSync\("Đang kết nối...",false);\}/,"online status refresh preserves a pending manual-retry warning");
