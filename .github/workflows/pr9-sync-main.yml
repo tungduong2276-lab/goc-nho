@@ -8,6 +8,7 @@ on:
     paths:
       - .github/workflows/pr9-sync-main.yml
       - tests/browser/garden.spec.mjs
+      - tests/browser/motion.spec.mjs
 
 permissions:
   contents: write
