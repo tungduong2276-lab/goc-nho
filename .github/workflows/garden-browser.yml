@@ -52,6 +52,14 @@ jobs:
           python3 scripts/pack-house-map.py
       - name: Test app and house navigation
         run: npm test
+      - name: Publish six-room mobile visual review bundle (synthetic local UI)
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: house-six-room-review-${{ github.run_id }}
+          path: test-results/house-visual-review/
+          if-no-files-found: warn
+          retention-days: 7
       - name: Publish 3D preview for visual inspection
         if: github.event.pull_request.head.ref == 'feature/spacious-house-weather-botany'
         uses: actions/upload-artifact@v4
