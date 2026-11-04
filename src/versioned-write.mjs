@@ -29,7 +29,7 @@ function canonical(value) {
 
 export async function applyVersionedPatch({
   db, targetRef, operationRef, expectedRevision, operationId,
-  actorUid, patch, allowedFields,
+  actorUid, patch, allowedFields, secureProtocol = false,
 }) {
   if (!db || !targetRef || !operationRef || !idOk(operationId) || !idOk(actorUid) ||
       !Number.isSafeInteger(expectedRevision) || expectedRevision < 0 ||
@@ -38,12 +38,12 @@ export async function applyVersionedPatch({
   }
   const parts = targetRef.path?.split("/") || [];
   if (parts.length !== 4 || parts[0] !== "couples" || !idOk(parts[1]) ||
-      parts[2] === "writeOps" ||
+      (parts[2] === "writeOps" || (secureProtocol && parts[2] !== "roomObjects")) ||
       operationRef.path !== `couples/${parts[1]}/writeOps/${operationId}`) {
     throw new VersionedWriteError("INVALID_REFERENCE");
   }
   const keys = Object.keys(patch);
-  const reserved = new Set(["revision", "id", "ownerUid", "createdAt", "updatedAt", "members", "roles", "code"]);
+  const reserved = new Set(["revision", "id", "ownerUid", "createdAt", "updatedAt", "members", "roles", "code", "lastOperationId", "updatedBy"]);
   if (!keys.length || !keys.every(k => allowedFields.includes(k) && !reserved.has(k) &&
       /^[a-zA-Z][a-zA-Z0-9_]{0,79}$/.test(k))) {
     throw new VersionedWriteError("INVALID_FIELDS");
@@ -69,9 +69,13 @@ export async function applyVersionedPatch({
       throw new VersionedWriteError("INVALID_REVISION");
     }
     if (revision !== expectedRevision) throw new VersionedWriteError("STALE_REVISION");
-    tx.update(targetRef, { ...stablePatch, revision: revision + 1 });
+    tx.update(targetRef, {
+      ...stablePatch, revision: revision + 1,
+      ...(secureProtocol ? { lastOperationId: operationId, updatedBy: actorUid } : {}),
+    });
     tx.set(operationRef, {
       operationId, actorUid, targetPath: targetRef.path,
+      ...(secureProtocol ? { targetId: parts[3] } : {}),
       expectedRevision, appliedRevision: revision + 1, fingerprint,
     });
     return { status: "applied", revision: revision + 1 };
