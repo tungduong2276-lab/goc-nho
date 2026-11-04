@@ -6,6 +6,7 @@ on:
       - feature/spacious-house-weather-botany
     paths:
       - .github/workflows/pr9-sync-main.yml
+      - tests/browser/garden.spec.mjs
 
 permissions:
   contents: write
