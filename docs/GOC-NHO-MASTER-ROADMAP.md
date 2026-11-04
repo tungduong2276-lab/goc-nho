@@ -207,3 +207,14 @@ Next safe action:
 - M0 staging locked-rules unauthenticated deny-read smoke passed in run #41757873506. This is **not** proof of Alice/Bob/Eve authorization, staging export/restore, production deployed rules, offline/reconnect, or rollback.
 - Firebase production: no production data migration, write, deployment or Rules change performed by this session. Persistent furniture placement must remain gated until M0 acceptance.
 - Next safe action: review PR #9 3D preview and touch geometry, finish staging-only synthetic export/restore and offline/reconnect security checks, then decide whether PR #9 can be merged. Do not interpret green CI alone as M0 completion.
+
+
+### Handoff update — 2026-11-04, PR #23 merged; PR #9 review pending
+
+- **Main SHA confirmed after merge:** `7616685f6fd3c0fcd5abba239faddba2515a8ec8` (PR #23 squash merged).
+- **Verified PR #23 CI:** run #108 passed static checks, Playwright browser 15/15 and Firestore Emulator 14/14; see https://github.com/tungduong2276-lab/goc-nho/actions/runs/41762525205.
+- **Implemented:** an isolated, synthetic nested-document snapshot/restore regression and serialized Node test-file execution to avoid cross-file `clearFirestore()` races. This is **not** a managed Cloud Firestore export/import, real staging restore or production backup.
+- **Firebase production:** no production writes, migration, Rules deployment or restore executed as part of PR #23. Existing early-gift plaintext and stale whole-document-write risks remain.
+- **PR #9 review:** still draft and open; latest known head `8792d704dad490a570f050685a67e790b1ad8dbc`; CI #104 was green and generated `house-3d-preview` artifact. Its branch currently lacks two main commits (including PR #23), and GitHub reports it nonmergeable until reconciled. Static inspection of `assets/3d/scene.json`: 11 zone polygons have nonzero areas and all vertices fall inside the 1170×1960 map; separate room render size remains 1170×1170. Static bounds checks do **not** establish visual alignment, touch-target correctness or enlarged interiors.
+- **Remaining M0 gates:** real isolated staging export/restore and rollback proof; review of deployed production Rules and IAM/Auth/App Check; two-client offline/reconnect/stale-revision tests; independent PR #9 visual review of rendered assets and hitboxes.
+- **Next safe action:** inspect PR #9 preview images and touch geometry, synchronize its branch with latest `main` on a separate safe review step, run complete CI, and retain draft status until visually accepted. Do not enable persistent M1 placement or treat PR #23 as M0 completion.
