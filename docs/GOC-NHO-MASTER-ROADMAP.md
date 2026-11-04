@@ -240,3 +240,13 @@ Next safe action:
 - **Important scope:** these tests validate a safer **proposed pattern**, not a migration of the app's generic `put()` whole-document write path. No production network access, staging restore, Rules deployment or live data migration occurred.
 - **Still blocking M0 completion:** authorized independent Cloud Firestore staging export/restore to a separate empty target, inventory of actually deployed production Rules/Auth/App Check and IAM via authorized admin, further end-to-end browser reconnect/retry/idempotency review, and manual approval of standalone interior sizes/visual appearance for PR #9. PR #9 must be rechecked against newer main before any merge.
 - **Next safe action:** obtain an authorized staging-only export/restore validation and deployed-configuration evidence; separately implement a narrow, version-aware writing abstraction for future M1 features without changing existing production data flows, with emulator tests for retry/idempotency and collision.
+
+
+### Handoff update — 2026-11-04, opt-in versioned write core added (still not deployed)
+
+- **Main at this checkpoint:** `3a1d8866fe78476333e927541584b7da06a06058` (PR #29 squash merged); recheck before follow-up work.
+- **Verified CI #118:** static checks, 15/15 Playwright browser and 22/22 synthetic Firestore Emulator tests passed. https://github.com/tungduong2276-lab/goc-nho/actions/runs/41777330414
+- **Implemented (not wired):** `src/versioned-write.mjs` and `tests/firebase/versioned-write.test.mjs`; `docs/M0-VERSIONED-WRITES-DESIGN.md` documents an optional transaction helper with revision compare-and-set, an operation-ID replay ledger, refusal of stale writes, collision checks and two-client emulator tests.
+- **Safety boundary:** `index.html`, existing `put()`, Firestore Rules and real Firebase schema remain unchanged; no live write path uses the module. The current broad member Rules still permit direct modification of writeOps ledger and target revision, so the helper is **not production-ready authorization**. Transactions also do not commit offline.
+- **Outstanding M0 gates:** actual authorized isolated Cloud Firestore staging export/restore into a second destination; deployed production Rules/Auth/App Check/IAM inventory; purpose-built Rules for writeOps plus end-to-end UI retry/persistence/reconnect testing; PR #9 full standalone room visuals and mobile design approval.
+- **Next safe action:** prototype and test tightened Rules for the future writeOps schema on Emulator in a separate PR, without deploying or enabling it; continue staging-only operational verification with authorized administrator. Review and resync PR #9 after main changes, but keep it Draft.
