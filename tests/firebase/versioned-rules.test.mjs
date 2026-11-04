@@ -150,7 +150,11 @@ test("two members racing at revision zero cannot both land; stale op has no ledg
   ]);
   assert.equal(results.filter(r => r.status === "fulfilled").length, 1);
   assert.equal(results.filter(r => r.status === "rejected").length, 1);
-  assert.match(String(results.find(r => r.status === "rejected").reason), /STALE_REVISION/);
+  // Firestore can reject the losing concurrent commit at the Rules boundary
+  // before the SDK retries and the helper raises STALE_REVISION. Both reject
+  // the unsafe write; the stronger invariant below checks atomic state.
+  assert.match(String(results.find(r => r.status === "rejected").reason),
+    /STALE_REVISION|permission-denied|PERMISSION_DENIED/);
   assert.equal((await getDoc(target(a))).data().revision, 1);
   const records = await Promise.all(["race-a", "race-b"].map(id => getDoc(ledger(a, id))));
   assert.equal(records.filter(r => r.exists()).length, 1);
