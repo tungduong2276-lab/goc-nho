@@ -1,0 +1,40 @@
+name: M0 staging configuration validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/m0-staging-config.yml"
+      - "docs/M0-STAGING-GITHUB-SETUP.md"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-staging-config:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 5
+    steps:
+      - name: Validate project identity and required configuration (no network)
+        env:
+          PROJECT_ID: ${{ secrets.STAGING_FIREBASE_PROJECT_ID }}
+          API_KEY: ${{ secrets.STAGING_FIREBASE_API_KEY }}
+          APP_ID: ${{ secrets.STAGING_FIREBASE_APP_ID }}
+          AUTH_DOMAIN: ${{ secrets.STAGING_FIREBASE_AUTH_DOMAIN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$PROJECT_ID" != "goc-nho-staging-2026" ]]; then
+            echo "::error::Staging project ID is missing or unexpected"
+            exit 1
+          fi
+          if [[ "$AUTH_DOMAIN" != "goc-nho-staging-2026.firebaseapp.com" ]]; then
+            echo "::error::Staging auth domain is missing or unexpected"
+            exit 1
+          fi
+          if [[ -z "$API_KEY" || -z "$APP_ID" ]]; then
+            echo "::error::Required staging Web App configuration is missing"
+            exit 1
+          fi
+          echo "Staging configuration validated without exposing values or connecting to Firebase."
