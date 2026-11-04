@@ -4401,13 +4401,37 @@ renderCare=function(){
   root.querySelectorAll("[data-g-gallery-season]").forEach(b=>b.onclick=()=>{gardenSel=+b.dataset.gGallerySeason;rerender();const t=$("gSeason");if(t)t.scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});});
   root.querySelectorAll(".garden3d .lay.hot,.garden3d .chr[data-gchar]").forEach(b=>b.addEventListener("pointerdown",()=>{b.classList.remove("tap-flash");void b.offsetWidth;b.classList.add("tap-flash");setTimeout(()=>b.classList.remove("tap-flash"),520);},{passive:true}));
   const canvas=root.querySelector(".garden3d .wcanvas");
+  // Keyboard activation must dispatch to the focused object, not a nearby
+  // pointer hit region. Prevent the browser's synthesized click from toggling
+  // the gallery a second time after the garden rerenders.
+  if(canvas)canvas.addEventListener("keydown",ev=>{
+    if(ev.key!=="Enter"&&ev.key!==" ")return;
+    const hit=ev.target.closest&&ev.target.closest("[data-hit-x][data-hit-y]");
+    if(!hit||!canvas.contains(hit))return;
+    ev.preventDefault();ev.stopPropagation();
+    if(hit.dataset.gi)gardenTap(hit.dataset.gi);
+    else if(hit.dataset.gs){
+      gardenSel=+hit.dataset.gs;
+      gardenGalleryOpen=gardenSel<=completedSeasons();
+      rerender();
+    }else if(hit.dataset.gchar){
+      if(ME===null)toast('Chọn "Điện thoại này của ai" ở mục Nhà trước nhé.');
+      else sendTap("hug");
+    }
+  });
   if(canvas)canvas.addEventListener("click",ev=>{
     const origin=ev.target.closest&&ev.target.closest("[data-hit-x][data-hit-y]");
     if(!origin)return;
     ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
     // Enter/Space và click hỗ trợ truy cập không có tọa độ con trỏ đáng tin cậy:
     // giữ đúng nút đang được kích hoạt, không chạy bộ phân giải theo tọa độ.
-    const hit=ev.detail===0?origin:nearestGardenHit(
+    // When the browser hit-tests the actual character or board, honor that
+    // target. A neighboring enlarged invisible hitbox must not steal the tap.
+    // Keep coordinate resolution for other overlaps (e.g. daily pot vs seeds).
+    const direct=origin.matches(".chr[data-gchar], [data-gi='bang']") &&
+      (()=>{const r=(origin.querySelector(".ghit")||origin).getBoundingClientRect();
+        return ev.clientX>=r.left&&ev.clientX<=r.right&&ev.clientY>=r.top&&ev.clientY<=r.bottom;})();
+    const hit=ev.detail===0||direct?origin:nearestGardenHit(
       ev.clientX,ev.clientY,
       Array.from(canvas.querySelectorAll("[data-hit-x][data-hit-y]")),canvas
     );

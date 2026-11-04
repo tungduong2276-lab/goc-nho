@@ -26,7 +26,7 @@ assert.ok(syncListenerAt >= 0 && dollarDeclarationAt > syncListenerAt, "sync lis
 assert.match(appCode, /root\.querySelectorAll\("\.gcare-card \[data-gi\]"\)\.forEach\(b=>b\.addEventListener\("click"/, "care-card watering button has its own click binding");
 assert.match(appCode, /function nearestGardenHit\(clientX,clientY,targets,canvas\)/, "pointer resolver accepts browser coordinates and canvas");
 assert.match(appCode, /targets\.filter\(el=>\{[\s\S]*?getBoundingClientRect\(\)/, "pointer resolver only compares actual hit areas containing the point");
-assert.match(appCode, /const hit=ev\.detail===0\?origin:nearestGardenHit\(/, "keyboard activation uses the focused element rather than pointer coordinates");
+assert.match(appCode, /const hit=ev\.detail===0\|\|direct\?origin:nearestGardenHit\(/, "keyboard activation and direct target hits use the intended element rather than neighboring pointer coordinates");
 assert.match(appCode, /data-hit-priority="4"[^>]*aria-label=/, "characters have a higher-priority hit target");
 assert.match(appCode, /class="ghit gchar-hit" aria-hidden="true"/, "character body has a real DOM hit area");
 assert.match(appCode, /priority>bestPriority\|\|\(priority===bestPriority&&d<bestD\)/, "overlapping hit areas use explicit priority before distance");
