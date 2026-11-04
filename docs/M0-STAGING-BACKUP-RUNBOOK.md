@@ -29,3 +29,24 @@
 ## Release/rollback gate
 
 No migration or production rules deployment is included in this PR. For subsequent features, require an explicit diff of schema and Rules, a reviewed rules-test suite, feature flag rollback and staging validation. If a release is rejected, leave production untouched.
+
+## Read-only staging preflight plan generator (new M0 gate)
+
+Run the **non-executing** safety preflight locally before asking an authorized administrator to execute any operation:
+
+```sh
+node scripts/m0-staging-preflight.mjs \
+  --production-project ACTUAL_PRODUCTION_PROJECT_ID \
+  --source-project DISTINCT_STAGING_SOURCE_PROJECT_ID \
+  --target-project DISTINCT_EMPTY_STAGING_TARGET_PROJECT_ID \
+  --export-bucket gs://APPROVED_STAGING_ONLY_BUCKET \
+  --run-id synthetic_20261104 \
+  --confirm-synthetic-source --confirm-empty-target \
+  --confirm-nonprod-source --confirm-nonprod-target
+```
+
+Replace **every** placeholder with independently verified values; placeholders are not accepted evidence. The four `--confirm-...` flags are **operator attestations**, not checks against GCP. The tool verifies syntax, three distinct project IDs, staging-only assertions and bucket/run ID safety, then prints JSON with status `REVIEW_ONLY_NOT_EXECUTED`. It does not call Cloud APIs, authenticate, write files, export, import or prove the destination is empty. It intentionally does not supply an executable import command until the actual completed export output URI and destination have been verified by an authorized administrator.
+
+To run the no-cloud tests: `npm run test:staging`. They also run within `npm test` / GitHub Actions. Failing test cases cover missing attestations, production IDs accidentally used as source or destination, same-project restoration, invalid bucket/input injection and accidental execution. Do not run any real GCP command from CI.
+
+**Critical:** A successful preflight **does not complete M0**. The admin still must prove source/destination isolation, use actual Cloud Firestore managed export/import on synthetic records only, verify the completed operation's output prefix and restricted GCS access, compare manifest hashes after restore and independently review the rollback. Never paste real credentials, export contents or private data into GitHub.
