@@ -23,8 +23,8 @@ test("3D garden characters and flowers have independent idle motion", async ({ p
 test("touching a 3D object produces a physical response and contextual particles", async ({ page }) => {
   await openGarden(page);
   const board = page.locator(".garden3d button[data-gi='bang']");
-  // Wait for the responsive scene to settle and for the real hit region
-  // to be actionable; cached coordinates can miss during fit3() layout.
+  // Hover resolves the live hitbox after delayed fit3() transforms settle,
+  // then mouse.down exercises real pointerdown without using stale coordinates.
   await board.locator(".ghit").hover();
   // Particle nodes are short-lived and may be removed when the garden rerenders.
   // Observe creation rather than asserting they still exist after the reaction.
