@@ -53,8 +53,10 @@ test("the real swing seat center is inside the swing target", async ({ page }) =
 test("keyboard activation acts on the focused scene button, not the nearest coordinate", async ({ page }) => {
   await openGarden(page);
   const board = page.locator(".garden3d button[data-gi='bang']");
-  await board.focus();
-  await page.keyboard.press("Enter");
+  // The garden scene may be re-rendered during fit3(). Locator.press
+  // resolves and focuses the current button before dispatching Enter;
+  // page.keyboard.press after a separate focus can target a stale node.
+  await board.press("Enter");
   await expect(page.locator("#gGallery")).toBeVisible();
   await expect(page.locator("#tab-care .g-swing button")).toHaveText("Ngồi lên xích đu");
 });
