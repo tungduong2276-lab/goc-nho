@@ -230,3 +230,13 @@ Next safe action:
 - PR #9 remains open **Draft**, not merged to main or deployed. Green CI and programmatic polygon checks do not prove UX acceptance, room-interior expansion or completion of M0.
 - **M0 blockers:** authorized separate Firebase staging Cloud Firestore managed export/restore to a distinct isolated destination, confirmation of deployed live Rules/Auth/App Check without private data disclosure, two-client offline/reconnect and stale-write tests, and final independent visual/mobile approval before releasing PR #9.
 - **Next safe action:** keep PR #9 as Draft; review full mobile house appearance and interior dimensions (not only overview); resolve any discovered visual hitbox/design discrepancies. Re-sync PR #9 with main if new documentation commits advance main. Do not enable or merge persistent M1 placement before M0 acceptance.
+
+
+### Handoff update — 2026-11-04, two-client reconnect and revision tests merged
+
+- **Main SHA at this checkpoint:** `446cbe18be5299ee57e96a925fc4eb3dabbd24b5` (PR #27 squash merge; recheck current main before subsequent changes).
+- PR #27 `test/m0-two-client-reconnect-revision` merged after GitHub Actions CI #116 passed: **15/15 browser and 16/16 Firestore Emulator tests**, including two new tests: https://github.com/tungduong2276-lab/goc-nho/actions/runs/41775183998.
+- **New synthetic M0 coverage:** with Alice's field-level write queued while offline and Bob updating a different field online, reconnect preserves both and an unrelated field; a transaction with expected `revision` rejects a stale writer instead of silently replacing a partner update.
+- **Important scope:** these tests validate a safer **proposed pattern**, not a migration of the app's generic `put()` whole-document write path. No production network access, staging restore, Rules deployment or live data migration occurred.
+- **Still blocking M0 completion:** authorized independent Cloud Firestore staging export/restore to a separate empty target, inventory of actually deployed production Rules/Auth/App Check and IAM via authorized admin, further end-to-end browser reconnect/retry/idempotency review, and manual approval of standalone interior sizes/visual appearance for PR #9. PR #9 must be rechecked against newer main before any merge.
+- **Next safe action:** obtain an authorized staging-only export/restore validation and deployed-configuration evidence; separately implement a narrow, version-aware writing abstraction for future M1 features without changing existing production data flows, with emulator tests for retry/idempotency and collision.
