@@ -1,0 +1,47 @@
+name: M0 staging locked-rules smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/m0-staging-locked-rules.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-workflow:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check staging smoke is manually gated
+        shell: bash
+        run: |
+          test "${{ github.event_name }}" = "pull_request"
+          echo "PR check passed; no staging environment was accessed."
+
+  verify-locked-firestore:
+    if: github.event_name == 'workflow_dispatch'
+    environment: staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Confirm staging-only unauthenticated read is denied
+        env:
+          STAGING_PROJECT_ID: ${{ secrets.STAGING_FIREBASE_PROJECT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$STAGING_PROJECT_ID" != "goc-nho-staging-2026" ]]; then
+            echo "::error::Refusing non-staging Firebase project"
+            exit 1
+          fi
+          # A nonexistent synthetic document path. No authentication, no writes,
+          # no SDK initialization, no production project or service account.
+          URL="https://firestore.googleapis.com/v1/projects/goc-nho-staging-2026/databases/(default)/documents/m0_smoke/locked-read"
+          status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 20 "$URL")"
+          if [[ "$status" != "401" && "$status" != "403" ]]; then
+            echo "::error::Expected unauthenticated rejection (HTTP 401/403), received HTTP $status"
+            exit 1
+          fi
+          echo "Staging Firestore rejected an unauthenticated read (HTTP $status). No data was written."
