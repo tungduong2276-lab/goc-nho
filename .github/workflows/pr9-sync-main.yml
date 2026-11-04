@@ -1,4 +1,5 @@
 name: Sync PR9 branch with main (safe merge)
+# Retry after resolving garden test conflict; never force-push.
 
 on:
   push:
