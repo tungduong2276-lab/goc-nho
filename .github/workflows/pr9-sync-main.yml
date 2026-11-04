@@ -1,0 +1,36 @@
+name: Sync PR9 branch with main (safe merge)
+
+on:
+  push:
+    branches:
+      - feature/spacious-house-weather-botany
+    paths:
+      - .github/workflows/pr9-sync-main.yml
+
+permissions:
+  contents: write
+
+jobs:
+  merge-main:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/spacious-house-weather-botany
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Merge main without overwriting conflicts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          if ! git merge --no-edit origin/main; then
+            echo "::error::Merge conflicts detected; no branch changes pushed."
+            git diff --name-only --diff-filter=U
+            git merge --abort
+            exit 1
+          fi
+          git push origin HEAD:feature/spacious-house-weather-botany
