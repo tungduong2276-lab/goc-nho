@@ -33,6 +33,16 @@ test("all six room interiors render real images and allow returning home on smal
         img.complete && img.naturalWidth > 0 && img.naturalHeight > 0
       ), { timeout: 10000, message: `${route}: room image must finish loading` }).toBe(true);
 
+      // Room content and fit3() can be rebuilt after asset load.
+      // Require nonzero *settled* dimensions, rather than sampling the
+      // element during its initial CSS/DOM transition.
+      await expect.poll(async () => room.evaluate(el => {
+        const box = el.getBoundingClientRect();
+        const stageBox = el.querySelector(".wcanvas")?.getBoundingClientRect();
+        return box.width > 200 && box.height > 200 &&
+          !!stageBox && stageBox.width > 0 && stageBox.height > 0;
+      }), { timeout: 10000, message: `${route}: room stage never becomes measurable` }).toBe(true);
+
       const geometry = await room.evaluate(el => {
         const scene = el.querySelector(".wcanvas");
         const backdrop = el.querySelector(".wbg");
