@@ -23,7 +23,7 @@ test("same synthetic nested records match regardless of document/field insertion
   const original = fixture();
   const manifest = createSyntheticManifest(original);
   const swapped = [...original].reverse();
-  swapped[1] = { path: "couples/fixture-couple/notes/memory", fields: {
+  swapped[3] = { path: "couples/fixture-couple/notes/memory", fields: {
     createdAt: { nanoseconds: 123, seconds: 1730000000, __firestoreType: "timestamp" },
     counters: { a: 1, z: 2 }, body: "synthetic only",
   }};
