@@ -291,3 +291,12 @@ Next safe action:
 - **PR #9 after-merge CI #132** was triggered at https://github.com/tungduong2276-lab/goc-nho/actions/runs/41805967308; inspect its conclusion separately before any further merge/release.
 - **Scope:** app `index.html`, 3D art, root Firestore Rules, cloud configuration and production data remain unchanged by PR #38. Test success establishes basic room image/navigation functionality **not** aesthetic approval or an enlarged 1170×1170 interior. PR #9 stays **Draft/unreleased**.
 - **M0 still OPEN:** require independently authorized isolated Cloud Firestore managed staging backup/restore evidence, production deployed Rules/Auth/App Check/IAM inventory and final manual 3D room visual/design approval before production release or enabling M1 placement.
+
+
+### Handoff update — 2026-11-04, house scene geometry integrity
+
+- **PR #40 merged into PR #9 feature branch only** (feature SHA `812dd68da8e8575c4884cf289e84b3f10adf65e9`). Adds `scripts/check-house-geometry.mjs`, `tests/staging/m0-house-geometry.test.mjs`, and a static-test CI gate. No scene, art, app, Firebase Rules, live data or deployment changes.
+- **CI #134 passed:** all 11 overview polygons and six room floor anchors passed geometry validation; 9 new synthetic geometry tests, **25/25 staging**, **22/22 browser**, **29/29 synthetic Emulator** tests: https://github.com/tungduong2276-lab/goc-nho/actions/runs/41810865878.
+- Validator rejects coordinates outside `scene.map.size`, nonfinite or duplicate vertices, zero-area or self-intersecting polygons, missing room anchors and anchors outside respective polygons; deliberate cross-zone isometric overlap remains allowed and browser hitbox tests still govern reachability.
+- **Important:** standalone interior art is still 1170×1170 and not proven physically expanded; static geometry validation does not substitute for visual/design acceptance.
+- **Remaining M0 release gates:** real isolated Cloud Firestore managed export from synthetic staging source into independent empty staging target (with operation/IAM/manifests evidence); authorized inspection of deployed production Rules/Auth/App Check/IAM; visual acceptance and rollback. Keep PR #9 Draft, M1 live writes off, production data untouched.
