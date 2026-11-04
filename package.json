@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:static": "node scripts/check-garden.mjs",
+    "test:static": "node scripts/check-garden.mjs && node scripts/check-house-geometry.mjs",
     "test:browser": "playwright test",
     "test": "npm run test:static && npm run test:staging && npm run test:browser && npm run test:firebase",
     "test:firebase": "firebase emulators:exec --project demo-goc-nho-safety --only firestore \"node --test --test-concurrency=1 tests/firebase/*.test.mjs\"",
