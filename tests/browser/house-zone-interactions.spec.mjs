@@ -43,7 +43,16 @@ test("real pointer taps on room polygons navigate on 360/390/430px phones", asyn
       // Room polygons overlap in the isometric projection. A polygon bounding
       // box center can belong to a higher floor; sample its truly clickable
       // pixels and require a meaningful uncovered hit region instead.
-      await target.scrollIntoViewIfNeeded();
+      // The house map can replace the SVG while images and fit3() settle.
+      // Retry the scroll on the current locator, never a stale element handle.
+      await expect.poll(async () => {
+        try {
+          await target.scrollIntoViewIfNeeded({ timeout: 1500 });
+          return true;
+        } catch {
+          return false;
+        }
+      }, { timeout: 10000 }).toBe(true);
       const hit = await target.evaluate(el => {
         const box = el.getBBox();
         const ctm = el.getScreenCTM();
