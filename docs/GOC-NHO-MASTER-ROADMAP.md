@@ -261,3 +261,13 @@ Next safe action:
 - **No production change:** `firebase.json`, `firestore.rules`, `index.html`, legacy `put()`, data schema and live data were untouched; no Rules deploy, staging export/restore or M1 writes enabled.
 - **M0 gates still open:** admin-authorized actual deployed production Rules/Auth/App Check/IAM inspection; real separate Firebase staging export/restore with document manifest; formal security review of bounded rule-access calls, field validation, ledger growth and abuse; two-client browser/UI reconnect/retry integration; PR #9 standalone room visual acceptance.
 - **Next safe action:** carry out staging-only project inventory and managed export/restore with authorized credentials, or expand Emulator-only negative/security tests while waiting for staging; do not deploy candidate Rules before reviewed staging and rollback evidence.
+
+
+### Handoff update — 2026-11-04, staging preflight safety guard merged
+
+- **Main SHA at checkpoint:** `58facfce89f8f7407c38adbe4200cd1bd640a0ed` (PR #33 squash merge; recheck HEAD later).
+- **PR #33 merged:** read-only, no-network/no-subprocess script `scripts/m0-staging-preflight.mjs`, six negative/success tests at `tests/staging/m0-preflight.test.mjs`, `npm run test:staging` integrated in `npm test`, and updated `docs/M0-STAGING-BACKUP-RUNBOOK.md`.
+- **CI #123 verified:** static checks, 6/6 staging preflight safety tests, 15/15 browser and 29/29 synthetic Firebase Emulator tests all passed: https://github.com/tungduong2276-lab/goc-nho/actions/runs/41795368009.
+- **Strict limitation:** preflight prints `REVIEW_ONLY_NOT_EXECUTED` and `verifiedAgainstCloud: false`, validates distinct production/source/target IDs and four manual attestations; it does not authenticate, check actual project identity/emptiness/IAM/bucket ownership, execute Firestore export/import or prove any backup. **M0 staging gate remains OPEN.**
+- **Still blocking:** an authorized administrator must provision independently isolated staging source and empty target, compare actual Cloud Firestore managed export and restore against synthetic nested manifest, inspect deployed production Rules/Auth/App Check/IAM and approve rollback. Production live app data and Rules were not touched.
+- **Next safe action:** gather staging administrator evidence without secrets/private data and verify the completed export outputUriPrefix, destination, manifest and operation logs under two-person review. Continue to keep PR #9 Draft and M1 persistent feature flags off until all gates, including visual acceptance, are fulfilled.
