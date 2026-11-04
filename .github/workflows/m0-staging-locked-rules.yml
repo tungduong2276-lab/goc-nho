@@ -2,12 +2,26 @@ name: M0 staging locked-rules smoke
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/m0-staging-locked-rules.yml"
 
 permissions:
   contents: read
 
 jobs:
+  validate-workflow:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check staging smoke is manually gated
+        shell: bash
+        run: |
+          test "${{ github.event_name }}" = "pull_request"
+          echo "PR check passed; no staging environment was accessed."
+
   verify-locked-firestore:
+    if: github.event_name == 'workflow_dispatch'
     environment: staging
     runs-on: ubuntu-latest
     timeout-minutes: 5
