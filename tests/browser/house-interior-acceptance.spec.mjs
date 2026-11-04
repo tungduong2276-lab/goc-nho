@@ -45,6 +45,7 @@ test("all six room interiors render real images and allow returning home on smal
 
       const geometry = await room.evaluate(el => {
         const scene = el.querySelector(".wcanvas");
+        const stage = el.querySelector(".rstage");
         const backdrop = el.querySelector(".wbg");
         const bounds = el.getBoundingClientRect();
         const raw = scene?.getBoundingClientRect();
@@ -52,6 +53,9 @@ test("all six room interiors render real images and allow returning home on smal
           width: bounds.width, height: bounds.height,
           scrollWidth: el.scrollWidth,
           rawWidth: raw?.width, rawHeight: raw?.height,
+          stageWidth: stage?.getBoundingClientRect().width,
+          stageHeight: stage?.getBoundingClientRect().height,
+          canvasTop: scene ? Number.parseFloat(getComputedStyle(scene).top) : null,
           imageWidth: backdrop?.naturalWidth, imageHeight: backdrop?.naturalHeight,
         };
       });
@@ -61,6 +65,9 @@ test("all six room interiors render real images and allow returning home on smal
       expect(geometry.imageHeight, `${route}: source art must be loaded`).toBeGreaterThan(0);
       expect(geometry.rawWidth).toBeGreaterThan(0);
       expect(geometry.rawHeight).toBeGreaterThan(0);
+      // House rooms display the entire 1170-square image, with no top crop.
+      expect(Math.abs(geometry.stageWidth - geometry.stageHeight), `${route}: square fitted stage`).toBeLessThanOrEqual(2);
+      expect(geometry.canvasTop, `${route}: uncropped image begins at stage top`).toBe(0);
       // Layout should be contained within viewport; no horizontal page overflow.
       const pageWidth = await page.evaluate(() => document.documentElement.scrollWidth);
       expect(pageWidth, `${route}: unexpected horizontal overflow at ${width}px`).toBeLessThanOrEqual(width + 2);

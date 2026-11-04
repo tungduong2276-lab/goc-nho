@@ -26,8 +26,9 @@ test("all six house room polygons respond to keyboard Enter", async ({ page }) =
     await page.goto("/index.html#nha");
     const target = page.locator(`.world .zones polygon[data-zone="${zone}"]`);
     await expect(target).toBeVisible();
-    await target.focus();
-    await page.keyboard.press("Enter");
+    // The isometric SVG can be replaced during fit3(): resolve and focus
+    // the current polygon in the same Playwright keyboard action.
+    await target.press("Enter");
     await expect(page).toHaveURL(new RegExp(`#${hash}$`));
   }
 });
