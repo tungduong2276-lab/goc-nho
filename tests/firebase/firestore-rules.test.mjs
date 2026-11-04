@@ -168,3 +168,67 @@ test("KNOWN RISK: stale whole-document set overwrites the other partner's field"
   assert.equal(final.data().left, "old");
   assert.equal(final.data().right, "new-B");
 });
+
+test("M0 baseline: independent field updates from both members preserve both changes", async () => {
+  const path = `${couple()}/shared/field-patches`;
+  await env.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), path), {
+      left: "old", right: "old", untouched: "preserve",
+    });
+  });
+  // updateDoc applies field-level patches; unlike the current generic put/set,
+  // neither client replaces a stale snapshot of the entire document.
+  await Promise.all([
+    assertSucceeds(updateDoc(ref(ALICE, path), { left: "new-A" })),
+    assertSucceeds(updateDoc(ref(BOB, path), { right: "new-B" })),
+  ]);
+  const [seenByAlice, seenByBob] = await Promise.all([
+    assertSucceeds(getDoc(ref(ALICE, path))),
+    assertSucceeds(getDoc(ref(BOB, path))),
+  ]);
+  for (const snapshot of [seenByAlice, seenByBob]) {
+    assert.equal(snapshot.data().left, "new-A");
+    assert.equal(snapshot.data().right, "new-B");
+    assert.equal(snapshot.data().untouched, "preserve");
+  }
+});
+
+test("invitation code collision: existing code cannot be overwritten by a second creator", async () => {
+  await env.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), "codes/EXISTING"), { cid: CID });
+  });
+  await assertFails(setDoc(ref(EVE, "codes/EXISTING"), { cid: "attacker-house" }));
+  const existing = await assertSucceeds(getDoc(ref(ALICE, "codes/EXISTING")));
+  assert.equal(existing.data().cid, CID);
+});
+
+test("membership join rejects changing roles or invitation code", async () => {
+  const path = "couples/fixture-join-immutable";
+  await env.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), path), {
+      members: [ALICE], roles: { [ALICE]: 0 }, code: "JOIN-IMMUTABLE",
+    });
+  });
+  await assertFails(updateDoc(ref(BOB, path), {
+    members: [ALICE, BOB],
+    roles: { [ALICE]: 0, [BOB]: 0 },
+  }));
+  await assertFails(updateDoc(ref(BOB, path), {
+    members: [ALICE, BOB], code: "REPLACED",
+  }));
+  const after = await assertSucceeds(getDoc(ref(ALICE, path)));
+  assert.deepEqual(after.data().members, [ALICE]);
+  assert.equal(after.data().code, "JOIN-IMMUTABLE");
+});
+
+test("outsider cannot read or write even when nested fixture is malformed", async () => {
+  const path = `${couple()}/notes/malformed`;
+  await env.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), path), {
+      id: "malformed", body: null, unexpected: { nested: true },
+    });
+  });
+  await assertFails(getDoc(ref(EVE, path)));
+  await assertFails(updateDoc(ref(EVE, path), { body: "tampered" }));
+  await assertSucceeds(getDoc(ref(ALICE, path)));
+});

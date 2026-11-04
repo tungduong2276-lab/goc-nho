@@ -9,6 +9,9 @@ on:
       - "scripts/**"
       - "docs/garden-two-device-test.md"
       - "tests/browser/**"
+      - "tests/firebase/**"
+      - "firestore.rules"
+      - "firebase.json"
       - "package.json"
       - "playwright.config.mjs"
       - ".github/workflows/garden-browser.yml"
@@ -31,6 +34,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
       - run: npm install
       - run: npx playwright install --with-deps chromium
       - name: Render and validate updated 3D house geometry

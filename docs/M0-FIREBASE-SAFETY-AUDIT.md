@@ -35,3 +35,19 @@
 ## Rollback and data privacy
 
 No unreviewed deletion, schema replacement or automatic migration of `couples`, `users`, `codes` or nested records. Store only synthetic identities and fixtures. For changes involving Rules, roll back the Rules deployment via reviewed version management; for any data migration, first require an independently verified staging export/restore and idempotent script. Never treat a passed browser test as proof of Firebase isolation.
+
+## Incremental M0 work in PR #18 (pending CI and review)
+
+- Added an Emulator-only two-member same-document `updateDoc` field-patch convergence test. This is a test of a safer write primitive, **not** a fix for the existing whole-document `put()` implementation.
+- Added synthetic tests for invitation-code collision, join immutability (code/roles), and outsider access to malformed nested fixtures. Their outcomes must be read from the latest CI run, not assumed.
+- Updated GitHub Actions paths so changes to `tests/firebase/**`, `firestore.rules` and `firebase.json` trigger CI; provisioned Java 21 for Firestore Emulator.
+- Documented future flags and rollback policy in `docs/M0-FEATURE-FLAGS-ROLLBACK.md`. These flags are **not** live implementations.
+- PR #17 browser CI #89 failed (15/17): pointer character hug and board gallery activation. Its two weather-persistence regression tests passed. PR #9 remains blocked until the full browser suite and geometry review pass.
+
+### Gates still requiring external/interactive evidence
+
+1. An authorized Firebase administrator must inspect deployed production Rules, Auth providers, App Check, indexes and Storage/Functions status without disclosing private contents. Source code cannot establish deployed configuration.
+2. An isolated **real staging project** must be provisioned and synthetic export/restore verified against a separate destination with manifest hashes. Emulator testing alone does not meet this gate.
+3. Two-client offline/reconnect, stale revision, retry/idempotency and mobile hitbox coverage must be exercised before shared M1 writes are enabled.
+4. PR #9 visual render, room dimensions and conflict reconciliation with current `main` require separate acceptance.
+5. No M0 completion, production backup, rules deployment or migration is claimed by this PR.
