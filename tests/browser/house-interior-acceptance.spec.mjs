@@ -43,7 +43,9 @@ test("all six room interiors render real images and allow returning home on smal
           !!stageBox && stageBox.width > 0 && stageBox.height > 0;
       }), { timeout: 10000, message: `${route}: room stage never becomes measurable` }).toBe(true);
 
-      const geometry = await room.evaluate(el => {
+      let geometry;
+      await expect.poll(async () => {
+        geometry = await room.evaluate(el => {
         const scene = el.querySelector(".wcanvas");
         const stage = el.querySelector(".rstage");
         const backdrop = el.querySelector(".wbg");
@@ -58,7 +60,13 @@ test("all six room interiors render real images and allow returning home on smal
           canvasTop: scene ? Number.parseFloat(getComputedStyle(scene).top) : null,
           imageWidth: backdrop?.naturalWidth, imageHeight: backdrop?.naturalHeight,
         };
-      });
+        });
+        // DOM rebuilds can replace an already measured scene between awaits.
+        // Keep all original checks; only accept a complete, nonzero snapshot.
+        return geometry.width > 200 && geometry.height > 200 &&
+          geometry.rawWidth > 0 && geometry.rawHeight > 0 &&
+          geometry.stageWidth > 0 && geometry.stageHeight > 0;
+      }, { timeout: 10000, message: `${route}: room geometry must settle before assertions` }).toBe(true);
       expect(geometry.width, `${route}: visible stage width`).toBeGreaterThan(200);
       expect(geometry.height, `${route}: visible stage height`).toBeGreaterThan(200);
       expect(geometry.imageWidth, `${route}: source art must be loaded`).toBeGreaterThan(0);
