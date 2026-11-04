@@ -12,6 +12,9 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  runTransaction,
+  disableNetwork,
+  enableNetwork,
 } from "firebase/firestore";
 
 // Must run under the dedicated Firestore Emulator. Never instantiate a production client.
@@ -231,4 +234,76 @@ test("outsider cannot read or write even when nested fixture is malformed", asyn
   await assertFails(getDoc(ref(EVE, path)));
   await assertFails(updateDoc(ref(EVE, path), { body: "tampered" }));
   await assertSucceeds(getDoc(ref(ALICE, path)));
+});
+
+
+// M0 fixture-only simulation: no production Firebase client or data involved.
+// This validates field-level reconnection behavior, not the app's generic put().
+test("M0 two-client reconnect: queued Alice field update does not erase Bob's online update", async () => {
+  const path = `${couple()}/shared/reconnect-patches`;
+  await env.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), path), {
+      left: "initial", right: "initial", untouched: "keep",
+    });
+  });
+
+  const aliceDb = context(ALICE).firestore();
+  const bobDb = context(BOB).firestore();
+  const aliceRef = doc(aliceDb, path);
+  const bobRef = doc(bobDb, path);
+  await assertSucceeds(getDoc(aliceRef));
+  await disableNetwork(aliceDb);
+  let pendingAlice;
+  try {
+    // Firestore queues this write locally; do not await before enabling network.
+    pendingAlice = updateDoc(aliceRef, { left: "alice-offline" });
+    await assertSucceeds(updateDoc(bobRef, { right: "bob-online" }));
+  } finally {
+    await enableNetwork(aliceDb);
+  }
+  await assertSucceeds(pendingAlice);
+
+  const [aliceView, bobView] = await Promise.all([
+    assertSucceeds(getDoc(aliceRef)),
+    assertSucceeds(getDoc(bobRef)),
+  ]);
+  for (const snap of [aliceView, bobView]) {
+    assert.equal(snap.data().left, "alice-offline");
+    assert.equal(snap.data().right, "bob-online");
+    assert.equal(snap.data().untouched, "keep");
+  }
+});
+
+test("M0 revision protocol: stale writer is rejected and cannot erase partner's update", async () => {
+  const path = `${couple()}/shared/optimistic-revision`;
+  await env.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), path), {
+      left: "initial", right: "initial", revision: 0,
+    });
+  });
+  const aliceDb = context(ALICE).firestore();
+  const bobDb = context(BOB).firestore();
+  const aliceRef = doc(aliceDb, path);
+  const bobRef = doc(bobDb, path);
+  const original = await assertSucceeds(getDoc(aliceRef));
+  const expectedRevision = original.data().revision;
+
+  // Proposed application-level compare-and-set protocol; existing generic
+  // whole-document put() does not yet implement this check.
+  const applyIfCurrent = (db, target, expected, patch) =>
+    runTransaction(db, async tx => {
+      const current = await tx.get(target);
+      if (!current.exists()) throw new Error("M0_MISSING_DOCUMENT");
+      if (current.data().revision !== expected) throw new Error("M0_STALE_REVISION");
+      tx.update(target, { ...patch, revision: expected + 1 });
+    });
+  await assertSucceeds(applyIfCurrent(bobDb, bobRef, expectedRevision, { right: "bob-new" }));
+  await assert.rejects(
+    applyIfCurrent(aliceDb, aliceRef, expectedRevision, { left: "alice-stale" }),
+    /M0_STALE_REVISION/
+  );
+  const current = await assertSucceeds(getDoc(aliceRef));
+  assert.equal(current.data().left, "initial");
+  assert.equal(current.data().right, "bob-new");
+  assert.equal(current.data().revision, 1);
 });
