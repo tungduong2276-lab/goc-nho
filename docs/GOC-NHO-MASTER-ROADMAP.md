@@ -197,3 +197,13 @@ Next safe action:
 - Production data/Rules: untouched; deployed Rules, Auth/App Check and actual staging export/restore remain unverified.
 - **M0 remains incomplete** until real staging-only export/restore, authorized deployment inventory, offline/reconnect and stale revision testing, and PR #9 visual geometry review.
 - Next safe action: review latest CI for PR #18, diagnose browser failures on PR #17, and arrange authorized isolated staging project validation. Do not start persistent M1 furniture writes yet.
+
+### Handoff update — 2026-11-04, PR #9 validated but M0 not complete
+
+- Main last confirmed: `88092f79a00917320a952a8b46fdea1a5295c1f8`; recheck before merge.
+- PR #17 was merged into PR #9 feature branch; PR #21 merged current main into that feature branch without changing main. Temporary sync workflow was removed.
+- PR #9 latest verified head: `8792d704dad490a570f050685a67e790b1ad8dbc`; Garden browser regressions CI #104 passed, including 3D geometry rendering, browser/navigation tests and preview artifact publication: https://github.com/tungduong2276-lab/goc-nho/actions/runs/41760611871. Branch was ahead of main with no missing main commits at this check.
+- Preview artifact `house-3d-preview` (CI #104) exists; **a successful render job does not establish independent visual approval of room sizes, hit zones or design**. PR #9 still needs this review and M0 release-gate review before merge to main.
+- M0 staging locked-rules unauthenticated deny-read smoke passed in run #41757873506. This is **not** proof of Alice/Bob/Eve authorization, staging export/restore, production deployed rules, offline/reconnect, or rollback.
+- Firebase production: no production data migration, write, deployment or Rules change performed by this session. Persistent furniture placement must remain gated until M0 acceptance.
+- Next safe action: review PR #9 3D preview and touch geometry, finish staging-only synthetic export/restore and offline/reconnect security checks, then decide whether PR #9 can be merged. Do not interpret green CI alone as M0 completion.
