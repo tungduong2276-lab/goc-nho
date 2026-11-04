@@ -4425,7 +4425,13 @@ renderCare=function(){
     ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
     // Enter/Space và click hỗ trợ truy cập không có tọa độ con trỏ đáng tin cậy:
     // giữ đúng nút đang được kích hoạt, không chạy bộ phân giải theo tọa độ.
-    const hit=ev.detail===0?origin:nearestGardenHit(
+    // When the browser hit-tests the actual character or board, honor that
+    // target. A neighboring enlarged invisible hitbox must not steal the tap.
+    // Keep coordinate resolution for other overlaps (e.g. daily pot vs seeds).
+    const direct=origin.matches(".chr[data-gchar], [data-gi='bang']") &&
+      (()=>{const r=(origin.querySelector(".ghit")||origin).getBoundingClientRect();
+        return ev.clientX>=r.left&&ev.clientX<=r.right&&ev.clientY>=r.top&&ev.clientY<=r.bottom;})();
+    const hit=ev.detail===0||direct?origin:nearestGardenHit(
       ev.clientX,ev.clientY,
       Array.from(canvas.querySelectorAll("[data-hit-x][data-hit-y]")),canvas
     );
