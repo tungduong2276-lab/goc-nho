@@ -85,11 +85,19 @@ test("board hit target wins over the neighboring watering-can expansion across v
       await page.goto("/index.html#khu-vuon");
       await expect(page.locator(".garden3d")).toBeVisible();
       const hit = page.locator(".garden3d button[data-gi='bang'] .ghit");
-      const point = await hit.evaluate((el, p) => {
-        const r = el.getBoundingClientRect();
-        return { x: r.left + r.width * p.fx, y: r.top + r.height * p.fy };
-      }, { fx, fy });
-      await page.mouse.click(point.x, point.y);
+      // Keep the nine-point geometry assertion: each selected point must
+      // actually receive a real pointer tap. Unlike a raw click using a
+      // previously sampled viewport coordinate, locator.click waits for the
+      // target to be stable and checks whether another element intercepts
+      // this exact relative point (including the neighboring watering can).
+      const bounds = await hit.boundingBox();
+      expect(bounds, "board must have a rendered hit region").not.toBeNull();
+      expect(bounds.width).toBeGreaterThan(0);
+      expect(bounds.height).toBeGreaterThan(0);
+      await hit.click({
+        position: { x: bounds.width * fx, y: bounds.height * fy },
+        timeout: 10000,
+      });
       await expect(page.locator("#gGallery")).toBeVisible();
     }
   }
