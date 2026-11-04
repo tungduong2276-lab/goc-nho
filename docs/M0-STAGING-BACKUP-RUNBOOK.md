@@ -50,3 +50,28 @@ Replace **every** placeholder with independently verified values; placeholders a
 To run the no-cloud tests: `npm run test:staging`. They also run within `npm test` / GitHub Actions. Failing test cases cover missing attestations, production IDs accidentally used as source or destination, same-project restoration, invalid bucket/input injection and accidental execution. Do not run any real GCP command from CI.
 
 **Critical:** A successful preflight **does not complete M0**. The admin still must prove source/destination isolation, use actual Cloud Firestore managed export/import on synthetic records only, verify the completed operation's output prefix and restricted GCS access, compare manifest hashes after restore and independently review the rollback. Never paste real credentials, export contents or private data into GitHub.
+
+## Offline synthetic restore manifest verification (M0 follow-up)
+
+The utility `scripts/m0-restore-manifest.mjs` provides `createSyntheticManifest(rows)` and `compareSyntheticRestore(expectedManifest, restoredRows)` for **strictly offline** comparison of hand-reviewed synthetic records.
+
+For each record, supply `{ "path": "couples/fixture-couple/notes/example", "fields": { "body": "synthetic" } }`. Use dedicated synthetic paths only: `couples/fixture-couple` and descendants, `users/fixture-alice`, `users/fixture-bob`, `codes/FIXTURE-CODE`. All values must be JSON-compatible. When converting Firestore native values, use an agreed lossless tagged JSON representation preserving timestamp **seconds and nanoseconds**, reference paths, geo data and bytes. The utility hashes the supplied representation; it **does not** fetch or convert Firestore native values itself, and a mismatch in the conversion convention can produce false negatives/positives.
+
+```js
+import { createSyntheticManifest, compareSyntheticRestore } from "./scripts/m0-restore-manifest.mjs";
+const before = [
+  { path: "couples/fixture-couple", fields: { members: ["fixture-alice", "fixture-bob"] } },
+  { path: "couples/fixture-couple/notes/example", fields: {
+    date: { __firestoreType: "timestamp", seconds: 1730000000, nanoseconds: 123 }
+  }}
+];
+const expected = createSyntheticManifest(before);
+const after = structuredClone(before); // Replace with real *synthetic staging* restore inventory
+const report = compareSyntheticRestore(expected, after);
+if (report.status !== "SYNTHETIC_MANIFEST_MATCH") throw Error("Staging restore mismatch");
+console.log(report);
+```
+
+A match proves only that **two supplied offline synthetic snapshots** have equal document paths and canonicalized field hashes. It cannot prove a managed Firestore export/import ran, that the snapshots came from separate projects, that the database is complete, or that the real staging target was empty before import. These claims require independent admin Cloud operation logs, project/IAM evidence, reviewed source/target inventory and actual post-restore SDK reads. Do not upload any real user data, credential, personal content or private GCP logs to this repository.
+
+Run `npm run test:staging` for no-network negative tests: missing/extra/nested records, content/timestamp changes, duplicate paths, unsafe fields, altered manifest. A genuine M0 restore gate remains open until a reviewer verifies the Cloud operation and the manifest comparison using **authorized staging-only synthetic source and target datasets**.
