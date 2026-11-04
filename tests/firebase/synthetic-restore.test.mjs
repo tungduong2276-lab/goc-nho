@@ -7,7 +7,7 @@ import { collection, doc, getDoc, getDocs, setDoc, Timestamp } from "firebase/fi
 // This is a SYNTHETIC document snapshot round-trip, NOT an actual Cloud Firestore
 // managed export/import and NOT a backup of any real couple's data.
 const address = process.env.FIRESTORE_EMULATOR_HOST || "";
-if (!/^(127\\.0\\.0\\.1|localhost):[0-9]+$/.test(address)) {
+if (!/^(127[.]0[.]0[.]1|localhost):[0-9]+$/.test(address)) {
   throw new Error("Refusing non-loopback Firestore endpoint");
 }
 const projectId = "demo-goc-nho-safety";
