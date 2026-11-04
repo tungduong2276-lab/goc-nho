@@ -39,7 +39,10 @@ test("synthetic nested documents survive isolated snapshot and restore with perm
     await setDoc(doc(db, source), meta);
     for (let i = 0; i < paths.length; i++) await setDoc(doc(db, source + "/" + paths[i]), data[i]);
   });
-  const snapshot = await env.withSecurityRulesDisabled(async ctx => {
+  // withSecurityRulesDisabled does not forward the callback's return value.
+  // Capture the synthetic snapshot explicitly before restoring it.
+  let snapshot;
+  await env.withSecurityRulesDisabled(async ctx => {
     const db = ctx.firestore();
     const root = (await getDoc(doc(db, source))).data();
     const nested = [];
@@ -48,8 +51,9 @@ test("synthetic nested documents survive isolated snapshot and restore with perm
       assert(snap.exists());
       nested.push({ relative, data: snap.data() });
     }
-    return { root, nested };
+    snapshot = { root, nested };
   });
+  assert(snapshot, "synthetic snapshot must exist before restore");
   // Restore to a distinct synthetic ID; never overwrite the source.
   await env.withSecurityRulesDisabled(async ctx => {
     const db = ctx.firestore();
