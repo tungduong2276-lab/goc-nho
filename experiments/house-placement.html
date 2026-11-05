@@ -18,7 +18,7 @@ button:disabled{opacity:.5;cursor:not-allowed}.primary{background:#8e516d;color:
 .stage img{width:100%;height:100%;object-fit:contain;display:block}
 .slot{position:absolute;transform:translate(-50%,-50%);border:3px solid #fff;background:#9c4c77;color:white;width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;box-shadow:0 3px 10px #3338}
 .slot[data-occupied="true"]{background:#315f68}.slot[aria-pressed="true"]{outline:4px solid #f3b33c}
-.slot span{pointer-events:none}.item{position:absolute;transform:translate(-50%,-80%);pointer-events:none;font-size:28px;filter:drop-shadow(0 2px 3px #3338)}
+.slot{display:grid;place-items:center;pointer-events:none;font-weight:800}.slot-pick[aria-pressed="true"]{outline:3px solid #f3b33c;outline-offset:2px}#slot-picker{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:10px auto}.slot-pick{min-width:128px}.item{position:absolute;transform:translate(-50%,-80%);pointer-events:none;font-size:28px;filter:drop-shadow(0 2px 3px #3338)}
 .legend{font-size:.85rem;color:#704a61}#status{min-height:2em;font-weight:700}#editor[hidden],#stage-wrap[hidden],#start[hidden]{display:none}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
@@ -38,7 +38,8 @@ button:disabled{opacity:.5;cursor:not-allowed}.primary{background:#8e516d;color:
 <img id="background" alt="Hình ảnh nội thất phòng được chọn" width="1170" height="1170">
 <div id="markers"></div>
 </div>
-<p class="legend">Chọn vòng tròn 1 hoặc 2 trên ảnh; vòng xanh có đồ, vòng hồng trống. Đây không phải kiểm tra va chạm thực tế.</p>
+<div id="slot-picker" aria-label="Chọn một trong hai vị trí đặt đồ"></div>
+<p class="legend">Hai vòng tròn chỉ đánh dấu vị trí. Dùng hai nút Vị trí bên dưới ảnh để chọn, tránh chồng vùng chạm. Vòng xanh có đồ, vòng hồng trống. Đây không phải kiểm tra va chạm thực tế.</p>
 </div>
 <div class="controls">
 <button id="place" class="primary" type="button" disabled>Đặt đồ</button>
