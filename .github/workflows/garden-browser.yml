@@ -82,6 +82,25 @@ jobs:
           path: review-artifacts/house-spacious/
           if-no-files-found: error
           retention-days: 7
+      - name: Render spacious bedroom source-art comparison
+        if: github.event.pull_request.head.ref == 'feature/m1-spacious-bedroom-source-pilot'
+        run: |
+          npm install --no-save three@0.169.0
+          python3 -m pip install --break-system-packages Pillow
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/bedroom-pilot-render.log 2>&1 &
+          node _xuong-3d/run.cjs rooms2.js out_bedrooms phong_anh phong_em
+          python3 scripts/m1-bedroom-spacious-compare.py
+          node -e 'const fs=require("fs");for(const r of ["phong_anh","phong_em"])if(!fs.existsSync("review-artifacts/bedroom-spacious/bedroom-"+r+"-before-after.png"))process.exitCode=1;'
+      - name: Upload bedroom spacious before/after evidence
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-spacious-bedroom-source-pilot'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-bedroom-spacious-${{ github.run_id }}
+          path: review-artifacts/bedroom-spacious/
+          if-no-files-found: error
+          retention-days: 7
       - name: Render and validate updated 3D house geometry
         if: github.event.pull_request.head.ref == 'feature/spacious-house-weather-botany'
         run: |
