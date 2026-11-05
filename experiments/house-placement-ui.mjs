@@ -1,9 +1,10 @@
 import { applyPreviewAction, PlacementPreviewError } from "../src/house-placement-preview.mjs";
 import { makeFloorProposalPreview } from "../src/house-floor-review.mjs";
+import { assertFurnitureFits, itemFootprint } from "../src/house-furniture-collision.mjs";
 
 // Deliberately isolated from index.html and Firebase. Nothing persists.
 const $ = id => document.getElementById(id);
-const icons = Object.freeze({chair:"🪑",lamp:"💡",plant:"🪴",rug:"🟠"});
+const icons = Object.freeze({chair:"🪑",table:"🪵",lamp:"💡",plant:"🪴",rug:"🟠"});
 const images = Object.freeze({
   "phong-khach":"phong_khach_ngay.webp",
   bep:"bep_ngay.webp",
@@ -13,6 +14,7 @@ const images = Object.freeze({
   gac:"gac_ngay.webp",
 });
 let draft = null;
+let scene = null;
 let selectedSlot = null;
 let sequence = 0;
 const room = () => $("room").value;
@@ -36,6 +38,14 @@ function render() {
       icon.style.left = slot.x / 1170 * 100 + "%";
       icon.style.top = slot.y / 1170 * 100 + "%";
       icon.style.rotate = item.rotation + "deg";
+      const footprint = itemFootprint(item.assetType,item.rotation);
+      icon.style.width = footprint.width / 1170 * 100 + "%";
+      icon.style.height = footprint.height / 1170 * 100 + "%";
+      icon.style.border = "2px dashed #315f68";
+      icon.style.background = "rgba(49,95,104,.12)";
+      icon.style.display = "grid";
+      icon.style.placeItems = "center";
+      icon.style.fontSize = "clamp(10px,3vw,25px)";
       icon.setAttribute("aria-hidden", "true");
       $("markers").append(icon);
     }
@@ -66,15 +76,24 @@ function render() {
   const item = selectedItem();
   const other = current.find(s => s.id !== selectedSlot);
   const otherTaken = draft.items.some(x => x.slotId === other?.id && x.roomId === room());
-  $("place").disabled = !selectedSlot || !!item;
-  $("move").disabled = !item || !other || otherTaken;
-  $("rotate").disabled = !item;
+  let placementSafe=false;
+  if(selectedSlot && !item) {
+    try {assertFurnitureFits(scene,draft,{kind:"place",id:"probe",roomId:room(),slotId:selectedSlot,assetType:$("asset").value});placementSafe=true;}catch { /* invalid footprint is a disabled action */ }
+  }
+  $("place").disabled = !placementSafe;
+  let canMove=!!item && !!other && !otherTaken;
+  if(canMove){try{assertFurnitureFits(scene,draft,{kind:"move",id:item.id,slotId:other.id});}catch{canMove=false;}}
+  $("move").disabled = !canMove;
+  let canRotate=!!item;
+  if(item){try{assertFurnitureFits(scene,draft,{kind:"rotate",id:item.id,rotation:(item.rotation+90)%360});}catch{canRotate=false;}}
+  $("rotate").disabled = !canRotate;
   $("remove").disabled = !item;
   $("undo").disabled = draft.undoStack.length === 0;
 }
 
 function mutate(action, message) {
   try {
+    if(["place","move","rotate"].includes(action.kind)) assertFurnitureFits(scene,draft,action);
     draft = applyPreviewAction(draft, action);
     render();
     notify(message + " · Chỉ trong bộ nhớ, chưa lưu.");
@@ -87,18 +106,20 @@ $("enable").addEventListener("click", async () => {
   try {
     const response = await fetch("../assets/3d/scene.json", {cache:"no-store"});
     if (!response.ok) throw new Error("SCENE_UNAVAILABLE");
-    draft = makeFloorProposalPreview(await response.json());
+    scene = await response.json();
+    draft = makeFloorProposalPreview(scene);
     $("start").hidden = true;
     $("editor").hidden = false;
     $("stage-wrap").hidden = false;
     selectedSlot = null;
     render();
-    notify("Đã mở bản thử cục bộ. Chọn một vị trí đánh dấu.");
+    notify("Đã mở bản thử cục bộ. Kiểm tra footprint mô phỏng; không xác nhận va chạm với đồ 3D được vẽ sẵn.");
   } catch {
     $("enable").disabled = false;
     $("start").insertAdjacentText("beforeend", " Không thể tải cảnh thử. Không có dữ liệu nào được ghi.");
   }
 });
+$("asset").addEventListener("change",()=>{render();notify("Đã đổi vật dụng: vùng footprint được kiểm tra lại.");});
 $("room").addEventListener("change", () => {selectedSlot=null;render();notify("Đã đổi phòng. Chọn vị trí ứng viên.");});
 $("place").addEventListener("click", () => mutate({
   kind:"place",id:"preview-"+(++sequence),assetType:$("asset").value,
