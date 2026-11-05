@@ -25,6 +25,7 @@ function render() {
   const assetUrl = images[room()];
   $("background").src = "../assets/3d/" + assetUrl;
   $("markers").replaceChildren();
+  $("slot-picker").replaceChildren();
   for (const slot of current) {
     const item = draft.items.find(x => x.slotId === slot.id && x.roomId === room());
     if (item) {
@@ -37,23 +38,29 @@ function render() {
       icon.setAttribute("aria-hidden", "true");
       $("markers").append(icon);
     }
+    const marker = document.createElement("span");
+    marker.className = "slot";
+    marker.style.left = slot.x / 1170 * 100 + "%";
+    marker.style.top = slot.y / 1170 * 100 + "%";
+    marker.dataset.slot = slot.id;
+    marker.dataset.occupied = String(Boolean(item));
+    marker.setAttribute("aria-hidden", "true");
+    marker.textContent = String(current.indexOf(slot) + 1);
+    $("markers").append(marker);
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "slot";
-    button.style.left = slot.x / 1170 * 100 + "%";
-    button.style.top = slot.y / 1170 * 100 + "%";
+    button.className = "slot-pick";
     button.dataset.slot = slot.id;
-    button.dataset.occupied = String(Boolean(item));
     button.setAttribute("aria-pressed", String(selectedSlot === slot.id));
-    button.setAttribute("aria-label", "Vị trí ứng viên " + (current.indexOf(slot) + 1) +
+    button.setAttribute("aria-label", "Chọn vị trí " + (current.indexOf(slot) + 1) +
       (item ? ", đang có " + item.assetType : ", trống"));
-    button.textContent = String(current.indexOf(slot) + 1);
+    button.textContent = "Vị trí " + (current.indexOf(slot) + 1) + (item ? " · có đồ" : " · trống");
     button.addEventListener("click", () => {
       selectedSlot = slot.id;
       render();
       notify("Đã chọn vị trí " + (current.indexOf(slot) + 1) + " (chưa duyệt hình học).");
     });
-    $("markers").append(button);
+    $("slot-picker").append(button);
   }
   const item = selectedItem();
   const other = current.find(s => s.id !== selectedSlot);
