@@ -3,6 +3,7 @@ import { makeFloorProposalPreview } from "../src/house-floor-review.mjs";
 import { assertFurnitureFits, itemFootprint } from "../src/house-furniture-collision.mjs";
 import { ROOM_ZONE_PROPOSALS, assertWithinProposedZones } from "../src/house-room-zones.mjs";
 import { ROOM_OBSTACLE_ATLAS, OBSTACLE_REVIEW_ZONES } from "../src/house-obstacle-atlas.mjs";
+import { reviewSixRoomWalkways } from "../src/house-walkway-audit.mjs";
 
 // Deliberately isolated from index.html and Firebase. Nothing persists.
 const $ = id => document.getElementById(id);
@@ -17,6 +18,7 @@ const images = Object.freeze({
 });
 let draft = null;
 let scene = null;
+let walkwayReviews = null;
 let selectedSlot = null;
 let sequence = 0;
 const room = () => $("room").value;
@@ -32,6 +34,30 @@ function render() {
   $("markers").replaceChildren();
   $("zones").replaceChildren();
   $("obstacles").replaceChildren();
+  $("walkways").replaceChildren();
+  const lane=walkwayReviews[room()];
+  const ns="http://www.w3.org/2000/svg";
+  const svg=document.createElementNS(ns,"svg");
+  svg.setAttribute("viewBox","0 0 1170 1170");
+  svg.setAttribute("class","walkway-overlay");
+  svg.setAttribute("aria-hidden","true");
+  const path=document.createElementNS(ns,"line");
+  path.setAttribute("x1",lane.path[0][0]);path.setAttribute("y1",lane.path[0][1]);
+  path.setAttribute("x2",lane.path[1][0]);path.setAttribute("y2",lane.path[1][1]);
+  path.setAttribute("stroke",lane.blockingIds.length?"#bf4a31":"#3369a0");
+  path.setAttribute("stroke-width",String(lane.clearanceRadiusPx*2));
+  path.setAttribute("stroke-opacity",".3");
+  path.setAttribute("stroke-dasharray","24 15");
+  svg.append(path);
+  for(const point of lane.path){const circle=document.createElementNS(ns,"circle");
+    circle.setAttribute("cx",point[0]);circle.setAttribute("cy",point[1]);circle.setAttribute("r","15");
+    circle.setAttribute("fill","#173954");circle.setAttribute("stroke","#fff");circle.setAttribute("stroke-width","4");
+    svg.append(circle);
+  }
+  $("walkways").append(svg);
+  $("walkway-status").textContent=lane.blockingIds.length?
+    "Lối đi tham chiếu có "+lane.blockingIds.length+" vùng vật cản ước lượng cắt qua. Không dùng để điều hướng thật.":
+    "Không tìm thấy vật cản ước lượng trên đoạn nối hai điểm đứng. Sàn và cửa vẫn chưa được đo/duyệt.";
   for(const obstacle of ROOM_OBSTACLE_ATLAS[room()]){
     const el=document.createElement("div");
     el.className="obstacle-review";
@@ -135,6 +161,7 @@ $("enable").addEventListener("click", async () => {
     if (!response.ok) throw new Error("SCENE_UNAVAILABLE");
     scene = await response.json();
     draft = makeFloorProposalPreview(scene);
+    walkwayReviews = reviewSixRoomWalkways(scene);
     $("start").hidden = true;
     $("editor").hidden = false;
     $("stage-wrap").hidden = false;
