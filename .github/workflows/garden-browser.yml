@@ -62,6 +62,26 @@ jobs:
           path: review-artifacts/house-spacious/
           if-no-files-found: error
           retention-days: 7
+      - name: Generate spacious living and kitchen WebP assets for trial branch only
+        if: github.event.pull_request.head.ref == 'feature/m1-spacious-scenes-assets'
+        run: |
+          npm install --no-save three@0.169.0
+          python3 -m pip install --break-system-packages Pillow
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/spacious-pack-render.log 2>&1 &
+          node _xuong-3d/run.cjs room.js out_spacious nen lop
+          node _xuong-3d/run.cjs rooms2.js out_spacious bep
+          python3 scripts/m1-spacious-preview.py
+          python3 scripts/m1-pack-spacious-scenes.py
+      - name: Upload before-and-after render comparison and packing manifest
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-spacious-scenes-assets'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-spacious-packer-review-${{ github.run_id }}
+          path: review-artifacts/house-spacious/
+          if-no-files-found: error
+          retention-days: 7
       - name: Render and validate updated 3D house geometry
         if: github.event.pull_request.head.ref == 'feature/spacious-house-weather-botany'
         run: |
@@ -74,6 +94,19 @@ jobs:
           python3 scripts/pack-house-map.py
       - name: Test app and house navigation
         run: npm test
+      - name: Commit tested spacious assets to isolated PR branch
+        if: github.event.pull_request.head.ref == 'feature/m1-spacious-scenes-assets'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/3d/scene.json
+          git add assets/3d/phong_khach_*.webp assets/3d/pk_*.webp assets/3d/bep_*.webp
+          if git diff --cached --quiet; then
+            echo "Spacious assets already match rendered 3D source"
+          else
+            git commit -m "Render(M1): synchronized spacious living/kitchen sprites and scene metadata"
+            git push origin HEAD:feature/m1-spacious-scenes-assets
+          fi
       - name: Verify full-composite visual review files
         if: always()
         run: |
