@@ -92,7 +92,14 @@ test("board hit target wins over the neighboring watering-can expansion across v
       // previously sampled viewport coordinate, locator.click waits for the
       // target to be stable and checks whether another element intercepts
       // this exact relative point (including the neighboring watering can).
-      const bounds = await hit.boundingBox();
+      // The garden stage can rerender after its parent becomes visible.
+      // Wait for this specific hitbox to be laid out (without skipping
+      // any of the nine actual pointer geometry assertions).
+      let bounds;
+      await expect.poll(async () => {
+        bounds = await hit.boundingBox();
+        return bounds !== null && bounds.width > 0 && bounds.height > 0;
+      }, {timeout: 10000, message:"board hitbox must settle after garden rerender"}).toBe(true);
       expect(bounds, "board must have a rendered hit region").not.toBeNull();
       expect(bounds.width).toBeGreaterThan(0);
       expect(bounds.height).toBeGreaterThan(0);
