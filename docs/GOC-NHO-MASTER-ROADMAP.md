@@ -346,3 +346,11 @@ Next safe action:
 - **At time of writing:** CI run #159 (`41953137827`) was in progress; DO NOT claim tests passed or merge before confirmation. Manual review of slot overlaps is pending.
 - **M0 blockers remain:** deployed production Rules/Auth/App Check/IAM inspection, actual managed separate-staging export/restore and rollback evidence, and visual approval of house rooms/furniture zones. PR #9 remains Draft. No live data touched.
 - **Next:** verify CI for PR #50 and repair any failure on its branch; inspect screenshots for all six rooms and adjust unapproved slots only after geometry review. Do not enable persistent M1 Firebase writes.
+
+
+### Handoff update — 2026-11-05, proposed six-room floor slots (Draft follow-up)
+
+- PR #50 merged only into PR #9 experimental branch at `c3f4fbe`; post-merge CI #41954074064 passed. `main` stayed at `e79f978`; PR #9 remains Draft and unmerged.
+- Created `feature/m1-floor-slot-review` based on PR #9 after CI success. Added `src/house-floor-review.mjs`, standalone UI proposal wiring, negative geometry tests and `docs/M1-FLOOR-REVIEW.md`. Original character-standing candidates are untouched in `src/house-placement-preview.mjs`; the visual proof of concept now uses separate, proposed floor points.
+- All 12 floor centers are **unapproved review proposals**. Basic source-image bound, 160px inter-slot center distance and 120px character-standing anchor clearance checks do not prove full furniture footprints or baked-in object collision. No Firestore, live app UI or production data modified.
+- Next: inspect CI and snapshots for this branch; correct any failures. Review proposed floor coordinates on six room backgrounds, design per-asset polygon footprints/collision and manual sign-off. No PR #9 to main merge, no M1 cloud writes until M0 export/restore and deployed security audit pass.
