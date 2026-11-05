@@ -8,7 +8,9 @@ const scene=JSON.parse(readFileSync("assets/3d/scene.json","utf8"));
 const reports=auditSixRoomComposites(scene);
 const names={"phong-khach":"Phòng khách",bep:"Bếp","phong-anh":"Phòng Anh","phong-em":"Phòng Em",
   "goc-sang-tao":"Góc sáng tạo",gac:"Gác kỷ niệm"};
-const folder="test-results/house-visual-review";
+// Keep screenshots outside Playwright-managed test-results, which may be cleaned
+// by other concurrent workers before GitHub uploads the review bundle.
+const folder="review-artifacts/house-composite";
 
 test("capture real six-room composites with actual sprite extents at mobile and wide viewport",async ({page})=>{
  test.setTimeout(150000);
