@@ -9,6 +9,53 @@ function roomSource(){
  const source=ROOM_SOURCES[$("room").value];
  return source===null?scene.room:scene.rooms[source];
 }
+// A review-only reconstruction of ONE state per physical furniture item.
+// Source sprite boxes are image extents, not floor contacts or 3D collision.
+const livingDefaults=["pk_sofa","pk_khung_anh","pk_lich","pk_bang_ghim_trong","pk_hu_it","pk_radio_tat"];
+function livingFamily(key){
+ if(key.startsWith("pk_hu_"))return "pk_hu";
+ if(key.startsWith("pk_radio_"))return "pk_radio";
+ if(key.startsWith("pk_bang_ghim_"))return "pk_bang_ghim";
+ return key;
+}
+function visibleLayers(){
+ const room=$("room").value,source=roomSource();
+ const focus=$("role").value==="fixed_contact"?$("layer").value:null;
+ if(ROOM_SOURCES[room]===null){
+  const items=[...livingDefaults];
+  if(focus){
+   const family=livingFamily(focus);
+   const at=items.findIndex(x=>livingFamily(x)===family);
+   if(at<0)items.push(focus);else items[at]=focus;
+  }
+  return items.filter(x=>Object.hasOwn(source.layers,x));
+ }
+ const items=Object.entries(source.items).map(([itemId,item])=>{
+  const selected=focus?.startsWith(itemId+"_")?focus:null;
+  return selected||itemId+"_"+item.st[0];
+ });
+ return items.filter(x=>Object.hasOwn(source.layers,x));
+}
+function renderLayers(){
+ if(!scene)return;
+ const parent=$("layers");parent.replaceChildren();
+ if(!$("show-furniture").checked)return;
+ const room=$("room").value,source=roomSource(),prefix=ROOM_SOURCES[room];
+ const focus=$("role").value==="fixed_contact"?$("layer").value:null;
+ for(const key of visibleLayers()){
+  const box=source.layers[key];
+  const image=document.createElement("img");
+  image.src="../assets/3d/"+(prefix===null?"":prefix+"_")+key+".webp";
+  image.dataset.layer=key;
+  image.alt="";
+  image.style.left=100*box[0]/1170+"%";
+  image.style.top=100*box[1]/1170+"%";
+  image.style.width=100*(box[2]-box[0])/1170+"%";
+  image.style.height=100*(box[3]-box[1])/1170+"%";
+  image.style.opacity=focus&&key!==focus?".72":"1";
+  parent.append(image);
+ }
+}
 function refreshRoom(){
  $("background").src="../assets/3d/"+backgrounds[$("room").value];
  const layer=$("layer"),previous=layer.value;
@@ -18,7 +65,7 @@ function refreshRoom(){
   option.value=key;option.textContent=key;layer.append(option);
  }
  if([...layer.options].some(option=>option.value===previous))layer.value=previous;
- vertices=[];render();
+ vertices=[];renderLayers();render();
  notice("Vùng đang vẽ chỉ là đề xuất, chưa duyệt.");
 }
 function drawPolygon(points,color,opacity=.14){
@@ -87,7 +134,7 @@ $("export-button").addEventListener("click",()=>{
 });
 $("reset").addEventListener("click",()=>{proposals.length=0;vertices=[];$("export").value="";render();notice("Đã xóa dữ liệu trong bộ nhớ.");});
 $("room").addEventListener("change",refreshRoom);
-$("role").addEventListener("change",()=>{vertices=[];render();});
+$("role").addEventListener("change",()=>{vertices=[];renderLayers();render();});\n$("layer").addEventListener("change",renderLayers);\n$("show-furniture").addEventListener("change",renderLayers);
 $("enable").addEventListener("click",async()=>{
  $("enable").disabled=true;
  try{
