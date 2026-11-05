@@ -15,6 +15,8 @@ test("isolated furniture preview is opt-in, works in six rooms, never requests F
       const img=page.locator("#background");
       await expect.poll(() => img.evaluate(el => el.complete && el.naturalWidth > 0)).toBe(true);
       await expect(page.locator(".slot-pick")).toHaveCount(2);
+      await expect(page.locator(".floor-zone")).toHaveCount(2);
+      await expect(page.locator(".floor-zone").first()).toBeVisible();
       await expect(page.locator("span.slot")).toHaveCount(2);
       await page.locator(".slot-pick").first().click();
       await page.locator("#asset").selectOption("chair");
