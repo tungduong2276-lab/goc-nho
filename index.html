@@ -2319,6 +2319,13 @@ function renderAll(){renderHeader();renderToday();renderGarden();renderHistory()
 function rerender(){
   // keep what people are typing when data from the other phone arrives
   const vals={},act=document.activeElement,actId=act&&act.id,sel=act&&("selectionStart" in act)?[act.selectionStart,act.selectionEnd]:null;
+  // Scene controls do not have stable DOM IDs. A scheduled partner update
+  // rebuilds their buttons; keep the *semantic* garden target focused so a
+  // keyboard Enter/Space is not lost between focus and keydown.
+  const gardenFocused=act?.closest?.(".garden3d [data-hit-x][data-hit-y]");
+  const gardenFocus= !gardenFocused ? null :
+    ["gi","gs","gchar"].map(key=>({key,value:gardenFocused.dataset[key]}))
+      .find(item=>item.value!==undefined) || null;
   document.querySelectorAll("#app input[id],#app textarea[id],#app select[id]").forEach(el=>{if(el.type==="file")return;vals[el.id]=(el.type==="radio"||el.type==="checkbox")?{c:el.checked}:{v:el.value};});
   const open={};document.querySelectorAll("#app details[id]").forEach(d=>open[d.id]=d.open);
   const errs={};document.querySelectorAll("#app .err[id]").forEach(e=>errs[e.id]=e.hidden);
@@ -2327,6 +2334,11 @@ function rerender(){
   Object.entries(open).forEach(([id,o])=>{const d=$(id);if(d)d.open=o;});
   Object.entries(errs).forEach(([id,h])=>{const e=$(id);if(e)e.hidden=h;});
   if(actId){const el=$(actId);if(el&&el!==document.activeElement){try{el.focus({preventScroll:true});if(sel&&el.setSelectionRange)el.setSelectionRange(sel[0],sel[1]);}catch(e){}}}
+  if(gardenFocus && !$("v-khu-vuon")?.hidden && (!document.activeElement || document.activeElement===document.body)){
+    const target=Array.from(document.querySelectorAll(".garden3d [data-hit-x][data-hit-y]"))
+      .find(el=>el.dataset[gardenFocus.key]===gardenFocus.value);
+    if(target)target.focus({preventScroll:true});
+  }
 }
 let sched=false;function schedule(){if(sched)return;sched=true;requestAnimationFrame(()=>{sched=false;rerender();});}
 

@@ -61,6 +61,23 @@ test("keyboard activation acts on the focused scene button, not the nearest coor
   await expect(page.locator("#tab-care .g-swing button")).toHaveText("Ngồi lên xích đu");
 });
 
+test("garden board retains keyboard focus when a scheduled state rerender replaces its DOM", async ({ page }) => {
+  await openGarden(page);
+  const board = page.locator(".garden3d button[data-gi='bang']");
+  await board.focus();
+  const focus = await page.evaluate(async () => {
+    const before = document.querySelector(".garden3d button[data-gi='bang']");
+    window.schedule();
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const after = document.querySelector(".garden3d button[data-gi='bang']");
+    return { replaced: before !== after, focusOnBoard: document.activeElement === after };
+  });
+  expect(focus.replaced, "schedule must replace the garden scene node").toBe(true);
+  expect(focus.focusOnBoard, "rerender must restore focus to the same semantic garden object").toBe(true);
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#gGallery")).toBeVisible();
+});
+
 test("a pointer tap on the character sends a hug at 390px and 360px", async ({ browser }) => {
   for (const width of [390, 360]) {
     const context = await browser.newContext({ viewport: { width, height: 844 } });
