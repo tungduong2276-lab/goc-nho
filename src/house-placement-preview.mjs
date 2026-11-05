@@ -43,7 +43,7 @@ export function makePlacementPreview(scene) {
   for (const [roomId, sourceId] of Object.entries(ROOM_SOURCES)) {
     const source = sourceId === null ? scene.room : scene.rooms[sourceId];
     const size = source?.size;
-    const candidateSpots = sourceId === null ? source?.dung : source?.spots?.dung;
+    const candidateSpots = sourceId === null ? source?.dung?.slice(0, 2) : source?.spots?.dung;
     if (!Array.isArray(size) || size.length !== 2 ||
         !size.every(n => Number.isInteger(n) && n > 0) ||
         !Array.isArray(candidateSpots) || candidateSpots.length !== 2 ||
