@@ -1,0 +1,99 @@
+import {ROOM_SOURCES} from "../src/house-placement-preview.mjs";
+import {makeFloorAnnotation,buildFloorReviewBundle} from "../src/house-floor-evidence.mjs";
+const $=id=>document.getElementById(id);
+const backgrounds=Object.freeze({"phong-khach":"phong_khach_ngay.webp",bep:"bep_ngay.webp","phong-anh":"phong_anh_ngay.webp","phong-em":"phong_em_ngay.webp","goc-sang-tao":"sang_tao_ngay.webp",gac:"gac_ngay.webp"});
+let scene=null,vertices=[];
+const proposals=[];
+const notice=message=>{$("status").textContent=message;};
+function roomSource(){
+ const source=ROOM_SOURCES[$("room").value];
+ return source===null?scene.room:scene.rooms[source];
+}
+function refreshRoom(){
+ $("background").src="../assets/3d/"+backgrounds[$("room").value];
+ const layer=$("layer"),previous=layer.value;
+ layer.replaceChildren();
+ for(const key of Object.keys(roomSource().layers)){
+  const option=document.createElement("option");
+  option.value=key;option.textContent=key;layer.append(option);
+ }
+ if([...layer.options].some(option=>option.value===previous))layer.value=previous;
+ vertices=[];render();
+ notice("Vùng đang vẽ chỉ là đề xuất, chưa duyệt.");
+}
+function drawPolygon(points,color,opacity=.14){
+ const ns="http://www.w3.org/2000/svg";
+ if(points.length>=2){
+  const poly=document.createElementNS(ns,points.length>=3?"polygon":"polyline");
+  poly.setAttribute("points",points.map(p=>p.join(",")).join(" "));
+  poly.setAttribute("stroke",color);poly.setAttribute("stroke-width","5");
+  poly.setAttribute("fill",points.length>=3?`rgba(0,0,0,${opacity})`:"none");
+  $("overlay").append(poly);
+ }
+ for(const p of points){
+  const circle=document.createElementNS(ns,"circle");
+  circle.setAttribute("cx",p[0]);circle.setAttribute("cy",p[1]);
+  circle.setAttribute("r","7");circle.setAttribute("fill",color);
+  circle.setAttribute("stroke","white");circle.setAttribute("stroke-width","2");
+  $("overlay").append(circle);
+ }
+}
+function render(){
+ $("overlay").replaceChildren();
+ const colors={floor:"#16815c",doorway:"#d0822d",walkway:"#e3a329",fixed_contact:"#c84a4a"};
+ if(scene){
+  for(const p of proposals)if(p.roomId===$("room").value)
+   drawPolygon(p.vertices,colors[p.role]);
+  drawPolygon(vertices,"#f0cf35");
+ }
+ $("counter").textContent=`${vertices.length} điểm · ${proposals.length} vùng chưa duyệt`;
+ $("commit").disabled=vertices.length<3;
+ $("undo").disabled=$("clear").disabled=vertices.length===0;
+ $("layer-control").hidden=$("role").value!=="fixed_contact";
+ const bundle=buildFloorReviewBundle(proposals);
+ const current=bundle.readiness.find(x=>x.roomId===$("room").value);
+ $("summary").textContent=`Thiếu bằng chứng: ${current.missing.join(", ")||"không còn loại trống"}\nLối đi ngoài vùng sàn: ${current.reservesOutsideProposedFloor?"CẦN XEM LẠI":"chưa phát hiện / chưa đủ dữ liệu"}\nTrạng thái: CHƯA ĐƯỢC DUYỆT`;
+}
+function addPoint(x,y){
+ if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||y<0||x>1170||y>1170){notice("Tọa độ không hợp lệ.");return;}
+ if(vertices.length>=32){notice("Mỗi vùng tối đa 32 đỉnh.");return;}
+ vertices.push([Math.round(x*10)/10,Math.round(y*10)/10]);
+ render();
+}
+$("stage").addEventListener("click",e=>{
+ const b=$("stage").getBoundingClientRect();
+ addPoint((e.clientX-b.left)*1170/b.width,(e.clientY-b.top)*1170/b.height);
+});
+$("add").addEventListener("click",()=>addPoint(Number($("x").value),Number($("y").value)));
+$("undo").addEventListener("click",()=>{vertices.pop();render();});
+$("clear").addEventListener("click",()=>{vertices=[];render();});
+$("commit").addEventListener("click",()=>{
+ try{
+  const roomId=$("room").value,role=$("role").value;
+  const entry=makeFloorAnnotation({roomId,role,vertices,
+   layerId:role==="fixed_contact"?$("layer").value:null},scene);
+  if(role==="fixed_contact"&&proposals.some(x=>x.roomId===roomId&&x.role===role&&x.layerId===entry.layerId))
+   throw Error("DUPLICATE_CONTACT_ANNOTATION");
+  proposals.push(entry);vertices=[];$("export").value="";render();
+  notice("Đã ghi nhận bản vẽ để kiểm tra, CHƯA ĐƯỢC DUYỆT.");
+ }catch(e){notice("Không ghi nhận: "+(e.code||e.message||"INVALID_POLYGON"));}
+});
+$("export-button").addEventListener("click",()=>{
+ try{
+  const bundle=buildFloorReviewBundle(proposals);
+  $("export").value=JSON.stringify(bundle,null,2);
+  notice("Đã xuất dữ liệu chưa duyệt; không có lưu Firebase.");
+ }catch(e){notice("Không xuất được: "+(e.code||"INVALID_FLOOR_BUNDLE"));}
+});
+$("reset").addEventListener("click",()=>{proposals.length=0;vertices=[];$("export").value="";render();notice("Đã xóa dữ liệu trong bộ nhớ.");});
+$("room").addEventListener("change",refreshRoom);
+$("role").addEventListener("change",()=>{vertices=[];render();});
+$("enable").addEventListener("click",async()=>{
+ $("enable").disabled=true;
+ try{
+  const response=await fetch("../assets/3d/scene.json",{cache:"no-store"});
+  if(!response.ok)throw Error("SCENE_UNAVAILABLE");
+  scene=await response.json();$("editor").hidden=false;$("start").hidden=true;
+  refreshRoom();
+ }catch(e){$("enable").disabled=false;notice("Không tải được cảnh. Không có dữ liệu nào được lưu.");}
+});
