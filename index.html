@@ -1048,6 +1048,19 @@ body.sheet-open nav.tabs{display:none}
 /* Chỉ các phòng trong Nhà: hiển thị toàn bộ ảnh 1170x1170, không cắt mất trần/sàn. */
 #tab-room .room3d .rstage,.room-tab .room3d .rstage{aspect-ratio:1}
 #tab-room .room3d .rstage .wcanvas,.room-tab .room3d .rstage .wcanvas{top:0}
+/* M1 spacious visual pass — larger viewport for house rooms only.
+   Changes the responsive camera/display area, NOT physical floor geometry. */
+#tab-room .tab-head,.room-tab .tab-head{margin-bottom:4px}
+@media(min-width:800px){
+  #tab-room .room3d,.room-tab .room3d{
+    width:min(960px,calc(100vw - 48px));
+    max-width:none;
+    margin-left:calc((100% - min(960px,calc(100vw - 48px)))/2);
+    margin-right:0;
+    border-radius:22px;
+  }
+}
+
 .room3d.t-dem .lay img,.room3d.t-dem .spr,.room3d.t-dem .onwall{filter:brightness(.72) saturate(.85) hue-rotate(-8deg)}
 .room3d.t-chieu .lay img,.room3d.t-chieu .spr{filter:sepia(.18) saturate(1.05)}
 .lay{position:absolute;display:block;padding:0;margin:0;border:0;background:none}
