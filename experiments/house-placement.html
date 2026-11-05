@@ -15,7 +15,7 @@ label{display:grid;gap:5px;font-weight:700;font-size:.9rem}select,button{font:in
 button{cursor:pointer;font-weight:700}button:focus-visible,select:focus-visible{outline:3px solid #7b4fc3;outline-offset:2px}
 button:disabled{opacity:.5;cursor:not-allowed}.primary{background:#8e516d;color:white;border-color:#8e516d}
 .stage{position:relative;width:min(100%,650px);aspect-ratio:1;margin:12px auto;background:#f2e1de;border:2px solid #d9b9c5;border-radius:16px;overflow:hidden}
-.stage img{width:100%;height:100%;object-fit:contain;display:block}.floor-zone{position:absolute;border:2px dashed rgba(51,129,105,.85);background:rgba(65,175,140,.12);pointer-events:none}.obstacle-review{position:absolute;border:2px dashed #bc555f;background:rgba(200,65,90,.22);pointer-events:none}
+.stage img{width:100%;height:100%;object-fit:contain;display:block}.floor-zone{position:absolute;border:2px dashed rgba(51,129,105,.85);background:rgba(65,175,140,.12);pointer-events:none}.walkway-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.obstacle-review{position:absolute;border:2px dashed #bc555f;background:rgba(200,65,90,.22);pointer-events:none}
 .slot{position:absolute;transform:translate(-50%,-50%);border:3px solid #fff;background:#9c4c77;color:white;width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;box-shadow:0 3px 10px #3338}
 .slot[data-occupied="true"]{background:#315f68}.slot[aria-pressed="true"]{outline:4px solid #f3b33c}
 .slot{display:grid;place-items:center;pointer-events:none;font-weight:800}.slot-pick[aria-pressed="true"]{outline:3px solid #f3b33c;outline-offset:2px}#slot-picker{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:10px auto}.slot-pick{min-width:128px}.item{position:absolute;transform:translate(-50%,-80%);pointer-events:none;font-size:28px;filter:drop-shadow(0 2px 3px #3338)}
@@ -36,10 +36,10 @@ button:disabled{opacity:.5;cursor:not-allowed}.primary{background:#8e516d;color:
 <div id="stage-wrap" hidden>
 <div class="stage" id="stage" aria-label="Ảnh phòng với hai vị trí ứng viên">
 <img id="background" alt="Hình ảnh nội thất phòng được chọn" width="1170" height="1170">
-<div id="zones" aria-hidden="true"></div><div id="obstacles" aria-hidden="true"></div><div id="markers"></div>
+<div id="zones" aria-hidden="true"></div><div id="walkways" aria-hidden="true"></div><div id="obstacles" aria-hidden="true"></div><div id="markers"></div>
 </div>
-<div id="slot-picker" aria-label="Chọn một trong hai vị trí đặt đồ"></div>
-<p class="legend">Hai vòng tròn đánh dấu <strong>điểm đề xuất chưa được duyệt</strong>. Dùng hai nút Vị trí bên dưới ảnh để chọn, tránh chồng vùng chạm. Vòng xanh có đồ, vòng hồng trống. Vùng xanh nét đứt là ô sàn ứng viên, không phải bản đồ sàn đã nghiệm thu; khung nét đứt của đồ cho biết footprint mô phỏng. Khung đỏ là vật cản ước lượng trên ảnh (không phải mesh va chạm đã được duyệt). Đây không phải kiểm tra va chạm 3D thực tế.</p>
+<p id="walkway-status" class="legend" role="status">Lối đi tham chiếu chưa được kiểm tra.</p><div id="slot-picker" aria-label="Chọn một trong hai vị trí đặt đồ"></div>
+<p class="legend">Hai vòng tròn đánh dấu <strong>điểm đề xuất chưa được duyệt</strong>. Dùng hai nút Vị trí bên dưới ảnh để chọn, tránh chồng vùng chạm. Vòng xanh có đồ, vòng hồng trống. Vùng xanh nét đứt là ô sàn ứng viên, không phải bản đồ sàn đã nghiệm thu; khung nét đứt của đồ cho biết footprint mô phỏng. Khung đỏ là vật cản ước lượng trên ảnh (không phải mesh va chạm đã được duyệt). Vệt xanh lam/cam là đoạn nối hai điểm đứng nhân vật lấy từ scene.json, chỉ để xem xét lối đi; vị trí cửa, biên sàn và hành lang thật hiện chưa xác định. Đây không phải kiểm tra va chạm 3D thực tế.</p>
 </div>
 <div class="controls">
 <button id="place" class="primary" type="button" disabled>Đặt đồ</button>
