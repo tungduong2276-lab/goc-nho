@@ -1,6 +1,7 @@
 // Phòng khách — trang chủ (mục 6.1). Nền theo 4 buổi + vật tương tác là lớp rời.
 import { THREE, C, piece, makeScene, isoCamera, shoot, shadowCatcher, toPx, TIMES } from './lib.js';
 import * as F from './furn.js';
+import {SPACIOUS_SCENE_PILOT} from './spacious-layout.js';
 import { buildChar } from './chars.js';
 import { buildCat } from './pet.js';
 
@@ -15,7 +16,11 @@ function scene(time) {
   const st = F.stairs(7); st.rotation.y = Math.PI / 2; st.position.set(-2.45 + 2.0, 0, -2.45); // dọc tường phải, lên về góc trong
   st.rotation.y = 0; st.position.set(-2.5, 0, -0.55);
   const bg = [F.rug(1.5), F.coffeeTable(), F.bookshelfLow(), F.floorLamp(time === 'dem' || time === 'chieu'), F.pothos(), F.cushion(C.pink), F.petBed()];
-  bg[0].position.set(0.55, 0, 0.55); bg[1].position.set(0.55, 0, 0.45);
+  // Pilot: bring the coffee table/rug closer to the sofa, clear center floor.
+  // Regenerate all four backgrounds; do not move cropped sprite boxes by CSS.
+  const spacious=SPACIOUS_SCENE_PILOT["phong-khach"].next;
+  bg[0].position.set(spacious.rug[0],0,spacious.rug[1]);
+  bg[1].position.set(spacious.coffeeTable[0],0,spacious.coffeeTable[1]);
   bg[2].position.set(1.9, 0, -2.55);
   bg[3].position.set(-2.55, 0, 2.55);
   bg[4].position.set(2.55, 0, 2.45 - 4.9); bg[4].position.set(2.6, 0, -1.6);
@@ -30,7 +35,10 @@ function scene(time) {
   L.lich = F.calendar(); F.onWall(L.lich, 'R', 0.45, 1.7); s.add(L.lich);
   L.bangghim = F.corkboard(false); F.onWall(L.bangghim, 'R', 1.95, 1.7); s.add(L.bangghim);
   L.radio = F.radio(false); L.radio.position.set(2.15, 0.79, -2.55); s.add(L.radio);
-  L.hu = F.jar('day'); L.hu.position.set(0.55, 0.53, 0.45); s.add(L.hu);
+  L.hu = F.jar('day');
+  // The jar sits on the coffee table, so it must follow the real 3D table.
+  L.hu.position.set(spacious.coffeeTable[0],0.53,spacious.coffeeTable[1]);
+  s.add(L.hu);
   s.userData.L = L; s.userData.bg = [shell, ...bgAll];
   return s;
 }
