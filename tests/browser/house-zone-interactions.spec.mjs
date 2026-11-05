@@ -41,47 +41,11 @@ test("focused room remains keyboard-operable when house DOM rerenders", async ({
     await expect(target).toBeVisible();
     await target.focus();
     await expect(target).toBeFocused();
-    // Simulate the app updating shared/decorative state while someone is
-    // navigating by keyboard: renderHome replaces every SVG polygon.
+    // Force a real app rerender while the same room zone is keyboard-focused.
     await page.evaluate(() => renderHome());
-    await expect(target, `${zone}: rerender should retain keyboard focus`).toBeFocused();
-    await target.press("Enter");
-    await expect(page).toHaveURL(new RegExp(`#${hash}import { test, expect } from "@playwright/test";
-
-// Visual geometry is rendered separately. These tests exercise *actual* SVG
-// hit regions in Chromium instead of trusting metadata bounds alone.
-const rooms = [
-  ["sangtao", "goc-sang-tao"],
-  ["khach", "phong-khach"],
-  ["bep", "bep"],
-  ["anh", "phong-anh"],
-  ["em", "phong-em"],
-  ["gac", "gac"],
-];
-
-async function openHouse(page) {
-  await page.addInitScript(() => localStorage.setItem("hu-hen-ho-me", "0"));
-  await page.route("https://www.gstatic.com/**", route => route.abort());
-  await page.route("https://fonts.googleapis.com/**", route => route.abort());
-  await page.route("https://fonts.gstatic.com/**", route => route.abort());
-  await page.goto("/index.html#nha");
-  await expect(page.locator(".world .zones polygon[data-zone]")).toHaveCount(11);
-}
-
-test("all six house room polygons respond to keyboard Enter", async ({ page }) => {
-  await openHouse(page);
-  for (const [zone, hash] of rooms) {
-    await page.goto("/index.html#nha");
-    const target = page.locator(`.world .zones polygon[data-zone="${zone}"]`);
-    await expect(target).toBeVisible();
-    // The isometric SVG can be replaced during fit3(): resolve and focus
-    // the current polygon in the same Playwright keyboard action.
+    await expect(target, `${zone}: focus survives SVG replacement`).toBeFocused();
     await target.press("Enter");
     await expect(page).toHaveURL(new RegExp(`#${hash}$`));
-  }
-});
-
-));
   }
 });
 
