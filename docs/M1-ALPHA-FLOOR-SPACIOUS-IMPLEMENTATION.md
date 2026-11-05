@@ -27,6 +27,10 @@
 - `tests/browser/house-spacious-view.spec.mjs`: đo bbox tại 360, 390, 430, 1300, sáu phòng, kiểm tra tràn ngang và stage đủ lớn.
 - Đây là **rộng về hiển thị**. Chưa dịch chuyển/thu nhỏ sprite hay mở rộng sàn thật.
 
+### [x] C0 — Bộ báo cáo trạng thái mặt sàn v2 (không cấp phép trang trí)
+- `src/house-floor-zones-v2.mjs`: `makeDecorFloorReview(roomId,alphaRecords,zones)` hiển thị hai vùng ứng viên nhưng để `decorFreeZones:[]`, `usableFloorAreaPx2:null`, `spaciousScore:null`, và liệt kê 4 bằng chứng bắt buộc còn thiếu.
+- `requireVerifiedFloorReview(report)` từ chối dùng kết quả chưa được nghiệm thu. `tests/staging/m1-floor-zones-v2.test.mjs` xác minh sáu phòng fail-closed, kể cả khi đã đo alpha.
+
 ### [ ] C1 — Duyệt floor-contact của từng sprite trong scene
 - Dự kiến `src/house-floor-contact-atlas.mjs`: `getFloorContact(roomId,itemState)`, `validateContactPolygon(...)`, metadata về nguồn/bằng chứng và trạng thái `PROPOSED/VERIFIED`.
 - Cần người duyệt đối chiếu ảnh ghép 1170px và chân/đáy của sprite: giường, sofa, tủ, bàn, giá vẽ, rương; loại vật treo tường khỏi collider nhưng không loại khỏi occlusion.
