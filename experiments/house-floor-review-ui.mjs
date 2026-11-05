@@ -134,7 +134,9 @@ $("export-button").addEventListener("click",()=>{
 });
 $("reset").addEventListener("click",()=>{proposals.length=0;vertices=[];$("export").value="";render();notice("Đã xóa dữ liệu trong bộ nhớ.");});
 $("room").addEventListener("change",refreshRoom);
-$("role").addEventListener("change",()=>{vertices=[];renderLayers();render();});\n$("layer").addEventListener("change",renderLayers);\n$("show-furniture").addEventListener("change",renderLayers);
+$("role").addEventListener("change",()=>{vertices=[];renderLayers();render();});
+$("layer").addEventListener("change",renderLayers);
+$("show-furniture").addEventListener("change",renderLayers);
 $("enable").addEventListener("click",async()=>{
  $("enable").disabled=true;
  try{
