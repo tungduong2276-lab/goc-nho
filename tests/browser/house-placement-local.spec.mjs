@@ -14,8 +14,9 @@ test("isolated furniture preview is opt-in, works in six rooms, never requests F
       await page.locator("#room").selectOption(room);
       const img=page.locator("#background");
       await expect.poll(() => img.evaluate(el => el.complete && el.naturalWidth > 0)).toBe(true);
-      await expect(page.locator("button.slot")).toHaveCount(2);
-      await page.locator("button.slot").first().click();
+      await expect(page.locator(".slot-pick")).toHaveCount(2);
+      await expect(page.locator("span.slot")).toHaveCount(2);
+      await page.locator(".slot-pick").first().click();
       await page.locator("#asset").selectOption("chair");
       await page.locator("#place").click();
       await expect(page.locator(".item")).toHaveCount(1);
@@ -39,10 +40,10 @@ test("isolated furniture preview is opt-in, works in six rooms, never requests F
 test("no duplicate placement and reset clears memory without saving", async ({page}) => {
   await page.goto("/experiments/house-placement.html");
   await page.locator("#enable").click();
-  await page.locator("button.slot").first().click();
+  await page.locator(".slot-pick").first().click();
   await page.locator("#place").click();
   await expect(page.locator("#place")).toBeDisabled();
-  await page.locator("button.slot").last().click();
+  await page.locator(".slot-pick").last().click();
   await page.locator("#place").click();
   await expect(page.locator(".item")).toHaveCount(2);
   await expect(page.locator("#move")).toBeDisabled();
