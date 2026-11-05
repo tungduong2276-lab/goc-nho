@@ -72,3 +72,29 @@ test("fixed-contact annotations require a real scene layer and reject duplicates
  await expect(page.locator("#status")).toContainText("DUPLICATE_CONTACT_ANNOTATION");
  await expect(page.locator("#counter")).toContainText("1 vùng");
 });
+
+test("six-room review composes actual first-state furniture sprite images, never inferred colliders",async ({page})=>{
+ await page.setViewportSize({width:390,height:900});
+ await page.goto("/experiments/house-floor-review.html");
+ await page.locator("#enable").click();
+ for(const room of rooms){
+  await page.locator("#room").selectOption(room);
+  const sprites=page.locator("#layers img[data-layer]");
+  expect(await sprites.count()).toBeGreaterThan(0);
+  await expect.poll(()=>sprites.evaluateAll(images=>images.every(img=>img.complete&&img.naturalWidth>0&&img.naturalHeight>0)),{timeout:10000}).toBe(true);
+  for(const layer of await sprites.evaluateAll(images=>images.map(img=>img.dataset.layer))){
+   expect(typeof layer).toBe("string");
+  }
+  const review=await page.locator("#summary").textContent();
+  expect(review).toContain("CHƯA ĐƯỢC DUYỆT");
+ }
+ await page.locator("#room").selectOption("phong-anh");
+ await page.locator("#role").selectOption("fixed_contact");
+ await page.locator("#layer").selectOption("giuong_ngu");
+ await expect(page.locator('#layers img[data-layer="giuong_ngu"]')).toHaveCount(1);
+ await expect(page.locator('#layers img[data-layer="giuong_gon"]')).toHaveCount(0);
+ await page.locator("#show-furniture").uncheck();
+ await expect(page.locator("#layers img")).toHaveCount(0);
+ await page.locator("#show-furniture").check();
+ await expect(page.locator("#layers img").first()).toBeVisible();
+});
