@@ -1,0 +1,120 @@
+import { makePlacementPreview, applyPreviewAction, PlacementPreviewError } from "../src/house-placement-preview.mjs";
+
+// Deliberately isolated from index.html and Firebase. Nothing persists.
+const $ = id => document.getElementById(id);
+const icons = Object.freeze({chair:"🪑",lamp:"💡",plant:"🪴",rug:"🟠"});
+const images = Object.freeze({
+  "phong-khach":"phong_khach_ngay.webp",
+  bep:"bep_ngay.webp",
+  "phong-anh":"phong_anh_ngay.webp",
+  "phong-em":"phong_em_ngay.webp",
+  "goc-sang-tao":"sang_tao_ngay.webp",
+  gac:"gac_ngay.webp",
+});
+let draft = null;
+let selectedSlot = null;
+let sequence = 0;
+const room = () => $("room").value;
+const slots = () => draft?.slots.filter(s => s.roomId === room()) ?? [];
+const selectedItem = () => draft?.items.find(x => x.slotId === selectedSlot && x.roomId === room());
+const notify = message => { $("status").textContent = message; };
+
+function render() {
+  if (!draft) return;
+  const current = slots();
+  const assetUrl = images[room()];
+  $("background").src = "../assets/3d/" + assetUrl;
+  $("markers").replaceChildren();
+  for (const slot of current) {
+    const item = draft.items.find(x => x.slotId === slot.id && x.roomId === room());
+    if (item) {
+      const icon = document.createElement("span");
+      icon.className = "item";
+      icon.textContent = icons[item.assetType];
+      icon.style.left = slot.x / 1170 * 100 + "%";
+      icon.style.top = slot.y / 1170 * 100 + "%";
+      icon.style.rotate = item.rotation + "deg";
+      icon.setAttribute("aria-hidden", "true");
+      $("markers").append(icon);
+    }
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "slot";
+    button.style.left = slot.x / 1170 * 100 + "%";
+    button.style.top = slot.y / 1170 * 100 + "%";
+    button.dataset.slot = slot.id;
+    button.dataset.occupied = String(Boolean(item));
+    button.setAttribute("aria-pressed", String(selectedSlot === slot.id));
+    button.setAttribute("aria-label", "Vị trí ứng viên " + (current.indexOf(slot) + 1) +
+      (item ? ", đang có " + item.assetType : ", trống"));
+    button.textContent = String(current.indexOf(slot) + 1);
+    button.addEventListener("click", () => {
+      selectedSlot = slot.id;
+      render();
+      notify("Đã chọn vị trí " + (current.indexOf(slot) + 1) + " (chưa duyệt hình học).");
+    });
+    $("markers").append(button);
+  }
+  const item = selectedItem();
+  const other = current.find(s => s.id !== selectedSlot);
+  const otherTaken = draft.items.some(x => x.slotId === other?.id && x.roomId === room());
+  $("place").disabled = !selectedSlot || !!item;
+  $("move").disabled = !item || !other || otherTaken;
+  $("rotate").disabled = !item;
+  $("remove").disabled = !item;
+  $("undo").disabled = draft.undoStack.length === 0;
+}
+
+function mutate(action, message) {
+  try {
+    draft = applyPreviewAction(draft, action);
+    render();
+    notify(message + " · Chỉ trong bộ nhớ, chưa lưu.");
+  } catch (error) {
+    notify(error instanceof PlacementPreviewError ? "Không thể thực hiện: " + error.code : "Lỗi thao tác thử nghiệm.");
+  }
+}
+$("enable").addEventListener("click", async () => {
+  $("enable").disabled = true;
+  try {
+    const response = await fetch("../assets/3d/scene.json", {cache:"no-store"});
+    if (!response.ok) throw new Error("SCENE_UNAVAILABLE");
+    draft = makePlacementPreview(await response.json());
+    $("start").hidden = true;
+    $("editor").hidden = false;
+    $("stage-wrap").hidden = false;
+    selectedSlot = null;
+    render();
+    notify("Đã mở bản thử cục bộ. Chọn một vị trí đánh dấu.");
+  } catch {
+    $("enable").disabled = false;
+    $("start").insertAdjacentText("beforeend", " Không thể tải cảnh thử. Không có dữ liệu nào được ghi.");
+  }
+});
+$("room").addEventListener("change", () => {selectedSlot=null;render();notify("Đã đổi phòng. Chọn vị trí ứng viên.");});
+$("place").addEventListener("click", () => mutate({
+  kind:"place",id:"preview-"+(++sequence),assetType:$("asset").value,
+  roomId:room(),slotId:selectedSlot,
+}, "Đã đặt vật dụng"));
+$("move").addEventListener("click", () => {
+  const item = selectedItem();
+  const other = slots().find(s => s.id !== selectedSlot);
+  if (item && other) {
+    mutate({kind:"move",id:item.id,slotId:other.id}, "Đã chuyển vị trí");
+    selectedSlot=other.id;render();
+  }
+});
+$("rotate").addEventListener("click", () => {
+  const item=selectedItem();
+  if (item) mutate({kind:"rotate",id:item.id,rotation:(item.rotation+90)%360}, "Đã xoay");
+});
+$("remove").addEventListener("click", () => {
+  const item=selectedItem();
+  if (item) mutate({kind:"remove",id:item.id}, "Đã cất vật dụng");
+});
+$("undo").addEventListener("click", () => mutate({kind:"undo"}, "Đã hoàn tác"));
+$("reset").addEventListener("click", () => {
+  // Reconstruct from safe in-memory slot metadata, not from app state or cloud.
+  draft = {...draft,items:[],undoStack:[]};
+  sequence=0;selectedSlot=null;render();notify("Đã xóa mọi vị trí thử nghiệm.");
+});
