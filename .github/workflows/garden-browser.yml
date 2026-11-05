@@ -101,6 +101,25 @@ jobs:
           path: review-artifacts/bedroom-spacious/
           if-no-files-found: error
           retention-days: 7
+      - name: Render all bedroom scene states and repack into isolated trial branch
+        if: github.event.pull_request.head.ref == 'feature/m1-spacious-bedroom-assets'
+        run: |
+          npm install --no-save three@0.169.0
+          python3 -m pip install --break-system-packages Pillow
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/m1-bedrooms-repack.log 2>&1 &
+          node _xuong-3d/run.cjs rooms2.js out_bedrooms phong_anh phong_em
+          python3 scripts/m1-bedroom-spacious-compare.py
+          python3 scripts/m1-pack-bedroom-assets.py
+      - name: Upload regenerated bedroom preview and metadata manifest
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-spacious-bedroom-assets'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-bedroom-asset-review-${{ github.run_id }}
+          path: review-artifacts/bedroom-spacious/
+          if-no-files-found: error
+          retention-days: 7
       - name: Render and validate updated 3D house geometry
         if: github.event.pull_request.head.ref == 'feature/spacious-house-weather-botany'
         run: |
@@ -125,6 +144,19 @@ jobs:
           else
             git commit -m "Render(M1): synchronized spacious living/kitchen sprites and scene metadata"
             git push origin HEAD:feature/m1-spacious-scenes-assets
+          fi
+      - name: Commit tested bedroom binaries to isolated PR branch
+        if: github.event.pull_request.head.ref == 'feature/m1-spacious-bedroom-assets'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/3d/scene.json
+          git add assets/3d/phong_anh_*.webp assets/3d/phong_em_*.webp
+          if git diff --cached --quiet; then
+            echo "Bedroom artwork already matches source"
+          else
+            git commit -m "Render(M1): synchronized spacious bedroom layers and scene metadata"
+            git push origin HEAD:feature/m1-spacious-bedroom-assets
           fi
       - name: Verify full-composite visual review files
         if: always()

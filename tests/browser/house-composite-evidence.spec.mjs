@@ -54,11 +54,23 @@ test("capture real six-room composites with actual sprite extents at mobile and 
          throw new Error("Living room missing composite sprite overlays");
        return observed;
      },{layers:Object.fromEntries(report.layers.map(l=>[l.layerId,l.box])),ignoreLiving:id==="phong-khach"});
-     await canvas.evaluate((node,{layers})=>{
-       const ns="http://www.w3.org/2000/svg";
-       const svg=document.createElementNS(ns,"svg");svg.setAttribute("viewBox","0 0 1170 1170");
-       svg.setAttribute("data-composite-audit","true");svg.setAttribute("aria-hidden","true");
-       Object.assign(svg.style,{position:"absolute",left:"0",top:"0",width:"1170px",height:"1170px",pointerEvents:"none",zIndex:"99999"});
+     // Attach the review overlay to document.body, not the room canvas. The app
+     // can asynchronously rebuild its room DOM after Firebase/local hydration;
+     // a canvas-owned overlay would disappear even though the image is valid.
+     // All coordinates still come from the *current* rendered canvas position.
+     await page.evaluate(({roomId,layers})=>{
+       document.querySelectorAll('[data-composite-audit]').forEach(el=>el.remove());
+       const node=document.querySelector('#v-'+roomId+' .room3d .wcanvas');
+       if(!node)throw new Error('Missing live room canvas for '+roomId);
+       const bounds=node.getBoundingClientRect(),ns="http://www.w3.org/2000/svg";
+       if(bounds.width<=0||bounds.height<=0)throw new Error('Empty live room canvas');
+       const svg=document.createElementNS(ns,"svg");
+       svg.setAttribute("viewBox","0 0 1170 1170");
+       svg.setAttribute("data-composite-audit","true");
+       svg.setAttribute("aria-hidden","true");
+       Object.assign(svg.style,{position:"absolute",left:(bounds.left+scrollX)+"px",
+         top:(bounds.top+scrollY)+"px",width:bounds.width+"px",height:bounds.height+"px",
+         pointerEvents:"none",zIndex:"99999"});
        for(const layer of layers){
          const b=layer.box,rect=document.createElementNS(ns,"rect");
          rect.setAttribute("x",b[0]);rect.setAttribute("y",b[1]);
@@ -67,9 +79,9 @@ test("capture real six-room composites with actual sprite extents at mobile and 
          rect.setAttribute("stroke-width","4");rect.setAttribute("stroke-opacity",".68");
          svg.append(rect);
        }
-       node.append(svg);
-     },{layers:report.layers});
-     await expect(canvas.locator("[data-composite-audit] rect")).toHaveCount(report.layers.length);
+       document.body.append(svg);
+     },{roomId:id,layers:report.layers});
+     await expect(page.locator("body > [data-composite-audit] rect")).toHaveCount(report.layers.length);
      const file="composite-"+id+"-"+width+".png";
      // A Firebase/local rerender may replace .room3d while an element screenshot
      // waits for stability. Capture the current page instead of a stale node.
