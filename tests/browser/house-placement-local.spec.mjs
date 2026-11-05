@@ -28,6 +28,8 @@ test("isolated furniture preview is opt-in, works in six rooms, never requests F
       await expect(page.locator(".item")).toHaveCount(0);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
+    await page.locator("#reset").click();
+    await expect(page.locator(".item")).toHaveCount(0);
     await page.reload();
     await expect(page.locator("#editor")).toBeHidden();
   }
