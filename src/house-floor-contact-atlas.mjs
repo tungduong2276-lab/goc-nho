@@ -16,6 +16,10 @@ function segmentsTouch(a,b,c,d){
 }
 export function validateContactPolygon(vertices){
  if(!Array.isArray(vertices)||vertices.length<3||vertices.length>32||!vertices.every(inside))fail("INVALID_CONTACT_POLYGON");
+ for(let i=0;i<vertices.length;i++){
+   const next=vertices[(i+1)%vertices.length];
+   if(vertices[i][0]===next[0]&&vertices[i][1]===next[1])fail("CONTACT_POLYGON_DEGENERATE");
+ }
  const area=Math.abs(vertices.reduce((sum,p,i)=>{const n=vertices[(i+1)%vertices.length];return sum+p[0]*n[1]-n[0]*p[1];},0)/2);
  if(area<16)fail("CONTACT_POLYGON_DEGENERATE");
  for(let i=0;i<vertices.length;i++)for(let j=i+1;j<vertices.length;j++){
