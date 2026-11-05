@@ -62,6 +62,10 @@ jobs:
         if: always()
         run: |
           node -e 'const fs=require("fs");const p="review-artifacts/house-alpha/";if(!fs.existsSync(p+"alpha-review-manifest.json"))process.exit(1);for(const id of ["phong-khach","bep","phong-anh","phong-em","goc-sang-tao","gac"])if(!fs.existsSync(p+"alpha-"+id+"-390.png")){console.error("Missing alpha review screenshot",id);process.exitCode=1;}'
+      - name: Verify six-room floor-contact review screenshots
+        if: always()
+        run: |
+          node -e 'const fs=require("fs");const p="review-artifacts/house-contact/";for(const id of ["phong-khach","bep","phong-anh","phong-em","goc-sang-tao","gac"])if(!fs.existsSync(p+"contact-"+id+"-390.png")){console.error("Missing contact review",id);process.exitCode=1;}'
       - name: Publish six-room mobile and composited visual review bundle
         if: always()
         uses: actions/upload-artifact@v4
@@ -71,6 +75,7 @@ jobs:
             test-results/house-visual-review/
             review-artifacts/house-composite/
             review-artifacts/house-alpha/
+            review-artifacts/house-contact/
           if-no-files-found: warn
           retention-days: 7
       - name: Publish 3D preview for visual inspection
