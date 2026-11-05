@@ -2729,6 +2729,9 @@ function renderHome(){
   if(w.wishNew)todos.push(`<li><span class="ic">${ICON.note}</span><span class="tx">${N(o)} thêm ${w.wishNew} ước mơ mới</span><a class="btn btn-ghost btn-small" href="#uoc-mo">Xem</a></li>`);
   if(w.storyDone)todos.push(`<li><span class="ic">${ICON.pen}</span><span class="tx">${N(o)} đã khép lại một câu chuyện</span><a class="btn btn-ghost btn-small" href="#truyen">Đọc</a></li>`);
   if(w.drawDone)todos.push(`<li class="hot"><span class="ic">${ICON.pen}</span><span class="tx">${N(o)} đã lật bức tranh của hai đứa</span><a class="btn btn-main btn-small" href="#ve">Xem tranh</a></li>`);
+  // Preserve keyboard navigation when updates rebuild the SVG house map.
+  // The previous polygon is detached by innerHTML; restore focus to its replacement.
+  const focusedHouseZone = root.querySelector("[data-zone]:focus")?.dataset.zone || null;
   const fd=feed(),up=upcoming(5),gifts=list("gifts"),treH=treasureHTML();
   const pend=todos.length-(w.water?1:0);
   root.innerHTML=`${inviteHTML()}${pend>0?`<a class="newsbar" href="#nha" data-jump="todos"><span class="ic">${ICON.note}</span><b>${pend} việc đang chờ bạn</b><span>Xem ›</span></a>`:""}${houseWeatherHTML()}${worldMapHTML()}${houseRoomNavHTML("")}
@@ -2743,6 +2746,10 @@ function renderHome(){
       ${giftsHTML()}</section>`;
   root.querySelectorAll("[data-tap]").forEach(b=>b.onclick=()=>sendTap(b.dataset.tap));
   bindWorld(root);
+  if(focusedHouseZone && location.hash === "#nha"){
+    const nextZone=[...root.querySelectorAll("[data-zone]")].find(el=>el.dataset.zone===focusedHouseZone);
+    if(nextZone)nextZone.focus({preventScroll:true});
+  }
   bindHouseWeather(root);
   root.querySelectorAll("[data-water]").forEach(b=>b.onclick=water);
   root.querySelectorAll("[data-jump]").forEach(b=>b.onclick=e=>{e.preventDefault();const t=$(b.dataset.jump);if(t)t.scrollIntoView({behavior:reduced()?"auto":"smooth"});});
