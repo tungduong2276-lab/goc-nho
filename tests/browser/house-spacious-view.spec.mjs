@@ -10,13 +10,23 @@ test("spacious viewport uses screen width without horizontal overflow or touchin
       await page.goto("/index.html#"+room);
       const stage=page.locator("#v-"+room+" .room3d");
       await expect(stage).toBeVisible();
-      const measured=await stage.evaluate(el=>({width:el.getBoundingClientRect().width,
-        left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right}));
-      expect(measured.width).toBeGreaterThanOrEqual(width>=1000?700:width-40);
-      expect(measured.left).toBeGreaterThanOrEqual(-2);
-      expect(measured.right).toBeLessThanOrEqual(width+2);
-      const htmlWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
-      expect(htmlWidth).toBeLessThanOrEqual(width+3);
+      // Route render is asynchronous; don't sample a DOM element while its
+      // parent view is being torn down and rebuilt. Every geometry assertion
+      // remains mandatory once the scene has settled.
+      await expect.poll(async()=>{
+        return stage.evaluate(el=>{
+          const box=el.getBoundingClientRect();
+          return box.width>0 && box.left>=-2;
+        }).catch(()=>false);
+      },{timeout:10000,message:room+" must render a stable stage at "+width}).toBe(true);
+      await expect.poll(async()=>{
+        const box=await stage.evaluate(el=>{
+          const r=el.getBoundingClientRect();
+          return {w:r.width,l:r.left,right:r.right};
+        }).catch(()=>({w:0,l:-100,right:99999}));
+        const pageWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
+        return box.w>=(width>=1000?700:width-40)&&box.l>=-2&&box.right<=width+2&&pageWidth<=width+3;
+      },{timeout:10000,message:room+" must occupy safe visible space at "+width}).toBe(true);
     }
   }
 });
