@@ -34,8 +34,9 @@ test("the source 3D builders, existing scene schema and render jobs remain coupl
  const living=readFileSync("_xuong-3d/room.js","utf8");
  const kitchen=readFileSync("_xuong-3d/rooms2.js","utf8");
  assert.match(living,/SPACIOUS_SCENE_PILOT\["phong-khach"\]\.next/);
+ assert.match(living,/L\.hu\.position\.set\(spacious\.coffeeTable\[0\]/);
  assert.match(kitchen,/SPACIOUS_SCENE_PILOT\.bep\.next/);
- assert.match(kitchen,/spacious\.diningTable/);
+ assert.match(kitchen,/SPACIOUS_SCENE_PILOT\.bep\.next\.diningTable/);
  assert.equal(scene.room.size[0],1170);
  assert.equal(scene.rooms.bep.size[0],1170);
  for(const id of Object.keys(scene.rooms.bep.items))
