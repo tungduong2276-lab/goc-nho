@@ -26,12 +26,12 @@ button:disabled{opacity:.5;cursor:not-allowed}.primary{background:#8e516d;color:
 <body>
 <main>
 <h1>🏡 Thử trang trí Nhà 3D</h1>
-<p class="notice"><strong>Nguyên mẫu riêng biệt — chưa phát hành.</strong> Chỉ bật khi bạn chọn “Bắt đầu thử”. Hai điểm mỗi phòng là <strong>đề xuất mới trên vùng sàn từ ảnh đối chiếu</strong>, đã kiểm tra khoảng cách tới tâm điểm đứng của nhân vật nhưng <strong>chưa được duyệt vị trí nội thất</strong>. Vật dụng minh họa vẫn có thể chồng lên nội thất được vẽ sẵn vì chưa có dữ liệu va chạm 3D. Không có Firebase, không có lưu trên thiết bị và không đồng bộ. Tải lại trang sẽ xóa mọi thay đổi thử nghiệm.</p>
+<p class="notice"><strong>Nguyên mẫu riêng biệt — chưa phát hành.</strong> Chỉ bật khi bạn chọn “Bắt đầu thử”. Hai điểm mỗi phòng là <strong>đề xuất mới trên vùng sàn từ ảnh đối chiếu</strong>, đã kiểm tra khoảng cách tới tâm điểm đứng của nhân vật nhưng <strong>chưa được duyệt vị trí nội thất</strong>. Vật dụng có khung chiếm chỗ 2D để thử nghiệm kiểm tra biên phòng, nhân vật và các vật dụng đã đặt. Vẫn có thể chồng lên nội thất được vẽ sẵn vì chưa có dữ liệu va chạm 3D. Không có Firebase, không có lưu trên thiết bị và không đồng bộ. Tải lại trang sẽ xóa mọi thay đổi thử nghiệm.</p>
 <div id="start"><button class="primary" id="enable" type="button">Bắt đầu thử (không lưu)</button></div>
 <section id="editor" hidden aria-label="Bảng điều khiển đặt nội thất">
 <div class="controls">
 <label>Chọn phòng<select id="room"><option value="phong-khach">Phòng khách</option><option value="bep">Bếp</option><option value="phong-anh">Phòng Anh</option><option value="phong-em">Phòng Em</option><option value="goc-sang-tao">Góc sáng tạo</option><option value="gac">Gác kỷ niệm</option></select></label>
-<label>Vật dụng<select id="asset"><option value="chair">Ghế 🪑</option><option value="lamp">Đèn 💡</option><option value="plant">Cây 🪴</option><option value="rug">Thảm 🟠</option></select></label>
+<label>Vật dụng<select id="asset"><option value="chair">Ghế 🪑</option><option value="table">Bàn 🪵</option><option value="lamp">Đèn 💡</option><option value="plant">Cây 🪴</option><option value="rug">Thảm 🟠</option></select></label>
 </div>
 <div id="stage-wrap" hidden>
 <div class="stage" id="stage" aria-label="Ảnh phòng với hai vị trí ứng viên">
@@ -39,7 +39,7 @@ button:disabled{opacity:.5;cursor:not-allowed}.primary{background:#8e516d;color:
 <div id="markers"></div>
 </div>
 <div id="slot-picker" aria-label="Chọn một trong hai vị trí đặt đồ"></div>
-<p class="legend">Hai vòng tròn đánh dấu <strong>điểm đề xuất chưa được duyệt</strong>. Dùng hai nút Vị trí bên dưới ảnh để chọn, tránh chồng vùng chạm. Vòng xanh có đồ, vòng hồng trống. Đây không phải kiểm tra va chạm thực tế.</p>
+<p class="legend">Hai vòng tròn đánh dấu <strong>điểm đề xuất chưa được duyệt</strong>. Dùng hai nút Vị trí bên dưới ảnh để chọn, tránh chồng vùng chạm. Vòng xanh có đồ, vòng hồng trống. Khung nét đứt cho biết vùng chiếm chỗ mô phỏng. Đây không phải kiểm tra va chạm 3D thực tế.</p>
 </div>
 <div class="controls">
 <button id="place" class="primary" type="button" disabled>Đặt đồ</button>

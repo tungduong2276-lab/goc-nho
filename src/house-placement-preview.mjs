@@ -23,7 +23,7 @@ export const ROOM_SOURCES = Object.freeze({
   "goc-sang-tao": "sang_tao",
   gac: "gac",
 });
-export const PREVIEW_ASSET_TYPES = Object.freeze(["chair", "lamp", "plant", "rug"]);
+export const PREVIEW_ASSET_TYPES = Object.freeze(["chair", "table", "lamp", "plant", "rug"]);
 const ROTATIONS = Object.freeze([0, 90, 180, 270]);
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 const MAX_PREVIEW_HISTORY = 20;
