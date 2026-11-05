@@ -3,6 +3,7 @@
 import { THREE, C, piece, rbox, sphere, capsule, rcyl, lathe, torus, tube, leafGeo, makeScene, isoCamera, shoot, shadowCatcher, toPx } from './lib.js';
 import * as F from './furn.js';
 import {SPACIOUS_SCENE_PILOT} from './spacious-layout.js';
+import {BEDROOM_SPACIOUS_PILOT} from './bedroom-spacious-pilot.js';
 
 const G = () => new THREE.Group();
 const at = (o, x, y, z, ry = 0) => { o.position.set(x, y, z); o.rotation.y = ry; return o; };
@@ -155,8 +156,8 @@ const ROOMS = {
   phong_anh: { title: 'Phòng Anh', n: 6, d: 6, shell: { wallL: C.sky2, wallR: C.sky2, floor: 0xEEF4FA, plank: 0xDCE6F2, base: C.stoneD },
     deco(g, t) { const w = windowBox(t); F.onWall(w, 'R', 0.6, 1.6); g.add(w);
       const ps = G(); piece(rbox(0.8, 1.0, 0.04, 0.02), C.navy, { parent: ps }); for (let i = 0; i < 9; i++) piece(sphere(0.025, 6, 4), C.butter, { noOutline: true, basic: true, pos: [-0.3 + (i * 0.27) % 0.6, 0.38 - (i * 0.19) % 0.76, 0.03], parent: ps }); piece(sphere(0.1, 14, 8).scale(1, 1, 0.2), C.butter, { noOutline: true, basic: true, pos: [0.18, 0.25, 0.03], parent: ps }); F.onWall(ps, 'L', -0.9, 1.65); g.add(ps);
-      const lh = plantPot(C.white, 'luoiho'); lh.position.set(2.55, 0, -2.5); g.add(lh); const rg = rugRect(2.0, 1.4, C.sky, C.white); rg.position.set(0.2, 0, 0.9); g.add(rg); },
-    items: { giuong: { st: ['gon', 'ngu'], build: s => OBJ.giuong(s, { col: C.sky, hair: C.hairA }), place: o => at(o, -2.25, 0, -1.6), go: 'ngu', label: 'Giường: đi ngủ' },
+      const lh = plantPot(C.white, 'luoiho'); lh.position.set(2.55, 0, -2.5); g.add(lh); const rg = rugRect(2.0, 1.4, C.sky, C.white); const p=BEDROOM_SPACIOUS_PILOT.phong_anh.next.rug; rg.position.set(p[0],0,p[1]); g.add(rg); },
+    items: { giuong: { st: ['gon', 'ngu'], build: s => OBJ.giuong(s, { col: C.sky, hair: C.hairA }), place: o => {const p=BEDROOM_SPACIOUS_PILOT.phong_anh.next.bed;return at(o,p[0],0,p[1]);}, go: 'ngu', label: 'Giường: đi ngủ' },
       banlamviec: { st: ['tat', 'sang'], place: o => at(o, 1.9, 0, -2.6), go: 'ban', label: 'Bàn làm việc: đang bận' },
       tudo: { st: ['dong', 'mo'], place: o => at(o, -0.75, 0, -2.65), go: 'phoido', label: 'Tủ đồ: phối đồ' },
       kesuutap: { st: ['trong'], wall: 'L', place: o => (OBJ && o), go: 'vuong-quoc', label: 'Kệ huy hiệu' } },
@@ -165,10 +166,10 @@ const ROOMS = {
   phong_em: { title: 'Phòng Em', n: 6, d: 6, shell: { wallL: C.petal, wallR: C.petal, floor: C.wood },
     deco(g, t) { const w = windowBox(t); F.onWall(w, 'R', -0.4, 1.6); g.add(w); const hp = plantPot(C.white, 'treo'); hp.position.set(0.55, 2.05, -2.8); hp.scale.setScalar(0.8); g.add(hp);
       fairyLights(g, [-2.9, 2.45, -2.9], [-2.9, 2.35, 2.6]); fairyLights(g, [-2.9, 2.45, -2.9], [2.7, 2.35, -2.9], 11);
-      const rg = rugRound(1.0, C.white, C.pinkL); rg.position.set(0.4, 0, 0.8); g.add(rg);
-      const bear = G(); piece(sphere(0.26, 16, 12), C.wood, { pos: [0, 0.26, 0], parent: bear }); piece(sphere(0.2, 16, 12), C.wood, { pos: [0, 0.62, 0.02], parent: bear }); for (const s of [-1, 1]) { piece(sphere(0.08, 10, 8), C.wood, { pos: [s * 0.15, 0.8, 0], parent: bear }); piece(sphere(0.08, 10, 8), C.wood, { pos: [s * 0.2, 0.3, 0.16], parent: bear }); } piece(sphere(0.07, 10, 8), C.white, { pos: [0, 0.6, 0.2], parent: bear }); for (const s of [-1, 1]) piece(sphere(0.022, 6, 4), C.navy, { noOutline: true, pos: [s * 0.07, 0.68, 0.19], parent: bear }); piece(torus(0.13, 0.03, Math.PI * 2, 6, 16), C.pink, { pos: [0, 0.47, 0.02], rot: [Math.PI / 2, 0, 0], parent: bear }); bear.position.set(1.9, 0, 1.6); bear.rotation.y = -0.4; g.add(bear);
+      const rg = rugRound(1.0, C.white, C.pinkL); const rug=BEDROOM_SPACIOUS_PILOT.phong_em.next.rug; rg.position.set(rug[0],0,rug[1]); g.add(rg);
+      const bear = G(); piece(sphere(0.26, 16, 12), C.wood, { pos: [0, 0.26, 0], parent: bear }); piece(sphere(0.2, 16, 12), C.wood, { pos: [0, 0.62, 0.02], parent: bear }); for (const s of [-1, 1]) { piece(sphere(0.08, 10, 8), C.wood, { pos: [s * 0.15, 0.8, 0], parent: bear }); piece(sphere(0.08, 10, 8), C.wood, { pos: [s * 0.2, 0.3, 0.16], parent: bear }); } piece(sphere(0.07, 10, 8), C.white, { pos: [0, 0.6, 0.2], parent: bear }); for (const s of [-1, 1]) piece(sphere(0.022, 6, 4), C.navy, { noOutline: true, pos: [s * 0.07, 0.68, 0.19], parent: bear }); piece(torus(0.13, 0.03, Math.PI * 2, 6, 16), C.pink, { pos: [0, 0.47, 0.02], rot: [Math.PI / 2, 0, 0], parent: bear }); const bearAt=BEDROOM_SPACIOUS_PILOT.phong_em.next.bear; bear.position.set(bearAt[0],0,bearAt[1]); bear.rotation.y = -0.4; g.add(bear);
       const mn = plantPot(C.pink, 'monstera'); mn.position.set(2.6, 0, -2.5); g.add(mn); },
-    items: { giuong: { st: ['gon', 'ngu'], build: s => OBJ.giuong(s, { col: C.pink, hair: C.hairE, voan: true }), place: o => at(o, -2.25, 0, -1.7), go: 'ngu', label: 'Giường màn voan: đi ngủ' },
+    items: { giuong: { st: ['gon', 'ngu'], build: s => OBJ.giuong(s, { col: C.pink, hair: C.hairE, voan: true }), place: o => {const p=BEDROOM_SPACIOUS_PILOT.phong_em.next.bed;return at(o,p[0],0,p[1]);}, go: 'ngu', label: 'Giường màn voan: đi ngủ' },
       bantrangdiem: { st: ['thuong'], place: o => at(o, 0.9, 0, -2.65), go: 'phoido', label: 'Bàn trang điểm: phối đồ' },
       kecay: { st: ['trong'], place: o => at(o, -2.62, 0, 1.25, Math.PI / 2), go: 'khu-vuon', label: 'Kệ cây' },
       hopnhatky: { st: ['dong', 'mo'], place: o => at(o, -1.25, 0, -2.6), go: 'nhat-ky', label: 'Hộp nhật ký' } },
