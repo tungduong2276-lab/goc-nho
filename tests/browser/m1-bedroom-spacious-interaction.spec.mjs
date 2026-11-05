@@ -34,7 +34,10 @@ test("new bedroom interactive sprite images match actual hitboxes on mobile/wide
       }).toBe(true);
     }
     const bed=stage.locator('button[data-ri="giuong"]');
-    await bed.click({trial:true});
+    await expect.poll(()=>bed.evaluate(el=>getComputedStyle(el).pointerEvents)).toBe("auto");
+    await expect.poll(()=>stage.locator("img.wbg").evaluate(el=>getComputedStyle(el).pointerEvents)).toBe("none");
+    // A real pointer trial, not force:true, so hitbox interception is detected.
+    await bed.click({trial:true,timeout:10000});
     const fullWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
     expect(fullWidth).toBeLessThanOrEqual(width+3);
   }
