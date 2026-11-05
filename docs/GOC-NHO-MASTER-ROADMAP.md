@@ -354,3 +354,12 @@ Next safe action:
 - Created `feature/m1-floor-slot-review` based on PR #9 after CI success. Added `src/house-floor-review.mjs`, standalone UI proposal wiring, negative geometry tests and `docs/M1-FLOOR-REVIEW.md`. Original character-standing candidates are untouched in `src/house-placement-preview.mjs`; the visual proof of concept now uses separate, proposed floor points.
 - All 12 floor centers are **unapproved review proposals**. Basic source-image bound, 160px inter-slot center distance and 120px character-standing anchor clearance checks do not prove full furniture footprints or baked-in object collision. No Firestore, live app UI or production data modified.
 - Next: inspect CI and snapshots for this branch; correct any failures. Review proposed floor coordinates on six room backgrounds, design per-asset polygon footprints/collision and manual sign-off. No PR #9 to main merge, no M1 cloud writes until M0 export/restore and deployed security audit pass.
+
+
+### Handoff update — 2026-11-05, M1 footprint preflight PR #52 (Draft)
+
+- Latest verified PR #9 baseline at `48d9b1c` after PR #51 merge; GitHub Actions `41955534130` succeeded. `main` remains `e79f978`, PR #9 stays Draft.
+- Created `feature/m1-furniture-footprint-collision` and Draft PR #52 targeting PR #9 feature branch, not main. Scope: local-only five furniture types including table; approximate footprint rectangles, rotation, room image inset, standing-character safety discs, and simulated item-to-item collision before place/move/rotate.
+- No live House UI, Firebase reads/writes, production Rules/config/schema change, schema migration or deployment. The five footprints are provisional 2D screen/image-pixel estimates; existing baked-in 3D props/walls are NOT represented as meshes and MUST NOT be considered cleared by these checks.
+- Added `tests/staging/m1-furniture-collision.test.mjs`; CI run `41957498414` was in progress when this note was written. Inspect the final CI on the current head and fix any failures before merge; do not claim acceptance early.
+- Next: review CI + screenshot implications, merge PR #52 into PR #9 branch only if green, verify branch CI again. For any production M1 work, first complete M0 independent Cloud Firestore staging restore, deployed Rules/Auth/App Check/IAM inspection, full collision masks / manual 3D visual approval and rollback.
