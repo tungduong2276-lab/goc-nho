@@ -27,3 +27,14 @@ test("all living/kitchen daylight/weather variants and sprite states have nonemp
  for(const k of Object.keys(scene.room.layers))assert.ok(statSync("assets/3d/"+k+".webp").size>100);
  for(const k of Object.keys(scene.rooms.bep.layers))assert.ok(statSync("assets/3d/bep_"+k+".webp").size>100);
 });
+
+test("unrelated rooms, the garden scene and the outer house map remain addressable",()=>{
+ for(const id of ["phong_anh","phong_em","sang_tao","gac","khu_vuon"]){
+   assert.ok(scene.rooms[id]?.layers);
+   assert.deepEqual(scene.rooms[id].size,[1170,1170]);
+ }
+ assert.ok(scene.map?.zones);
+ assert.ok(scene.rooms.bep.items.tulanh.st.includes("mo"));
+ assert.ok(scene.rooms.bep.items.bepnau.st.includes("nau"));
+ assert.ok(scene.rooms.bep.items.banan.st.includes("baymon"));
+});
