@@ -36,8 +36,23 @@ test("new bedroom interactive sprite images match actual hitboxes on mobile/wide
     const bed=stage.locator('button[data-ri="giuong"]');
     await expect.poll(()=>bed.evaluate(el=>getComputedStyle(el).pointerEvents)).toBe("auto");
     await expect.poll(()=>stage.locator("img.wbg").evaluate(el=>getComputedStyle(el).pointerEvents)).toBe("none");
-    // A real pointer trial, not force:true, so hitbox interception is detected.
-    await bed.click({trial:true,timeout:10000});
+    // Furniture naturally overlap in isometric projection: the bbox center
+    // can be covered by a nearer wardrobe. Find a genuinely reachable pixel
+    // of the bed button instead of cheating with force:true or disabling it.
+    let reach;
+    await expect.poll(async()=>{
+      reach=await bed.evaluate(el=>{
+        const b=el.getBoundingClientRect();const hit=[];
+        for(let y=0;y<12;y++)for(let x=0;x<12;x++){
+          const rx=(x+.5)*b.width/12,ry=(y+.5)*b.height/12;
+          const z=document.elementFromPoint(b.left+rx,b.top+ry);
+          if(z===el||z?.closest?.(".lay.hot")===el)hit.push({x:rx,y:ry});
+        }
+        return {count:hit.length,point:hit[Math.floor(hit.length/2)]};
+      }).catch(()=>({count:0}));
+      return reach.count>=8;
+    },{timeout:10000,message:room+" must provide a visible unobstructed bed tap area"}).toBe(true);
+    await bed.click({trial:true,timeout:10000,position:reach.point});
     const fullWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
     expect(fullWidth).toBeLessThanOrEqual(width+3);
   }
