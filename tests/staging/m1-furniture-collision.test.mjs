@@ -60,11 +60,11 @@ test("blocks another object's overlapping rectangle even with different slots",(
 
 test("rotating near an edge is validated against the new occupied size",()=>{
  const d=fresh();
- const edited={...d,slots:d.slots.map(s=>s.id==="gac-candidate-1"?{...s,x:92,y:730}:s)};
- const first=place("gac","gac-candidate-1","table");
- assertFurnitureFits(scene,edited,first); // horizontal half-width 65 + inset 24
+ const edited={...d,slots:d.slots.map(s=>s.id==="gac-candidate-1"?{...s,x:70,y:730}:s)};
+ const first={...place("gac","gac-candidate-1","table"),rotation:90};
+ assertFurnitureFits(scene,edited,first); // rotated table half-width 45 + inset 24
  const placed=applyPreviewAction(edited,first);
- fails(placed,{kind:"rotate",id:"one",rotation:90},"FOOTPRINT_OUT_OF_BOUNDS"); // use a deliberately tighter y position below instead if widths differ
+ fails(placed,{kind:"rotate",id:"one",rotation:0},"FOOTPRINT_OUT_OF_BOUNDS");
 });
 
 test("rejects unapproved state transitions and invalid scene geometry",()=>{
