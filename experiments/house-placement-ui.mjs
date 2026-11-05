@@ -1,6 +1,7 @@
 import { applyPreviewAction, PlacementPreviewError } from "../src/house-placement-preview.mjs";
 import { makeFloorProposalPreview } from "../src/house-floor-review.mjs";
 import { assertFurnitureFits, itemFootprint } from "../src/house-furniture-collision.mjs";
+import { ROOM_ZONE_PROPOSALS, assertWithinProposedZones } from "../src/house-room-zones.mjs";
 
 // Deliberately isolated from index.html and Firebase. Nothing persists.
 const $ = id => document.getElementById(id);
@@ -28,6 +29,19 @@ function render() {
   const assetUrl = images[room()];
   $("background").src = "../assets/3d/" + assetUrl;
   $("markers").replaceChildren();
+  $("zones").replaceChildren();
+  const zone=ROOM_ZONE_PROPOSALS[room()];
+  for(const poly of zone.candidateFloor){
+    const el=document.createElement("div");
+    el.className="floor-zone";
+    const xs=poly.map(p=>p[0]),ys=poly.map(p=>p[1]);
+    const left=Math.min(...xs),top=Math.min(...ys);
+    el.style.left=left/1170*100+"%";
+    el.style.top=top/1170*100+"%";
+    el.style.width=(Math.max(...xs)-left)/1170*100+"%";
+    el.style.height=(Math.max(...ys)-top)/1170*100+"%";
+    $("zones").append(el);
+  }
   $("slot-picker").replaceChildren();
   for (const slot of current) {
     const item = draft.items.find(x => x.slotId === slot.id && x.roomId === room());
@@ -78,14 +92,14 @@ function render() {
   const otherTaken = draft.items.some(x => x.slotId === other?.id && x.roomId === room());
   let placementSafe=false;
   if(selectedSlot && !item) {
-    try {assertFurnitureFits(scene,draft,{kind:"place",id:"probe",roomId:room(),slotId:selectedSlot,assetType:$("asset").value});placementSafe=true;}catch { /* invalid footprint is a disabled action */ }
+    try {const action={kind:"place",id:"probe",roomId:room(),slotId:selectedSlot,assetType:$("asset").value};assertFurnitureFits(scene,draft,action);assertWithinProposedZones(draft,action);placementSafe=true;}catch { /* invalid footprint is a disabled action */ }
   }
   $("place").disabled = !placementSafe;
   let canMove=!!item && !!other && !otherTaken;
-  if(canMove){try{assertFurnitureFits(scene,draft,{kind:"move",id:item.id,slotId:other.id});}catch{canMove=false;}}
+  if(canMove){try{const action={kind:"move",id:item.id,slotId:other.id};assertFurnitureFits(scene,draft,action);assertWithinProposedZones(draft,action);}catch{canMove=false;}}
   $("move").disabled = !canMove;
   let canRotate=!!item;
-  if(item){try{assertFurnitureFits(scene,draft,{kind:"rotate",id:item.id,rotation:(item.rotation+90)%360});}catch{canRotate=false;}}
+  if(item){try{const action={kind:"rotate",id:item.id,rotation:(item.rotation+90)%360};assertFurnitureFits(scene,draft,action);assertWithinProposedZones(draft,action);}catch{canRotate=false;}}
   $("rotate").disabled = !canRotate;
   $("remove").disabled = !item;
   $("undo").disabled = draft.undoStack.length === 0;
@@ -93,7 +107,7 @@ function render() {
 
 function mutate(action, message) {
   try {
-    if(["place","move","rotate"].includes(action.kind)) assertFurnitureFits(scene,draft,action);
+    if(["place","move","rotate"].includes(action.kind)) {assertFurnitureFits(scene,draft,action);assertWithinProposedZones(draft,action);}
     draft = applyPreviewAction(draft, action);
     render();
     notify(message + " · Chỉ trong bộ nhớ, chưa lưu.");
