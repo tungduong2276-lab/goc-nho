@@ -336,3 +336,13 @@ Next safe action:
 - Earlier CI #149 and #150 on the memory-only M1 prototype exposed recurring intermittent keyboard navigation failures; #154 initially failed due to a malformed new test insertion, which was repaired before passing CI #156. These failures were not waived.
 - **Still no live M1:** the placement state is pure memory-only and candidate slots remain reused character standing coordinates, **not visual-approved furniture footprints**. PR #9 stays Draft. Separate real Cloud Firestore staging managed export/restore and deployed production Rules/Auth/App Check/IAM/rollback verification remain M0 blockers.
 - **Next safe action:** verify post-merge PR #9 CI (the #157 job was triggered), then design visually approved floor slots and local-only user-visible preview. Do not enable shared Firebase writes or merge PR #9 to main before all gates.
+
+
+### Handoff update — 2026-11-05, isolated M1 placement UI (PR #50, Draft)
+
+- Created `feature/m1-local-placement-ui` from PR #9 head `e7dc343` and Draft PR #50 targeting `feature/spacious-house-weather-botany` (NOT main).
+- Added `experiments/house-placement.html` and its local-only module to preview four illustrative items in six rooms, using existing candidate standing spots. Explicit opt-in button; no normal app navigation, Firebase SDK, backend writes, device storage or production migration.
+- Added browser regression `tests/browser/house-placement-local.spec.mjs` for 360/390/430px, room images, interactions, reload and absence of Firebase network requests. Added safety notes `docs/M1-LOCAL-PLACEMENT-UI.md`.
+- **At time of writing:** CI run #159 (`41953137827`) was in progress; DO NOT claim tests passed or merge before confirmation. Manual review of slot overlaps is pending.
+- **M0 blockers remain:** deployed production Rules/Auth/App Check/IAM inspection, actual managed separate-staging export/restore and rollback evidence, and visual approval of house rooms/furniture zones. PR #9 remains Draft. No live data touched.
+- **Next:** verify CI for PR #50 and repair any failure on its branch; inspect screenshots for all six rooms and adjust unapproved slots only after geometry review. Do not enable persistent M1 Firebase writes.
