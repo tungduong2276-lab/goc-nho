@@ -15,7 +15,7 @@ label{display:grid;gap:5px;font-weight:700;font-size:.9rem}select,button{font:in
 button{cursor:pointer;font-weight:700}button:focus-visible,select:focus-visible{outline:3px solid #7b4fc3;outline-offset:2px}
 button:disabled{opacity:.5;cursor:not-allowed}.primary{background:#8e516d;color:white;border-color:#8e516d}
 .stage{position:relative;width:min(100%,650px);aspect-ratio:1;margin:12px auto;background:#f2e1de;border:2px solid #d9b9c5;border-radius:16px;overflow:hidden}
-.stage img{width:100%;height:100%;object-fit:contain;display:block}.floor-zone{position:absolute;border:2px dashed rgba(51,129,105,.85);background:rgba(65,175,140,.12);pointer-events:none}
+.stage img{width:100%;height:100%;object-fit:contain;display:block}.floor-zone{position:absolute;border:2px dashed rgba(51,129,105,.85);background:rgba(65,175,140,.12);pointer-events:none}.obstacle-review{position:absolute;border:2px dashed #bc555f;background:rgba(200,65,90,.22);pointer-events:none}
 .slot{position:absolute;transform:translate(-50%,-50%);border:3px solid #fff;background:#9c4c77;color:white;width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;box-shadow:0 3px 10px #3338}
 .slot[data-occupied="true"]{background:#315f68}.slot[aria-pressed="true"]{outline:4px solid #f3b33c}
 .slot{display:grid;place-items:center;pointer-events:none;font-weight:800}.slot-pick[aria-pressed="true"]{outline:3px solid #f3b33c;outline-offset:2px}#slot-picker{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:10px auto}.slot-pick{min-width:128px}.item{position:absolute;transform:translate(-50%,-80%);pointer-events:none;font-size:28px;filter:drop-shadow(0 2px 3px #3338)}
@@ -26,7 +26,7 @@ button:disabled{opacity:.5;cursor:not-allowed}.primary{background:#8e516d;color:
 <body>
 <main>
 <h1>🏡 Thử trang trí Nhà 3D</h1>
-<p class="notice"><strong>Nguyên mẫu riêng biệt — chưa phát hành.</strong> Chỉ bật khi bạn chọn “Bắt đầu thử”. Hai điểm mỗi phòng là <strong>đề xuất mới trên vùng sàn từ ảnh đối chiếu</strong>, đã kiểm tra khoảng cách tới tâm điểm đứng của nhân vật nhưng <strong>chưa được duyệt vị trí nội thất</strong>. Vật dụng có khung chiếm chỗ 2D để thử nghiệm kiểm tra biên phòng, nhân vật và các vật dụng đã đặt. Vẫn có thể chồng lên nội thất được vẽ sẵn vì chưa có dữ liệu va chạm 3D. Không có Firebase, không có lưu trên thiết bị và không đồng bộ. Tải lại trang sẽ xóa mọi thay đổi thử nghiệm.</p>
+<p class="notice"><strong>Nguyên mẫu riêng biệt — chưa phát hành.</strong> Chỉ bật khi bạn chọn “Bắt đầu thử”. Hai điểm mỗi phòng là <strong>đề xuất mới trên vùng sàn từ ảnh đối chiếu</strong>, đã kiểm tra khoảng cách tới tâm điểm đứng của nhân vật nhưng <strong>chưa được duyệt vị trí nội thất</strong>. Vật dụng có khung chiếm chỗ 2D để thử nghiệm kiểm tra biên phòng, nhân vật và các vật dụng đã đặt. Các khung đỏ là ước lượng vùng đồ có sẵn từ ảnh nhỏ; có thể thiếu hoặc phủ sai vật cản vì chưa có dữ liệu va chạm 3D. Không có Firebase, không có lưu trên thiết bị và không đồng bộ. Tải lại trang sẽ xóa mọi thay đổi thử nghiệm.</p>
 <div id="start"><button class="primary" id="enable" type="button">Bắt đầu thử (không lưu)</button></div>
 <section id="editor" hidden aria-label="Bảng điều khiển đặt nội thất">
 <div class="controls">
@@ -36,10 +36,10 @@ button:disabled{opacity:.5;cursor:not-allowed}.primary{background:#8e516d;color:
 <div id="stage-wrap" hidden>
 <div class="stage" id="stage" aria-label="Ảnh phòng với hai vị trí ứng viên">
 <img id="background" alt="Hình ảnh nội thất phòng được chọn" width="1170" height="1170">
-<div id="zones" aria-hidden="true"></div><div id="markers"></div>
+<div id="zones" aria-hidden="true"></div><div id="obstacles" aria-hidden="true"></div><div id="markers"></div>
 </div>
 <div id="slot-picker" aria-label="Chọn một trong hai vị trí đặt đồ"></div>
-<p class="legend">Hai vòng tròn đánh dấu <strong>điểm đề xuất chưa được duyệt</strong>. Dùng hai nút Vị trí bên dưới ảnh để chọn, tránh chồng vùng chạm. Vòng xanh có đồ, vòng hồng trống. Vùng xanh nét đứt là ô sàn ứng viên, không phải bản đồ sàn đã nghiệm thu; khung nét đứt của đồ cho biết footprint mô phỏng. Đây không phải kiểm tra va chạm 3D thực tế.</p>
+<p class="legend">Hai vòng tròn đánh dấu <strong>điểm đề xuất chưa được duyệt</strong>. Dùng hai nút Vị trí bên dưới ảnh để chọn, tránh chồng vùng chạm. Vòng xanh có đồ, vòng hồng trống. Vùng xanh nét đứt là ô sàn ứng viên, không phải bản đồ sàn đã nghiệm thu; khung nét đứt của đồ cho biết footprint mô phỏng. Khung đỏ là vật cản ước lượng trên ảnh (không phải mesh va chạm đã được duyệt). Đây không phải kiểm tra va chạm 3D thực tế.</p>
 </div>
 <div class="controls">
 <button id="place" class="primary" type="button" disabled>Đặt đồ</button>
