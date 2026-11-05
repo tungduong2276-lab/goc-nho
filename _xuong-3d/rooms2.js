@@ -2,6 +2,7 @@
 // Mỗi phòng: nền 4 buổi (không có vật tương tác) + từng vật tương tác ở mọi trạng thái là lớp rời cùng khung.
 import { THREE, C, piece, rbox, sphere, capsule, rcyl, lathe, torus, tube, leafGeo, makeScene, isoCamera, shoot, shadowCatcher, toPx } from './lib.js';
 import * as F from './furn.js';
+import {SPACIOUS_SCENE_PILOT} from './spacious-layout.js';
 
 const G = () => new THREE.Group();
 const at = (o, x, y, z, ry = 0) => { o.position.set(x, y, z); o.rotation.y = ry; return o; };
@@ -139,11 +140,18 @@ const ROOMS = {
       [0.3, 0.45, 0.6].forEach((x, i) => piece(rcyl(0.05, 0.05, 0.14, 0.02, 12), [C.pink, C.butter, C.leafL][i], { pos: [x, 1.0, -2.75], parent: g }));
       piece(rbox(0.45, 0.04, 0.3, 0.02), C.woodD, { pos: [2.3, 0.95, -2.55], parent: g }); const bk = G(); bk.position.set(2.6, 0, -1.4); g.add(bk); piece(rcyl(0.25, 0.2, 0.25, 0.06, 18), C.wood, { pos: [0, 0.13, 0], parent: bk }); [C.orange, C.leaf, C.pink].forEach((c, i) => piece(sphere(0.09, 12, 8), c, { pos: [-0.08 + i * 0.08, 0.3, (i % 2) * 0.06], parent: bk }));
       const w = windowBox(t); curtainsChecker(w); F.onWall(w, 'L', -0.4, 1.6); g.add(w);
-      const rg = rugRect(1.6, 1.0, C.petal, C.pinkL); rg.position.set(0.6, 0, 1.1); g.add(rg); },
+      const rg = rugRect(1.6, 1.0, C.petal, C.pinkL);
+      const spacious=SPACIOUS_SCENE_PILOT.bep.next;
+      rg.position.set(spacious.rug[0],0,spacious.rug[1]); g.add(rg); },
     items: { tulanh: { st: ['dong', 'mo'], place: o => at(o, -2.2, 0, -2.5), go: 'tu-lanh', label: 'Tủ lạnh nhắn nhủ' },
       bepnau: { st: ['tat', 'nau'], place: o => at(o, -1.0, 0, -2.6), go: 'cook', label: 'Bếp: nấu cho nhau' },
-      banan: { st: ['trong', 'baymon'], place: o => at(o, 0.6, 0, 1.1), go: 'banan', label: 'Bàn ăn' } },
-    spots: { dung: [[-0.9, 0, -0.9], [1.9, 0, 0.0]], ghe: [[-0.25, 0.42, 1.1], [1.45, 0.42, 1.1]] } },
+      banan: { st: ['trong', 'baymon'], place: o => {
+        const p=SPACIOUS_SCENE_PILOT.bep.next.diningTable; return at(o,p[0],0,p[1]);
+      }, go: 'banan', label: 'Bàn ăn' } },
+    spots: {
+      dung: [[-0.9,0,-0.9],[1.9,0,0.0]],
+      ghe: SPACIOUS_SCENE_PILOT.bep.next.seats.map(([x,z])=>[x,0.42,z]),
+    } },
   phong_anh: { title: 'Phòng Anh', n: 6, d: 6, shell: { wallL: C.sky2, wallR: C.sky2, floor: 0xEEF4FA, plank: 0xDCE6F2, base: C.stoneD },
     deco(g, t) { const w = windowBox(t); F.onWall(w, 'R', 0.6, 1.6); g.add(w);
       const ps = G(); piece(rbox(0.8, 1.0, 0.04, 0.02), C.navy, { parent: ps }); for (let i = 0; i < 9; i++) piece(sphere(0.025, 6, 4), C.butter, { noOutline: true, basic: true, pos: [-0.3 + (i * 0.27) % 0.6, 0.38 - (i * 0.19) % 0.76, 0.03], parent: ps }); piece(sphere(0.1, 14, 8).scale(1, 1, 0.2), C.butter, { noOutline: true, basic: true, pos: [0.18, 0.25, 0.03], parent: ps }); F.onWall(ps, 'L', -0.9, 1.65); g.add(ps);
