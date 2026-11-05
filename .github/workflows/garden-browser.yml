@@ -58,6 +58,10 @@ jobs:
         if: always()
         run: |
           node -e 'const fs=require("fs");const p="review-artifacts/house-composite/";if(!fs.existsSync(p+"composite-evidence-manifest.json"))process.exit(1);for(const id of ["phong-khach","bep","phong-anh","phong-em","goc-sang-tao","gac"])for(const width of [390,1300])if(!fs.existsSync(p+"composite-"+id+"-"+width+".png")){console.error("Missing composite screenshot",id,width);process.exitCode=1;}'
+      - name: Verify real-alpha review evidence
+        if: always()
+        run: |
+          node -e 'const fs=require("fs");const p="review-artifacts/house-alpha/";if(!fs.existsSync(p+"alpha-review-manifest.json"))process.exit(1);for(const id of ["phong-khach","bep","phong-anh","phong-em","goc-sang-tao","gac"])if(!fs.existsSync(p+"alpha-"+id+"-390.png")){console.error("Missing alpha review screenshot",id);process.exitCode=1;}'
       - name: Publish six-room mobile and composited visual review bundle
         if: always()
         uses: actions/upload-artifact@v4
@@ -66,6 +70,7 @@ jobs:
           path: |
             test-results/house-visual-review/
             review-artifacts/house-composite/
+            review-artifacts/house-alpha/
           if-no-files-found: warn
           retention-days: 7
       - name: Publish 3D preview for visual inspection
