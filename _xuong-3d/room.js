@@ -35,7 +35,10 @@ function scene(time) {
   L.lich = F.calendar(); F.onWall(L.lich, 'R', 0.45, 1.7); s.add(L.lich);
   L.bangghim = F.corkboard(false); F.onWall(L.bangghim, 'R', 1.95, 1.7); s.add(L.bangghim);
   L.radio = F.radio(false); L.radio.position.set(2.15, 0.79, -2.55); s.add(L.radio);
-  L.hu = F.jar('day'); L.hu.position.set(0.55, 0.53, 0.45); s.add(L.hu);
+  L.hu = F.jar('day');
+  // The jar sits on the coffee table, so it must follow the real 3D table.
+  L.hu.position.set(spacious.coffeeTable[0],0.53,spacious.coffeeTable[1]);
+  s.add(L.hu);
   s.userData.L = L; s.userData.bg = [shell, ...bgAll];
   return s;
 }
