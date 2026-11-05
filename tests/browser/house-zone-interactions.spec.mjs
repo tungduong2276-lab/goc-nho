@@ -33,6 +33,22 @@ test("all six house room polygons respond to keyboard Enter", async ({ page }) =
   }
 });
 
+test("focused room remains keyboard-operable when house DOM rerenders", async ({ page }) => {
+  await openHouse(page);
+  for (const [zone, hash] of rooms) {
+    await page.goto("/index.html#nha");
+    const target = page.locator(`.world .zones polygon[data-zone="${zone}"]`);
+    await expect(target).toBeVisible();
+    await target.focus();
+    await expect(target).toBeFocused();
+    // Force a real app rerender while the same room zone is keyboard-focused.
+    await page.evaluate(() => renderHome());
+    await expect(target, `${zone}: focus survives SVG replacement`).toBeFocused();
+    await target.press("Enter");
+    await expect(page).toHaveURL(new RegExp(`#${hash}$`));
+  }
+});
+
 test("real pointer taps on room polygons navigate on 360/390/430px phones", async ({ page }) => {
   for (const width of [360, 390, 430]) {
     await page.setViewportSize({ width, height: 844 });
