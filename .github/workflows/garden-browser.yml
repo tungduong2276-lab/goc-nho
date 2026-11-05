@@ -6,6 +6,7 @@ on:
       - "index.html"
       - "sw.js"
       - "assets/3d/**"
+      - "_xuong-3d/**"
       - "scripts/**"
       - "src/**"
       - "tests/staging/**"
@@ -42,6 +43,25 @@ jobs:
           java-version: '21'
       - run: npm install
       - run: npx playwright install --with-deps chromium
+      - name: Render old/new living room + kitchen pilot from real 3D source
+        if: github.event.pull_request.head.ref == 'feature/m1-spacious-scene-living-kitchen-pilot'
+        run: |
+          npm install --no-save three@0.169.0
+          python3 -m pip install --break-system-packages Pillow
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/spacious-render.log 2>&1 &
+          node _xuong-3d/run.cjs room.js out_spacious nen lop
+          node _xuong-3d/run.cjs rooms2.js out_spacious bep
+          python3 scripts/m1-spacious-preview.py
+      - name: Upload pilot 3D before/after art for human review
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-spacious-scene-living-kitchen-pilot'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-spacious-living-kitchen-${{ github.run_id }}
+          path: review-artifacts/house-spacious/
+          if-no-files-found: error
+          retention-days: 7
       - name: Render and validate updated 3D house geometry
         if: github.event.pull_request.head.ref == 'feature/spacious-house-weather-botany'
         run: |
