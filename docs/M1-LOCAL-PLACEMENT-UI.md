@@ -10,3 +10,20 @@ Trang thử độc lập: `/experiments/house-placement.html`, chỉ tải khi t
 
 ## Chặn phát hành
 Chưa nghiệm thu trực quan sáu phòng, xác nhận sàn trống/vị trí đồ, thực hiện staging export/restore thật hay kiểm toán deployed Rules/Auth/App Check/IAM. Không merge PR #9 vào main hoặc nối luồng ghi Firebase dựa riêng trên thử nghiệm này.
+
+## Review ảnh thực tế 390px từ CI #41953137827
+
+Đã xem bộ 13 ảnh (sáu ảnh room, sáu ảnh mobile page và ảnh tổng quan). Đối chiếu trực tiếp 12 điểm ứng viên trong `scene.json` với nền phòng, không đánh đồng kiểm tra tọa độ trong biên với vùng trống thực sự:
+
+| Phòng | Đánh giá hình ảnh của hai điểm hiện có |
+|---|---|
+| Phòng khách | Điểm 1 gần nhân vật và bàn trà; điểm 2 gần nhân vật còn lại/thảm. Không đạt duyệt chỗ đặt đồ. |
+| Bếp | Điểm 1 trùng nhân vật đứng; điểm 2 ở sàn nhưng chưa xác minh khoảng cách với bàn ăn. |
+| Phòng Anh | Điểm 1 trùng nhân vật; điểm 2 rất gần điểm 1 (khoảng 35px trên stage 390px). |
+| Phòng Em | Hai điểm gần nhau khoảng 27px trên stage 390px, một điểm chồng nhân vật. Đây là nguyên nhân lỗi pointer hitbox được CI chứng minh. |
+| Góc sáng tạo | Điểm 1 trùng nhân vật ở giá vẽ; điểm 2 gần vùng thảm và bàn. |
+| Gác kỷ niệm | Điểm 1 trùng nhân vật; điểm 2 sát đồ trang trí giữa phòng. |
+
+**Phương án tạm thời:** giữ nguyên tọa độ để không ngụy tạo vùng sàn được duyệt; render đánh dấu đúng trên ảnh nhưng chuyển tương tác sang hai nút chọn độc lập ngoài ảnh, không tạo hitbox chồng lấn. Cần thiết kế footprint nội thất / polygon vùng sàn và duyệt từng phòng trước khi có tính năng shared placement.
+
+CI run đầu tiên #41953137827: 35/35 staging đạt, 25/26 browser đạt; lỗi thực là hai nút marker trong Phòng Em chồng vùng click, không phải lỗi Firebase. Các commit sửa UI và test tiếp theo cần CI xanh trên HEAD trước khi merge nhánh thử nghiệm.
