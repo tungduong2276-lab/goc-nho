@@ -26,7 +26,7 @@ button:disabled{opacity:.5;cursor:not-allowed}.primary{background:#8e516d;color:
 <body>
 <main>
 <h1>🏡 Thử trang trí Nhà 3D</h1>
-<p class="notice"><strong>Nguyên mẫu riêng biệt — chưa phát hành.</strong> Chỉ bật khi bạn chọn “Bắt đầu thử”. Hai điểm đánh dấu mỗi phòng là vị trí ứng viên lấy từ điểm đứng của nhân vật, <strong>chưa được duyệt để đặt đồ</strong>. Đồ minh họa có thể đè lên nội thất có sẵn. Không có Firebase, không có lưu trên thiết bị và không đồng bộ. Tải lại trang sẽ xóa mọi thay đổi thử nghiệm.</p>
+<p class="notice"><strong>Nguyên mẫu riêng biệt — chưa phát hành.</strong> Chỉ bật khi bạn chọn “Bắt đầu thử”. Hai điểm mỗi phòng là <strong>đề xuất mới trên vùng sàn từ ảnh đối chiếu</strong>, đã kiểm tra khoảng cách tới tâm điểm đứng của nhân vật nhưng <strong>chưa được duyệt vị trí nội thất</strong>. Vật dụng minh họa vẫn có thể chồng lên nội thất được vẽ sẵn vì chưa có dữ liệu va chạm 3D. Không có Firebase, không có lưu trên thiết bị và không đồng bộ. Tải lại trang sẽ xóa mọi thay đổi thử nghiệm.</p>
 <div id="start"><button class="primary" id="enable" type="button">Bắt đầu thử (không lưu)</button></div>
 <section id="editor" hidden aria-label="Bảng điều khiển đặt nội thất">
 <div class="controls">
@@ -39,7 +39,7 @@ button:disabled{opacity:.5;cursor:not-allowed}.primary{background:#8e516d;color:
 <div id="markers"></div>
 </div>
 <div id="slot-picker" aria-label="Chọn một trong hai vị trí đặt đồ"></div>
-<p class="legend">Hai vòng tròn chỉ đánh dấu vị trí. Dùng hai nút Vị trí bên dưới ảnh để chọn, tránh chồng vùng chạm. Vòng xanh có đồ, vòng hồng trống. Đây không phải kiểm tra va chạm thực tế.</p>
+<p class="legend">Hai vòng tròn đánh dấu <strong>điểm đề xuất chưa được duyệt</strong>. Dùng hai nút Vị trí bên dưới ảnh để chọn, tránh chồng vùng chạm. Vòng xanh có đồ, vòng hồng trống. Đây không phải kiểm tra va chạm thực tế.</p>
 </div>
 <div class="controls">
 <button id="place" class="primary" type="button" disabled>Đặt đồ</button>
