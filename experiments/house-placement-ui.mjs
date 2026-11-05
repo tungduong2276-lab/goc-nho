@@ -2,6 +2,7 @@ import { applyPreviewAction, PlacementPreviewError } from "../src/house-placemen
 import { makeFloorProposalPreview } from "../src/house-floor-review.mjs";
 import { assertFurnitureFits, itemFootprint } from "../src/house-furniture-collision.mjs";
 import { ROOM_ZONE_PROPOSALS, assertWithinProposedZones } from "../src/house-room-zones.mjs";
+import { ROOM_OBSTACLE_ATLAS, OBSTACLE_REVIEW_ZONES } from "../src/house-obstacle-atlas.mjs";
 
 // Deliberately isolated from index.html and Firebase. Nothing persists.
 const $ = id => document.getElementById(id);
@@ -30,6 +31,18 @@ function render() {
   $("background").src = "../assets/3d/" + assetUrl;
   $("markers").replaceChildren();
   $("zones").replaceChildren();
+  $("obstacles").replaceChildren();
+  for(const obstacle of ROOM_OBSTACLE_ATLAS[room()]){
+    const el=document.createElement("div");
+    el.className="obstacle-review";
+    const xs=obstacle.polygon.map(p=>p[0]), ys=obstacle.polygon.map(p=>p[1]);
+    el.style.left=Math.min(...xs)/1170*100+"%";
+    el.style.top=Math.min(...ys)/1170*100+"%";
+    el.style.width=(Math.max(...xs)-Math.min(...xs))/1170*100+"%";
+    el.style.height=(Math.max(...ys)-Math.min(...ys))/1170*100+"%";
+    el.title=obstacle.label+" (ước lượng từ ảnh)";
+    $("obstacles").append(el);
+  }
   const zone=ROOM_ZONE_PROPOSALS[room()];
   for(const poly of zone.candidateFloor){
     const el=document.createElement("div");
@@ -92,14 +105,14 @@ function render() {
   const otherTaken = draft.items.some(x => x.slotId === other?.id && x.roomId === room());
   let placementSafe=false;
   if(selectedSlot && !item) {
-    try {const action={kind:"place",id:"probe",roomId:room(),slotId:selectedSlot,assetType:$("asset").value};assertFurnitureFits(scene,draft,action);assertWithinProposedZones(draft,action);placementSafe=true;}catch { /* invalid footprint is a disabled action */ }
+    try {const action={kind:"place",id:"probe",roomId:room(),slotId:selectedSlot,assetType:$("asset").value};assertFurnitureFits(scene,draft,action);assertWithinProposedZones(draft,action,OBSTACLE_REVIEW_ZONES);placementSafe=true;}catch { /* invalid footprint is a disabled action */ }
   }
   $("place").disabled = !placementSafe;
   let canMove=!!item && !!other && !otherTaken;
-  if(canMove){try{const action={kind:"move",id:item.id,slotId:other.id};assertFurnitureFits(scene,draft,action);assertWithinProposedZones(draft,action);}catch{canMove=false;}}
+  if(canMove){try{const action={kind:"move",id:item.id,slotId:other.id};assertFurnitureFits(scene,draft,action);assertWithinProposedZones(draft,action,OBSTACLE_REVIEW_ZONES);}catch{canMove=false;}}
   $("move").disabled = !canMove;
   let canRotate=!!item;
-  if(item){try{const action={kind:"rotate",id:item.id,rotation:(item.rotation+90)%360};assertFurnitureFits(scene,draft,action);assertWithinProposedZones(draft,action);}catch{canRotate=false;}}
+  if(item){try{const action={kind:"rotate",id:item.id,rotation:(item.rotation+90)%360};assertFurnitureFits(scene,draft,action);assertWithinProposedZones(draft,action,OBSTACLE_REVIEW_ZONES);}catch{canRotate=false;}}
   $("rotate").disabled = !canRotate;
   $("remove").disabled = !item;
   $("undo").disabled = draft.undoStack.length === 0;
@@ -107,7 +120,7 @@ function render() {
 
 function mutate(action, message) {
   try {
-    if(["place","move","rotate"].includes(action.kind)) {assertFurnitureFits(scene,draft,action);assertWithinProposedZones(draft,action);}
+    if(["place","move","rotate"].includes(action.kind)) {assertFurnitureFits(scene,draft,action);assertWithinProposedZones(draft,action,OBSTACLE_REVIEW_ZONES);}
     draft = applyPreviewAction(draft, action);
     render();
     notify(message + " · Chỉ trong bộ nhớ, chưa lưu.");
