@@ -1,4 +1,5 @@
-import { makePlacementPreview, applyPreviewAction, PlacementPreviewError } from "../src/house-placement-preview.mjs";
+import { applyPreviewAction, PlacementPreviewError } from "../src/house-placement-preview.mjs";
+import { makeFloorProposalPreview } from "../src/house-floor-review.mjs";
 
 // Deliberately isolated from index.html and Firebase. Nothing persists.
 const $ = id => document.getElementById(id);
@@ -86,7 +87,7 @@ $("enable").addEventListener("click", async () => {
   try {
     const response = await fetch("../assets/3d/scene.json", {cache:"no-store"});
     if (!response.ok) throw new Error("SCENE_UNAVAILABLE");
-    draft = makePlacementPreview(await response.json());
+    draft = makeFloorProposalPreview(await response.json());
     $("start").hidden = true;
     $("editor").hidden = false;
     $("stage-wrap").hidden = false;
