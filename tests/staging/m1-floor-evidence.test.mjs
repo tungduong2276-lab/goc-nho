@@ -1,7 +1,7 @@
 import {test} from "node:test";
 import {strict as assert} from "node:assert";
 import {readFileSync} from "node:fs";
-import {makeFloorAnnotation,buildFloorReviewBundle,requireApprovedFloorEvidence,FLOOR_EVIDENCE_PROTOCOL} from "../../src/house-floor-evidence.mjs";
+import {makeFloorAnnotation,buildFloorReviewBundle,requireApprovedFloorEvidence,FLOOR_EVIDENCE_PROTOCOL,polygonInsideProposedFloor} from "../../src/house-floor-evidence.mjs";
 import {ROOM_SOURCES} from "../../src/house-placement-preview.mjs";
 
 const scene=JSON.parse(readFileSync("assets/3d/scene.json","utf8"));
@@ -59,4 +59,28 @@ test("reject fabricated approvals, duplicate furniture contacts and tampered geo
  fails(()=>buildFloorReviewBundle([{...entry,reviewStatus:"APPROVED"}]),"UNTRUSTED_FLOOR_ANNOTATION");
  fails(()=>buildFloorReviewBundle([{...entry,areaPx2:1}]),"TAMPERED_FLOOR_AREA");
  fails(()=>buildFloorReviewBundle([{}]),"UNTRUSTED_FLOOR_ANNOTATION");
+});
+
+test("reject edge escaping a concave floor although all vertices remain inside",()=>{
+ // The notch is [450,650] x [300,600]. A horizontal reserve bridge
+ // at y=400 has endpoints inside two arms but crosses the exterior gap.
+ const concave=[[200,200],[800,200],[800,800],[650,800],[650,300],[450,300],[450,800],[200,800]];
+ const bridge=[[300,350],[700,350],[700,420],[300,420]];
+ assert.equal(bridge.every(p=>{
+  // Demonstrate the misleading vertex-only condition with a bridge on
+  // either side of the notch: all four corners lie inside the floor.
+  return p[0]<450||p[0]>650;
+ }),true);
+ assert.equal(polygonInsideProposedFloor(bridge,concave),false);
+ const b=buildFloorReviewBundle([
+  make("phong-em","floor",concave),make("phong-em","walkway",bridge)
+ ]);
+ assert.equal(b.readiness.find(x=>x.roomId==="phong-em").reservesOutsideProposedFloor,true);
+ assert.equal(b.canPersist,false);
+});
+test("accept fully interior, boundary-coincident and concave-safe reviewer geometry without approving it",()=>{
+ const concave=[[200,200],[800,200],[800,800],[650,800],[650,300],[450,300],[450,800],[200,800]];
+ assert.equal(polygonInsideProposedFloor([[250,350],[400,350],[400,700],[250,700]],concave),true);
+ assert.equal(polygonInsideProposedFloor([[200,200],[800,200],[800,250],[200,250]],concave),true);
+ assert.equal(polygonInsideProposedFloor([[50,50],[100,50],[100,100],[50,100]],concave),false);
 });

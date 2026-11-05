@@ -19,6 +19,41 @@ const pointInPolygon=(point,polygon)=>{
  }
  return inside;
 };
+// A concave floor may contain both endpoints of a reserve edge while the
+// segment passes outside through a notch. Split each edge at ALL boundary
+// intersections and require every resulting interval to remain inside.
+const cross=(a,b)=>a[0]*b[1]-a[1]*b[0];
+function segmentInsidePolygon(a,b,floor){
+ if(!pointInPolygon(a,floor)||!pointInPolygon(b,floor))return false;
+ const d=[b[0]-a[0],b[1]-a[1]],len=d[0]*d[0]+d[1]*d[1];
+ if(len===0)return false;
+ const ts=[0,1];
+ const add=t=>{if(Number.isFinite(t)&&t>=-1e-9&&t<=1+1e-9)ts.push(Math.max(0,Math.min(1,t)));};
+ for(let i=0;i<floor.length;i++){
+  const c=floor[i],e=floor[(i+1)%floor.length],v=[e[0]-c[0],e[1]-c[1]];
+  const w=[c[0]-a[0],c[1]-a[1]],den=cross(d,v);
+  if(Math.abs(den)<1e-9){
+   if(Math.abs(cross(w,d))<1e-7){
+    add((w[0]*d[0]+w[1]*d[1])/len);
+    add(((e[0]-a[0])*d[0]+(e[1]-a[1])*d[1])/len);
+   }
+  }else{
+   const t=cross(w,v)/den,u=cross(w,d)/den;
+   if(u>=-1e-9&&u<=1+1e-9)add(t);
+  }
+ }
+ ts.sort((x,y)=>x-y);
+ for(let i=1;i<ts.length;i++){
+  if(ts[i]-ts[i-1]<1e-9)continue;
+  const t=(ts[i]+ts[i-1])/2;
+  if(!pointInPolygon([a[0]+t*d[0],a[1]+t*d[1]],floor))return false;
+ }
+ return true;
+}
+export function polygonInsideProposedFloor(vertices,floor){
+ return vertices.every(p=>pointInPolygon(p,floor))&&
+ vertices.every((p,i)=>segmentInsidePolygon(p,vertices[(i+1)%vertices.length],floor));
+}
 export function makeFloorAnnotation({roomId,role,vertices,layerId=null},scene){
  if(!Object.hasOwn(ROOM_SOURCES,roomId))fail("UNKNOWN_ROOM");
  if(!FLOOR_ROLES.includes(role))fail("UNKNOWN_FLOOR_ROLE");
@@ -62,7 +97,7 @@ export function buildFloorReviewBundle(annotations){
   const missing=["floor","doorway","walkway"].filter(role=>!records.some(r=>r.role===role));
   const floors=records.filter(r=>r.role==="floor");
   const reserves=records.filter(r=>r.role==="doorway"||r.role==="walkway");
-  const floatingReserveVertices=reserves.some(r=>!floors.some(f=>r.vertices.every(p=>pointInPolygon(p,f.vertices))));
+  const floatingReserveVertices=reserves.some(r=>!floors.some(f=>polygonInsideProposedFloor(r.vertices,f.vertices)));
   return Object.freeze({roomId,annotationCount:records.length,missing:Object.freeze(missing),
    reservesOutsideProposedFloor:floatingReserveVertices,
    status:"UNAPPROVED",canPersist:false});
