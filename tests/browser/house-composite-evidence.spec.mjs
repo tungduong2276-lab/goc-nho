@@ -71,7 +71,9 @@ test("capture real six-room composites with actual sprite extents at mobile and 
      },{layers:report.layers});
      await expect(canvas.locator("[data-composite-audit] rect")).toHaveCount(report.layers.length);
      const file="composite-"+id+"-"+width+".png";
-     // A Firebase/local rerender may replace .room3d while an element screenshot\n     // waits for stability. Capture the current page instead of a stale node.\n     const png=await page.screenshot({fullPage:true,animations:"disabled"});
+     // A Firebase/local rerender may replace .room3d while an element screenshot
+     // waits for stability. Capture the current page instead of a stale node.
+     const png=await page.screenshot({fullPage:true,animations:"disabled"});
      writeFileSync(join(folder,file),png);
      captures.push({id,width,title:names[id],file,
        sourceLayerCount:report.layers.length,renderedInteractiveLayers:checked,
