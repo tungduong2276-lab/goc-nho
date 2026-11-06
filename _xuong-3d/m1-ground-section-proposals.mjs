@@ -7,6 +7,7 @@ import {THREE,toPx} from "./lib.js";
 import {inspectLivingSource} from "./room.js";
 import {inspectRoomSource} from "./rooms2.js";
 import {fileDigest,ROOM_IDS} from "./m1-ground-contact-proposals.mjs";
+export {ROOM_IDS} from "./m1-ground-contact-proposals.mjs";
 import {sliceTriangleAtHeight,traceSectionSegments} from "./m1-plane-slice-geometry.mjs";
 import {createHash} from "node:crypto";
 import {readFileSync,writeFileSync,mkdirSync} from "node:fs";
