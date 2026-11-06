@@ -127,3 +127,30 @@ test("six-room review composes actual first-state furniture sprite images, never
  await page.locator("#show-furniture").check();
  await expect(page.locator("#layers img").first()).toBeVisible();
 });
+
+test("all 24 source lighting backgrounds load without moving reviewed furniture or enabling writes",async ({page})=>{
+ test.setTimeout(150000);
+ mkdirSync("review-artifacts/house-floor-lighting",{recursive:true});
+ const network=[];page.on("request",r=>network.push(r.url()));
+ await page.setViewportSize({width:390,height:900});
+ await page.goto("/experiments/house-floor-review.html");
+ await page.locator("#enable").click();
+ for(const room of rooms){
+  await page.locator("#room").selectOption(room);
+  const initial=await page.locator("#layers img[data-layer]").evaluateAll(images=>images.map(el=>({
+   layer:el.dataset.layer,style:[el.style.left,el.style.top,el.style.width,el.style.height]})));
+  expect(initial.length).toBeGreaterThan(0);
+  for(const lighting of ["sang","ngay","chieu","dem"]){
+   await page.locator("#lighting").selectOption(lighting);
+   await expect(page.locator("#background")).toHaveAttribute("data-lighting",lighting);
+   await expect.poll(()=>page.locator("#background").evaluate(img=>img.complete&&img.naturalWidth===1170&&img.naturalHeight===1170),{timeout:12000}).toBe(true);
+   expect(await page.locator("#layers img[data-layer]").evaluateAll(images=>images.map(el=>({
+    layer:el.dataset.layer,style:[el.style.left,el.style.top,el.style.width,el.style.height]})))).toEqual(initial);
+   await page.screenshot({path:join("review-artifacts/house-floor-lighting",room+"-"+lighting+"-390.png"),
+    fullPage:true,animations:"disabled"});
+  }
+ }
+ await page.locator("#export-button").click();
+ expect(JSON.parse(await page.locator("#export").inputValue()).canPersist).toBe(false);
+ expect(network.some(url=>/firestore|firebase|identitytoolkit|googleapis/i.test(url))).toBe(false);
+});

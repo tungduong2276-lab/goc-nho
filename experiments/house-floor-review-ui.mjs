@@ -1,7 +1,14 @@
 import {ROOM_SOURCES} from "../src/house-placement-preview.mjs";
 import {makeFloorAnnotation,buildFloorReviewBundle} from "../src/house-floor-evidence.mjs";
 const $=id=>document.getElementById(id);
-const backgrounds=Object.freeze({"phong-khach":"phong_khach_ngay.webp",bep:"bep_ngay.webp","phong-anh":"phong_anh_ngay.webp","phong-em":"phong_em_ngay.webp","goc-sang-tao":"sang_tao_ngay.webp",gac:"gac_ngay.webp"});
+const backgrounds=Object.freeze({"phong-khach":"phong_khach",bep:"bep","phong-anh":"phong_anh","phong-em":"phong_em","goc-sang-tao":"sang_tao",gac:"gac"});
+const LIGHTING=Object.freeze(["sang","ngay","chieu","dem"]);
+function updateBackground(){
+ const room=$("room").value,lighting=$("lighting").value;
+ if(!LIGHTING.includes(lighting))throw Error("INVALID_REVIEW_LIGHTING");
+ $("background").src="../assets/3d/"+backgrounds[room]+"_"+lighting+".webp";
+ $("background").dataset.lighting=lighting;
+}
 let scene=null,vertices=[];
 const proposals=[];
 const notice=message=>{$("status").textContent=message;};
@@ -57,7 +64,7 @@ function renderLayers(){
  }
 }
 function refreshRoom(){
- $("background").src="../assets/3d/"+backgrounds[$("room").value];
+ updateBackground();
  const layer=$("layer"),previous=layer.value;
  layer.replaceChildren();
  for(const key of Object.keys(roomSource().layers)){
@@ -134,6 +141,7 @@ $("export-button").addEventListener("click",()=>{
 });
 $("reset").addEventListener("click",()=>{proposals.length=0;vertices=[];$("export").value="";render();notice("Đã xóa dữ liệu trong bộ nhớ.");});
 $("room").addEventListener("change",refreshRoom);
+$("lighting").addEventListener("change",()=>{updateBackground();notice("Đang xem ánh sáng "+$("lighting").value+". Mọi vùng vẫn chưa duyệt.");});
 $("role").addEventListener("change",()=>{vertices=[];renderLayers();render();});
 $("layer").addEventListener("change",renderLayers);
 $("show-furniture").addEventListener("change",renderLayers);
