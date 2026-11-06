@@ -43,6 +43,19 @@ function sourceContact(object,camera){
  return {meshCount,nearFloorMeshes:ground.length,worldRect:rect,
   imagePolygon:corners.map(([x,z])=>toPx(camera,x,0,z).map(ROUND))};
 }
+/** Conservative diagnostic flags; no flag (or flag removal) means a clear floor. */
+export function reviewRectFlags(worldRect,shell){
+ if(!worldRect)return [];
+ const [left,back,right,front]=worldRect;
+ const [floorLeft,floorBack,floorRight,floorFront]=shell;
+ const flags=[];
+ if(left<floorLeft-0.01||back<floorBack-0.01||
+    right>floorRight+0.01||front>floorFront+0.01)
+  flags.push("EXTENDS_BEYOND_SOURCE_SHELL_REVIEW");
+ if((right-left)*(front-back)>3)
+  flags.push("BROAD_WORLD_ENVELOPE_REVIEW");
+ return flags;
+}
 function reviewCandidate({id,kind,object},camera){
  // Explicitly preserve the distinction between decorative floor finishes,
  // unknown source props, and wall elements; none is a verified blocker.
@@ -76,13 +89,16 @@ export function buildMeshAudit(){
   const living=roomId==="phong-khach";
   const desc=living?inspectLivingSource():inspectRoomSource(ROOMS2[roomId]);
   const {camera,n,d}=desc;
-  const itemStates=interactiveCandidates(desc);
+  const floor=[-n/2,-d/2,n/2,d/2];
+  const attachFlags=candidate=>({...candidate,
+    warningFlags:reviewRectFlags(candidate.worldRect,floor)});
+  const itemStates=interactiveCandidates(desc).map(attachFlags);
   const bakedComponents=desc.backgrounds.map(({id,kind,object})=>
-   reviewCandidate({id,kind,object},camera));
+   attachFlags(reviewCandidate({id,kind,object},camera)));
   rooms.push({
    roomId,sourceGenerator:living?"room.js":"rooms2.js",
    interactiveStateCoverage:living?"LIVING_DEFAULT_STATES_ONLY":"ALL_SOURCE_ITEM_STATES",
-   worldFloorRect:[-n/2,-d/2,n/2,d/2],
+   worldFloorRect:floor,
    floorStatus:"SOURCE_SHELL_RECT_NOT_APPROVED",
    doorwayStatus:"UNKNOWN",walkwayStatus:"UNKNOWN",
    itemStates,bakedComponents,canPersist:false
