@@ -45,6 +45,35 @@ function scene(time) {
 
 const cam = () => isoCamera(ROOM.w, ROOM.h, ROOM.ppm, ROOM.target);
 
+/** Source-only introspection; room.js still produces identical shipped renders.
+ * Default-state living-room inspection, NOT approval of alternate item states.
+ */
+export function inspectLivingSource() {
+  const source=scene("ngay"), L=source.userData.L, bg=source.userData.bg;
+  return {
+    source,camera:cam(),n:6,d:6,
+    items:[
+      {itemId:"sofa",state:"default",layerId:"pk_sofa",object:L.sofa},
+      {itemId:"khunganh",state:"default",layerId:"pk_khung_anh",object:L.khunganh},
+      {itemId:"lich",state:"default",layerId:"pk_lich",object:L.lich},
+      {itemId:"bangghim",state:"trong",layerId:"pk_bang_ghim_trong",object:L.bangghim},
+      {itemId:"radio",state:"tat",layerId:"pk_radio_tat",object:L.radio},
+      {itemId:"hu",state:"day",layerId:"pk_hu_day",object:L.hu},
+    ],
+    backgrounds:[
+      {id:"stairs",kind:"UNCLASSIFIED_SOURCE_PROP",object:bg[1]},
+      {id:"rug",kind:"FLOOR_COVERING_NOT_BLOCKER",object:bg[2]},
+      {id:"coffee_table",kind:"UNCLASSIFIED_SOURCE_PROP",object:bg[3]},
+      {id:"low_bookshelf",kind:"UNCLASSIFIED_SOURCE_PROP",object:bg[4]},
+      {id:"floor_lamp",kind:"UNCLASSIFIED_SOURCE_PROP",object:bg[5]},
+      {id:"pothos",kind:"UNCLASSIFIED_SOURCE_PROP",object:bg[6]},
+      {id:"floor_cushion",kind:"UNCLASSIFIED_SOURCE_PROP",object:bg[7]},
+      {id:"pet_bed",kind:"UNCLASSIFIED_SOURCE_PROP",object:bg[8]},
+      {id:"window",kind:"WALL_OR_RAISED_DECOR",object:bg[9]},
+    ],
+  };
+}
+
 function layerShot(s, keep, extra = []) {
   // chỉ hiện các vật trong keep + mặt hứng bóng
   const vis = [];

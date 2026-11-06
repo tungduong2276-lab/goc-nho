@@ -57,6 +57,21 @@ jobs:
           path: review-artifacts/house-mesh-contact/
           if-no-files-found: error
           retention-days: 7
+      - name: Audit six source room meshes and distinguish baked floor materials
+        if: github.event.pull_request.head.ref == 'feature/m1-six-room-baked-prop-contact-audit'
+        run: |
+          npm install --no-save three@0.169.0
+          node --test _xuong-3d/m1-ground-contact-audit.test.mjs
+          node _xuong-3d/m1-ground-contact-proposals.mjs
+          node --input-type=module -e 'import{readFileSync}from"node:fs";const a=JSON.parse(readFileSync("review-artifacts/house-mesh-contact/source-ground-contact-proposals.json"));if(a.rooms.length!==6||a.canPersist!==false||a.reviewStatus!=="EXPERIMENTAL_ONLY"||!a.rooms.every(r=>r.canPersist===false&&r.bakedComponents.length>0&&r.bakedComponents.every(x=>x.physicalContactVerified===false&&x.canPersist===false)))process.exit(1);'
+      - name: Upload six-room baked-prop source audit
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-six-room-baked-prop-contact-audit'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-six-room-baked-contact-${{ github.run_id }}
+          path: review-artifacts/house-mesh-contact/
+          if-no-files-found: error
+          retention-days: 7
       - name: Render old/new living room + kitchen pilot from real 3D source
         if: github.event.pull_request.head.ref == 'feature/m1-spacious-scene-living-kitchen-pilot'
         run: |
