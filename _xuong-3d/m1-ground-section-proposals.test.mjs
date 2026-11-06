@@ -13,7 +13,7 @@ test("actual six-room source section audit preserves identities and fail-closed 
  assert.equal(audit.approvedFloorPolygons,null);
  assert.equal(audit.canPersist,false);
  assert.equal(audit.contactVerified,false);
- assert.equal(audit.rooms.reduce((n,r)=>n+r.itemStates.length,0),42);
+ assert.equal(audit.rooms.reduce((n,r)=>n+r.itemStates.length,0),48);
  assert.equal(audit.rooms.reduce((n,r)=>n+r.bakedComponents.length,0),199);
  for(const r of audit.rooms){
   assert.equal(r.floorApproval,"UNAPPROVED");
@@ -55,7 +55,7 @@ test("wall-hung source elements do not get synthetic floor contact paths",()=>{
 });
 test("different floor materials remain visible as classified background, not safe placement permission",()=>{
  const living=audit.rooms.find(r=>r.roomId==="phong-khach");
- assert.equal(living.stateCoverage,"LIVING_DEFAULT_STATES_ONLY");
+ assert.equal(living.stateCoverage,"ALL_SOURCE_ITEM_STATES");
  assert.ok(living.bakedComponents.some(x=>x.id==="rug"&&x.kind==="FLOOR_COVERING_NOT_BLOCKER"));
  const kitchen=audit.rooms.find(r=>r.roomId==="bep");
  assert.ok(kitchen.bakedComponents.some(x=>x.kind==="FLOOR_FINISH_NOT_BLOCKER"));
