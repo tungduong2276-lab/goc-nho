@@ -122,6 +122,8 @@ jobs:
         run: |
           npm install --no-save three@0.169.0
           node --test _xuong-3d/m1-physical-expansion-source.test.mjs
+          node --test src/house-open-edge-route-audit.test.mjs
+          node src/house-open-edge-route-audit.mjs
           python3 -m pip install --break-system-packages Pillow
           ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
           cp _xuong-3d/run.js _xuong-3d/run.cjs
@@ -135,7 +137,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: m1-six-room-real-world-expansion-${{ github.run_id }}
-          path: review-artifacts/house-physical-expansion/
+          path: |
+            review-artifacts/house-physical-expansion/
+            review-artifacts/house-routes/
           if-no-files-found: error
           retention-days: 7
       - name: Render old/new living room + kitchen pilot from real 3D source
