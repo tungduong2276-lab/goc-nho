@@ -12,10 +12,15 @@ Separate experimental review-only UI: `experiments/house-floor-review.html`.
 ## Safety
 - Unapproved geometry always has `canPersist:false`; it cannot unlock shared decorating.
 - No Firestore Rules, live app, production image or deployment modifications.
-- The background is an existing actual day render. Individual fixed-contact sprites are **not** currently composited in this editor; use the existing contact tool and actual full-composite review before approving anything.
+- The background is an existing actual day render. The review now overlays ONE default state per physical item, or the currently selected contact item's state, using exact scene.json sprite file paths and image boxes. A toggle hides the overlay for floor-only inspection. **Sprite depth/occlusion and all alternate states are NOT verified here; do not mistake transparent sprite image bounds for foot contact.** Compare original full-composite renders before approving anything.
 - The logic rejects doorway/walkway segments that cross the outside of a concave floor polygon, even if the endpoints are inside.
 
 ## Gates
 - Browser tests cover all six rooms, 360/390/430 widths, duplicate contacts, export, memory-only reset and absence of Firebase traffic. Full `npm test` required.
 - Review screenshots and compositing, and independently verify contact masks and human standing points across 4 lighting variations before proposing any approval.
 - PR #9 stays Draft and cannot merge into main until M0 deployed security and staging export/restore are documented and tested.
+
+## Separate composite integration (review-only)
+- One initial state per item is layered over the day background, with selected `fixed_contact` state taking priority. Living room defaults choose one radio/jar/noticeboard state rather than overlaying all alternatives.
+- Reviewer can hide/show furniture layers; the selection affects visual evidence only and never scene.json, Firebase or saved user preferences.
+- Playwright checks images load in all six rooms and that changing the selected bed state swaps the corresponding sprite. The composite is a source-coordinate approximation and still needs manual depth, alpha silhouette, floor-contact and standing-point verification.

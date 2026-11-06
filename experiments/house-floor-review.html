@@ -12,6 +12,8 @@ button{cursor:pointer}button:focus-visible,select:focus-visible,input:focus-visi
 button:disabled{opacity:.55}#workspace{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(250px,.85fr);gap:18px}
 #stage{position:relative;width:100%;max-width:850px;aspect-ratio:1;overflow:hidden;border:2px solid #b78b9c;border-radius:12px;background:#f2e9eb;cursor:crosshair;touch-action:manipulation}
 #stage>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+#layers{position:absolute;inset:0;pointer-events:none}
+#layers img{position:absolute;display:block;object-fit:fill;pointer-events:none}
 #overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #status{font-weight:650;min-height:24px}aside{background:white;border:1px solid #e2d0d5;border-radius:14px;padding:12px;min-width:0}
 #export{width:100%;height:220px;resize:vertical;font:12px/1.4 monospace;min-width:0}
@@ -26,12 +28,14 @@ small{color:#685d6e}#summary{white-space:pre-wrap;font-size:14px}
 <label>Phòng<select id="room"><option value="phong-khach">Phòng khách</option><option value="bep">Bếp</option><option value="phong-anh">Phòng Anh</option><option value="phong-em">Phòng Em</option><option value="goc-sang-tao">Góc sáng tạo</option><option value="gac">Gác kỷ niệm</option></select></label>
 <label>Vùng cần đánh dấu<select id="role"><option value="floor">Mặt sàn</option><option value="doorway">Ngưỡng cửa</option><option value="walkway">Lối đi</option><option value="fixed_contact">Chân nội thất</option></select></label>
 <label id="layer-control" hidden>Đồ nội thất<select id="layer"></select></label>
+<label><input id="show-furniture" type="checkbox" checked> Hiện nội thất ghép (chưa duyệt chiều sâu)</label>
 </div>
 <div id="workspace"><div>
 <div id="stage" role="img" aria-label="Ảnh phòng để vẽ các đỉnh đa giác">
 <img id="background" alt="Ảnh nền phòng 1170 pixel" width="1170" height="1170">
+<div id="layers" aria-hidden="true"></div>
 <svg id="overlay" viewBox="0 0 1170 1170" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"></svg>
-</div><p><small>Vàng: nét đang vẽ. Xanh: sàn đề xuất. Cam: cửa và lối đi. Đỏ: chân nội thất. Kết quả chỉ dành cho người duyệt, không tự động phê duyệt.</small></p></div>
+</div><p><small>Vàng: nét đang vẽ. Xanh: sàn đề xuất. Cam: cửa và lối đi. Đỏ: chân nội thất. Các lớp sprite được ghép theo scene.json nhưng thứ tự chiều sâu chưa nghiệm thu. Kết quả chỉ dành cho người duyệt, không tự động phê duyệt.</small></p></div>
 <aside><p id="counter">0 điểm · 0 vùng chưa duyệt</p>
 <div class="controls"><label>X<input id="x" type="number" min="0" max="1170" value="500"></label><label>Y<input id="y" type="number" min="0" max="1170" value="700"></label><button id="add">Thêm điểm</button></div>
 <div class="controls"><button id="undo">Lùi điểm</button><button id="clear">Xóa nét</button><button id="commit">Ghi nhận đề xuất</button></div>
