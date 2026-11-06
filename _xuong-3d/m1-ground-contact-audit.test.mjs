@@ -21,7 +21,7 @@ test("all six real THREE.js rooms include separate baked and interactive source 
 });
 test("keep floor coverings distinct from unclassified baked objects",()=>{
  const living=audit.rooms.find(r=>r.roomId==="phong-khach");
- assert.equal(living.interactiveStateCoverage,"LIVING_DEFAULT_STATES_ONLY");
+ assert.equal(living.interactiveStateCoverage,"ALL_SOURCE_ITEM_STATES");
  assert.ok(living.itemStates.some(r=>r.layerId==="pk_sofa"));
  assert.equal(living.bakedComponents.length,9);
  assert.equal(living.bakedComponents.find(o=>o.id==="rug").kind,"FLOOR_COVERING_NOT_BLOCKER");
@@ -54,7 +54,7 @@ test("world/source camera coordinates are finite; no mesh envelope is a collisio
 });
 test("alternatives are not silently claimed in living source; five other rooms report all states",()=>{
  const living=audit.rooms.find(r=>r.roomId==="phong-khach");
- assert.equal(living.itemStates.length,6);
+ assert.equal(living.itemStates.length,12);
  for(const room of audit.rooms.filter(r=>r!==living))
   assert.equal(room.interactiveStateCoverage,"ALL_SOURCE_ITEM_STATES");
  const raised=audit.rooms.find(r=>r.roomId==="gac").itemStates.find(s=>s.layerId==="bandogioi_trong");
