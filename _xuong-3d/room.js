@@ -2,7 +2,7 @@
 import { THREE, C, piece, makeScene, isoCamera, shoot, shadowCatcher, toPx, TIMES } from './lib.js';
 import * as F from './furn.js';
 import {SPACIOUS_SCENE_PILOT} from './spacious-layout.js';
-import {M1_EXPANDED_SOURCE_ROOMS,applyExpandedPosition} from './m1-expanded-room-source.mjs';
+import {M1_EXPANDED_SOURCE_ROOMS,applyExpandedPosition,expandedSourceCoordinates} from './m1-expanded-room-source.mjs';
 import { buildChar } from './chars.js';
 import { buildCat } from './pet.js';
 
@@ -79,7 +79,8 @@ export function inspectLivingSource() {
   return {
     source,camera:cam(),n:ROOM.n,d:ROOM.d,
     // Identical source-space standing positions used by jobs.nen metadata.
-    standingXZ:[[-0.85,-0.05],[1.95,0.95],[0.6,2.1]],
+    standingXZ:[[-0.85,-0.05],[1.95,0.95],[0.6,2.1]]
+      .map(p=>expandedSourceCoordinates("phong-khach",p)),
     items:variants,
     backgrounds:[
       {id:"stairs",kind:"UNCLASSIFIED_SOURCE_PROP",object:bg[1]},
@@ -125,16 +126,17 @@ export const jobs = {
       out.push({ file: `phong_khach_${t}@3x.png`, data: shoot(s, cam()) });
     }
     const s = scene('ngay'), c = cam(), L = s.userData.L;
+    const sourcePx=(x,y,z)=>{const [xx,zz]=expandedSourceCoordinates('phong-khach',[x,z]);return toPx(c,xx,y,zz);};
     const meta = {
       size: [ROOM.w, ROOM.h], ppm: ROOM.ppm,
       origin: toPx(c, 0, 0, 0), ex: toPx(c, 1, 0, 0), ez: toPx(c, 0, 0, 1), ey: toPx(c, 0, 1, 0),
       lichQuad: quad(c, L.lich, F.CAL_FACE.w, F.CAL_FACE.h, F.CAL_FACE.y),
       anhQuad: quad(c, L.khunganh, F.FRAME_FACE.w, F.FRAME_FACE.h),
       cuasoQuad: (() => { const w = F.windowW(); F.onWall(w, 'R', -1.2, 1.55, ROOM.n, ROOM.d); return quad(c, w, 1.0, 1.1); })(),
-      ghe: [toPx(c, -2.25, 0.42, 0.75), toPx(c, -2.25, 0.42, 1.75)],
-      dung: [toPx(c, -0.85, 0, -0.05), toPx(c, 1.95, 0, 0.95), toPx(c, 0.6, 0, 2.1)],
-      thu: toPx(c, 1.6, 0.1, 2.2),
-      radioTop: toPx(c, 2.15, 1.25, -2.55)
+      ghe: [sourcePx(-2.25, 0.42, 0.75), sourcePx(-2.25, 0.42, 1.75)],
+      dung: [sourcePx(-0.85, 0, -0.05), sourcePx(1.95, 0, 0.95), sourcePx(0.6, 0, 2.1)],
+      thu: sourcePx(1.6, 0.1, 2.2),
+      radioTop: sourcePx(2.15, 1.25, -2.55)
     };
     out.push({ file: 'phong_khach_meta', meta });
     return out;
