@@ -97,7 +97,7 @@ export function buildMeshAudit(){
    attachFlags(reviewCandidate({id,kind,object},camera)));
   rooms.push({
    roomId,sourceGenerator:living?"room.js":"rooms2.js",
-   interactiveStateCoverage:living?"LIVING_DEFAULT_STATES_ONLY":"ALL_SOURCE_ITEM_STATES",
+   interactiveStateCoverage:"ALL_SOURCE_ITEM_STATES",
    worldFloorRect:floor,
    floorStatus:"SOURCE_SHELL_RECT_NOT_APPROVED",
    doorwayStatus:"UNKNOWN",walkwayStatus:"UNKNOWN",
