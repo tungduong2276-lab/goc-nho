@@ -72,6 +72,21 @@ jobs:
           path: review-artifacts/house-mesh-contact/
           if-no-files-found: error
           retention-days: 7
+      - name: Extract real mesh-plane contours from six source rooms
+        if: github.event.pull_request.head.ref == 'feature/m1-mesh-plane-slice-evidence'
+        run: |
+          npm install --no-save three@0.169.0
+          node --test _xuong-3d/m1-plane-slice-geometry.test.mjs _xuong-3d/m1-ground-section-proposals.test.mjs
+          node _xuong-3d/m1-ground-section-proposals.mjs
+          node --input-type=module -e 'import{readFileSync,existsSync}from"node:fs";const dir="review-artifacts/house-mesh-sections/";const a=JSON.parse(readFileSync(dir+"source-mesh-plane-sections.json"));if(a.canPersist!==false||a.contactVerified!==false||a.rooms.length!==6||!a.rooms.every(r=>r.canPersist===false&&r.itemStates.every(s=>s.canPersist===false&&s.contactVerified===false)&&r.bakedComponents.every(s=>s.canPersist===false&&s.contactVerified===false)&&existsSync(dir+r.roomId+"-sections.svg")))process.exit(1);'
+      - name: Upload source mesh-plane contour review artifacts
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-mesh-plane-slice-evidence'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-six-room-mesh-plane-contours-${{ github.run_id }}
+          path: review-artifacts/house-mesh-sections/
+          if-no-files-found: error
+          retention-days: 7
       - name: Render old/new living room + kitchen pilot from real 3D source
         if: github.event.pull_request.head.ref == 'feature/m1-spacious-scene-living-kitchen-pilot'
         run: |
