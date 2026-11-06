@@ -227,6 +227,14 @@ function catchers(R) {
   const r = shadowCatcher(R.n - 0.4, 2.2, 0, 0.14); r.position.set(0.2, 1.5, -R.d / 2 + 0.01);
   return [f, l, r];
 }
+// Read-only source-scene inspection for experimental M1 contact proposals.
+// This exposes render-source objects; it never authorizes floor placement.
+export function inspectRoomSource(room) {
+  if (!Object.hasOwn(ROOMS, room)) throw new Error("UNKNOWN_SOURCE_ROOM");
+  const source = build(room, "ngay");
+  return { source, camera: cam(room), n: ROOMS[room].n, d: ROOMS[room].d,
+    items: source.userData.items };
+}
 export const ROOM_IDS = Object.keys(ROOMS);
 export function roomJobs(room) {
   const R = ROOMS[room];
