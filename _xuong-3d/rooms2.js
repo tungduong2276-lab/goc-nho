@@ -22,9 +22,9 @@ function wallTiles(g, n, d, h, col) { // gạch ô trắng-xanh
   for (let i = 0; i < n * 2; i++) for (let j = 0; j < 4; j++) if ((i + j) % 2) piece(new THREE.BoxGeometry(0.46, 0.46, 0.01), col, { noOutline: true, pos: [-n / 2 + 0.25 + i * 0.5, 0.95 + j * 0.5, -d / 2 + 0.006], parent: g, receive: true, cast: false });
   for (let i = 0; i < d * 2; i++) for (let j = 0; j < 4; j++) if ((i + j) % 2) piece(new THREE.BoxGeometry(0.01, 0.46, 0.46), col, { noOutline: true, pos: [-n / 2 + 0.006, 0.95 + j * 0.5, -d / 2 + 0.25 + i * 0.5], parent: g, receive: true, cast: false });
 }
-function checkerFloor(g, n, d, col) { for (let i = 0; i < n * 2; i++) for (let j = 0; j < d * 2; j++) if ((i + j) % 2) piece(new THREE.PlaneGeometry(0.5, 0.5), col, { noOutline: true, pos: [-n / 2 + 0.25 + i * 0.5, 0.034, -d / 2 + 0.25 + j * 0.5], rot: [-Math.PI / 2, 0, 0], parent: g, receive: true, cast: false }); }
-function rugRound(r, c1, c2) { const g = G(); piece(rcyl(r, r, 0.04, 0.02, 40), c1, { pos: [0, 0.02, 0], parent: g, receive: true, cast: false }); if (c2) piece(rcyl(r * 0.7, r * 0.7, 0.045, 0.02, 40), c2, { noOutline: true, pos: [0, 0.025, 0], parent: g, receive: true, cast: false }); return g; }
-function rugRect(w, d, c1, c2) { const g = G(); piece(rbox(w, 0.04, d, 0.02), c1, { pos: [0, 0.02, 0], parent: g, receive: true, cast: false }); if (c2) for (let i = 0; i < 4; i++) piece(new THREE.BoxGeometry(w * 0.9, 0.005, 0.06), c2, { noOutline: true, pos: [0, 0.042, -d / 2 + (i + 1) * d / 5], parent: g, cast: false }); return g; }
+function checkerFloor(g, n, d, col) { for (let i = 0; i < n * 2; i++) for (let j = 0; j < d * 2; j++) if ((i + j) % 2) { const tile=piece(new THREE.PlaneGeometry(0.5, 0.5), col, { noOutline: true, pos: [-n / 2 + 0.25 + i * 0.5, 0.034, -d / 2 + 0.25 + j * 0.5], rot: [-Math.PI / 2, 0, 0], parent: g, receive: true, cast: false }); tile.userData.floorReviewKind='FLOOR_FINISH_NOT_BLOCKER'; } }
+function rugRound(r, c1, c2) { const g = G(); g.userData.floorReviewKind='FLOOR_COVERING_NOT_BLOCKER'; piece(rcyl(r, r, 0.04, 0.02, 40), c1, { pos: [0, 0.02, 0], parent: g, receive: true, cast: false }); if (c2) piece(rcyl(r * 0.7, r * 0.7, 0.045, 0.02, 40), c2, { noOutline: true, pos: [0, 0.025, 0], parent: g, receive: true, cast: false }); return g; }
+function rugRect(w, d, c1, c2) { const g = G(); g.userData.floorReviewKind='FLOOR_COVERING_NOT_BLOCKER'; piece(rbox(w, 0.04, d, 0.02), c1, { pos: [0, 0.02, 0], parent: g, receive: true, cast: false }); if (c2) for (let i = 0; i < 4; i++) piece(new THREE.BoxGeometry(w * 0.9, 0.005, 0.06), c2, { noOutline: true, pos: [0, 0.042, -d / 2 + (i + 1) * d / 5], parent: g, cast: false }); return g; }
 function windowBox(time, o = {}) { const w = F.windowW({ sky: SKY[time], stars: time === 'dem', moon: time === 'dem', cloud: time === 'ngay' || time === 'sang' }); if (o.checker) w.traverse(m => { }); return w; }
 function curtainsChecker(win) { for (const s of [-1, 1]) { const c = G(); c.position.set(s * 0.67, 0.02, 0.1); win.add(c); for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) piece(new THREE.BoxGeometry(0.1, 0.3, 0.02), (i + j) % 2 ? C.pink : C.white, { noOutline: true, pos: [-0.05 + j * 0.1, 0.45 - i * 0.3, 0.04], parent: c }); } }
 function bookStack(n = 4) { const g = G(); const cols = [C.sky, C.pink, C.leaf, C.butter, C.lilac]; for (let i = 0; i < n; i++) piece(rbox(0.36 - i * 0.02, 0.08, 0.26, 0.02, 1), cols[i % 5], { pos: [0, 0.04 + i * 0.085, 0], rot: [0, i * 0.2, 0], parent: g }); return g; }
@@ -233,7 +233,8 @@ export function inspectRoomSource(room) {
   if (!Object.hasOwn(ROOMS, room)) throw new Error("UNKNOWN_SOURCE_ROOM");
   const source = build(room, "ngay");
   return { source, camera: cam(room), n: ROOMS[room].n, d: ROOMS[room].d,
-    items: source.userData.items };
+    items: source.userData.items,
+    backgrounds:source.userData.deco.children.map((object,i)=>({id:'deco-'+String(i).padStart(3,'0'),kind:object.userData.floorReviewKind||'UNCLASSIFIED_SOURCE_PROP',object})) };
 }
 export const ROOM_IDS = Object.keys(ROOMS);
 export function roomJobs(room) {
