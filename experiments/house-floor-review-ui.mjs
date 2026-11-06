@@ -108,7 +108,8 @@ function render(){
  const bundle=buildFloorReviewBundle(proposals);
  const current=bundle.readiness.find(x=>x.roomId===$("room").value);
  const mismatches=captures.filter(c=>c.roomId===$("room").value&&c.lighting!==$("lighting").value).length;
- $("summary").textContent=`Thiếu bằng chứng: ${current.missing.join(", ")||"không còn loại trống"}\nLối đi ngoài vùng sàn: ${current.reservesOutsideProposedFloor?"CẦN XEM LẠI":"chưa phát hiện / chưa đủ dữ liệu"}\nTrạng thái: CHƯA ĐƯỢC DUYỆT\\nBản vẽ từ ánh sáng khác: ${mismatches}`;
+ $("summary").textContent=`Thiếu bằng chứng: ${current.missing.join(", ")||"không còn loại trống"}\nLối đi ngoài vùng sàn: ${current.reservesOutsideProposedFloor?"CẦN XEM LẠI":"chưa phát hiện / chưa đủ dữ liệu"}\nTrạng thái: CHƯA ĐƯỢC DUYỆT
+Bản vẽ từ ánh sáng khác: ${mismatches}`;
 }
 function addPoint(x,y){
  if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||y<0||x>1170||y>1170){notice("Tọa độ không hợp lệ.");return;}
