@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import {strict as assert} from "node:assert";
-import {buildSectionAudit,SECTION_PROTOCOL,SECTION_Y,ROOM_IDS} from "./m1-ground-section-proposals.mjs";
+import {buildSectionAudit,SECTION_PROTOCOL,SECTION_Y,SECTION_HEIGHTS,ROOM_IDS} from "./m1-ground-section-proposals.mjs";
 
 const audit=buildSectionAudit();
 const all=audit.rooms.flatMap(room=>[...room.itemStates,...room.bakedComponents]);
@@ -60,4 +60,29 @@ test("different floor materials remain visible as classified background, not saf
  const kitchen=audit.rooms.find(r=>r.roomId==="bep");
  assert.ok(kitchen.bakedComponents.some(x=>x.kind==="FLOOR_FINISH_NOT_BLOCKER"));
  assert.ok(all.every(x=>x.canPersist===false));
+});
+
+test("all source items and baked backgrounds preserve real section contours at four heights",()=>{
+ assert.deepEqual(SECTION_HEIGHTS,[0.04,0.08,0.22,0.45]);
+ let changed=0;
+ for(const candidate of all){
+  assert.equal(candidate.multiHeightApproval,"UNAPPROVED");
+  assert.equal(candidate.heightSlices.length,4);
+  assert.ok(candidate.heightSlices.every(s=>s.contactVerified===false&&s.canPersist===false));
+  assert.deepEqual(candidate.heightSlices[1].contours,candidate.contours);
+  const counts=new Set(candidate.heightSlices.map(s=>s.distinctSegments));
+  if(counts.size>1)changed++;
+  for(const profile of candidate.heightSlices){
+   assert.ok(profile.contours.every(path=>path.worldXZ.every(pt=>pt.every(Number.isFinite))));
+  }
+ }
+ assert.ok(changed>10,"different world heights must expose real source differences");
+});
+test("all living-room sprite variants appear in the source mesh audit",()=>{
+ const living=audit.rooms.find(r=>r.roomId==="phong-khach");
+ const expected=["pk_sofa","pk_khung_anh","pk_lich","pk_bang_ghim_trong",
+  "pk_bang_ghim_giay","pk_radio_tat","pk_radio_phat","pk_hu_day",
+  "pk_hu_nua","pk_hu_it","pk_hu_mo","pk_cuaso_mua"];
+ assert.deepEqual(living.itemStates.map(x=>x.layerId),expected);
+ assert.equal(living.stateCoverage,"ALL_SOURCE_ITEM_STATES");
 });
