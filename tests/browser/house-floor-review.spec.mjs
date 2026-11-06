@@ -154,3 +154,52 @@ test("all 24 source lighting backgrounds load without moving reviewed furniture 
  expect(JSON.parse(await page.locator("#export").inputValue()).canPersist).toBe(false);
  expect(network.some(url=>/firestore|firebase|identitytoolkit|googleapis/i.test(url))).toBe(false);
 });
+
+test("manual floor review captures the exact scene SHA-256 and selected light without persistent writes",async ({page})=>{
+ await page.setViewportSize({width:390,height:900});
+ const urls=[];page.on("request",request=>urls.push(request.url()));
+ await page.goto("/experiments/house-floor-review.html");
+ await page.locator("#enable").click();
+ await page.locator("#room").selectOption("phong-em");
+ await page.locator("#lighting").selectOption("dem");
+ for(const [x,y] of [[320,600],[440,600],[440,740]]){
+  await page.locator("#x").fill(String(x));
+  await page.locator("#y").fill(String(y));
+  await page.locator("#add").click();
+ }
+ await page.locator("#commit").click();
+ await page.locator("#lighting").selectOption("sang");
+ await expect(page.locator("#summary")).toContainText("Bản vẽ từ ánh sáng khác: 1");
+ await page.locator("#export-button").click();
+ const data=JSON.parse(await page.locator("#export").inputValue());
+ const {createHash}=await import("node:crypto");
+ const sourceHash=createHash("sha256").update(readFileSync("assets/3d/scene.json")).digest("hex");
+ expect(data.sceneSha256).toBe(sourceHash);
+ expect(data.captures).toHaveLength(1);
+ expect(data.captures[0].lighting).toBe("dem");
+ expect(data.captures[0].roomId).toBe("phong-em");
+ expect(data.canPersist).toBe(false);
+ await page.locator("#reset").click();
+ await page.locator("#export-button").click();
+ expect(JSON.parse(await page.locator("#export").inputValue()).captures).toHaveLength(0);
+ expect(urls.some(u=>/firebase|firestore|identitytoolkit|googleapis/i.test(u))).toBe(false);
+});
+test("contact polygon cannot be recorded if its source furniture sprite is hidden",async ({page})=>{
+ await page.goto("/experiments/house-floor-review.html");
+ await page.locator("#enable").click();
+ await page.locator("#room").selectOption("phong-anh");
+ await page.locator("#role").selectOption("fixed_contact");
+ await page.locator("#layer").selectOption("giuong_gon");
+ await page.locator("#show-furniture").uncheck();
+ for(const [x,y] of [[420,600],[520,600],[520,750]]){
+  await page.locator("#x").fill(String(x));
+  await page.locator("#y").fill(String(y));
+  await page.locator("#add").click();
+ }
+ await page.locator("#commit").click();
+ await expect(page.locator("#status")).toContainText("CONTACT_SPRITE_NOT_VISIBLE");
+ await expect(page.locator("#counter")).toContainText("0 vùng");
+ await page.locator("#show-furniture").check();
+ await page.locator("#commit").click();
+ await expect(page.locator("#counter")).toContainText("1 vùng");
+});
