@@ -13,7 +13,8 @@ import {createHash} from "node:crypto";
 import {readFileSync,writeFileSync,mkdirSync} from "node:fs";
 
 export const SECTION_PROTOCOL="M1_SOURCE_MESH_PLANE_SECTIONS_UNAPPROVED";
-export const SECTION_Y=0.08; // world metres above ground y=0; sections can miss short props
+export const SECTION_Y=0.08; // canonical comparison height
+export const SECTION_HEIGHTS=Object.freeze([0.04,0.08,0.22,0.45]); // metres; none proves physical clearance
 export const SECTION_LIMIT=10000; // per candidate; overflow MUST be reported
 const sourceNames=Object.freeze({"bep":"bep","phong-anh":"phong_anh","phong-em":"phong_em","goc-sang-tao":"sang_tao",gac:"gac"});
 const round=n=>Math.round(n*1e4)/1e4;
@@ -78,20 +79,26 @@ export function sliceSourceObject(object,camera,height=SECTION_Y){
   contactVerified:false,canPersist:false
  };
 }
+function sourceSlices(object,camera){
+ const heightSlices=SECTION_HEIGHTS.map(height=>sliceSourceObject(object,camera,height));
+ const baseline=heightSlices.find(s=>s.sectionYMetres===SECTION_Y);
+ return {...baseline,heightSlices,
+  multiHeightApproval:"UNAPPROVED",canPersist:false,contactVerified:false};
+}
 function record({id,kind,object},camera){
- return {id,kind,...sliceSourceObject(object,camera)};
+ return {id,kind,...sourceSlices(object,camera)};
 }
 function itemRecords(descriptor){
  const {camera,items}=descriptor;
  if(Array.isArray(items))return items.map(x=>({
   itemId:x.itemId,state:x.state,layerId:x.layerId,
-  ...sliceSourceObject(x.object,camera)
+  ...sourceSlices(x.object,camera)
  }));
  const result=[];
  for(const [itemId,states]of Object.entries(items))for(const [state,object]of Object.entries(states)){
   object.visible=true;
   try{result.push({itemId,state,layerId:itemId+"_"+state,
-   ...sliceSourceObject(object,camera)});}
+   ...sourceSlices(object,camera)});}
   finally{object.visible=false;}
  }
  return result;
@@ -120,7 +127,7 @@ export function buildSectionAudit(){
   contactVerified:false,canPersist:false};
 }
 function svgEscape(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");}
-function renderRoomSvg(room){
+function renderRoomSvg(room,height=SECTION_Y){
  const lines=['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1170 1170">',
  '<rect width="1170" height="1170" fill="#faf8fc"/>',
  '<text x="18" y="40" font-size="22" fill="#542a56">M1 — UNAPPROVED 3D plane-section evidence</text>'];
@@ -129,7 +136,8 @@ function renderRoomSvg(room){
   const color=candidate.kind==="FLOOR_FINISH_NOT_BLOCKER"?"#adb1b8":
    candidate.kind==="FLOOR_COVERING_NOT_BLOCKER"?"#90a3aa":
    candidate.sourceKind==="interactive"?"#2384d1":"#b4455c";
-  for(const contour of candidate.contours){
+  const heightSlice=candidate.heightSlices.find(x=>x.sectionYMetres===height);
+  for(const contour of heightSlice.contours){
    if(contour.image1170.length<2)continue;
    const points=contour.image1170.map(p=>p.join(",")).join(" ");
    lines.push('<polyline points="'+points+'" fill="none" stroke="'+color+
@@ -144,12 +152,16 @@ if(process.argv[1]?.endsWith("m1-ground-section-proposals.mjs")){
  const audit=buildSectionAudit(),dir="review-artifacts/house-mesh-sections";
  mkdirSync(dir,{recursive:true});
  writeFileSync(dir+"/source-mesh-plane-sections.json",JSON.stringify(audit,null,2));
- for(const room of audit.rooms)writeFileSync(dir+"/"+room.roomId+"-sections.svg",renderRoomSvg(room));
+ for(const room of audit.rooms)for(const height of SECTION_HEIGHTS){
+  const filename=room.roomId+"-y"+Math.round(height*100)+"cm-sections.svg";
+  writeFileSync(dir+"/"+filename,renderRoomSvg(room,height));
+ }
  const counts=audit.rooms.reduce((a,r)=>{a.items+=r.itemStates.length;a.baked+=r.bakedComponents.length;
   a.lines+=[...r.itemStates,...r.bakedComponents].reduce((s,v)=>s+v.distinctSegments,0);
   a.truncated+=[...r.itemStates,...r.bakedComponents].filter(v=>v.limitReached).length;return a;
  },{items:0,baked:0,lines:0,truncated:0});
  console.log("M1 source plane section evidence: "+JSON.stringify({rooms:audit.rooms.length,...counts}));
- if(audit.rooms.length!==6||counts.items!==48||counts.baked!==199||counts.lines<20)
+ if(audit.rooms.length!==6||counts.items!==48||counts.baked!==199||counts.lines<20||
+    audit.rooms.some(r=>[...r.itemStates,...r.bakedComponents].some(c=>c.heightSlices.length!==SECTION_HEIGHTS.length)))
   process.exitCode=1;
 }
