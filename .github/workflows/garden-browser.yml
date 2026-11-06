@@ -43,6 +43,20 @@ jobs:
           java-version: '21'
       - run: npm install
       - run: npx playwright install --with-deps chromium
+      - name: Derive experimental 3D near-ground mesh contact evidence
+        if: github.event.pull_request.head.ref == 'feature/m1-3d-mesh-floor-contact-candidates'
+        run: |
+          npm install --no-save three@0.169.0
+          node _xuong-3d/m1-ground-contact-proposals.mjs
+          node --input-type=module -e 'import{readFileSync}from"node:fs";const a=JSON.parse(readFileSync("review-artifacts/house-mesh-contact/source-ground-contact-proposals.json"));if(a.canPersist!==false||a.reviewStatus!=="EXPERIMENTAL_ONLY"||a.rooms.length!==5||!a.rooms.every(r=>r.canPersist===false&&r.itemStates.every(s=>s.canPersist===false&&s.contactVerified===false)))process.exit(1);'
+      - name: Upload 3D near-ground mesh contact proposals
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-3d-mesh-floor-contact-candidates'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-3d-mesh-contact-proposals-${{ github.run_id }}
+          path: review-artifacts/house-mesh-contact/
+          if-no-files-found: error
+          retention-days: 7
       - name: Render old/new living room + kitchen pilot from real 3D source
         if: github.event.pull_request.head.ref == 'feature/m1-spacious-scene-living-kitchen-pilot'
         run: |
