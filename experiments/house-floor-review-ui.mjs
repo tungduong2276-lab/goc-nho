@@ -1,5 +1,6 @@
 import {ROOM_SOURCES} from "../src/house-placement-preview.mjs";
 import {makeFloorAnnotation,buildFloorReviewBundle} from "../src/house-floor-evidence.mjs";
+import {buildFloorEvidenceWithProvenance} from "../src/house-floor-review-provenance.mjs";
 const $=id=>document.getElementById(id);
 const backgrounds=Object.freeze({"phong-khach":"phong_khach",bep:"bep","phong-anh":"phong_anh","phong-em":"phong_em","goc-sang-tao":"sang_tao",gac:"gac"});
 const LIGHTING=Object.freeze(["sang","ngay","chieu","dem"]);
@@ -9,8 +10,8 @@ function updateBackground(){
  $("background").src="../assets/3d/"+backgrounds[room]+"_"+lighting+".webp";
  $("background").dataset.lighting=lighting;
 }
-let scene=null,vertices=[];
-const proposals=[];
+let scene=null,vertices=[],sceneSha256=null;
+const proposals=[],captures=[];
 const notice=message=>{$("status").textContent=message;};
 function roomSource(){
  const source=ROOM_SOURCES[$("room").value];
@@ -106,7 +107,9 @@ function render(){
  $("layer-control").hidden=$("role").value!=="fixed_contact";
  const bundle=buildFloorReviewBundle(proposals);
  const current=bundle.readiness.find(x=>x.roomId===$("room").value);
- $("summary").textContent=`Thiếu bằng chứng: ${current.missing.join(", ")||"không còn loại trống"}\nLối đi ngoài vùng sàn: ${current.reservesOutsideProposedFloor?"CẦN XEM LẠI":"chưa phát hiện / chưa đủ dữ liệu"}\nTrạng thái: CHƯA ĐƯỢC DUYỆT`;
+ const mismatches=captures.filter(c=>c.roomId===$("room").value&&c.lighting!==$("lighting").value).length;
+ $("summary").textContent=`Thiếu bằng chứng: ${current.missing.join(", ")||"không còn loại trống"}\nLối đi ngoài vùng sàn: ${current.reservesOutsideProposedFloor?"CẦN XEM LẠI":"chưa phát hiện / chưa đủ dữ liệu"}\nTrạng thái: CHƯA ĐƯỢC DUYỆT
+Bản vẽ từ ánh sáng khác: ${mismatches}`;
 }
 function addPoint(x,y){
  if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||y<0||x>1170||y>1170){notice("Tọa độ không hợp lệ.");return;}
@@ -128,20 +131,29 @@ $("commit").addEventListener("click",()=>{
    layerId:role==="fixed_contact"?$("layer").value:null},scene);
   if(role==="fixed_contact"&&proposals.some(x=>x.roomId===roomId&&x.role===role&&x.layerId===entry.layerId))
    throw Error("DUPLICATE_CONTACT_ANNOTATION");
-  proposals.push(entry);vertices=[];$("export").value="";render();
+  // Snapshot only the actual visible state at annotation time.
+  // A hidden furniture layer cannot establish contact evidence.
+  const visible=$("show-furniture").checked?visibleLayers():[];
+  if(role==="fixed_contact"&&!visible.includes($("layer").value))
+   throw Error("CONTACT_SPRITE_NOT_VISIBLE");
+  proposals.push(entry);
+  captures.push({roomId,role,layerId:entry.layerId,lighting:$("lighting").value,
+   visibleLayers:[...visible]});
+  vertices=[];$("export").value="";render();
   notice("Đã ghi nhận bản vẽ để kiểm tra, CHƯA ĐƯỢC DUYỆT.");
  }catch(e){notice("Không ghi nhận: "+(e.code||e.message||"INVALID_POLYGON"));}
 });
 $("export-button").addEventListener("click",()=>{
  try{
   const bundle=buildFloorReviewBundle(proposals);
-  $("export").value=JSON.stringify(bundle,null,2);
+  const evidence=buildFloorEvidenceWithProvenance({bundle,sceneSha256,captures});
+  $("export").value=JSON.stringify(evidence,null,2);
   notice("Đã xuất dữ liệu chưa duyệt; không có lưu Firebase.");
  }catch(e){notice("Không xuất được: "+(e.code||"INVALID_FLOOR_BUNDLE"));}
 });
-$("reset").addEventListener("click",()=>{proposals.length=0;vertices=[];$("export").value="";render();notice("Đã xóa dữ liệu trong bộ nhớ.");});
+$("reset").addEventListener("click",()=>{proposals.length=0;captures.length=0;vertices=[];$("export").value="";render();notice("Đã xóa dữ liệu trong bộ nhớ.");});
 $("room").addEventListener("change",refreshRoom);
-$("lighting").addEventListener("change",()=>{updateBackground();notice("Đang xem ánh sáng "+$("lighting").value+". Mọi vùng vẫn chưa duyệt.");});
+$("lighting").addEventListener("change",()=>{updateBackground();render();notice("Đang xem ánh sáng "+$("lighting").value+". Mọi vùng vẫn chưa duyệt.");});
 $("role").addEventListener("change",()=>{vertices=[];renderLayers();render();});
 $("layer").addEventListener("change",renderLayers);
 $("show-furniture").addEventListener("change",renderLayers);
@@ -150,7 +162,10 @@ $("enable").addEventListener("click",async()=>{
  try{
   const response=await fetch("../assets/3d/scene.json",{cache:"no-store"});
   if(!response.ok)throw Error("SCENE_UNAVAILABLE");
-  scene=await response.json();$("editor").hidden=false;$("start").hidden=true;
+  const raw=await response.text();
+  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(raw));
+  sceneSha256=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
+  scene=JSON.parse(raw);$("editor").hidden=false;$("start").hidden=true;
   refreshRoom();
  }catch(e){$("enable").disabled=false;notice("Không tải được cảnh. Không có dữ liệu nào được lưu.");}
 });

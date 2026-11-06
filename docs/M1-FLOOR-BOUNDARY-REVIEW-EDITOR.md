@@ -30,3 +30,11 @@ Separate experimental review-only UI: `experiments/house-floor-review.html`.
 - CI checks 6 rooms × 4 lighting views, confirms the 1170×1170 source image loads and furniture boxes remain stable, and uploads 24 screenshots under `review-artifacts/house-floor-lighting/`.
 - The images support checking contrast, room boundaries, visual occlusions and initial footprint proposals; they do **not** confirm whether a sprite image rectangle is a physical collision hull. User-authored floor, doorway, walkable corridor and fixed contact polygons remain required.
 - No change to the live app or Firebase. Review metadata always `UNAPPROVED`, `canPersist:false`.
+
+## M1 source provenance for geometry annotations
+
+The review-only exporter now attaches a SHA-256 digest of the exact fetched `assets/3d/scene.json` bytes and one source context per hand-drawn polygon: room, role, selected furniture layer, lighting state and currently visible furniture state keys. It is a **local audit snapshot, not a cryptographic signature or proof of real contact**.
+
+Switching lighting after drawing warns if existing room annotations were drawn under another light. Changing lighting never changes any polygon coordinates. Furniture-contact proposals cannot be recorded while their selected sprite is hidden. Reviewers must compare every source context with current rendered assets and redo the review if the scene digest changes.
+
+All exports and in-memory records remain `UNAPPROVED`, `canPersist:false`; no Firebase writes, production changes or free-placement authorizations. CI checks malformed or forged contexts, browser-export SHA-256 against repository file bytes, source-light snapshots and mobile safety. The remaining manual task is to trace **real physical floor, doorways, walkways and furniture foot contact** per room and validate against all interaction states, not to infer them from image-box rectangles.
