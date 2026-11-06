@@ -142,6 +142,27 @@ jobs:
             review-artifacts/house-routes/
           if-no-files-found: error
           retention-days: 7
+      - name: Render and package synchronized real expanded rooms for isolated six-room trial
+        if: github.event.pull_request.head.ref == 'feature/m1-six-room-expanded-assets'
+        run: |
+          npm install --no-save three@0.169.0
+          python3 -m pip install --break-system-packages Pillow
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/m1-6room-pack.log 2>&1 &
+          node _xuong-3d/run.cjs room.js out_m1_physical nen lop
+          node _xuong-3d/run.cjs rooms2.js out_m1_physical bep phong_anh phong_em sang_tao gac
+          python3 scripts/m1-six-room-physical-compare.py
+          python3 scripts/m1-pack-six-room-expansion.py
+          node --test _xuong-3d/m1-physical-expansion-source.test.mjs
+      - name: Upload source-world and full sprite pack review artifacts
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-six-room-expanded-assets'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-six-room-expanded-pack-${{ github.run_id }}
+          path: review-artifacts/house-physical-expansion/
+          if-no-files-found: error
+          retention-days: 7
       - name: Render old/new living room + kitchen pilot from real 3D source
         if: github.event.pull_request.head.ref == 'feature/m1-spacious-scene-living-kitchen-pilot'
         run: |
@@ -231,6 +252,21 @@ jobs:
           python3 scripts/pack-house-map.py
       - name: Test app and house navigation
         run: npm test
+      - name: Commit six-room synchronized 3D assets only after all tests pass
+        if: github.event.pull_request.head.ref == 'feature/m1-six-room-expanded-assets'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/3d/scene.json
+          git add assets/3d/phong_khach_*.webp assets/3d/pk_*.webp assets/3d/bep_*.webp
+          git add assets/3d/phong_anh_*.webp assets/3d/phong_em_*.webp
+          git add assets/3d/sang_tao_*.webp assets/3d/gac_*.webp
+          if git diff --cached --quiet; then
+            echo "All six physical interior source renders already match the app package"
+          else
+            git commit -m "Render(M1): synchronize six expanded physical room backgrounds, sprites and metadata"
+            git push origin HEAD:feature/m1-six-room-expanded-assets
+          fi
       - name: Commit tested spacious assets to isolated PR branch
         if: github.event.pull_request.head.ref == 'feature/m1-spacious-scenes-assets'
         run: |
