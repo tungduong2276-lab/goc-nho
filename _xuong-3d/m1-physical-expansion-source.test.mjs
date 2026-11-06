@@ -23,8 +23,10 @@ test("actually increase world floor width/depth and area for all six source scen
  }
 });
 test("model positions move physically in XZ without scaling object meshes",()=>{
- assert.deepEqual(expandedSourceCoordinates("bep",[1.35,1.55]),[1.575,1.8083333333333333]);
- assert.deepEqual(expandedSourceCoordinates("gac",[2,1]),[7/3,1.25]);
+ const [tableX,tableZ]=expandedSourceCoordinates("bep",[1.35,1.55]);
+ assert.ok(Math.abs(tableX-1.575)<1e-9&&Math.abs(tableZ-1.8083333333333333)<1e-9);
+ const [atticX,atticZ]=expandedSourceCoordinates("gac",[2,1]);
+ assert.ok(Math.abs(atticX-7/3)<1e-9&&Math.abs(atticZ-1.25)<1e-9);
  assert.throws(()=>expandedSourceCoordinates("foobar",[1,1]),/INVALID_PHYSICAL_EXPANSION_COORDINATES/);
  const living=inspectLivingSource();
  const table=living.backgrounds.find(x=>x.id==="coffee_table").object;
