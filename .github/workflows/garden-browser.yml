@@ -257,26 +257,14 @@ jobs:
           python3 scripts/pack-house-map.py
       - name: Test app and house navigation
         run: npm test
-      - name: Commit six-room synchronized 3D assets only after all tests pass
+      - name: Verify exact committed six-room binary assets after source re-render
         if: github.event.pull_request.head.ref == 'feature/m1-six-room-expanded-assets'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/3d/scene.json
-          git add assets/3d/phong_khach_*.webp assets/3d/pk_*.webp assets/3d/bep_*.webp
-          git add assets/3d/phong_anh_*.webp assets/3d/phong_em_*.webp
-          git add assets/3d/sang_tao_*.webp assets/3d/gac_*.webp
-          git fetch origin feature/m1-six-room-expanded-assets
-          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/feature/m1-six-room-expanded-assets)" ]; then
-            echo "Ref changed while rendering; refusing stale source to overwrite new assets"
-            exit 1
-          fi
-          if git diff --cached --quiet; then
-            echo "All six physical interior source renders already match the app package"
-          else
-            git commit -m "Render(M1): synchronize six expanded physical room backgrounds, sprites and metadata"
-            git push origin HEAD:feature/m1-six-room-expanded-assets
-          fi
+          # Fail rather than mutating the PR HEAD. This proves CI tested the
+          # already-committed 72 images and scene metadata, not only temporary files.
+          git diff --exit-code -- assets/3d/
+          test -z "$(git ls-files --others --exclude-standard assets/3d/)"
+          echo "PASS: committed six-room WebP + scene.json exactly match real Three.js source"
       - name: Commit tested spacious assets to isolated PR branch
         if: github.event.pull_request.head.ref == 'feature/m1-spacious-scenes-assets'
         run: |
