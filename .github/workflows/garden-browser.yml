@@ -117,6 +117,27 @@ jobs:
           path: review-artifacts/house-routes/
           if-no-files-found: error
           retention-days: 7
+      - name: Validate real six-room physically wider Three.js shells
+        if: github.event.pull_request.head.ref == 'feature/m1-six-room-world-expansion'
+        run: |
+          npm install --no-save three@0.169.0
+          node --test _xuong-3d/m1-physical-expansion-source.test.mjs
+          python3 -m pip install --break-system-packages Pillow
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/m1-world-expansion.log 2>&1 &
+          node _xuong-3d/run.cjs room.js out_m1_physical nen lop
+          node _xuong-3d/run.cjs rooms2.js out_m1_physical bep phong_anh phong_em sang_tao gac
+          python3 scripts/m1-six-room-physical-compare.py
+          node --input-type=module -e 'import{readFileSync,existsSync}from"node:fs";const p="review-artifacts/house-physical-expansion/";const x=JSON.parse(readFileSync(p+"manifest.json"));if(x.rooms.length!==6||x.canPersist!==false||x.appAssetsModified!==false||x.rooms.some(r=>r.physicalAreaGainM2<10||!existsSync(p+r.file)))process.exit(1);'
+      - name: Upload six-room real source floor expansion before/after evidence
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-six-room-world-expansion'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-six-room-real-world-expansion-${{ github.run_id }}
+          path: review-artifacts/house-physical-expansion/
+          if-no-files-found: error
+          retention-days: 7
       - name: Render old/new living room + kitchen pilot from real 3D source
         if: github.event.pull_request.head.ref == 'feature/m1-spacious-scene-living-kitchen-pilot'
         run: |
