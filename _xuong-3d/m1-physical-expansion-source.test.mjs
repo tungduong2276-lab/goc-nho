@@ -4,6 +4,7 @@ import {M1_EXPANDED_SOURCE_ROOMS,expandedSourceCoordinates,realExpansionReport} 
 import {inspectLivingSource} from "./room.js";
 import {inspectRoomSource} from "./rooms2.js";
 import {buildMeshAudit} from "./m1-ground-contact-proposals.mjs";
+import {toPx} from "./lib.js";
 import {buildSixRoomSourceRouteAudit} from "../src/house-open-edge-route-audit.mjs";
 const keys=["phong-khach","bep","phong-anh","phong-em","goc-sang-tao","gac"];
 const map={"bep":"bep","phong-anh":"phong_anh","phong-em":"phong_em","goc-sang-tao":"sang_tao",gac:"gac"};
@@ -66,5 +67,25 @@ test("attic decorative sunlight is not a solid blocker; existing source spots ha
   assert.equal(spot.status,"UNAPPROVED_ROUTE_HYPOTHESIS");
   assert.ok(spot.paths.some(path=>path.found));
   assert.equal(spot.canPersist,false);
+ }
+});
+
+test("all source-standing anchors are reanchored within new physical floor dimensions",()=>{
+ const fixtures=[
+  ["phong-khach",[-0.85,-0.05],[-0.85*7/6,-0.05*7/6]],
+  ["bep",[-0.9,-0.9],[-0.9*7/6,-0.9*7/6]],
+  ["phong-anh",[0.3,0.6],[0.3*7/6,0.6*7/6]],
+  ["phong-em",[0.3,0.4],[0.3*7/6,0.4*7/6]],
+  ["goc-sang-tao",[-0.5,0.9],[-0.5*7/6,0.9*7/6]],
+  ["gac",[-0.2,1.3],[-0.2*7/6,1.3*5/4]]
+ ];
+ const refs={"bep":"bep","phong-anh":"phong_anh","phong-em":"phong_em","goc-sang-tao":"sang_tao",gac:"gac"};
+ for(const [id,original,expected] of fixtures){
+  const desc=id==="phong-khach"?inspectLivingSource():inspectRoomSource(refs[id]);
+  const candidate=desc.standingXZ[0];
+  assert.ok(candidate.every((v,i)=>Math.abs(v-expected[i])<1e-9),id+" standing coordinate not widened");
+  assert.ok(candidate.every((v,i)=>Math.abs(v)<desc[!i?"n":"d"]/2),id+" standing outside shell");
+  const screen=toPx(desc.camera,candidate[0],0,candidate[1]);
+  assert.ok(screen.every(Number.isFinite)&&screen.every(v=>v>=0&&v<=1170),id+" projected anchor cropped");
  }
 });
