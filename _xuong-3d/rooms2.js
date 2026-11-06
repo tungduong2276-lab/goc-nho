@@ -234,6 +234,7 @@ export function inspectRoomSource(room) {
   const source = build(room, "ngay");
   return { source, camera: cam(room), n: ROOMS[room].n, d: ROOMS[room].d,
     items: source.userData.items,
+    standingXZ:(ROOMS[room].spots?.dung||[]).map(([x,y,z])=>[x,z]),
     backgrounds:source.userData.deco.children.map((object,i)=>({id:'deco-'+String(i).padStart(3,'0'),kind:object.userData.floorReviewKind||'UNCLASSIFIED_SOURCE_PROP',object})) };
 }
 export const ROOM_IDS = Object.keys(ROOMS);
