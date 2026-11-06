@@ -1066,13 +1066,21 @@ body.sheet-open nav.tabs{display:none}
 .lay{position:absolute;display:block;padding:0;margin:0;border:0;background:none}
 .lay img{width:100%;height:100%;display:block;pointer-events:none}
 .lay.hot{cursor:pointer;-webkit-tap-highlight-color:transparent;pointer-events:none}
-/* M1 bedroom hotspot fix: the source images are noninteractive, but their
-   explicit furniture buttons must receive real taps and keyboard activation.
-   Scoped to these two redesigned rooms to preserve every other scene. */
+/* M1 six-room actual 3D furniture hit targets: cropped sprite images are
+   visually passive, while their accessible furniture buttons receive taps.
+   Only House interiors are affected; garden and exterior retain own hit rules. */
+#v-phong-khach .room3d button.lay.hot,
+#v-bep .room3d button.lay.hot[data-ri],
 #v-phong-anh .room3d button.lay.hot[data-ri],
-#v-phong-em .room3d button.lay.hot[data-ri]{pointer-events:auto}
+#v-phong-em .room3d button.lay.hot[data-ri],
+#v-goc-sang-tao .room3d button.lay.hot[data-ri],
+#v-gac .room3d button.lay.hot[data-ri]{pointer-events:auto}
+#v-phong-khach .room3d img.wbg,
+#v-bep .room3d img.wbg,
 #v-phong-anh .room3d img.wbg,
-#v-phong-em .room3d img.wbg{pointer-events:none}
+#v-phong-em .room3d img.wbg,
+#v-goc-sang-tao .room3d img.wbg,
+#v-gac .room3d img.wbg{pointer-events:none}
 .lay.hot.press img{transform:translateY(4px)}
 .lay.hot:focus-visible{outline:6px solid var(--pink);outline-offset:4px;border-radius:20px}
 .onwall{position:absolute;left:0;top:0;z-index:4;transform-origin:0 0;pointer-events:none;overflow:hidden}
