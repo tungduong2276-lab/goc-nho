@@ -4,6 +4,7 @@ import {M1_EXPANDED_SOURCE_ROOMS,expandedSourceCoordinates,realExpansionReport} 
 import {inspectLivingSource} from "./room.js";
 import {inspectRoomSource} from "./rooms2.js";
 import {buildMeshAudit} from "./m1-ground-contact-proposals.mjs";
+import {buildSixRoomSourceRouteAudit} from "../src/house-open-edge-route-audit.mjs";
 const keys=["phong-khach","bep","phong-anh","phong-em","goc-sang-tao","gac"];
 const map={"bep":"bep","phong-anh":"phong_anh","phong-em":"phong_em","goc-sang-tao":"sang_tao",gac:"gac"};
 test("actually increase world floor width/depth and area for all six source scenes",()=>{
@@ -48,5 +49,22 @@ test("real expanded source meshes remain review-only, with no geometry approval"
    M1_EXPANDED_SOURCE_ROOMS[entry.roomId].expanded[0]/2,
    M1_EXPANDED_SOURCE_ROOMS[entry.roomId].expanded[1]/2]);
   assert.ok(entry.itemStates.every(x=>x.canPersist===false));
+ }
+});
+
+test("attic decorative sunlight is not a solid blocker; existing source spots have candidate routes",()=>{
+ const audit=buildMeshAudit();
+ const attic=audit.rooms.find(x=>x.roomId==="gac");
+ const beam=attic.bakedComponents.find(x=>x.id==="deco-011");
+ assert.ok(beam,"real attic sunlight object must remain in source");
+ assert.equal(beam.kind,"LIGHT_EFFECT_NOT_BLOCKER");
+ const routes=buildSixRoomSourceRouteAudit().rooms.find(x=>x.roomId==="gac");
+ assert.equal(routes.doorGeometryPresent,false);
+ assert.equal(routes.walkwayVerified,false);
+ assert.ok(routes.routes.length>=2);
+ for(const spot of routes.routes){
+  assert.equal(spot.status,"UNAPPROVED_ROUTE_HYPOTHESIS");
+  assert.ok(spot.paths.some(path=>path.found));
+  assert.equal(spot.canPersist,false);
  }
 });
