@@ -26,6 +26,11 @@ on:
 permissions:
   contents: write
 
+# Serialize PR runs so a stale renderer cannot race a newer source commit.
+concurrency:
+  group: garden-browser-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   chromium:
     runs-on: ubuntu-24.04
@@ -261,6 +266,11 @@ jobs:
           git add assets/3d/phong_khach_*.webp assets/3d/pk_*.webp assets/3d/bep_*.webp
           git add assets/3d/phong_anh_*.webp assets/3d/phong_em_*.webp
           git add assets/3d/sang_tao_*.webp assets/3d/gac_*.webp
+          git fetch origin feature/m1-six-room-expanded-assets
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/feature/m1-six-room-expanded-assets)" ]; then
+            echo "Ref changed while rendering; refusing stale source to overwrite new assets"
+            exit 1
+          fi
           if git diff --cached --quiet; then
             echo "All six physical interior source renders already match the app package"
           else
