@@ -6,7 +6,10 @@ on:
       - "index.html"
       - "sw.js"
       - "assets/3d/**"
+      - "_xuong-3d/**"
       - "scripts/**"
+      - "src/**"
+      - "tests/staging/**"
       - "docs/garden-two-device-test.md"
       - "tests/browser/**"
       - "tests/firebase/**"
@@ -22,6 +25,11 @@ on:
 
 permissions:
   contents: write
+
+# Serialize PR runs so a stale renderer cannot race a newer source commit.
+concurrency:
+  group: garden-browser-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   chromium:
@@ -40,8 +48,205 @@ jobs:
           java-version: '21'
       - run: npm install
       - run: npx playwright install --with-deps chromium
+      - name: Derive experimental 3D near-ground mesh contact evidence
+        if: github.event.pull_request.head.ref == 'feature/m1-3d-mesh-floor-contact-candidates'
+        run: |
+          npm install --no-save three@0.169.0
+          node _xuong-3d/m1-ground-contact-proposals.mjs
+          node --input-type=module -e 'import{readFileSync}from"node:fs";const a=JSON.parse(readFileSync("review-artifacts/house-mesh-contact/source-ground-contact-proposals.json"));if(a.canPersist!==false||a.reviewStatus!=="EXPERIMENTAL_ONLY"||a.rooms.length!==5||!a.rooms.every(r=>r.canPersist===false&&r.itemStates.every(s=>s.canPersist===false&&s.contactVerified===false)))process.exit(1);'
+      - name: Upload 3D near-ground mesh contact proposals
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-3d-mesh-floor-contact-candidates'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-3d-mesh-contact-proposals-${{ github.run_id }}
+          path: review-artifacts/house-mesh-contact/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Audit six source room meshes and distinguish baked floor materials
+        if: github.event.pull_request.head.ref == 'feature/m1-six-room-baked-prop-contact-audit'
+        run: |
+          npm install --no-save three@0.169.0
+          node --test _xuong-3d/m1-ground-contact-audit.test.mjs
+          node _xuong-3d/m1-ground-contact-proposals.mjs
+          node --input-type=module -e 'import{readFileSync}from"node:fs";const a=JSON.parse(readFileSync("review-artifacts/house-mesh-contact/source-ground-contact-proposals.json"));if(a.rooms.length!==6||a.canPersist!==false||a.reviewStatus!=="EXPERIMENTAL_ONLY"||!a.rooms.every(r=>r.canPersist===false&&r.bakedComponents.length>0&&r.bakedComponents.every(x=>x.physicalContactVerified===false&&x.canPersist===false)))process.exit(1);'
+      - name: Upload six-room baked-prop source audit
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-six-room-baked-prop-contact-audit'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-six-room-baked-contact-${{ github.run_id }}
+          path: review-artifacts/house-mesh-contact/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Extract real mesh-plane contours from six source rooms
+        if: github.event.pull_request.head.ref == 'feature/m1-mesh-plane-slice-evidence'
+        run: |
+          npm install --no-save three@0.169.0
+          node --test _xuong-3d/m1-plane-slice-geometry.test.mjs _xuong-3d/m1-ground-section-proposals.test.mjs
+          node _xuong-3d/m1-ground-section-proposals.mjs
+          node --input-type=module -e 'import{readFileSync,existsSync}from"node:fs";const dir="review-artifacts/house-mesh-sections/";const a=JSON.parse(readFileSync(dir+"source-mesh-plane-sections.json"));if(a.canPersist!==false||a.contactVerified!==false||a.rooms.length!==6||!a.rooms.every(r=>r.canPersist===false&&r.itemStates.every(s=>s.canPersist===false&&s.contactVerified===false)&&r.bakedComponents.every(s=>s.canPersist===false&&s.contactVerified===false)&&existsSync(dir+r.roomId+"-sections.svg")))process.exit(1);'
+      - name: Upload source mesh-plane contour review artifacts
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-mesh-plane-slice-evidence'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-six-room-mesh-plane-contours-${{ github.run_id }}
+          path: review-artifacts/house-mesh-sections/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Compare all living-room states and source contours at four heights
+        if: github.event.pull_request.head.ref == 'feature/m1-multiheight-living-states'
+        run: |
+          npm install --no-save three@0.169.0
+          node --test _xuong-3d/m1-plane-slice-geometry.test.mjs _xuong-3d/m1-ground-contact-audit.test.mjs _xuong-3d/m1-ground-section-proposals.test.mjs
+          node _xuong-3d/m1-ground-section-proposals.mjs
+          node --input-type=module -e 'import{readFileSync,existsSync}from"node:fs";const p="review-artifacts/house-mesh-sections/";const a=JSON.parse(readFileSync(p+"source-mesh-plane-sections.json"));const names=["phong-khach","bep","phong-anh","phong-em","goc-sang-tao","gac"];if(a.canPersist!==false||a.rooms.length!==6||a.rooms.reduce((n,r)=>n+r.itemStates.length,0)!==48||!a.rooms.every(r=>r.itemStates.every(s=>s.heightSlices.length===4&&s.canPersist===false&&s.contactVerified===false)))process.exit(1);for(const room of names)for(const h of [4,8,22,45])if(!existsSync(p+room+"-y"+h+"cm-sections.svg"))process.exit(1);'
+      - name: Upload 24 multi-height six-room source sections
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-multiheight-living-states'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-four-height-living-all-states-${{ github.run_id }}
+          path: review-artifacts/house-mesh-sections/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Audit six source standing routes toward isometric open sides
+        if: github.event.pull_request.head.ref == 'feature/m1-open-edge-route-candidates'
+        run: |
+          npm install --no-save three@0.169.0
+          node --test src/house-open-edge-route-audit.test.mjs
+          node src/house-open-edge-route-audit.mjs
+          node --input-type=module -e 'import{readFileSync,existsSync}from"node:fs";const p="review-artifacts/house-routes/";const x=JSON.parse(readFileSync(p+"six-room-open-edge-candidates.json"));if(x.canPersist!==false||x.doorwayStatus!=="NOT_AUTHENTICATED"||x.rooms.length!==6||!x.rooms.every(r=>r.canPersist===false&&r.doorGeometryPresent===false&&r.walkwayVerified===false&&existsSync(p+r.roomId+"-source-open-edges.svg")))process.exit(1);'
+      - name: Upload unapproved source-side routes for six rooms
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-open-edge-route-candidates'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-source-route-hypotheses-${{ github.run_id }}
+          path: review-artifacts/house-routes/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Validate real six-room physically wider Three.js shells
+        if: github.event.pull_request.head.ref == 'feature/m1-six-room-world-expansion'
+        run: |
+          npm install --no-save three@0.169.0
+          node --test _xuong-3d/m1-physical-expansion-source.test.mjs
+          node --test src/house-open-edge-route-audit.test.mjs
+          node src/house-open-edge-route-audit.mjs
+          python3 -m pip install --break-system-packages Pillow
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/m1-world-expansion.log 2>&1 &
+          node _xuong-3d/run.cjs room.js out_m1_physical nen lop
+          node _xuong-3d/run.cjs rooms2.js out_m1_physical bep phong_anh phong_em sang_tao gac
+          python3 scripts/m1-six-room-physical-compare.py
+          node --input-type=module -e 'import{readFileSync,existsSync}from"node:fs";const p="review-artifacts/house-physical-expansion/";const x=JSON.parse(readFileSync(p+"manifest.json"));if(x.rooms.length!==6||x.canPersist!==false||x.appAssetsModified!==false||x.rooms.some(r=>r.physicalAreaGainM2<10||!existsSync(p+r.file)))process.exit(1);'
+      - name: Upload six-room real source floor expansion before/after evidence
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-six-room-world-expansion'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-six-room-real-world-expansion-${{ github.run_id }}
+          path: |
+            review-artifacts/house-physical-expansion/
+            review-artifacts/house-routes/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Render and package synchronized real expanded rooms for isolated six-room trial
+        if: github.event.pull_request.head.ref == 'feature/m1-six-room-expanded-assets'
+        run: |
+          npm install --no-save three@0.169.0
+          python3 -m pip install --break-system-packages Pillow
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/m1-6room-pack.log 2>&1 &
+          node _xuong-3d/run.cjs room.js out_m1_physical nen lop
+          node _xuong-3d/run.cjs rooms2.js out_m1_physical bep phong_anh phong_em sang_tao gac
+          python3 scripts/m1-six-room-physical-compare.py
+          python3 scripts/m1-pack-six-room-expansion.py
+          node --test _xuong-3d/m1-physical-expansion-source.test.mjs
+      - name: Upload source-world and full sprite pack review artifacts
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-six-room-expanded-assets'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-six-room-expanded-pack-${{ github.run_id }}
+          path: review-artifacts/house-physical-expansion/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Render old/new living room + kitchen pilot from real 3D source
+        if: github.event.pull_request.head.ref == 'feature/m1-spacious-scene-living-kitchen-pilot'
+        run: |
+          npm install --no-save three@0.169.0
+          python3 -m pip install --break-system-packages Pillow
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/spacious-render.log 2>&1 &
+          node _xuong-3d/run.cjs room.js out_spacious nen lop
+          node _xuong-3d/run.cjs rooms2.js out_spacious bep
+          python3 scripts/m1-spacious-preview.py
+      - name: Upload pilot 3D before/after art for human review
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-spacious-scene-living-kitchen-pilot'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-spacious-living-kitchen-${{ github.run_id }}
+          path: review-artifacts/house-spacious/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Generate spacious living and kitchen WebP assets for trial branch only
+        if: github.event.pull_request.head.ref == 'feature/m1-spacious-scenes-assets'
+        run: |
+          npm install --no-save three@0.169.0
+          python3 -m pip install --break-system-packages Pillow
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/spacious-pack-render.log 2>&1 &
+          node _xuong-3d/run.cjs room.js out_spacious nen lop
+          node _xuong-3d/run.cjs rooms2.js out_spacious bep
+          python3 scripts/m1-spacious-preview.py
+          python3 scripts/m1-pack-spacious-scenes.py
+      - name: Upload before-and-after render comparison and packing manifest
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-spacious-scenes-assets'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-spacious-packer-review-${{ github.run_id }}
+          path: review-artifacts/house-spacious/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Render spacious bedroom source-art comparison
+        if: github.event.pull_request.head.ref == 'feature/m1-spacious-bedroom-source-pilot'
+        run: |
+          npm install --no-save three@0.169.0
+          python3 -m pip install --break-system-packages Pillow
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/bedroom-pilot-render.log 2>&1 &
+          node _xuong-3d/run.cjs rooms2.js out_bedrooms phong_anh phong_em
+          python3 scripts/m1-bedroom-spacious-compare.py
+          node -e 'const fs=require("fs");for(const r of ["phong_anh","phong_em"])if(!fs.existsSync("review-artifacts/bedroom-spacious/bedroom-"+r+"-before-after.png"))process.exitCode=1;'
+      - name: Upload bedroom spacious before/after evidence
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-spacious-bedroom-source-pilot'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-bedroom-spacious-${{ github.run_id }}
+          path: review-artifacts/bedroom-spacious/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Render all bedroom scene states and repack into isolated trial branch
+        if: github.event.pull_request.head.ref == 'feature/m1-spacious-bedroom-assets'
+        run: |
+          npm install --no-save three@0.169.0
+          python3 -m pip install --break-system-packages Pillow
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/m1-bedrooms-repack.log 2>&1 &
+          node _xuong-3d/run.cjs rooms2.js out_bedrooms phong_anh phong_em
+          python3 scripts/m1-bedroom-spacious-compare.py
+          python3 scripts/m1-pack-bedroom-assets.py
+      - name: Upload regenerated bedroom preview and metadata manifest
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-spacious-bedroom-assets'
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-bedroom-asset-review-${{ github.run_id }}
+          path: review-artifacts/bedroom-spacious/
+          if-no-files-found: error
+          retention-days: 7
       - name: Render and validate updated 3D house geometry
-        if: github.event.pull_request.head.ref == 'feature/house-room-continuity'
+        if: github.event.pull_request.head.ref == 'feature/spacious-house-weather-botany'
         run: |
           npm install --no-save three@0.169.0
           python3 -m pip install --break-system-packages Pillow
@@ -52,20 +257,88 @@ jobs:
           python3 scripts/pack-house-map.py
       - name: Test app and house navigation
         run: npm test
+      - name: Verify exact committed six-room binary assets after source re-render
+        if: github.event.pull_request.head.ref == 'feature/m1-six-room-expanded-assets'
+        run: |
+          # Fail rather than mutating the PR HEAD. This proves CI tested the
+          # already-committed 72 images and scene metadata, not only temporary files.
+          git diff --exit-code -- assets/3d/
+          test -z "$(git ls-files --others --exclude-standard assets/3d/)"
+          echo "PASS: committed six-room WebP + scene.json exactly match real Three.js source"
+      - name: Commit tested spacious assets to isolated PR branch
+        if: github.event.pull_request.head.ref == 'feature/m1-spacious-scenes-assets'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/3d/scene.json
+          git add assets/3d/phong_khach_*.webp assets/3d/pk_*.webp assets/3d/bep_*.webp
+          if git diff --cached --quiet; then
+            echo "Spacious assets already match rendered 3D source"
+          else
+            git commit -m "Render(M1): synchronized spacious living/kitchen sprites and scene metadata"
+            git push origin HEAD:feature/m1-spacious-scenes-assets
+          fi
+      - name: Commit tested bedroom binaries to isolated PR branch
+        if: github.event.pull_request.head.ref == 'feature/m1-spacious-bedroom-assets'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/3d/scene.json
+          git add assets/3d/phong_anh_*.webp assets/3d/phong_em_*.webp
+          if git diff --cached --quiet; then
+            echo "Bedroom artwork already matches source"
+          else
+            git commit -m "Render(M1): synchronized spacious bedroom layers and scene metadata"
+            git push origin HEAD:feature/m1-spacious-bedroom-assets
+          fi
+      - name: Verify full-composite visual review files
+        if: always()
+        run: |
+          node -e 'const fs=require("fs");const p="review-artifacts/house-composite/";if(!fs.existsSync(p+"composite-evidence-manifest.json"))process.exit(1);for(const id of ["phong-khach","bep","phong-anh","phong-em","goc-sang-tao","gac"])for(const width of [390,1300])if(!fs.existsSync(p+"composite-"+id+"-"+width+".png")){console.error("Missing composite screenshot",id,width);process.exitCode=1;}'
+      - name: Verify real-alpha review evidence
+        if: always()
+        run: |
+          node -e 'const fs=require("fs");const p="review-artifacts/house-alpha/";if(!fs.existsSync(p+"alpha-review-manifest.json"))process.exit(1);for(const id of ["phong-khach","bep","phong-anh","phong-em","goc-sang-tao","gac"])if(!fs.existsSync(p+"alpha-"+id+"-390.png")){console.error("Missing alpha review screenshot",id);process.exitCode=1;}'
+      - name: Verify six-room floor-contact review screenshots
+        if: always()
+        run: |
+          node -e 'const fs=require("fs");const p="review-artifacts/house-contact/";for(const id of ["phong-khach","bep","phong-anh","phong-em","goc-sang-tao","gac"])if(!fs.existsSync(p+"contact-"+id+"-390.png")){console.error("Missing contact review",id);process.exitCode=1;}'
+      - name: Verify six-room manual floor review screenshots
+        if: always() && (github.event.pull_request.head.ref == 'feature/m1-floor-boundary-review-editor' || github.event.pull_request.head.ref == 'feature/spacious-house-weather-botany')
+        run: |
+          node -e 'const fs=require("fs");const p="review-artifacts/house-floor/";for(const id of ["phong-khach","bep","phong-anh","phong-em","goc-sang-tao","gac"])if(!fs.existsSync(p+id+"-390.png")){console.error("Missing unapproved floor screenshot",id);process.exitCode=1;}'
+      - name: Verify all 24 room lighting review images
+        if: always() && github.event.pull_request.head.ref == 'feature/m1-four-lighting-floor-review'
+        run: |
+          node -e 'const fs=require("fs");const p="review-artifacts/house-floor-lighting/";for(const room of ["phong-khach","bep","phong-anh","phong-em","goc-sang-tao","gac"])for(const light of ["sang","ngay","chieu","dem"])if(!fs.existsSync(p+room+"-"+light+"-390.png")){console.error("Missing lighting screenshot",room,light);process.exitCode=1;}'
+      - name: Publish six-room mobile and composited visual review bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: house-six-room-review-${{ github.run_id }}
+          path: |
+            test-results/house-visual-review/
+            review-artifacts/house-composite/
+            review-artifacts/house-alpha/
+            review-artifacts/house-contact/
+            review-artifacts/house-floor/
+            review-artifacts/house-floor-lighting/
+          if-no-files-found: warn
+          retention-days: 7
       - name: Publish 3D preview for visual inspection
-        if: github.event.pull_request.head.ref == 'feature/house-room-continuity'
+        if: github.event.pull_request.head.ref == 'feature/spacious-house-weather-botany'
         uses: actions/upload-artifact@v4
         with:
           name: house-3d-preview
           path: out_house/ban_do_ngay@3x.png
           retention-days: 7
       - name: Commit validated house renders to PR branch
-        if: github.event.pull_request.head.ref == 'feature/house-room-continuity'
+        if: github.event.pull_request.head.ref == 'feature/spacious-house-weather-botany'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/3d/ban_do_sang.webp assets/3d/ban_do_ngay.webp assets/3d/ban_do_chieu.webp assets/3d/ban_do_dem.webp
+          git add assets/3d/ban_do_sang.webp assets/3d/ban_do_ngay.webp assets/3d/ban_do_chieu.webp assets/3d/ban_do_dem.webp assets/3d/scene.json
           if ! git diff --cached --quiet; then
             git commit -m "Render: updated dollhouse exterior and connected rooms"
-            git push origin HEAD:feature/house-room-continuity
+            git push origin HEAD:feature/spacious-house-weather-botany
           fi

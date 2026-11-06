@@ -26,7 +26,7 @@ assert.ok(syncListenerAt >= 0 && dollarDeclarationAt > syncListenerAt, "sync lis
 assert.match(appCode, /root\.querySelectorAll\("\.gcare-card \[data-gi\]"\)\.forEach\(b=>b\.addEventListener\("click"/, "care-card watering button has its own click binding");
 assert.match(appCode, /function nearestGardenHit\(clientX,clientY,targets,canvas\)/, "pointer resolver accepts browser coordinates and canvas");
 assert.match(appCode, /targets\.filter\(el=>\{[\s\S]*?getBoundingClientRect\(\)/, "pointer resolver only compares actual hit areas containing the point");
-assert.match(appCode, /const hit=ev\.detail===0\?origin:nearestGardenHit\(/, "keyboard activation uses the focused element rather than pointer coordinates");
+assert.match(appCode, /const hit=ev\.detail===0\|\|direct\?origin:nearestGardenHit\(/, "keyboard activation and direct target hits use the intended element rather than neighboring pointer coordinates");
 assert.match(appCode, /data-hit-priority="4"[^>]*aria-label=/, "characters have a higher-priority hit target");
 assert.match(appCode, /class="ghit gchar-hit" aria-hidden="true"/, "character body has a real DOM hit area");
 assert.match(appCode, /priority>bestPriority\|\|\(priority===bestPriority&&d<bestD\)/, "overlapping hit areas use explicit priority before distance");
@@ -78,7 +78,7 @@ assert.doesNotMatch(appCode,/có mạng sẽ tự đồng bộ/,"offline copy do
 assert.match(appCode,/data-gi="cay"[^\x60]*data-hit-priority="3"/,"large daily pot has priority over overlapping seed-box hit region");
 assert.match(appCode,/key==="hopgiong"\?1/,"seed box uses lower hit priority than the daily pot");
 assert.match(html,/\.garden3d \.gcare \.ghit\{left:15%;right:15%;top:38%;bottom:4%\}/,"daily pot hit area covers the pot body");
-assert.match(sw,/const CACHE = "goc-nho-v14"/,"service-worker cache version is bumped for the new app shell");
+assert.match(sw,/const CACHE = "goc-nho-v15"/,"service-worker cache version is bumped for the new app shell");
 assert.match(html,/assets\/3d\/living-motion\.js/, "living motion runtime is loaded after the app");
 assert.match(sw,/\.\/assets\/3d\/living-motion\.js/, "living motion runtime is precached for offline startup");
 assert.match(motion,/prefers-reduced-motion:\s*reduce/, "motion layer respects reduced-motion preferences");
