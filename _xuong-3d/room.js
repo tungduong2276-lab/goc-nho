@@ -72,6 +72,8 @@ export function inspectLivingSource() {
   add("cuaso","mua","pk_cuaso_mua",rainy);
   return {
     source,camera:cam(),n:6,d:6,
+    // Identical source-space standing positions used by jobs.nen metadata.
+    standingXZ:[[-0.85,-0.05],[1.95,0.95],[0.6,2.1]],
     items:variants,
     backgrounds:[
       {id:"stairs",kind:"UNCLASSIFIED_SOURCE_PROP",object:bg[1]},
