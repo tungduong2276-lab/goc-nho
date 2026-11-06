@@ -4,7 +4,7 @@ import { THREE, C, piece, rbox, sphere, capsule, rcyl, lathe, torus, tube, leafG
 import * as F from './furn.js';
 import {SPACIOUS_SCENE_PILOT} from './spacious-layout.js';
 import {BEDROOM_SPACIOUS_PILOT} from './bedroom-spacious-pilot.js';
-import {M1_EXPANDED_SOURCE_ROOMS,applyExpandedPosition} from './m1-expanded-room-source.mjs';
+import {M1_EXPANDED_SOURCE_ROOMS,applyExpandedPosition,expandedSourceCoordinates} from './m1-expanded-room-source.mjs';
 
 const G = () => new THREE.Group();
 const at = (o, x, y, z, ry = 0) => { o.position.set(x, y, z); o.rotation.y = ry; return o; };
@@ -229,6 +229,7 @@ function build(room, time) {
   s.userData = Object.assign(s.userData, { shell, deco, items });
   return s;
 }
+const appRoomName = room => room==='sang_tao'?'goc-sang-tao':room==='phong_anh'?'phong-anh':room==='phong_em'?'phong-em':room;
 const cam = room => { const R = ROOMS[room]; return isoCamera(W, W, PPM, [0,1.05,0]); };
 function catchers(R) {
   const f = shadowCatcher(R.n - 0.4, R.d - 0.4, 0.035); f.position.x = 0.2; f.position.z = 0.2;
@@ -243,7 +244,7 @@ export function inspectRoomSource(room) {
   const source = build(room, "ngay");
   return { source, camera: cam(room), n: ROOMS[room].n, d: ROOMS[room].d,
     items: source.userData.items,
-    standingXZ:(ROOMS[room].spots?.dung||[]).map(([x,y,z])=>[x,z]),
+    standingXZ:(ROOMS[room].spots?.dung||[]).map(([x,y,z])=>expandedSourceCoordinates(appRoomName(room),[x,z])),
     backgrounds:source.userData.deco.children.map((object,i)=>({id:'deco-'+String(i).padStart(3,'0'),kind:object.userData.floorReviewKind||'UNCLASSIFIED_SOURCE_PROP',object})) };
 }
 export const ROOM_IDS = Object.keys(ROOMS);
@@ -259,10 +260,10 @@ export function roomJobs(room) {
       o.visible = true; out.push({ file: `${room}_${k}_${st}@3x.png`, data: shoot(s, c) }); o.visible = false; layers[k] = layers[k] || [];
       layers[k].push(st);
     }
-    const spots = {}; for (const [k, v] of Object.entries(R.spots || {})) spots[k] = Array.isArray(v[0]) ? v.map(p => toPx(c, ...p)) : v;
+    const spots = {}; for (const [k, v] of Object.entries(R.spots || {})) spots[k] = Array.isArray(v[0]) ? v.map(([x,y,z]) => {const [xx,zz]=expandedSourceCoordinates(appRoomName(room),[x,z]);return toPx(c,xx,y,zz);}) : v;
     if (room === 'sang_tao') { // 5 kẹp trên dây phơi, mặt phẳng tường trái
-      spots.tranh = R.spots.tranh.map((z, i) => { const t = (i + 0.5) / 5; return toPx(c, -2.95, 2.05 - Math.sin(t * Math.PI) * 0.12 - 0.05, -1.25 + 2.5 * t + 0.2); });
-      spots.tranhEx = [toPx(c, -2.95, 0, 0), toPx(c, -2.95, 0, 1), toPx(c, -2.95, 1, 0)];
+      spots.tranh = R.spots.tranh.map((z, i) => { const t = (i + 0.5) / 5; const [xx,zz]=expandedSourceCoordinates(appRoomName(room),[-2.95,-1.25+2.5*t+0.2]); return toPx(c, xx, 2.05-Math.sin(t*Math.PI)*0.12-0.05, zz); });
+      spots.tranhEx = [toPx(c, -3.45, 0, 0), toPx(c, -3.45, 0, 7/6), toPx(c, -3.45, 1, 0)];
     }
     out.push({ file: `${room}_meta`, meta: { title: R.title, ppm: PPM, size: [W, W], items: Object.fromEntries(Object.entries(R.items).map(([k, it]) => [k, { st: it.st, go: it.go, label: it.label }])), spots } });
     return out;
