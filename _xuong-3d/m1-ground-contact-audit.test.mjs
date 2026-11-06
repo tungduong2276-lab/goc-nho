@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import {strict as assert} from "node:assert";
-import {buildMeshAudit,fileDigest,ROOM_IDS} from "./m1-ground-contact-proposals.mjs";
+import {buildMeshAudit,fileDigest,ROOM_IDS,reviewRectFlags} from "./m1-ground-contact-proposals.mjs";
 
 const audit=buildMeshAudit();
 test("all six real THREE.js rooms include separate baked and interactive source evidence",()=>{
@@ -59,4 +59,16 @@ test("alternatives are not silently claimed in living source; five other rooms r
   assert.equal(room.interactiveStateCoverage,"ALL_SOURCE_ITEM_STATES");
  const raised=audit.rooms.find(r=>r.roomId==="gac").itemStates.find(s=>s.layerId==="bandogioi_trong");
  assert.equal(raised.worldRect,null,"wall map must not create a fake floor obstacle");
+});
+
+test("oversize and beyond-shell source rectangles are warnings, never authorization",()=>{
+ const shell=[-3,-3,3,3];
+ assert.deepEqual(reviewRectFlags(null,shell),[]);
+ assert.deepEqual(reviewRectFlags([-1,-1,1,1],shell),["BROAD_WORLD_ENVELOPE_REVIEW"]);
+ assert.deepEqual(reviewRectFlags([2.8,0,3.3,0.4],shell),["EXTENDS_BEYOND_SOURCE_SHELL_REVIEW"]);
+ assert.deepEqual(reviewRectFlags([-0.2,-0.2,0.2,0.2],shell),[]);
+ for(const room of audit.rooms)for(const candidate of [...room.itemStates,...room.bakedComponents]){
+  assert.deepEqual(candidate.warningFlags,reviewRectFlags(candidate.worldRect,room.worldFloorRect));
+  assert.equal(candidate.canPersist,false);
+ }
 });
