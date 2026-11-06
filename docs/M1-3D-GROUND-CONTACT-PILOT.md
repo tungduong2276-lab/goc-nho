@@ -18,3 +18,9 @@
 2. Add physical contact classification for background/deco furnishings and separately generated living room; collect human-reviewed door/walkway/standing-place geometry.
 3. Propose exact mesh-ground intersections or manually reviewed smaller contact polygons after a real source 3D comparison, while leaving the approval gate fail-closed.
 4. Preserve PR #9 Draft and M0 deployed Firebase security plus independent staging backup/restore gates.
+
+## Verified pilot artifact — CI #239
+- Generated JSON from the real `Three.js` source for five rooms: 36 interactive item-state meshes examined; 33 yielded near-floor mesh envelopes, 3 yielded no near-floor contact.
+- No-ground (not automatically safe to place below): `phong_anh/kesuutap_trong`, `sang_tao/dayphoi_trong`, `gac/bandogioi_trong`, all wall-hung source items.
+- All 33 grounded rectangles stayed inside source shell X/Z bounds in this audit. This is only a consistency check, not a clearance or gameplay approval.
+- The source JSON was downloaded and inspected from artifact `m1-3d-mesh-contact-proposals-42181665583`; full test and final HEAD status must still be verified before merge.
