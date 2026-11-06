@@ -24,3 +24,9 @@ Separate experimental review-only UI: `experiments/house-floor-review.html`.
 - One initial state per item is layered over the day background, with selected `fixed_contact` state taking priority. Living room defaults choose one radio/jar/noticeboard state rather than overlaying all alternatives.
 - Reviewer can hide/show furniture layers; the selection affects visual evidence only and never scene.json, Firebase or saved user preferences.
 - Playwright checks images load in all six rooms and that changing the selected bed state swaps the corresponding sprite. The composite is a source-coordinate approximation and still needs manual depth, alpha silhouette, floor-contact and standing-point verification.
+
+## M1 four-lighting evidence pass (experimental PR)
+- The editor can switch the exact existing `sang/ngay/chieu/dem` backgrounds of all six rooms without editing scene metadata or moving overlays. It is a *visual review*, not a 3D floor reconstruction.
+- CI checks 6 rooms × 4 lighting views, confirms the 1170×1170 source image loads and furniture boxes remain stable, and uploads 24 screenshots under `review-artifacts/house-floor-lighting/`.
+- The images support checking contrast, room boundaries, visual occlusions and initial footprint proposals; they do **not** confirm whether a sprite image rectangle is a physical collision hull. User-authored floor, doorway, walkable corridor and fixed contact polygons remain required.
+- No change to the live app or Firebase. Review metadata always `UNAPPROVED`, `canPersist:false`.
