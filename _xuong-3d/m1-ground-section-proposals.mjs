@@ -110,7 +110,7 @@ export function buildSectionAudit(){
   const itemStates=itemRecords(desc);
   const bakedComponents=desc.backgrounds.map(b=>record(b,desc.camera));
   return {roomId,sourceGenerator:living?"room.js":"rooms2.js",
-   stateCoverage:living?"LIVING_DEFAULT_STATES_ONLY":"ALL_SOURCE_ITEM_STATES",
+   stateCoverage:"ALL_SOURCE_ITEM_STATES",
    worldShellRect:[-desc.n/2,-desc.d/2,desc.n/2,desc.d/2],
    itemStates,bakedComponents,floorApproval:"UNAPPROVED",
    doorwayStatus:"UNKNOWN",walkwayStatus:"UNKNOWN",canPersist:false};
@@ -150,6 +150,6 @@ if(process.argv[1]?.endsWith("m1-ground-section-proposals.mjs")){
   a.truncated+=[...r.itemStates,...r.bakedComponents].filter(v=>v.limitReached).length;return a;
  },{items:0,baked:0,lines:0,truncated:0});
  console.log("M1 source plane section evidence: "+JSON.stringify({rooms:audit.rooms.length,...counts}));
- if(audit.rooms.length!==6||counts.items!==42||counts.baked!==199||counts.lines<20)
+ if(audit.rooms.length!==6||counts.items!==48||counts.baked!==199||counts.lines<20)
   process.exitCode=1;
 }
