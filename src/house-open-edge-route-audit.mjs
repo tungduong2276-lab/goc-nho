@@ -14,7 +14,7 @@ function solidCandidates(room){
  // Candidate-only; conservatively treat every other near-floor baked component
  // as possibly blocking. Do not treat rug/finishes as certified free floor.
  const solid=room.bakedComponents.filter(c=>
-   c.worldRect&&c.kind!=="FLOOR_FINISH_NOT_BLOCKER"&&c.kind!=="FLOOR_COVERING_NOT_BLOCKER"&&c.kind!=="WALL_OR_RAISED_DECOR");
+   c.worldRect&&c.kind!=="FLOOR_FINISH_NOT_BLOCKER"&&c.kind!=="FLOOR_COVERING_NOT_BLOCKER"&&c.kind!=="WALL_OR_RAISED_DECOR"&&c.kind!=="LIGHT_EFFECT_NOT_BLOCKER");
  const interactive=room.itemStates.filter(c=>c.worldRect);
  return {rects:[...solid,...interactive].map(c=>c.worldRect),solidCount:solid.length,
   interactiveStateCount:interactive.length};

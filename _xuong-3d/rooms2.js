@@ -4,11 +4,12 @@ import { THREE, C, piece, rbox, sphere, capsule, rcyl, lathe, torus, tube, leafG
 import * as F from './furn.js';
 import {SPACIOUS_SCENE_PILOT} from './spacious-layout.js';
 import {BEDROOM_SPACIOUS_PILOT} from './bedroom-spacious-pilot.js';
+import {M1_EXPANDED_SOURCE_ROOMS,applyExpandedPosition,expandedSourceCoordinates} from './m1-expanded-room-source.mjs';
 
 const G = () => new THREE.Group();
 const at = (o, x, y, z, ry = 0) => { o.position.set(x, y, z); o.rotation.y = ry; return o; };
 const SKY = { sang: 0xFFD6DE, ngay: 0xBFE3FA, chieu: 0xFFC2A0, dem: 0x2A3D6E };
-const W = 1170, PPM = 112;
+const W = 1170, PPM = M1_EXPANDED_SOURCE_ROOMS.bep.ppmNew;
 
 // ---------- đồ dùng chung ----------
 function plantPot(col = C.white, kind = 'luoiho') {
@@ -19,8 +20,8 @@ function plantPot(col = C.white, kind = 'luoiho') {
   return g;
 }
 function wallTiles(g, n, d, h, col) { // gạch ô trắng-xanh
-  for (let i = 0; i < n * 2; i++) for (let j = 0; j < 4; j++) if ((i + j) % 2) piece(new THREE.BoxGeometry(0.46, 0.46, 0.01), col, { noOutline: true, pos: [-n / 2 + 0.25 + i * 0.5, 0.95 + j * 0.5, -d / 2 + 0.006], parent: g, receive: true, cast: false });
-  for (let i = 0; i < d * 2; i++) for (let j = 0; j < 4; j++) if ((i + j) % 2) piece(new THREE.BoxGeometry(0.01, 0.46, 0.46), col, { noOutline: true, pos: [-n / 2 + 0.006, 0.95 + j * 0.5, -d / 2 + 0.25 + i * 0.5], parent: g, receive: true, cast: false });
+  for (let i = 0; i < n * 2; i++) for (let j = 0; j < 4; j++) if ((i + j) % 2) piece(new THREE.BoxGeometry(0.46, 0.46, 0.01), col, { noOutline: true, pos: [-n / 2 + 0.25 + i * 0.5, 0.95 + j * 0.5, -d / 2 + 0.006], parent: g, receive: true, cast: false }).userData.floorReviewKind='WALL_FINISH_NOT_BLOCKER';
+  for (let i = 0; i < d * 2; i++) for (let j = 0; j < 4; j++) if ((i + j) % 2) piece(new THREE.BoxGeometry(0.01, 0.46, 0.46), col, { noOutline: true, pos: [-n / 2 + 0.006, 0.95 + j * 0.5, -d / 2 + 0.25 + i * 0.5], parent: g, receive: true, cast: false }).userData.floorReviewKind='WALL_FINISH_NOT_BLOCKER';
 }
 function checkerFloor(g, n, d, col) { for (let i = 0; i < n * 2; i++) for (let j = 0; j < d * 2; j++) if ((i + j) % 2) { const tile=piece(new THREE.PlaneGeometry(0.5, 0.5), col, { noOutline: true, pos: [-n / 2 + 0.25 + i * 0.5, 0.034, -d / 2 + 0.25 + j * 0.5], rot: [-Math.PI / 2, 0, 0], parent: g, receive: true, cast: false }); tile.userData.floorReviewKind='FLOOR_FINISH_NOT_BLOCKER'; } }
 function rugRound(r, c1, c2) { const g = G(); g.userData.floorReviewKind='FLOOR_COVERING_NOT_BLOCKER'; piece(rcyl(r, r, 0.04, 0.02, 40), c1, { pos: [0, 0.02, 0], parent: g, receive: true, cast: false }); if (c2) piece(rcyl(r * 0.7, r * 0.7, 0.045, 0.02, 40), c2, { noOutline: true, pos: [0, 0.025, 0], parent: g, receive: true, cast: false }); return g; }
@@ -132,8 +133,8 @@ const OBJ = {
 
 // ---------- cấu hình từng phòng ----------
 const ROOMS = {
-  bep: { title: 'Bếp', n: 6, d: 6, shell: { wallL: C.white, wallR: C.white, floor: 0xF4F7FB, planks: false, base: C.woodD },
-    deco(g, t) { wallTiles(g, 6, 6, 2.7, C.sky2); checkerFloor(g, 6, 6, C.sky2);
+  bep: { title: 'Bếp', n: 7, d: 7, shell: { wallL: C.white, wallR: C.white, floor: 0xF4F7FB, planks: false, base: C.woodD },
+    deco(g, t) { wallTiles(g, 7, 7, 2.7, C.sky2); checkerFloor(g, 7, 7, C.sky2);
       const cnt = G(); for (let i = 0; i < 3; i++) { piece(rbox(0.95, 0.88, 0.7, 0.05), C.wood, { pos: [i * 0.95, 0.44, 0], parent: cnt }); piece(rbox(0.95, 0.06, 0.72, 0.02), C.white, { pos: [i * 0.95, 0.9, 0], parent: cnt }); piece(sphere(0.03, 8, 6), C.butter, { pos: [i * 0.95, 0.75, 0.36], parent: cnt }); }
       cnt.position.set(0.55, 0, -2.6); g.add(cnt);
       // đồ trang trí: ấm trà, lọ gia vị, thớt, giỏ rau
@@ -153,7 +154,7 @@ const ROOMS = {
       dung: [[-0.9,0,-0.9],[1.9,0,0.0]],
       ghe: SPACIOUS_SCENE_PILOT.bep.next.seats.map(([x,z])=>[x,0.42,z]),
     } },
-  phong_anh: { title: 'Phòng Anh', n: 6, d: 6, shell: { wallL: C.sky2, wallR: C.sky2, floor: 0xEEF4FA, plank: 0xDCE6F2, base: C.stoneD },
+  phong_anh: { title: 'Phòng Anh', n: 7, d: 7, shell: { wallL: C.sky2, wallR: C.sky2, floor: 0xEEF4FA, plank: 0xDCE6F2, base: C.stoneD },
     deco(g, t) { const w = windowBox(t); F.onWall(w, 'R', 0.6, 1.6); g.add(w);
       const ps = G(); piece(rbox(0.8, 1.0, 0.04, 0.02), C.navy, { parent: ps }); for (let i = 0; i < 9; i++) piece(sphere(0.025, 6, 4), C.butter, { noOutline: true, basic: true, pos: [-0.3 + (i * 0.27) % 0.6, 0.38 - (i * 0.19) % 0.76, 0.03], parent: ps }); piece(sphere(0.1, 14, 8).scale(1, 1, 0.2), C.butter, { noOutline: true, basic: true, pos: [0.18, 0.25, 0.03], parent: ps }); F.onWall(ps, 'L', -0.9, 1.65); g.add(ps);
       const lh = plantPot(C.white, 'luoiho'); lh.position.set(2.55, 0, -2.5); g.add(lh); const rg = rugRect(2.0, 1.4, C.sky, C.white); const p=BEDROOM_SPACIOUS_PILOT.phong_anh.next.rug; rg.position.set(p[0],0,p[1]); g.add(rg); },
@@ -163,7 +164,7 @@ const ROOMS = {
       kesuutap: { st: ['trong'], wall: 'L', place: o => (OBJ && o), go: 'vuong-quoc', label: 'Kệ huy hiệu' } },
     wall: { kesuutap: ['L', 1.4, 1.25] },
     spots: { dung: [[0.3, 0, 0.6], [1.6, 0, 1.4]] } },
-  phong_em: { title: 'Phòng Em', n: 6, d: 6, shell: { wallL: C.petal, wallR: C.petal, floor: C.wood },
+  phong_em: { title: 'Phòng Em', n: 7, d: 7, shell: { wallL: C.petal, wallR: C.petal, floor: C.wood },
     deco(g, t) { const w = windowBox(t); F.onWall(w, 'R', -0.4, 1.6); g.add(w); const hp = plantPot(C.white, 'treo'); hp.position.set(0.55, 2.05, -2.8); hp.scale.setScalar(0.8); g.add(hp);
       fairyLights(g, [-2.9, 2.45, -2.9], [-2.9, 2.35, 2.6]); fairyLights(g, [-2.9, 2.45, -2.9], [2.7, 2.35, -2.9], 11);
       const rg = rugRound(1.0, C.white, C.pinkL); const rug=BEDROOM_SPACIOUS_PILOT.phong_em.next.rug; rg.position.set(rug[0],0,rug[1]); g.add(rg);
@@ -174,7 +175,7 @@ const ROOMS = {
       kecay: { st: ['trong'], place: o => at(o, -2.62, 0, 1.25, Math.PI / 2), go: 'khu-vuon', label: 'Kệ cây' },
       hopnhatky: { st: ['dong', 'mo'], place: o => at(o, -1.25, 0, -2.6), go: 'nhat-ky', label: 'Hộp nhật ký' } },
     spots: { dung: [[0.3, 0, 0.4], [1.2, 0, 1.3]], kecay: [[-2.62, 0.33, 1.65], [-2.62, 0.33, 1.25], [-2.62, 0.33, 0.85], [-2.62, 0.88, 1.65], [-2.62, 0.88, 1.25], [-2.62, 0.88, 0.85]] } },
-  sang_tao: { title: 'Góc sáng tạo', n: 6, d: 6, shell: { wallL: 0xFFF3C9, wallR: 0xFFF3C9, floor: C.wood },
+  sang_tao: { title: 'Góc sáng tạo', n: 7, d: 7, shell: { wallL: 0xFFF3C9, wallR: 0xFFF3C9, floor: C.wood },
     deco(g, t) { const w = windowBox(t); F.onWall(w, 'R', -1.6, 1.6); g.add(w);
       [[0.8, 0.5, 0.4, 0.3], [1.5, 0.3, -0.3, -0.5], [-0.5, 1.6, 0.9, 0.2], [2.1, 1.4, 0.2, 0.9]].forEach(([x, z, r, r2]) => piece(rbox(0.3, 0.008, 0.38, 0.004, 1), C.white, { pos: [x, 0.04, z], rot: [0, r, 0], parent: g, cast: false }));
       const rg = rugRound(1.2, C.butter, C.white); rg.position.set(0.3, 0, 0.5); g.add(rg); const cu = F.cushion(C.sky); cu.position.set(-0.6, 0, 1.6); g.add(cu); },
@@ -184,11 +185,11 @@ const ROOMS = {
       dayphoi: { st: ['trong'], go: 've', label: 'Dây phơi tranh' } },
     wall: { dayphoi: ['L', 0.2, 2.05] },
     spots: { dung: [[-0.5, 0, 0.9], [1.3, 0, -0.5]], tranh: [-0.8, -0.3, 0.2, 0.7, 1.2] } },
-  gac: { title: 'Gác kỷ niệm', n: 6, d: 4, shell: { wallL: 0xF3DDBF, wallR: 0xF3DDBF, floor: C.woodD, plank: C.woodDD, base: C.woodDD, skirt: C.woodDD },
+  gac: { title: 'Gác kỷ niệm', n: 7, d: 5, shell: { wallL: 0xF3DDBF, wallR: 0xF3DDBF, floor: C.woodD, plank: C.woodDD, base: C.woodDD, skirt: C.woodDD },
     deco(g, t) { // mái chéo gỗ + cửa sổ tròn + nắng xiên lấp lánh
       for (let i = 0; i < 6; i++) piece(rbox(0.1, 2.6, 0.05, 0.02), C.woodD, { noOutline: true, pos: [-2.5 + i, 1.35, -1.97], parent: g }); for (let i = 0; i < 4; i++) piece(rbox(0.05, 2.6, 0.1, 0.02), C.woodD, { noOutline: true, pos: [-2.97, 1.35, -1.5 + i], parent: g });
       const win = G(); piece(torus(0.38, 0.07, Math.PI * 2, 10, 32), C.white, { parent: win }); piece(rcyl(0.34, 0.34, 0.03, 0.01, 30), SKY[t], { rot: [Math.PI / 2, 0, 0], parent: win, noOutline: true, basic: true }); piece(rbox(0.04, 0.7, 0.04, 0.01), C.white, { pos: [0, 0, 0.03], parent: win }); piece(rbox(0.7, 0.04, 0.04, 0.01), C.white, { pos: [0, 0, 0.03], parent: win }); F.onWall(win, 'R', -0.2, 1.75, 6, 4); g.add(win);
-      if (t !== 'dem') { const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.9, 3.0, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xFFF1C4, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false })); beam.position.set(0.2, 1.05, -0.6); beam.rotation.set(0.85, 0, 0.25); g.add(beam);
+      if (t !== 'dem') { const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.9, 3.0, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xFFF1C4, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false })); beam.position.set(0.2, 1.05, -0.6); beam.rotation.set(0.85, 0, 0.25); beam.userData.floorReviewKind='LIGHT_EFFECT_NOT_BLOCKER'; g.add(beam);
         for (let i = 0; i < 8; i++) { const s = new THREE.OctahedronGeometry(0.02, 0); piece(s, C.white, { noOutline: true, basic: true, pos: [0.0 + (i % 4) * 0.2, 0.6 + (i * 0.17) % 1.2, -0.8 + (i % 3) * 0.3], parent: g, cast: false }); } }
       const arm = G(); piece(rbox(0.85, 0.42, 0.8, 0.15), C.pinkL, { pos: [0, 0.32, 0], parent: arm }); piece(rbox(0.85, 0.65, 0.22, 0.12), C.pinkL, { pos: [0, 0.65, -0.3], parent: arm }); for (const s of [-1, 1]) piece(rbox(0.18, 0.5, 0.8, 0.09), 0xFF9DC2, { pos: [s * 0.42, 0.45, 0], parent: arm }); arm.position.set(-2.3, 0, 0.6); arm.rotation.y = Math.PI / 2 - 0.3; g.add(arm);
       const lamp = G(); piece(rcyl(0.12, 0.14, 0.12, 0.04, 14), C.butterD, { pos: [0, 0.06, 0], parent: lamp }); piece(sphere(0.11, 14, 10).scale(1, 1.3, 1), 0xFFF1C4, { pos: [0, 0.22, 0], parent: lamp, emissive: C.butter, ei: t === 'dem' ? 1 : 0.3, opacity: 0.85 }); lamp.position.set(2.5, 0, 1.5); g.add(lamp);
@@ -207,20 +208,29 @@ const ROOMS = {
 function build(room, time) {
   const R = ROOMS[room], s = makeScene(time, { shadowSize: 6, shadowRes: 2048, shadowBlur: 5 });
   const shell = F.roomShell(Object.assign({ n: R.n, d: R.d, h: 2.7 }, R.shell)); s.add(shell);
-  const deco = G(); R.deco(deco, time); s.add(deco);
+  const deco = G(); R.deco(deco, time);
+  const appRoom=room==='sang_tao'?'goc-sang-tao':room==='phong_anh'?'phong-anh':room==='phong_em'?'phong-em':room;
+  // Re-anchor object groups in world metres; do NOT change furniture size.
+  // Floor tiles and wall finishes were already regenerated at new dimensions.
+  for(const item of deco.children){
+   if(['FLOOR_FINISH_NOT_BLOCKER','WALL_FINISH_NOT_BLOCKER'].includes(item.userData.floorReviewKind))continue;
+   applyExpandedPosition(item,appRoom);
+  }
+  s.add(deco);
   const items = {};
   for (const [k, it] of Object.entries(R.items)) {
     items[k] = {};
     for (const st of it.st) {
       const o = it.build ? it.build(st) : OBJ[k](st);
-      if (R.wall && R.wall[k]) { const [side, along, y] = R.wall[k]; F.onWall(o, side, along, y, R.n, R.d); } else it.place(o);
+      if (R.wall && R.wall[k]) { const [side, along, y] = R.wall[k]; F.onWall(o, side, along, y, R.n, R.d); } else { it.place(o); applyExpandedPosition(o,appRoom); }
       o.visible = false; s.add(o); items[k][st] = o;
     }
   }
   s.userData = Object.assign(s.userData, { shell, deco, items });
   return s;
 }
-const cam = room => { const R = ROOMS[room]; return isoCamera(W, W, PPM, [(R.n - 6) / 2 * 0.0, 1.05, (R.d - 6) / 2 * 0.5]); };
+const appRoomName = room => room==='sang_tao'?'goc-sang-tao':room==='phong_anh'?'phong-anh':room==='phong_em'?'phong-em':room;
+const cam = room => { const R = ROOMS[room]; return isoCamera(W, W, PPM, [0,1.05,0]); };
 function catchers(R) {
   const f = shadowCatcher(R.n - 0.4, R.d - 0.4, 0.035); f.position.x = 0.2; f.position.z = 0.2;
   const l = shadowCatcher(R.d - 0.4, 2.2, 0, 0.14); l.rotation.set(0, Math.PI / 2, 0); l.position.set(-R.n / 2 + 0.01, 1.5, 0.2);
@@ -234,7 +244,7 @@ export function inspectRoomSource(room) {
   const source = build(room, "ngay");
   return { source, camera: cam(room), n: ROOMS[room].n, d: ROOMS[room].d,
     items: source.userData.items,
-    standingXZ:(ROOMS[room].spots?.dung||[]).map(([x,y,z])=>[x,z]),
+    standingXZ:(ROOMS[room].spots?.dung||[]).map(([x,y,z])=>expandedSourceCoordinates(appRoomName(room),[x,z])),
     backgrounds:source.userData.deco.children.map((object,i)=>({id:'deco-'+String(i).padStart(3,'0'),kind:object.userData.floorReviewKind||'UNCLASSIFIED_SOURCE_PROP',object})) };
 }
 export const ROOM_IDS = Object.keys(ROOMS);
@@ -250,10 +260,10 @@ export function roomJobs(room) {
       o.visible = true; out.push({ file: `${room}_${k}_${st}@3x.png`, data: shoot(s, c) }); o.visible = false; layers[k] = layers[k] || [];
       layers[k].push(st);
     }
-    const spots = {}; for (const [k, v] of Object.entries(R.spots || {})) spots[k] = Array.isArray(v[0]) ? v.map(p => toPx(c, ...p)) : v;
+    const spots = {}; for (const [k, v] of Object.entries(R.spots || {})) spots[k] = Array.isArray(v[0]) ? v.map(([x,y,z]) => {const [xx,zz]=expandedSourceCoordinates(appRoomName(room),[x,z]);return toPx(c,xx,y,zz);}) : v;
     if (room === 'sang_tao') { // 5 kẹp trên dây phơi, mặt phẳng tường trái
-      spots.tranh = R.spots.tranh.map((z, i) => { const t = (i + 0.5) / 5; return toPx(c, -2.95, 2.05 - Math.sin(t * Math.PI) * 0.12 - 0.05, -1.25 + 2.5 * t + 0.2); });
-      spots.tranhEx = [toPx(c, -2.95, 0, 0), toPx(c, -2.95, 0, 1), toPx(c, -2.95, 1, 0)];
+      spots.tranh = R.spots.tranh.map((z, i) => { const t = (i + 0.5) / 5; const [xx,zz]=expandedSourceCoordinates(appRoomName(room),[-2.95,-1.25+2.5*t+0.2]); return toPx(c, xx, 2.05-Math.sin(t*Math.PI)*0.12-0.05, zz); });
+      spots.tranhEx = [toPx(c, -3.45, 0, 0), toPx(c, -3.45, 0, 7/6), toPx(c, -3.45, 1, 0)];
     }
     out.push({ file: `${room}_meta`, meta: { title: R.title, ppm: PPM, size: [W, W], items: Object.fromEntries(Object.entries(R.items).map(([k, it]) => [k, { st: it.st, go: it.go, label: it.label }])), spots } });
     return out;

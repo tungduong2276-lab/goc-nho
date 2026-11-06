@@ -65,7 +65,8 @@ test("all six room interiors render real images and allow returning home on smal
         // Keep all original checks; only accept a complete, nonzero snapshot.
         return geometry.width > 200 && geometry.height > 200 &&
           geometry.rawWidth > 0 && geometry.rawHeight > 0 &&
-          geometry.stageWidth > 0 && geometry.stageHeight > 0;
+          geometry.stageWidth > 0 && geometry.stageHeight > 0 &&
+          geometry.imageWidth > 0 && geometry.imageHeight > 0;
       }, { timeout: 10000, message: `${route}: room geometry must settle before assertions` }).toBe(true);
       expect(geometry.width, `${route}: visible stage width`).toBeGreaterThan(200);
       expect(geometry.height, `${route}: visible stage height`).toBeGreaterThan(200);
