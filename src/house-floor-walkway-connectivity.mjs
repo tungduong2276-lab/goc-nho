@@ -4,7 +4,7 @@
  * Source standing spots are UI anchors, NOT walked avatar trajectories.
  */
 import {ROOM_SOURCES,PlacementPreviewError} from "./house-placement-preview.mjs";
-import {buildFloorReviewBundle,FLOOR_EVIDENCE_PROTOCOL} from "./house-floor-evidence.mjs";
+import {buildFloorReviewBundle,FLOOR_EVIDENCE_PROTOCOL,polygonInsideProposedFloor} from "./house-floor-evidence.mjs";
 
 export const MANUAL_CONNECTIVITY_PROTOCOL="M1_MANUAL_WALKWAY_CONNECTIVITY_UNAPPROVED";
 const fail=code=>{throw new PlacementPreviewError(code);};
@@ -92,7 +92,7 @@ export function auditManualWalkwayConnectivity({bundle,scene}){
   const intersectsContacts=walkways.some(w=>contacts.some(c=>
    reviewPolygonsMeet(w.vertices,c.vertices)));
   const contactsOutsideFloor=contacts.some(c=>!floors.some(f=>
-    c.vertices.every(p=>pointInReviewPolygon(p,f.vertices))));
+    polygonInsideProposedFloor(c.vertices,f.vertices)));
   const standing=anchors.map((p,i)=>{
    const starts=walkways.map((w,j)=>pointInReviewPolygon(p,w.vertices)?j:-1).filter(j=>j>=0);
    const connectedToProposedDoorway=starts.some(j=>reached.has(j));
