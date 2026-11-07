@@ -1,0 +1,93 @@
+/* Góc Nhỏ — experimental living-world UI: scene object close-ups and contextual chat */
+.gn2-enabled .room3d,.gn2-enabled .garden3d,.gn2-enabled .world {position:relative;}
+.gn2-chat-toggle,.gn2-fridge-toggle {
+  position:absolute;right:12px;bottom:14px;z-index:3500;
+  border:2px solid #fff;border-radius:20px;padding:10px 14px;
+  background:#fff1f6;color:#633c62;font:800 13px/1.2 Nunito,system-ui,sans-serif;
+  box-shadow:0 4px 14px #33243a33;cursor:pointer;min-height:44px;
+}
+.gn2-fridge-toggle{right:auto;left:12px;background:#e4fcf2;color:#315c4e;}
+.gn2-chat-toggle:focus-visible,.gn2-fridge-toggle:focus-visible,.gn2-dialog button:focus-visible {
+  outline:3px solid #6a8bec;outline-offset:3px;
+}
+.gn2-dialog {
+  width:min(94vw,550px);max-height:88dvh;border:3px solid #ffe4ef;
+  border-radius:28px;padding:0;background:linear-gradient(#fffdfb,#fff6fa);
+  color:#433049;box-shadow:0 15px 70px #27213e55;
+}
+.gn2-dialog::backdrop{background:#2b183a8a;backdrop-filter:blur(3px);}
+.gn2-dialog-header {
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:14px 18px;background:linear-gradient(100deg,#ffe3ee,#e5f6ff);
+  border-bottom:2px solid #ffcfdf;
+}
+.gn2-dialog-title{font:800 19px/1.2 "Baloo 2",Nunito,sans-serif;}
+.gn2-dialog-content{padding:16px;display:flex;flex-direction:column;gap:14px;max-height:calc(88dvh - 68px);overflow:auto;}
+.gn2-dialog button{border:0;font:800 14px Nunito,system-ui,sans-serif;cursor:pointer;}
+.gn2-close,.gn2-back,.gn2-secondary{background:#fff;border:2px solid #e3d8e6!important;color:#66486b;border-radius:14px;padding:8px 12px;}
+.gn2-primary{background:#ee739e;color:#fff;border-radius:14px;padding:12px 15px;min-height:44px;box-shadow:0 3px 0 #cf5d86;}
+.gn2-primary:disabled{opacity:.55;box-shadow:none;}
+.gn2-status{background:#ecf5ff;border-radius:12px;padding:8px 12px;font-size:12px;font-weight:800;color:#476583;}
+.gn2-muted{font-size:13px;color:#7d667c;font-weight:650;}
+.gn2-empty{text-align:center;color:#816c81;padding:22px 10px;font-weight:750;}
+.gn2-fridge-shell{
+  border-radius:28px;border:8px solid #b6dbe0;background:#e7faf9;
+  padding:13px 15px 20px;box-shadow:inset 2px 2px 7px #6b9fb022,6px 8px 0 #e2edf1;
+}
+.gn2-fridge-top{text-align:center;color:#588b95;font:800 18px "Baloo 2",Nunito,sans-serif;padding:4px 0 10px;}
+.gn2-fridge-door {
+  min-height:260px;padding:19px 16px 22px;border-radius:24px;
+  border:3px solid #badde3;background:linear-gradient(115deg,#fff,#e7f7fa 80%);
+  box-shadow:inset -12px 2px 24px #bcd9e744;position:relative;transform-origin:left;
+  animation:gn2-open .55s cubic-bezier(.1,.7,.2,1);
+}
+.gn2-fridge-handle{position:absolute;right:8px;top:26%;width:7px;height:76px;background:#a9cbd3;border-radius:8px;box-shadow:2px 1px 2px #709fa344;}
+.gn2-note-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:8px 18px 8px 0;}
+.gn2-note {
+  text-align:left;min-height:96px;padding:15px 12px 13px;line-height:1.4;
+  color:#654a5a;box-shadow:3px 7px 9px #36465020;
+  transform:rotate(var(--tilt,0deg));white-space:normal;word-break:break-word;
+  clip-path:polygon(0 0,100% 0,100% 95%,95% 100%,0 100%);
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
+}
+.gn2-note:hover{transform:rotate(0deg) translateY(-3px);}
+.gn2-paper-0{background:#ffe5ec}.gn2-paper-1{background:#dff6ea}
+.gn2-paper-2{background:#fff0bb}.gn2-paper-3{background:#ebe3ff}
+.gn2-paper-detail{
+  padding:22px 20px;min-height:240px;border-radius:5px 20px 18px 4px;
+  box-shadow:4px 8px 0 #64546a16;display:flex;flex-direction:column;gap:12px;
+  animation:gn2-paper .3s ease-out;
+}
+.gn2-note-author{font-size:13px;font-weight:900;color:#8d7187;}
+.gn2-note-body{font-size:19px;line-height:1.5;font-weight:800;white-space:pre-wrap;overflow-wrap:anywhere;}
+.gn2-note-sticker{font-size:32px;}
+.gn2-reply{border-left:3px solid #c38cad;background:#ffffff7d;border-radius:4px 11px 11px 4px;padding:9px 12px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere;}
+.gn2-note-actions{display:flex;gap:9px;flex-wrap:wrap;}
+.gn2-editor,.gn2-paper-reply{display:flex;flex-direction:column;gap:10px;}
+.gn2-editor label{font-weight:900;display:flex;flex-direction:column;gap:6px;}
+.gn2-dialog textarea,.gn2-dialog input,.gn2-dialog select{
+  border:2px solid #eed7e6;border-radius:15px;background:#fffdfa;
+  color:#433049;padding:12px;font:700 15px Nunito,system-ui,sans-serif;width:100%;box-sizing:border-box;
+}
+.gn2-chat-messages{
+  height:270px;overflow:auto;display:flex;flex-direction:column;gap:10px;
+  padding:12px;border-radius:18px;background:#fff;box-shadow:inset 0 0 0 2px #fbe6f0;
+}
+.gn2-chat-message{align-self:flex-start;max-width:88%;display:flex;flex-direction:column;gap:2px;}
+.gn2-chat-message.mine{align-self:flex-end;align-items:flex-end;}
+.gn2-chat-bubble{background:#e9f7f3;border-radius:18px 18px 18px 4px;padding:11px 13px;font-weight:750;white-space:pre-wrap;overflow-wrap:anywhere;}
+.gn2-chat-message.mine .gn2-chat-bubble{background:#ffe3ef;border-radius:18px 18px 4px 18px;}
+.gn2-chat-person{font-size:11px;color:#836e86;font-weight:800;}
+.gn2-chat-form{display:flex;gap:8px;}
+.gn2-chat-form input{min-width:0;flex:1;}
+.gn2-toast{
+  position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+  z-index:100000;background:#3b314c;color:white;padding:12px 18px;border-radius:17px;
+  max-width:min(92vw,500px);box-shadow:0 6px 28px #32253b55;font-size:13px;font-weight:800;
+}
+.gn2-toast[hidden]{display:none;}
+.gn2-sticker-glyph{display:inline-flex;align-items:center;justify-content:center;font-size:29px;line-height:1;width:100%;height:100%;}
+@keyframes gn2-open{from{transform:perspective(700px) rotateY(-20deg);opacity:.4}to{transform:perspective(700px) rotateY(0);opacity:1}}
+@keyframes gn2-paper{from{transform:translateY(18px) scale(.95);opacity:.5}to{transform:translateY(0) scale(1);opacity:1}}
+@media(max-width:390px){.gn2-note-grid{gap:12px}.gn2-dialog-content{padding:12px}.gn2-dialog-header{padding:12px}}
+@media(prefers-reduced-motion:reduce){.gn2-fridge-door,.gn2-paper-detail{animation:none}.gn2-note,.gn2-note:hover{transform:none}}
