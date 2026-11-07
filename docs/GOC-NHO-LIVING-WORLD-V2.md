@@ -123,3 +123,10 @@ Chất lượng không chỉ đo bằng số chức năng: đo số lần phải
 - Đã bổ sung `src/living-world-minigames.js` (không gọi mạng) với hai mini-game **chơi được trên một máy bằng cách chuyển lượt**: `Hai nửa mật mã` (vai A nhìn chuỗi từ, vai B nhận bàn phím biểu tượng, cùng giải khóa) và `Trùng sóng` (A/B chọn kín rồi cùng xem đáp án). Cả hai có nút chơi lại và tình huống sinh ngẫu nhiên.
 - Trò chơi cắm vào tab `#vuong-quoc` dưới `?world2=1`; không giả nhận đã hoạt động hai thiết bị. Trước khi 2 thiết bị chơi cùng, phải có session protocol được Rules/Emulator xác minh, tránh lộ câu trả lời trước khi hai người xác nhận.
 - Test: `tests/browser/living-world-games.spec.mjs`, bổ sung e2e chọn symbol, mở khóa, replay và lựa chọn kín. Phải xem kết quả CI cho HEAD mới nhất, không dùng kết quả commit cũ làm bằng chứng.
+
+
+### Cổng bảo mật chat staging — đề xuất cần kiểm chứng
+
+- `tests/firebase/fixtures/world-v2-chat.rules` là **candidate Rules cho Emulator**, mở rộng từ Rules candidate M0 và loại `worldChat` khỏi match legacy rộng. Không phải `firestore.rules` đã deploy.
+- `tests/firebase/world-v2-chat-rules.test.mjs` kiểm tra hai thành viên đọc/gửi, người ngoài không truy cập, chống mạo danh UID/vai, chống sửa/xóa tin nhắn, giới hạn độ dài/phòng và tiếp tục sử dụng collection cũ. Cần chạy CI và review độc lập; chưa chứng minh Rules staging cloud đã áp dụng.
+- Giao thức gửi dùng document ID ổn định trên mỗi lần submit để retry không thêm bản sao, lời đáp giấy sử dụng `arrayUnion` theo operation ID. Vẫn cần thử mất mạng thật và giới hạn tần suất / chi phí để lên production.
