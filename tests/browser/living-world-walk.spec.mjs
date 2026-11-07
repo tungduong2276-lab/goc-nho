@@ -27,9 +27,14 @@ test('tapping a walkable point moves the local avatar without navigation',async(
   const root=await openWorld(page,'bep',430);
   const canvas=root.locator('.wcanvas');
   await expect(canvas).toBeVisible({timeout:15000});
-  const size=await canvas.evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height}));
-  // Locator click keeps the fractional position stable while room DOM rerenders.
-  await canvas.click({position:{x:420*size.width/1170,y:715*size.height/1170}});
+  // The canvas contains overlapping interactive children: click at a real
+  // screen-space floor pixel, not locator.click(canvas) which intentionally
+  // refuses events intercepted by harmless canvas children.
+  const point=await canvas.evaluate(el=>{
+    const r=el.getBoundingClientRect();
+    return {x:r.left+420*r.width/1170,y:r.top+715*r.height/1170};
+  });
+  await page.mouse.click(point.x,point.y);
   await page.waitForTimeout(160);
   await page.evaluate(()=>renderRooms()); // deliberate mid-walk room rerender regression
   await expect.poll(async()=>Number(await root.locator('.gn2-walk-avatar').getAttribute('data-gn2-x')),{timeout:6000})
