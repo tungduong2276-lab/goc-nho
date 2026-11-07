@@ -114,3 +114,29 @@
 
 .gn2-dialog-header .gn2-close{white-space:nowrap;flex:0 0 auto;padding:9px 10px;font-size:13px}
 .gn2-dialog-title{font-size:18px;overflow-wrap:anywhere}
+
+
+/* V2 local walking — real floor taps and a small mobile-first control strip. */
+.gn2-enabled .gn2-walk-avatar{pointer-events:none!important;will-change:transform}
+.gn2-enabled .gn2-walk-avatar .cstack,.gn2-enabled .gn2-walk-avatar .spr,
+.gn2-enabled .gn2-walk-avatar .ctag{pointer-events:none!important}
+.gn2-walk-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:10px 12px;margin:4px 0 14px;border:1px solid #ead6e4;border-radius:18px;
+  background:linear-gradient(115deg,#fff4fa,#edf9fa);box-shadow:0 4px 10px #3d2a450a}
+.gn2-walk-help{flex:1 1 190px;min-width:0;font-size:12px;color:#73546a;font-weight:700}
+.gn2-walk-arrows,.gn2-walk-feelings{display:flex;gap:5px;align-items:center}
+.gn2-walk-button{font:inherit;display:grid;place-items:center;min-width:35px;height:35px;
+  padding:0 5px;border:1.5px solid #e0bfd1;background:white;border-radius:11px;
+  color:#6c3d61;box-shadow:0 2px 0 #f0d9e7;font-weight:900;cursor:pointer;touch-action:manipulation}
+.gn2-walk-button:active{transform:translateY(2px);box-shadow:none}
+.gn2-walk-button:focus-visible{outline:3px solid #ae63a2;outline-offset:2px}
+.gn2-walk-bubble{position:absolute;z-index:9000;display:grid;place-items:center;
+  width:70px;height:62px;border-radius:32px 32px 32px 8px;background:#fff9f9;
+  border:3px solid #f3c3d9;filter:drop-shadow(0 5px 5px #40364b25);
+  font-size:37px;transform:translate(-50%,-100%);pointer-events:none;
+  animation:gn2Hello .4s ease both}
+@keyframes gn2Hello{from{opacity:0;transform:translate(-50%,-75%) scale(.7)}to{opacity:1;transform:translate(-50%,-100%) scale(1)}}
+@media(max-width:420px){.gn2-walk-toolbar{gap:7px;padding:9px}.gn2-walk-help{flex-basis:100%}
+ .gn2-walk-button{min-width:34px;height:34px}}
+@media(prefers-reduced-motion:reduce){.gn2-walk-avatar{will-change:auto!important}
+ .gn2-walk-bubble{animation:none}}

@@ -235,7 +235,7 @@
     if(staging()) {
       try {
         var ref=DB.collection("fridge").doc(note.id);
-        await DB.firestore.runTransaction(async function(tx){
+        await DB.runTransaction(async function(tx){
           var snap=await tx.get(ref);
           if(!snap.exists)throw new Error("note not found");
           var arr=(snap.data().hearts||[false,false]).slice();
@@ -337,6 +337,13 @@
   document.addEventListener("keydown",function(e) {
     if(e.key==="Escape"&&activeDialog())activeDialog().close();
   });
+  // Keep the legacy kitchen shortcut inside the physical room in V2.
+  // Prevent #tu-lanh navigation, including keyboard activation of the link.
+  document.addEventListener("click",function(event) {
+    const link=event.target.closest?.('#v-bep a[href="#tu-lanh"]');
+    if(!link)return;
+    event.preventDefault();openFridge();
+  },true);
   window.addEventListener("hashchange",function() {requestAnimationFrame(mountHud);});
   mountHud();
 })();
