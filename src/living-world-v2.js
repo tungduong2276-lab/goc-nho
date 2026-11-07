@@ -12,6 +12,7 @@
 
   var testNotes = [];
   var demoReplies = Object.create(null);
+  var demoHearts = Object.create(null);
   var demoChat = [];
   var chatMessages = [];
   var chatUnsubscribe = null;
@@ -148,13 +149,21 @@
     });
     select.setAttribute("aria-label","Màu giấy");
     form.appendChild(select);
+    var stickerSelect=document.createElement("select");
+    stickerSelect.setAttribute("aria-label","Sticker trên giấy");
+    var none=document.createElement("option");none.value="";none.textContent="Không gắn sticker";stickerSelect.appendChild(none);
+    ["heart","cat","bunny","bear","boba","gn2-otter","gn2-pudding","gn2-spark"].forEach(function(key) {
+      if(!STK[key])return;
+      var opt=document.createElement("option");opt.value=key;opt.textContent=STK_NAME[key]||key;stickerSelect.appendChild(opt);
+    });
+    form.appendChild(stickerSelect);
     var submit=button("Dán lên tủ", "gn2-primary");submit.type="submit";form.appendChild(submit);
     form.addEventListener("submit",async function (e) {
       e.preventDefault();
       var text=input.value.trim();if(!text)return;
       submit.disabled=true;submit.textContent="Đang dán...";
       var note={id:"gn2-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8),
-        by:ME===null?0:ME,text:text,color:Number(select.value),sticker:null,
+        by:ME===null?0:ME,text:text,color:Number(select.value),sticker:stickerSelect.value||null,
         voice:null,date:new Date().toISOString(),hearts:[false,false],replies:[]};
       try {
         if(staging()) await DB.collection("fridge").doc(note.id).set(note);
@@ -174,13 +183,25 @@
     var paper=div("gn2-paper-detail gn2-paper-"+((note.color||0)%4));
     paper.appendChild(div("gn2-note-author", "📌 " + ownLabel(note.by) + " · " + new Date(note.date).toLocaleDateString("vi-VN")));
     paper.appendChild(div("gn2-note-body", note.text || "Một chiếc sticker dễ thương ♡"));
-    if(note.sticker) paper.appendChild(div("gn2-note-sticker","💗"));
+    if(note.sticker&&STK[note.sticker]){
+      var graphic=div("gn2-note-sticker");
+      graphic.innerHTML=STK[note.sticker];paper.appendChild(graphic);
+    }
+    if(note.voice){
+      paper.appendChild(button("▶ Nghe lời nhắn giọng nói", "gn2-secondary", function(){
+        var audio=new Audio(note.voice);
+        audio.play().catch(function(){hint("Không thể phát lời nhắn âm thanh này.");});
+      }));
+    }
     var replies=(note.replies||[]).concat(demoReplies[note.id]||[]);
     replies.forEach(function (reply) {
       paper.appendChild(div("gn2-reply", ownLabel(reply.by)+": "+reply.text));
     });
     var actions=div("gn2-note-actions");
-    actions.appendChild(button("♥ Thả tim", "gn2-secondary", function () { toggleHeart(note); }));
+    var hearts=demoHearts[note.id]||note.hearts||[false,false];
+    var heart=button("♥ Thả tim · "+hearts.filter(Boolean).length, "gn2-secondary", function () { toggleHeart(note); });
+    if(ME!==null)heart.setAttribute("aria-pressed",String(!!hearts[ME]));
+    actions.appendChild(heart);
     paper.appendChild(actions);
     if (ME!==null) {
       var form=document.createElement("form");form.className="gn2-paper-reply";
@@ -218,9 +239,9 @@
           var arr=(snap.data().hearts||[false,false]).slice();
           arr[ME]=!arr[ME];tx.update(ref,{hearts:arr});
         });
-        hint("Đã thả tim trên staging");
+        var h=(demoHearts[note.id]||note.hearts||[false,false]).slice();h[ME]=!h[ME];demoHearts[note.id]=h;openPaper(note.id);hint("Đã thả tim trên staging");
       }catch(e){hint("Chưa thả tim được. Thử lại nhé.");}
-    }else hint("Thả tim thử ♡ (chưa đồng bộ)");
+    }else {var h=(demoHearts[note.id]||note.hearts||[false,false]).slice();h[ME]=!h[ME];demoHearts[note.id]=h;openPaper(note.id);hint("Thả tim thử ♡ (chưa đồng bộ)");}
   }
   function locationScope() {
     return location.hash.replace("#","") || "nha";
