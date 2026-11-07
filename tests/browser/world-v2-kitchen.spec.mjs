@@ -76,7 +76,36 @@ test('kitchen and fridge remain distinct physical objects on 360/390/430px',asyn
     expect(w).toBeLessThanOrEqual(width+1);
     await page.screenshot({path:'test-results/world-v2-kitchen-'+width+'.png',fullPage:true});
     await dialog.getByRole('button',{name:/Đóng/}).click();
-    await root.locator('[data-ri="tulanh"]').first().click();
+    // Room sprites intentionally have pointer-events:none; the room's real
+    // alpha-aware delegated hit test handles taps on visible pixels.
+    const fridge=root.locator('[data-ri="tulanh"]');
+    await expect(fridge).toBeVisible();
+    await fridge.scrollIntoViewIfNeeded();
+    await expect.poll(()=>fridge.locator('img').evaluate(img=>img.complete&&img.naturalWidth>0)).toBe(true);
+    const tap=await fridge.evaluate(target=>{
+      const cv=target.closest('.wcanvas'),layers=[...cv.querySelectorAll('.lay.hot')];
+      const ordered=layers.map((el,i)=>({el,i,z:Number(el.style.zIndex)||0}))
+        .sort((a,b)=>b.z-a.z||b.i-a.i);
+      const r=target.getBoundingClientRect(),img=target.querySelector('img');
+      const points=[];
+      for(let py=.15;py<.90;py+=.09)for(let px=.15;px<.90;px+=.09){
+        const x=r.left+r.width*px,y=r.top+r.height*py;
+        if(x<1||y<1||x>innerWidth-1||y>innerHeight-1)continue;
+        if(layAlpha(img,px,py)<90)continue;
+        const top=ordered.find(({el})=>{
+          const b=el.getBoundingClientRect();
+          if(x<b.left||x>b.right||y<b.top||y>b.bottom)return false;
+          const a=layAlpha(el.querySelector('img'),(x-b.left)/b.width,(y-b.top)/b.height);
+          return a===null||a>30;
+        });
+        if(top?.el===target && cv.contains(document.elementFromPoint(x,y)))
+          points.push({x,y,center:Math.abs(px-.5)+Math.abs(py-.5)});
+      }
+      points.sort((a,b)=>a.center-b.center);
+      return points[0]||null;
+    });
+    expect(tap,'tủ lạnh phải có một điểm chạm thực trên phần hình nổi').not.toBeNull();
+    await page.mouse.click(tap.x,tap.y);
     await expect(page.locator('dialog#gn2-fridge')).toBeVisible();
     await page.locator('dialog#gn2-fridge').getByRole('button',{name:/Đóng/}).click();
     expect(new URL(page.url()).hash).toBe('#bep');
