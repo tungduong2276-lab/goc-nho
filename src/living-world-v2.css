@@ -91,3 +91,15 @@
 @keyframes gn2-paper{from{transform:translateY(18px) scale(.95);opacity:.5}to{transform:translateY(0) scale(1);opacity:1}}
 @media(max-width:390px){.gn2-note-grid{gap:12px}.gn2-dialog-content{padding:12px}.gn2-dialog-header{padding:12px}}
 @media(prefers-reduced-motion:reduce){.gn2-fridge-door,.gn2-paper-detail{animation:none}.gn2-note,.gn2-note:hover{transform:none}}
+
+.gn2-mini-head{font:800 21px "Baloo 2",Nunito,sans-serif;color:#ce5c8c}
+.gn2-mini-question{font-size:16px;line-height:1.5}
+.gn2-mini-menu,.gn2-mini-actions{display:flex;flex-direction:column;gap:10px}
+.gn2-mini-options,.gn2-mini-keys{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.gn2-mini-keys button,.gn2-mini-options button{background:#fff;border:2px solid #f6dbe8;border-radius:14px;padding:12px 8px;min-height:48px}
+.gn2-mini-keys button:hover,.gn2-mini-options button:hover{background:#fff0f6}
+.gn2-code{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.gn2-code-cell{min-width:42px;padding:14px 9px;background:#ffedf2;border:2px solid #f2cbd9;border-radius:12px;font-size:17px;font-weight:900;text-align:center}
+.gn2-mini-reveal{padding:12px 14px;border-radius:14px;background:#edfaf1;font-size:16px;font-weight:850}
+.gn2-game-area{margin:16px 0;padding:18px;border:2px solid #f6dbe8;background:#fffafc;border-radius:22px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+@media(max-width:370px){.gn2-mini-options{grid-template-columns:1fr}.gn2-code-cell{min-width:35px;padding:10px 6px}}
