@@ -7,7 +7,7 @@ const code=readFileSync(new URL('../../src/living-world-v2.js',import.meta.url),
 test('staging fridge heart toggle uses Firestore instance transaction, not a nonexistent nested firestore field',()=>{
   assert.match(code,/await DB\.runTransaction\(async function\(tx\)/);
   assert.doesNotMatch(code,/DB\.firestore\.runTransaction/);
-  assert.match(code,/const snap=await tx\.get\(ref\)/);
+  assert.match(code,/(?:var|const|let) snap=await tx\.get\(ref\)/);
   assert.match(code,/tx\.update\(ref,\{hearts:arr\}\)/);
 });
 test('preview remains opt-in and protects real production Firebase from V2 writes',()=>{
