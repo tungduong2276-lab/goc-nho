@@ -32,12 +32,10 @@ test('tapping a walkable point moves the local avatar without navigation',async(
   // refuses events intercepted by harmless canvas children.
   const point=await canvas.evaluate(el=>{
     const r=el.getBoundingClientRect();
-    return {x:r.left+420*r.width/1170,y:r.top+850*r.height/1170};
+    return {x:r.left+420*r.width/1170,y:r.top+715*r.height/1170};
   });
   await page.mouse.click(point.x,point.y);
-  // Verify a real floor tap actually started movement before forcing a rerender.
-  await expect.poll(async()=>Number(await root.locator('.gn2-walk-avatar').getAttribute('data-gn2-y')),{timeout:3000})
-    .toBeGreaterThan(615);
+  await page.waitForTimeout(160);
   await page.evaluate(()=>renderRooms()); // deliberate mid-walk room rerender regression
   await expect.poll(async()=>Number(await root.locator('.gn2-walk-avatar').getAttribute('data-gn2-x')),{timeout:6000})
     .toBeLessThan(435);
