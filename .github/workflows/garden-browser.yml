@@ -53,6 +53,13 @@ jobs:
           python3 scripts/pack-house-map.py
       - name: Test app and house navigation
         run: npm test
+      - name: Publish Living World V2 screenshots
+        if: github.event.pull_request.head.ref == 'feature/living-world-v2-slice'
+        uses: actions/upload-artifact@v4
+        with:
+          name: living-world-v2-review
+          path: test-results/world-v2-*.png
+          retention-days: 7
       - name: Publish 3D preview for visual inspection
         if: github.event.pull_request.head.ref == 'feature/house-room-continuity'
         uses: actions/upload-artifact@v4
