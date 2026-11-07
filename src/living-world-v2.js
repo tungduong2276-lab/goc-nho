@@ -235,7 +235,7 @@
     if(staging()) {
       try {
         var ref=DB.collection("fridge").doc(note.id);
-        await DB.firestore.runTransaction(async function(tx){
+        await DB.runTransaction(async function(tx){
           var snap=await tx.get(ref);
           if(!snap.exists)throw new Error("note not found");
           var arr=(snap.data().hearts||[false,false]).slice();
