@@ -1,6 +1,7 @@
 import {ROOM_SOURCES} from "../src/house-placement-preview.mjs";
 import {makeFloorAnnotation,buildFloorReviewBundle} from "../src/house-floor-evidence.mjs";
 import {buildFloorEvidenceWithProvenance} from "../src/house-floor-review-provenance.mjs";
+import {auditManualWalkwayConnectivity} from "../src/house-floor-walkway-connectivity.mjs";
 const $=id=>document.getElementById(id);
 const backgrounds=Object.freeze({"phong-khach":"phong_khach",bep:"bep","phong-anh":"phong_anh","phong-em":"phong_em","goc-sang-tao":"sang_tao",gac:"gac"});
 const LIGHTING=Object.freeze(["sang","ngay","chieu","dem"]);
@@ -108,7 +109,13 @@ function render(){
  const bundle=buildFloorReviewBundle(proposals);
  const current=bundle.readiness.find(x=>x.roomId===$("room").value);
  const mismatches=captures.filter(c=>c.roomId===$("room").value&&c.lighting!==$("lighting").value).length;
- $("summary").textContent=`Thiếu bằng chứng: ${current.missing.join(", ")||"không còn loại trống"}\nLối đi ngoài vùng sàn: ${current.reservesOutsideProposedFloor?"CẦN XEM LẠI":"chưa phát hiện / chưa đủ dữ liệu"}\nTrạng thái: CHƯA ĐƯỢC DUYỆT
+ const diagnostic=scene?auditManualWalkwayConnectivity({bundle,scene}).rooms.find(x=>x.roomId===$("room").value):null;
+ $("summary").textContent=`Thiếu bằng chứng: ${current.missing.join(", ")||"không còn loại trống"}
+Lối đi ngoài vùng sàn: ${current.reservesOutsideProposedFloor?"CẦN XEM LẠI":"chưa phát hiện / chưa đủ dữ liệu"}
+Kết nối điểm đứng → cửa vẽ: ${diagnostic?.sourceStanding.filter(s=>s.connectedToProposedDoorway).length??0}/${diagnostic?.sourceStanding.length??0} (chỉ là ứng viên)
+Lối đi chạm vùng chân đồ: ${diagnostic?.potentialWalkwayFixedContactTouch?"CẦN XEM LẠI":"chưa phát hiện / chưa đủ dữ liệu"}
+Cửa thực trong mô hình: CHƯA CÓ / CHƯA XÁC THỰC
+Trạng thái: CHƯA ĐƯỢC DUYỆT
 Bản vẽ từ ánh sáng khác: ${mismatches}`;
 }
 function addPoint(x,y){
@@ -147,7 +154,8 @@ $("export-button").addEventListener("click",()=>{
  try{
   const bundle=buildFloorReviewBundle(proposals);
   const evidence=buildFloorEvidenceWithProvenance({bundle,sceneSha256,captures});
-  $("export").value=JSON.stringify(evidence,null,2);
+  const manualConnectivity=auditManualWalkwayConnectivity({bundle,scene});
+  $("export").value=JSON.stringify({...evidence,manualConnectivity},null,2);
   notice("Đã xuất dữ liệu chưa duyệt; không có lưu Firebase.");
  }catch(e){notice("Không xuất được: "+(e.code||"INVALID_FLOOR_BUNDLE"));}
 });
