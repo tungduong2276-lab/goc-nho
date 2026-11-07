@@ -26,10 +26,10 @@ test('opt-in kitchen allows walk controls, flower emote and no legacy Firebase m
 test('tapping a walkable point moves the local avatar without navigation',async({page})=>{
   const root=await openWorld(page,'bep',430);
   const canvas=root.locator('.wcanvas');
-  const box=await canvas.boundingBox();
-  expect(box).not.toBeNull();
-  const x=box.x+420*box.width/1170,y=box.y+715*box.height/1170;
-  await page.mouse.click(x,y);
+  await expect(canvas).toBeVisible({timeout:15000});
+  const size=await canvas.evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height}));
+  // Locator click keeps the fractional position stable while room DOM rerenders.
+  await canvas.click({position:{x:420*size.width/1170,y:715*size.height/1170}});
   await page.waitForTimeout(160);
   await page.evaluate(()=>renderRooms()); // deliberate mid-walk room rerender regression
   await expect.poll(async()=>Number(await root.locator('.gn2-walk-avatar').getAttribute('data-gn2-x')),{timeout:6000})
