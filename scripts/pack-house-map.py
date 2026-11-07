@@ -1,5 +1,6 @@
 """Pack the four house-map renders without touching scene.json or any user data."""
 from pathlib import Path
+import json
 from PIL import Image
 
 source = Path("out_house")
@@ -19,3 +20,14 @@ for time in ("sang", "ngay", "chieu", "dem"):
             if check.size != (1170, 1960):
                 raise ValueError(f"{output}: bad encoded size")
         print(f"Rendered {output}: {output.stat().st_size} bytes")
+
+# Hit polygons, avatar anchors and plant positions must match the new camera.
+meta = json.loads((source / "meta.json").read_text(encoding="utf-8"))["ban_do_meta"]
+scene_file = target / "scene.json"
+scene = json.loads(scene_file.read_text(encoding="utf-8"))
+if len(meta["zones"]) < 10 or len(meta["plots"]) != 12:
+    raise ValueError("Incomplete house interaction metadata")
+meta["size"] = [1170, 1960]
+scene["map"] = meta
+scene_file.write_text(json.dumps(scene, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+print("Updated scene.json map hit polygons and actor anchors")

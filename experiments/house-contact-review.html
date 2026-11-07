@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<title>M1 — Duyệt vùng chân nội thất (cục bộ)</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#403646;background:#fff9f5}
+*{box-sizing:border-box}body{margin:0}main{max-width:1240px;margin:auto;padding:clamp(8px,2vw,20px)}
+h1{font-size:clamp(1.3rem,3vw,2rem);margin:12px 0}p{line-height:1.55}
+.notice{padding:12px;border:2px solid #a96765;background:#fff0ef;border-radius:14px}
+.controls{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin:14px 0}
+label{font-weight:650;font-size:14px;display:grid;gap:5px}
+button,select,input{font:inherit;min-height:44px;border:2px solid #bc97a4;background:#fff;border-radius:10px;padding:7px 12px;color:inherit}
+button{cursor:pointer}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #8366c8;outline-offset:2px}
+button[disabled]{opacity:.55;cursor:not-allowed}
+.primary{color:#fff;background:#8c4e6b;border-color:#8c4e6b}
+.split{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,.8fr);gap:18px;align-items:start}
+.stage{position:relative;aspect-ratio:1;width:100%;max-width:850px;border-radius:14px;overflow:hidden;border:2px solid #d7a2b2;background:#f0e5e1;touch-action:manipulation;cursor:crosshair}
+.stage>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+#layers,#polygon{position:absolute;inset:0;pointer-events:none}
+.sprite{position:absolute;object-fit:fill;pointer-events:none}
+#polygon{width:100%;height:100%}
+aside{border:1px solid #d8c3cf;border-radius:14px;padding:14px;background:#fff}
+#export{min-height:180px;max-height:330px;overflow:auto;width:100%;white-space:pre;resize:vertical;font:12px/1.4 ui-monospace,monospace;border:1px solid #cbb2ba;padding:10px}
+#status{min-height:2em;font-weight:650}small{color:#745e6b}
+@media(max-width:840px){.split{grid-template-columns:1fr}.stage{margin-inline:auto}aside{width:100%}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<h1>🏠 M1 — Vẽ vùng tiếp xúc sàn của nội thất</h1>
+<p class="notice"><strong>Chỉ dùng để đối chiếu hình học, chưa phát hành.</strong> Nhấn lên ảnh để đánh dấu các đỉnh của vùng <em>chân nội thất chạm sàn</em>, không phải toàn bộ bóng hình sprite. Các lớp ảnh dựng từ scene.json ở hệ 1170×1170; thứ tự lớp là bản xem xét, chưa xác nhận chiều sâu thật. Mọi dữ liệu chỉ trong bộ nhớ, không gọi Firebase, không tự động lưu và <strong>không cho phép đặt đồ thực tế</strong>.</p>
+<div id="start"><button class="primary" type="button" id="enable">Mở trình kiểm toán cục bộ</button></div>
+<section id="editor" hidden aria-label="Trình vẽ footprint cục bộ">
+<div class="controls">
+<label>Phòng<select id="room"><option value="phong-khach">Phòng khách</option><option value="bep">Bếp</option><option value="phong-anh">Phòng Anh</option><option value="phong-em">Phòng Em</option><option value="goc-sang-tao">Góc sáng tạo</option><option value="gac">Gác kỷ niệm</option></select></label>
+<label>Lớp nội thất<select id="layer"></select></label>
+<label><input id="show-all" type="checkbox" checked>Hiển thị các lớp khác</label>
+</div>
+<div class="split">
+<div>
+<div class="stage" id="stage" role="img" aria-label="Ảnh phòng và lớp nội thất; chạm ảnh để thêm điểm">
+<img id="background" alt="Nền phòng chưa được nghiệm thu" width="1170" height="1170">
+<div id="layers" aria-hidden="true"></div>
+<svg id="polygon" viewBox="0 0 1170 1170" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+</div>
+<p><small>Đường vàng: vùng đang vẽ. Vùng cam: đề xuất đã kiểm tra tính hợp lệ (chưa duyệt). Không vẽ toàn bộ phần trên của tủ, giường hay vật treo tường. Chọn lớp khác không mất các đề xuất đang vẽ.</small></p>
+</div>
+<aside>
+<p><strong id="point-count">0 điểm đang vẽ</strong></p>
+<div class="controls">
+<label>X <input type="number" id="x" min="0" max="1170" step="1" value="500"></label>
+<label>Y <input type="number" id="y" min="0" max="1170" step="1" value="700"></label>
+<button type="button" id="add">Thêm tọa độ</button>
+</div>
+<div class="controls">
+<button type="button" id="undo-point">Lùi 1 điểm</button>
+<button type="button" id="clear">Xóa nét đang vẽ</button>
+<button type="button" id="commit" class="primary">Ghi nhận đề xuất (không lưu)</button>
+</div>
+<p id="status" role="status" aria-live="polite">Bắt đầu bằng cách chọn một lớp đồ vật.</p>
+<p><strong>Xuất để người duyệt kiểm tra</strong> — chỉ dữ liệu JSON, không có thông tin người dùng.</p>
+<div class="controls"><button type="button" id="export-button">Tạo JSON kiểm toán</button><button type="button" id="copy">Sao chép JSON</button><button type="button" id="reset">Xóa toàn bộ bản thử</button></div>
+<textarea id="export" readonly aria-label="Dữ liệu đề xuất chưa duyệt"></textarea>
+</aside>
+</div>
+</section>
+<p><a href="../index.html#nha">Quay lại Nhà đang dùng</a></p>
+</main>
+<script type="module" src="./house-contact-review-ui.mjs"></script>
+</body>
+</html>

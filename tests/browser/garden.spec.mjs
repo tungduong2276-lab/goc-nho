@@ -53,10 +53,29 @@ test("the real swing seat center is inside the swing target", async ({ page }) =
 test("keyboard activation acts on the focused scene button, not the nearest coordinate", async ({ page }) => {
   await openGarden(page);
   const board = page.locator(".garden3d button[data-gi='bang']");
-  await board.focus();
-  await page.keyboard.press("Enter");
+  // The garden scene may be re-rendered during fit3(). Locator.press
+  // resolves and focuses the current button before dispatching Enter;
+  // page.keyboard.press after a separate focus can target a stale node.
+  await board.press("Enter");
   await expect(page.locator("#gGallery")).toBeVisible();
   await expect(page.locator("#tab-care .g-swing button")).toHaveText("Ngồi lên xích đu");
+});
+
+test("garden board retains keyboard focus when a scheduled state rerender replaces its DOM", async ({ page }) => {
+  await openGarden(page);
+  const board = page.locator(".garden3d button[data-gi='bang']");
+  await board.focus();
+  const focus = await page.evaluate(async () => {
+    const before = document.querySelector(".garden3d button[data-gi='bang']");
+    window.schedule();
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const after = document.querySelector(".garden3d button[data-gi='bang']");
+    return { replaced: before !== after, focusOnBoard: document.activeElement === after };
+  });
+  expect(focus.replaced, "schedule must replace the garden scene node").toBe(true);
+  expect(focus.focusOnBoard, "rerender must restore focus to the same semantic garden object").toBe(true);
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#gGallery")).toBeVisible();
 });
 
 test("a pointer tap on the character sends a hug at 390px and 360px", async ({ browser }) => {
@@ -85,11 +104,26 @@ test("board hit target wins over the neighboring watering-can expansion across v
       await page.goto("/index.html#khu-vuon");
       await expect(page.locator(".garden3d")).toBeVisible();
       const hit = page.locator(".garden3d button[data-gi='bang'] .ghit");
-      const point = await hit.evaluate((el, p) => {
-        const r = el.getBoundingClientRect();
-        return { x: r.left + r.width * p.fx, y: r.top + r.height * p.fy };
-      }, { fx, fy });
-      await page.mouse.click(point.x, point.y);
+      // Keep the nine-point geometry assertion: each selected point must
+      // actually receive a real pointer tap. Unlike a raw click using a
+      // previously sampled viewport coordinate, locator.click waits for the
+      // target to be stable and checks whether another element intercepts
+      // this exact relative point (including the neighboring watering can).
+      // The garden stage can rerender after its parent becomes visible.
+      // Wait for this specific hitbox to be laid out (without skipping
+      // any of the nine actual pointer geometry assertions).
+      let bounds;
+      await expect.poll(async () => {
+        bounds = await hit.boundingBox();
+        return bounds !== null && bounds.width > 0 && bounds.height > 0;
+      }, {timeout: 10000, message:"board hitbox must settle after garden rerender"}).toBe(true);
+      expect(bounds, "board must have a rendered hit region").not.toBeNull();
+      expect(bounds.width).toBeGreaterThan(0);
+      expect(bounds.height).toBeGreaterThan(0);
+      await hit.click({
+        position: { x: bounds.width * fx, y: bounds.height * fy },
+        timeout: 10000,
+      });
       await expect(page.locator("#gGallery")).toBeVisible();
     }
   }
