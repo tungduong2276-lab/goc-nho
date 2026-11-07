@@ -116,3 +116,10 @@ Chất lượng không chỉ đo bằng số chức năng: đo số lần phải
 - 24 trò hẹn hò mới + 24 hình phạt + 8 phần thưởng + 36 sticker dạng emoji placeholder; **chưa có 36 sticker art tự thiết kế** và **chưa có thêm mini-game engine realtime**.
 - Chỉ mở feature với ?world2=1; default giữ UI cũ. Không deploy, không migrate, không merge main ở bước này.
 - Next: xem kết quả CI PR thử nghiệm, sửa lỗi (không bỏ test), xác minh staging thực, review 2-client, sau đó làm avatar pathfinding và game framework theo S2/S5.
+
+
+### Tiến độ bổ sung trên nhánh thử nghiệm ngày 2026-11-07
+
+- Đã bổ sung `src/living-world-minigames.js` (không gọi mạng) với hai mini-game **chơi được trên một máy bằng cách chuyển lượt**: `Hai nửa mật mã` (vai A nhìn chuỗi từ, vai B nhận bàn phím biểu tượng, cùng giải khóa) và `Trùng sóng` (A/B chọn kín rồi cùng xem đáp án). Cả hai có nút chơi lại và tình huống sinh ngẫu nhiên.
+- Trò chơi cắm vào tab `#vuong-quoc` dưới `?world2=1`; không giả nhận đã hoạt động hai thiết bị. Trước khi 2 thiết bị chơi cùng, phải có session protocol được Rules/Emulator xác minh, tránh lộ câu trả lời trước khi hai người xác nhận.
+- Test: `tests/browser/living-world-games.spec.mjs`, bổ sung e2e chọn symbol, mở khóa, replay và lựa chọn kín. Phải xem kết quả CI cho HEAD mới nhất, không dùng kết quả commit cũ làm bằng chứng.
