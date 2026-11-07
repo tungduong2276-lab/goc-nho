@@ -31,8 +31,12 @@ test("fridge stays in kitchen while opening papers and responding locally",async
   await expect(page.locator("#v-bep")).toBeVisible();
   await page.getByRole("button",{name:"✎ Dán một mẩu giấy"}).click();
   await page.locator("#gn2-fridge .gn2-editor textarea").fill("Đi uống trà sữa không? 🧋");
+  await page.locator("#gn2-fridge .gn2-editor select[aria-label=\"Sticker trên giấy\"]").selectOption("gn2-otter");
   await page.getByRole("button",{name:"Dán lên tủ",exact:true}).click();
   await expect(page.locator(".gn2-note-body")).toContainText("Đi uống trà sữa không?");
+  await expect(page.locator("#gn2-fridge .gn2-note-sticker")).toContainText("🦦");
+  await page.getByRole("button",{name:/Thả tim/}).click();
+  await expect(page.getByRole("button",{name:/Thả tim/})).toHaveAttribute("aria-pressed","true");
   await page.locator("#gn2-fridge .gn2-paper-reply textarea").fill("Có, đi thôi!");
   await page.getByRole("button",{name:"↗ Trả lời"}).click();
   await expect(page.locator("#gn2-fridge .gn2-reply")).toContainText("Có, đi thôi!");
