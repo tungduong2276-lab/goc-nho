@@ -86,10 +86,17 @@ test("board hit target wins over the neighboring watering-can expansion across v
       await expect(page.locator(".garden3d")).toBeVisible();
       const hit = page.locator(".garden3d button[data-gi='bang'] .ghit");
       await expect(hit).toBeVisible();
-      // Locator click waits for a stable screen-space hitbox after fit3() redraw.
-      // Still samples all nine positions (rather than weakening the coverage).
-      const size = await hit.evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height}));
-      await hit.click({position:{x:size.width*fx,y:size.height*fy}});
+      // Layout fit3() is scheduled just after mounting. Scroll into view,
+      // then sample the live coordinates after that fit has settled.
+      // A locator.click intentionally refuses pixels covered by the adjacent
+      // watering can, whereas the real game uses alpha-aware priority resolution.
+      await hit.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(90);
+      const point=await hit.evaluate((el,p)=>{
+        const r=el.getBoundingClientRect();
+        return {x:r.left+r.width*p.fx,y:r.top+r.height*p.fy};
+      },{fx,fy});
+      await page.mouse.click(point.x,point.y);
       await expect(page.locator("#gGallery")).toBeVisible();
     }
   }
