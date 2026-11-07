@@ -109,6 +109,8 @@ test("daily pot wins over the overlapping seed-box hit region at both phone widt
       const context = await browser.newContext({ viewport: { width, height: 844 } });
       const page = await context.newPage();
       await openGarden(page);
+      // Let fit3() finish reactive sizing before reading overlap hitboxes.
+      await page.waitForTimeout(110);
       const overlap = await page.evaluate(() => {
         const pot = document.querySelector(".garden3d button.gcare .ghit")?.getBoundingClientRect();
         const seed = document.querySelector('.garden3d button[data-gi="hopgiong"] .ghit')?.getBoundingClientRect();
