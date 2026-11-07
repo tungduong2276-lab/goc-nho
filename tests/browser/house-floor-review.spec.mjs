@@ -21,6 +21,8 @@ test("six-room floor geometry editor exports review-only evidence with no Fireba
   await page.locator("#commit").click();
   await expect(page.locator("#status")).toContainText("CHƯA ĐƯỢC DUYỆT");
   await expect(page.locator("#summary")).toContainText("doorway, walkway");
+  await expect(page.locator("#summary")).toContainText("Kết nối điểm đứng");
+  await expect(page.locator("#summary")).toContainText("Cửa thực trong mô hình: CHƯA CÓ");
   writeFileSync(join("review-artifacts/house-floor",room+"-390.png"),
    await page.screenshot({fullPage:true,animations:"disabled"}));
  }
@@ -29,6 +31,14 @@ test("six-room floor geometry editor exports review-only evidence with no Fireba
  const b=JSON.parse(await page.locator("#export").inputValue());
  expect(b.canPersist).toBe(false);expect(b.readiness).toHaveLength(6);
  expect(b.annotations).toHaveLength(6);
+ expect(b.manualConnectivity.protocol).toBe("M1_MANUAL_WALKWAY_CONNECTIVITY_UNAPPROVED");
+ expect(b.manualConnectivity.canPersist).toBe(false);
+ expect(b.manualConnectivity.rooms).toHaveLength(6);
+ for(const diagnostic of b.manualConnectivity.rooms){
+  expect(diagnostic.actualDoorGeometryVerified).toBe(false);
+  expect(diagnostic.actualWalkwayVerified).toBe(false);
+  expect(diagnostic.warnings).toContain("NO_MODELED_OR_APPROVED_DOOR_GEOMETRY");
+ }
  for(const room of rooms)expect(b.annotations.some(x=>x.roomId===room&&x.role==="floor")).toBe(true);
  await page.locator("#reset").click();
  await expect(page.locator("#counter")).toContainText("0 vùng");
