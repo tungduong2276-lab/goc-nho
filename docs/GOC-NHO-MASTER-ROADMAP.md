@@ -5,6 +5,9 @@
 > **Audience:** future ChatGPT/Claude coding sessions, developer, reviewer.
 > **Priority:** protect real Firebase data belonging to two people. This document is a plan, not proof that a feature exists.
 
+
+> **2026-11-07 product-direction update:** The user approved a deeper **Living World V2** experience (in-world object actions, two-character chat, richer playful dates and replayable games). See [GOC-NHO-LIVING-WORLD-V2.md](GOC-NHO-LIVING-WORLD-V2.md). This **augments** the safety-first roadmap; it does not waive M0 production gates or imply features have shipped.
+
 ## 0. START HERE — instructions for a new AI conversation
 
 1. Read `AGENTS.md` and this entire file. Inspect actual `main`, open PRs, CI status and Firebase configuration before making assumptions.
@@ -336,3 +339,14 @@ Next safe action:
 - Earlier CI #149 and #150 on the memory-only M1 prototype exposed recurring intermittent keyboard navigation failures; #154 initially failed due to a malformed new test insertion, which was repaired before passing CI #156. These failures were not waived.
 - **Still no live M1:** the placement state is pure memory-only and candidate slots remain reused character standing coordinates, **not visual-approved furniture footprints**. PR #9 stays Draft. Separate real Cloud Firestore staging managed export/restore and deployed production Rules/Auth/App Check/IAM/rollback verification remain M0 blockers.
 - **Next safe action:** verify post-merge PR #9 CI (the #157 job was triggered), then design visually approved floor slots and local-only user-visible preview. Do not enable shared Firebase writes or merge PR #9 to main before all gates.
+
+
+### Handoff update — 2026-11-07, Living World V2 isolated proof of concept
+
+- Based on main e79f97870c4ea1797ba22c8a6d7011c66e5c9d4a (re-check actual HEAD).
+- Feature branch: `feature/living-world-v2-slice`, default-off via `?world2=1`. Added an in-room refrigerator close-up with interactive paper/reply workflow, a contextual chat dialog, 24 additional randomized date cards, 24 lighthearted penalties, eight bonuses and 36 lightweight sticker placeholders.
+- GitHub source: `src/living-world-v2.js`, `.css`, `src/living-world-games.js`; browser tests at `tests/browser/living-world-v2.spec.mjs`; specification `docs/GOC-NHO-LIVING-WORLD-V2.md`.
+- **No cloud write performed by this coding session, no production deploy, migration or merge.** Feature writes are intentionally disabled outside Firebase project `goc-nho-staging-2026`. Production-configured previews only simulate new content in-memory.
+- This is an experimental vertical slice, not the complete 3D shared world. Real 2-client avatar movement, staging chat verification, bespoke 3D sticker atlas, replayable in-app game engine, and permanent decoration are future work.
+- Do not merge while CI/browser/staging and M0 safety approval are incomplete; PR #9 full geometry and visual acceptance remain separate review blockers.
+- Next action: run PR CI; inspect screenshots and 360/390/430px interactions; prove staging-only writes and 2-client chat; improve actual object states/animations; then extend pathfinding and multiplayer sessions. Preserve legacy Firebase data.
