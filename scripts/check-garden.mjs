@@ -82,7 +82,7 @@ assert.match(sw,/const CACHE = "goc-nho-v15"/,"service-worker cache version is b
 for(const file of ["living-world-v2.js","living-world-minigames.js","living-world-games.js","living-world-v2.css","living-world-nav.mjs","living-world-avatar.mjs"]){
   assert.ok(sw.includes("./src/"+file),"V2 offline shell includes "+file);
 }
-assert.match(html,/src\\/living-world-avatar\\.mjs/,"walking preview is loaded through the module script");
+assert.ok(html.includes('<script type="module" src="./src/living-world-avatar.mjs"></script>'),"walking preview is loaded through the module script");
 assert.match(html,/assets\/3d\/living-motion\.js/, "living motion runtime is loaded after the app");
 assert.match(sw,/\.\/assets\/3d\/living-motion\.js/, "living motion runtime is precached for offline startup");
 assert.match(motion,/prefers-reduced-motion:\s*reduce/, "motion layer respects reduced-motion preferences");
