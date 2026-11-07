@@ -64,8 +64,7 @@ if(new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORLD
     title("Đây không còn là nút 'Bật bếp' nữa!");
     makeStove("🍲","Hai đứa cùng tạo món ăn bất ngờ");
     info("Một người giữ đơn hàng bí mật, người còn lại điều chỉnh lửa và thả nguyên liệu đúng thứ tự. Hai vòng đổi vai, có món mới và luật xáo trộn mỗi lần chơi.");
-    body.append(button("▶ Bắt đầu 2 vòng nấu","", "gn2-primary"));
-    const b=body.lastElementChild;b.addEventListener("click",start);
+    body.append(button("▶ Bắt đầu 2 vòng nấu",start,"gn2-primary"));
   }
   function briefing(){
     const plan=roundPlan(game.rounds[game.round]);const role=game.round===0?"A":"B";
