@@ -43,10 +43,15 @@ test('mobile dock and speech remain within 360/390/430 screens and support Enter
   for(const width of [360,390,430]){
     const root=await visitRoom(page,'bep',width);
     const input=root.locator('.gn2-chat-dock input');
-    const rect=await root.locator('.gn2-chat-dock').boundingBox();
+    const dock=root.locator('.gn2-chat-dock');
+    // The chat field must come immediately after the room and BEFORE the
+    // walking controls, not underneath the fixed bottom app navigation.
+    await expect(root.locator('.room3d + .gn2-chat-dock + .gn2-walk-toolbar')).toHaveCount(1);
+    const rect=await dock.boundingBox();
     expect(rect).not.toBeNull();
     expect(rect.x).toBeGreaterThanOrEqual(-1);
     expect(rect.x+rect.width).toBeLessThanOrEqual(width+1);
+    expect(rect.y+rect.height).toBeLessThanOrEqual(844-55);
     await input.fill('Xin chào 🌷 '+width);
     await input.press('Enter');
     await expect(root.locator('.gn2-scene-speech')).toContainText('Xin chào');
