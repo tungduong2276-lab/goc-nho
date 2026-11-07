@@ -320,7 +320,7 @@
     input.type="text";input.maxLength=160;input.required=true;
     input.setAttribute("aria-label","Lời nhắn trong phòng");
     input.placeholder="Nói gì với người ấy đi...";
-    var send=button("Gửi","gn2-chat-dock-send");send.type="submit";
+    var send=button("Gửi ngay","gn2-chat-dock-send");send.type="submit";
     if(ME===null){input.disabled=true;send.disabled=true;}
     var note=div("gn2-chat-dock-caption",staging()?
       "Chat thử qua Firebase staging · không phải dữ liệu thật":
@@ -336,7 +336,7 @@
       };
       try{
         var stage=await commitRoomChat(op);
-        op=null;input.value="";send.disabled=false;send.textContent="Gửi";
+        op=null;input.value="";send.disabled=false;send.textContent="Gửi ngay";
         if(stage)hint("Đã gửi tin nhắn qua staging");
       }catch(err){
         send.disabled=false;send.textContent="Thử lại";
