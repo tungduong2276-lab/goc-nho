@@ -350,3 +350,14 @@ Next safe action:
 - This is an experimental vertical slice, not the complete 3D shared world. Real 2-client avatar movement, staging chat verification, bespoke 3D sticker atlas, replayable in-app game engine, and permanent decoration are future work.
 - Do not merge while CI/browser/staging and M0 safety approval are incomplete; PR #9 full geometry and visual acceptance remain separate review blockers.
 - Next action: run PR CI; inspect screenshots and 360/390/430px interactions; prove staging-only writes and 2-client chat; improve actual object states/animations; then extend pathfinding and multiplayer sessions. Preserve legacy Firebase data.
+
+
+### Handoff update — 2026-11-07, V2 local walking prototype and in-room fridge shortcut
+
+- Base: PR #79 (`feature/living-world-v2-slice`, Draft), main at start `e79f97870c4ea1797ba22c8a6d7011c66e5c9d4a`. Stacked PR #84 (`feature/living-world-v2-walking`) targets **PR #79 branch only**, never main.
+- Implemented 2.5D local-only room movement in 7 rooms/garden, deterministic collision-aware A* routing, mobile arrow controls, three emotes, reduced-motion mode and route resume after DOM rerender. **No Firestore writes, no two-person position sync.** Floor polygons and furniture blockers are provisional.
+- Corrected old kitchen "Mở tủ lạnh nhắn nhủ" shortcut to open the close-up dialog without leaving `#bep`. Existing data/UI fallback remains intact.
+- Last verified commit with code + browser tests `159000c59038603ae53580c7221bd876e9fc3498`: GitHub Actions run #42386575912 **passed** — 22/22 staging node, 28/28 Playwright, 34/34 synthetic Firestore Emulator tests plus static assertions. Browser deliberately rerenders kitchen mid-walk to verify route recovery. https://github.com/tungduong2276-lab/goc-nho/actions/runs/42386575912
+- Screenshot evidence: CI artifacts `living-world-v2-review` with mobile 360px images for all seven spaces. Images were manually inspected for overall layout, but **not accepted as final enlarged interiors**, precise all-furniture footprints or final gameplay UX.
+- Cloud M0 remains **OPEN**: isolated actual managed staging export/restore, deployed Rules/Auth/App Check/IAM review, two-device live tests, PR #9 visual/map collision sign-off. No live Firebase deployment, migration, production data write or main merge took place.
+- Next safe action: integrate PR #84 into PR #79 test branch after green CI, verify full post-integration CI; then implement actual signed-off floor/collision meshes and staging-only two-user presence/game sessions with Rules and reconnect checks. Keep PR #79 Draft and never release to production before M0 gates.
