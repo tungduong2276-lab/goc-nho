@@ -45,6 +45,14 @@ test('seven existing rooms keep a walk toolbar on narrow screens',async({page})=
     await page.screenshot({path:'test-results/world-v2-walk-'+room+'-360.png',fullPage:true});
   }
 });
+test('kitchen shortcut stays in the room and opens the physical fridge',async({page})=>{
+  const root=await openWorld(page,'bep',390);
+  await root.getByRole('link',{name:'Mở tủ lạnh nhắn nhủ'}).click();
+  await expect(page.locator('dialog#gn2-fridge')).toBeVisible();
+  expect(new URL(page.url()).hash).toBe('#bep');
+  await page.locator('dialog#gn2-fridge').getByRole('button',{name:/Đóng/}).click();
+  await expect(root).toBeVisible();
+});
 test('world movement opt-out keeps original page untouched',async({page})=>{
   await page.goto('/#bep');
   await page.evaluate(()=>localStorage.setItem('hu-hen-ho-me','0'));
