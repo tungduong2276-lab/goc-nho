@@ -40,6 +40,7 @@ test('seven existing rooms keep a walk toolbar on narrow screens',async({page})=
     await expect(root.getByRole('button',{name:'Di chuyển phải'})).toBeVisible();
     await expect(root.getByRole('button',{name:'Biểu cảm 🥰'})).toBeVisible();
     expect(await root.evaluate(el=>el.scrollWidth)).toBeLessThanOrEqual(360+1);
+    await page.screenshot({path:'test-results/world-v2-walk-'+room+'-360.png',fullPage:true});
   }
 });
 test('world movement opt-out keeps original page untouched',async({page})=>{
