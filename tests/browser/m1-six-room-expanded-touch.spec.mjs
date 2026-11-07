@@ -27,7 +27,9 @@ test("physically wider rooms remain viewable and interactive on four viewport wi
    await expect.poll(()=>background.evaluate(img=>img.complete&&img.naturalWidth>0),{timeout:10000}).toBe(true);
    const hot=stage.locator(".lay.hot");
    await expect.poll(()=>hot.count(),{timeout:10000}).toBeGreaterThan(0);
-   const candidate=await hot.evaluateAll(nodes=>nodes.some(el=>{
+   // Responsive room layers can be rebuilt after the background loads.
+   // Require a REAL elementFromPoint hit, but allow the DOM to settle first.
+   await expect.poll(()=>hot.evaluateAll(nodes=>nodes.some(el=>{
     const box=el.getBoundingClientRect();
     const view=el.closest(".wcanvas")?.getBoundingClientRect();
     if(!view||box.width<=1||box.height<=1)return false;
@@ -38,8 +40,7 @@ test("physically wider rooms remain viewable and interactive on four viewport wi
      if(at===el||el.contains(at))return true;
     }
     return false;
-   }));
-   expect(candidate, id+" needs at least one genuinely reachable on-screen furniture touch target at "+width).toBe(true);
+   })),{timeout:10000,message:id+" needs at least one genuinely reachable on-screen furniture touch target at "+width}).toBe(true);
    const scroll=await page.evaluate(()=>document.documentElement.scrollWidth);
    expect(scroll,id+" must not overflow "+width+"px screen").toBeLessThanOrEqual(width+3);
   }
