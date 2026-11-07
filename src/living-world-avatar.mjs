@@ -13,7 +13,7 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
   };
   const sceneKeys={"phong-anh":"phong_anh","phong-em":"phong_em",
     "goc-sang-tao":"sang_tao","khu-vuon":"khu_vuon"};
-  const cache=new Map();
+  const cache=new Map(),travelGoal=new Map();
   let active=null,frame=0,lastTime=0;
   const prefersReduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const vector=(x,y)=>[x,y];
@@ -129,16 +129,16 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
     }
     cache.set(a.room,a.pos.slice());applyPosition(a);
     if(a.route.length)frame=requestAnimationFrame(step);
-    else {a.route=null;lastTime=0;}
+    else {a.route=null;lastTime=0;travelGoal.delete(a.room);}
   }
   function moveTo(target){
     const a=active;if(!a||standingPose(a.room))return false;
     if(!walkable(a.room,target))return false;
     const path=walkPath(a.room,a.pos,target);
     if(!path)return false;
-    stop();a.route=path.slice(1);lastTime=0;
+    stop();travelGoal.set(a.room,target.slice());a.route=path.slice(1);lastTime=0;
     if(prefersReduced()){
-      a.pos=target.slice();cache.set(a.room,a.pos.slice());a.route=null;applyPosition(a);
+      a.pos=target.slice();cache.set(a.room,a.pos.slice());a.route=null;travelGoal.delete(a.room);applyPosition(a);
     }else frame=requestAnimationFrame(step);
     return true;
   }
@@ -167,10 +167,13 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
   }
   function install(){
     if(!SC3||ME===null)return;
-    const room=locationRoom();if(!room||!ROOM_NAV[room]){stop();active=null;return;}
+    const room=locationRoom();if(!room||!ROOM_NAV[room]){if(active)travelGoal.delete(active.room);stop();active=null;return;}
     const parts=currentCanvas(room);
     if(!parts){stop();active=null;return;}
     if(active?.canvas===parts.canvas)return;
+    const previous=active;
+    const resumeGoal=previous?.room===room?travelGoal.get(room):null;
+    if(previous && previous.room!==room)travelGoal.delete(previous.room);
     stop();
     const base=basePoint(room);if(!base||!walkable(room,base))return;
     const avatar=findAvatar(room,parts.canvas,base);if(!avatar)return;
@@ -179,6 +182,7 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
     active={room,root:parts.root,scene:parts.scene,canvas:parts.canvas,avatar,
       base:base.slice(),pos:safe.slice(),route:null,bubble:null,bar};
     applyPosition(active);
+    if(resumeGoal && walkable(room,resumeGoal))moveTo(resumeGoal);
     parts.canvas.addEventListener("click",onCanvasClick);
     window.__GN_WORLD_V2__.walking={mode:"local-preview",rooms:Object.keys(ROOM_NAV)};
   }
