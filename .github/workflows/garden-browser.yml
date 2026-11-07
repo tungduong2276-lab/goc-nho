@@ -54,7 +54,7 @@ jobs:
       - name: Test app and house navigation
         run: npm test
       - name: Publish Living World V2 screenshots
-        if: startsWith(github.event.pull_request.head.ref, 'feature/living-world-v2-')
+        if: startsWith(github.event.pull_request.head.ref, 'feature/living-world-v2-') || startsWith(github.event.pull_request.head.ref, 'feature/world-v2-')
         uses: actions/upload-artifact@v4
         with:
           name: living-world-v2-review
