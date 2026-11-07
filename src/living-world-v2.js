@@ -194,7 +194,7 @@
         send.disabled=true;send.textContent="Đang gửi...";
         var item={by:ME,text:text,date:new Date().toISOString(),id:"reply-"+Date.now()+"-"+Math.random().toString(36).slice(2,8)};
         try {
-          if(staging() && !id.startsWith("gn2-local")) {
+          if(staging() && !testNotes.some(function(n){return n.id===id;})) {
             await DB.collection("fridge").doc(id).update({
               replies:firebase.firestore.FieldValue.arrayUnion(item)
             });
@@ -249,7 +249,7 @@
     status(content);
     content.appendChild(div("gn2-muted", "💬 Hai người có thể trò chuyện trong phòng, không cần rời khỏi không gian chung."));
     var messages=div("gn2-chat-messages");
-    (staging()?chatMessages:demoChat).slice(-40).forEach(function(m){
+    (staging()?chatMessages.filter(function(m){return m.scope===locationScope();}):demoChat).slice(-40).forEach(function(m){
       var row=div("gn2-chat-message"+(m.who===ME?" mine":""));
       row.appendChild(div("gn2-chat-bubble",m.text));
       row.appendChild(div("gn2-chat-person",ownLabel(m.who)));
