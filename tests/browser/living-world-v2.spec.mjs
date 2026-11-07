@@ -88,3 +88,18 @@ test("fridge close-up works on 360/390/430px screens",async({browser})=>{
     await context.close();
   }
 });
+
+test("capture V2 object close-up for visual approval, using only synthetic notes",async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await visitWorld(page);
+  await page.locator(".gn2-fridge-toggle").click();
+  await page.getByRole("button",{name:"✎ Dán một mẩu giấy"}).click();
+  await page.locator("#gn2-fridge .gn2-editor textarea").fill("Này, hôm nay hai đứa chọn trò nào? 🌷");
+  await page.getByRole("button",{name:"Dán lên tủ",exact:true}).click();
+  await page.locator("#gn2-fridge").screenshot({path:"test-results/world-v2-paper-390.png"});
+  await page.getByRole("button",{name:"‹ Trở lại cửa tủ"}).click();
+  await page.locator("#gn2-fridge").screenshot({path:"test-results/world-v2-fridge-390.png"});
+  await page.getByRole("button",{name:"✕ Đóng"}).click();
+  await page.locator(".gn2-chat-toggle").click();
+  await page.locator("#gn2-chat").screenshot({path:"test-results/world-v2-chat-390.png"});
+});
