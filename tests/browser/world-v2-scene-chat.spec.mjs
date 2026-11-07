@@ -30,7 +30,9 @@ test('speech in one room does not appear in other rooms or leak into other room 
   await kitchen.locator('.gn2-chat-dock input').fill('Bí mật chỉ trong bếp 🌸');
   await kitchen.getByRole('button',{name:'Gửi ngay'}).click();
   await expect(kitchen.locator('.gn2-scene-speech')).toBeVisible();
-  await page.goto('/index.html?world2=1#phong-anh');
+  // Navigate within the SAME app session; demoChat stays in memory, so this
+  // genuinely checks room scoping rather than clearing history by reloading.
+  await page.evaluate(()=>{location.hash='#phong-anh';});
   const room=page.locator('#v-phong-anh');
   await expect(room.locator('.gn2-chat-dock')).toBeVisible();
   await expect(room.locator('.gn2-scene-speech')).toHaveCount(0);
