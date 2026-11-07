@@ -209,18 +209,20 @@
       entry.required=true;entry.placeholder="Đáp lời ngay trên mẩu giấy này...";
       var send=button("↗ Trả lời", "gn2-primary");send.type="submit";
       form.appendChild(entry);form.appendChild(send);
+      var replyOp=null;
       form.addEventListener("submit",async function (ev) {
         ev.preventDefault();
         var text=entry.value.trim();if(!text)return;
         send.disabled=true;send.textContent="Đang gửi...";
-        var item={by:ME,text:text,date:new Date().toISOString(),id:"reply-"+Date.now()+"-"+Math.random().toString(36).slice(2,8)};
+        if(!replyOp||replyOp.text!==text)replyOp={by:ME,text:text,date:new Date().toISOString(),id:"reply-"+Date.now()+"-"+Math.random().toString(36).slice(2,8)};
+        var item=replyOp;
         try {
           if(staging() && !testNotes.some(function(n){return n.id===id;})) {
             await DB.collection("fridge").doc(id).update({
               replies:firebase.firestore.FieldValue.arrayUnion(item)
             });
           } else { (demoReplies[id]||(demoReplies[id]=[])).push(item); }
-          entry.value="";openPaper(id);
+          replyOp=null;entry.value="";openPaper(id);
           hint(staging()?"Đã trả lời trên staging":"Đã ghi lời đáp thử trên máy này");
         } catch(e) {send.disabled=false;send.textContent="Thử gửi lại";hint("Chưa lưu được; lời đáp vẫn ở đây.");}
       });
@@ -285,13 +287,15 @@
     var send=button("Gửi", "gn2-primary");send.type="submit";
     if(ME===null){input.disabled=true;send.disabled=true;}
     form.appendChild(input);form.appendChild(send);content.appendChild(form);
+    var chatOp=null;
     form.addEventListener("submit",async function(e) {
       e.preventDefault();
       var text=input.value.trim();if(!text)return;
       send.disabled=true;send.textContent="Đang gửi...";
+      if(!chatOp||chatOp.text!==text)chatOp={text:text,id:"chat-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,9)};
       try{
         if(staging()){
-          await DB.collection("worldChat").add({
+          await DB.collection("worldChat").doc(chatOp.id).set({
             who:ME,authorUid:UID,text:text,
             at:firebase.firestore.FieldValue.serverTimestamp(),
             scope:locationScope()
@@ -300,7 +304,7 @@
           demoChat.push({who:ME,text:text,at:Date.now()});
           renderChat();
         }
-        lastChat=text;hint(staging()?"Tin nhắn đã gửi qua staging":"Tin nhắn thử chỉ ở trên thiết bị này");
+        chatOp=null;lastChat=text;hint(staging()?"Tin nhắn đã gửi qua staging":"Tin nhắn thử chỉ ở trên thiết bị này");
       }catch(err){hint("Chưa gửi được. Bạn có thể thử lại.");send.disabled=false;send.textContent="Thử lại";}
     });
     messages.scrollTop=messages.scrollHeight;
