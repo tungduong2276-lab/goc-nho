@@ -246,7 +246,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - name: Render and validate updated 3D house geometry
-        if: github.event.pull_request.head.ref == 'feature/spacious-house-weather-botany'
+        if: github.event.pull_request.head.ref == 'feature/spacious-house-weather-botany' || github.event.pull_request.head.ref == 'fix/m1-house-map-render-ci-gate'
         run: |
           npm install --no-save three@0.169.0
           python3 -m pip install --break-system-packages Pillow
@@ -255,6 +255,14 @@ jobs:
           python3 -m http.server 8901 --directory _xuong-3d >/tmp/house-render.log 2>&1 &
           node _xuong-3d/run.cjs map.js out_house bando
           python3 scripts/pack-house-map.py
+      - name: Reject unsynchronized committed house map renders and interaction metadata
+        if: github.event.pull_request.head.ref == 'feature/spacious-house-weather-botany' || github.event.pull_request.head.ref == 'fix/m1-house-map-render-ci-gate'
+        run: |
+          # Re-render the true Three.js source, but never push changed assets.
+          # Git history stays stable; a mismatch requires a reviewed feature PR.
+          git diff --exit-code -- assets/3d/ban_do_sang.webp assets/3d/ban_do_ngay.webp assets/3d/ban_do_chieu.webp assets/3d/ban_do_dem.webp assets/3d/scene.json
+          test -z "$(git ls-files --others --exclude-standard assets/3d/)"
+          echo "PASS: six-room house map images and spot metadata match the committed 3D source"
       - name: Test app and house navigation
         run: npm test
       - name: Verify exact committed six-room binary assets after source re-render
@@ -332,13 +340,3 @@ jobs:
           name: house-3d-preview
           path: out_house/ban_do_ngay@3x.png
           retention-days: 7
-      - name: Commit validated house renders to PR branch
-        if: github.event.pull_request.head.ref == 'feature/spacious-house-weather-botany'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/3d/ban_do_sang.webp assets/3d/ban_do_ngay.webp assets/3d/ban_do_chieu.webp assets/3d/ban_do_dem.webp assets/3d/scene.json
-          if ! git diff --cached --quiet; then
-            git commit -m "Render: updated dollhouse exterior and connected rooms"
-            git push origin HEAD:feature/spacious-house-weather-botany
-          fi
