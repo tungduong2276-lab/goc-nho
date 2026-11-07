@@ -7,6 +7,7 @@
   border:2px solid #f4d9e7;border-radius:18px;
   background:linear-gradient(120deg,#fff9fc,#f0faf7);
   box-shadow:0 3px 12px #5d3f6b12;
+  scroll-margin-bottom:calc(110px + env(safe-area-inset-bottom));
 }
 .gn2-chat-dock-icon{font-size:22px;line-height:1;user-select:none}
 .gn2-chat-dock input{
