@@ -3,6 +3,8 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests/browser",
   fullyParallel: true,
+  // Reduce Chromium contention while isometric scenes rerender in CI.
+  workers: process.env.CI ? 2 : undefined,
   reporter: "list",
   timeout: 30_000,
   use: {
