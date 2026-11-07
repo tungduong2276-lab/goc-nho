@@ -3,6 +3,7 @@
  */
 (function () {
 "use strict";
+if (new URLSearchParams(location.search).get("world2") !== "1") return;
 var extraGames = [
   {n:31,g:"cung",name:"Điệp vụ HAI MẬT MÃ",desc:"Mỗi người nhận 2 mục tiêu bí mật, không được nói thẳng. Trong buổi hẹn, phải dẫn dắt người kia tự nguyện hoàn thành. Cuối buổi lật thẻ, đoán ai đã gài được bao nhiêu nhiệm vụ. Mỗi ván bốc nhiệm vụ mới.",aux:[{label:"Mục tiêu bí mật",count:4,list:["Khiến người kia nói từ 'phi thuyền'","Làm hai đứa cùng chọn một món chưa từng thử","Thuyết phục chụp ảnh cả hai cùng nhắm mắt","Dẫn câu chuyện đến hồi nhỏ đi học","Khiến người kia tự đặt biệt danh cho một vật","Làm cả hai cùng hát một câu tự chế","Khiến người kia tự đề xuất một điểm dừng mới","Dẫn người kia chọn một món có màu xanh"]}]},
   {n:32,g:"vai",name:"Quán ăn ngoài vũ trụ",desc:"Mỗi người thiết kế 3 món ăn kỳ dị từ những nguyên liệu có thật ở điểm hẹn. Phải thuyết phục người kia đặt món bằng cách thuyết minh như đầu bếp sao Hỏa. Chấm theo độ hài và tính khả thi; không cần ăn món kỳ quặc.",aux:[{label:"Quy tắc nhà hàng",list:["Mọi tên món có ít nhất 7 âm tiết","Khách hàng là vua của một hành tinh khác","Chỉ được quảng cáo bằng phép so sánh","Mỗi món đi kèm một siêu năng lực","Thực đơn là các vụ án bí ẩn"]}]},
@@ -32,6 +33,7 @@ var extraGames = [
 var known=new Set(GAMES.map(function (g) {return g.n;}));
 extraGames.forEach(function (game) {if(!known.has(game.n)){GAMES.push(game);known.add(game.n);}});
 Object.assign(TIMERS,{31:15,34:10,37:2,39:8,40:10,42:5,44:2,45:4,48:10,50:3,51:5,53:15,54:2});
+extraGames.forEach(function(g){if(TIMERS[g.n])g.timer=TIMERS[g.n];});
 PENALTIES.push(
   "Tự sáng tác một biệt danh ngớ ngẩn và dùng trong 10 phút",
   "Diễn lại cảnh gặp nhau như phim cổ trang trong 20 giây",
@@ -96,4 +98,5 @@ Object.keys(more).forEach(function (key) {
 });
 window.__GN_GAMES_V2__={extraGames:extraGames.length,extraStickers:Object.keys(more).length,
     penaltiesAdded:24,bonusesAdded:8};
+if(typeof schedule==="function")schedule();
 })();
