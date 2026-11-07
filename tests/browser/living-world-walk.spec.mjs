@@ -30,6 +30,8 @@ test('tapping a walkable point moves the local avatar without navigation',async(
   expect(box).not.toBeNull();
   const x=box.x+420*box.width/1170,y=box.y+715*box.height/1170;
   await page.mouse.click(x,y);
+  await page.waitForTimeout(160);
+  await page.evaluate(()=>renderRooms()); // deliberate mid-walk room rerender regression
   await expect.poll(async()=>Number(await root.locator('.gn2-walk-avatar').getAttribute('data-gn2-x')),{timeout:6000})
     .toBeLessThan(435);
   expect(new URL(page.url()).hash).toBe('#bep');
