@@ -12,7 +12,7 @@ const sceneRooms={"phong-khach":null,"bep":"bep","phong-anh":"phong_anh",
   "phong-em":"phong_em","goc-sang-tao":"sang_tao",
   "gac":"gac","khu-vuon":"khu_vuon"};
 test("seven distinct portal identities match seven real isometric scenes",()=>{
-  assert.deepEqual(V2_SLUGS.sort(),Object.keys(sceneRooms).sort());
+  assert.deepEqual([...V2_SLUGS].sort(),Object.keys(sceneRooms).sort());
   assert.equal(new Set(V2_DOORS.map(d=>d.id)).size,7);
   assert.equal(Object.isFrozen(V2_DOORS),true);
   for(const door of V2_DOORS){
