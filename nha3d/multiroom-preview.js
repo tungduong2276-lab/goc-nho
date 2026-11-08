@@ -13,6 +13,13 @@ import { cellCenter, blockGrid, cellFree, findPath, worldPath, worldToCell } fro
 const house = makeHouse(PREVIEW_LAYOUTS);
 const canvas = document.querySelector("#world"), status = document.querySelector("#status");
 const doorsUI = document.querySelector("#doors"), roomsUI = document.querySelector("#rooms");
+const activitiesUI = document.querySelector("#activities");
+const activityCounts = { khach: 0, bep: 0, ngu: 0 };
+const activities = {
+  khach: { label: "☕ Uống trà", message: "Hai người cùng ngồi uống trà trong phòng khách." },
+  bep: { label: "🍳 Nấu cùng nhau", message: "Căn bếp thơm mùi bữa ăn hai người chuẩn bị." },
+  ngu: { label: "💌 Lời nhắn", message: "Một lời nhắn dễ thương đã xuất hiện trong phòng ngủ." }
+};
 let renderer;
 try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); }
 catch { document.querySelector("#error").hidden = false; document.querySelector("#error").textContent = "Trình duyệt này chưa hỗ trợ WebGL."; throw new Error("WebGL unavailable"); }
@@ -104,6 +111,15 @@ function renderRoom() {
     b.addEventListener("click", () => { if (id !== roomId) { status.textContent = "Hãy đi qua cửa để sang " + def.name; } });
     roomsUI.append(b);
   }
+  activitiesUI.replaceChildren();
+  const action = activities[roomId];
+  const activityButton = document.createElement("button");
+  activityButton.textContent = action.label;
+  activityButton.addEventListener("click", () => {
+    activityCounts[roomId] += 1;
+    status.textContent = action.message + " · Lần " + activityCounts[roomId];
+  });
+  activitiesUI.append(activityButton);
   doorsUI.replaceChildren();
   for (const door of house.doors) {
     const endpoint = door.a.room === roomId ? door.a : door.b.room === roomId ? door.b : null;
