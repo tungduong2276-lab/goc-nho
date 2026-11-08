@@ -295,6 +295,7 @@
 .gn2-hall-head h2{font-family:"Baloo 2",Nunito,sans-serif;font-size:22px;line-height:1.2;color:#865577;margin:0}
 .gn2-hall-head p{grid-column:1/-1;font-size:12px;font-weight:750;line-height:1.5;margin:0;color:#775e7d}
 .gn2-hall-close{
+  grid-row:1;grid-column:2;
   border:2px solid #e6c6d5;border-radius:14px;background:white;
   color:#745477;font-size:13px;font-weight:850;min-height:40px;padding:7px 12px;
   cursor:pointer;touch-action:manipulation
