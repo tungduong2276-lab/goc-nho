@@ -25,3 +25,14 @@ test("no transition away from door", () => {
  const house=makeHouse();
  assert.equal(transitionAtDoor(house,{room:"khach",cell:{i:7,j:9}},"khach-bep"),null);
 });
+
+test("preview spawn is unblocked and can reach both doors", () => {
+ const house = makeHouse();
+ const spawn = { room: "khach", cell: { i: 8, j: 11 } };
+ const grid = blockGrid(house.rooms.khach.layout, house.rooms.khach.size);
+ assert.equal(cellFree(grid, spawn.cell.i, spawn.cell.j), true, "avatar must not spawn inside furniture");
+ for (const door of house.doors) {
+  const route = routeHouse(house, spawn, door.b);
+  assert.ok(route?.some(step => step.type === "door" && step.id === door.id), "spawn cannot reach " + door.id);
+ }
+});
