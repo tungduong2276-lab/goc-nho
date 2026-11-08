@@ -404,3 +404,75 @@ These tracks can be prototyped in parallel **only in isolated branches with mock
 - Firebase / Rules / deployment: **none changed** by this documentation-only update.
 - Verification: content review only; no code tests or production deployment asserted.
 - Next action: verify current V2 PRs and CI, then implement first safe W1 slice behind flags while completing M0 gates.
+
+
+## 9. V2 EXPANSION — DATE DIRECTOR, TINY TOWN, LIVING NPCs, WORLD EVENTS & KINGDOM 2.0 (2026-11-08)
+
+**Decision:** The product owner selected ideas #3 (Date Director), #4 (tiny town), #5 (NPCs with memory), and #9 (surprising world events), and requested a substantial redesign of the currently underwhelming kingdom-building mode. These are **approved product directions, not implemented features**. This section is the authoritative expansion backlog for these systems; retain earlier history and safety constraints.
+
+### 9.1 One connected world, not five unrelated tabs
+
+House ↔ Kingdom/town ↔ NPCs ↔ Events ↔ Date Director ↔ Shared memories. Each activity must produce at least one understandable consequence elsewhere: a new building function, an NPC relationship, a date location, a cosmetic unlock, a branching event, or an opt-in keepsake. Never force daily chores, paywalls, punitive timers or compulsory participation. The existing two-person identity and cute visual language remain central.
+
+**North-star play loop:** explore a meaningful change → discuss/choose together → build or play a short cooperative activity → see a persistent visible consequence → optionally preserve the memory → return later for a different possibility. Each session should be satisfying in 5–15 minutes; larger stories can span several optional sessions.
+
+### 9.2 KINGDOM 2.0 — rebuild the game loop
+
+**Design pillars:** (1) spatially meaningful construction; (2) NPCs with simple observable lives; (3) branching dilemmas; (4) partner cooperation and asynchronous contributions; (5) playful economy with minimal grind; (6) delightful but testable emergent combinations.
+
+**World layout:** a small, expandable, contiguous kingdom map connected to the house by a porch/path; districts: residential, market, lakeside, garden, plaza and exploration edge. Start with a small fixed grid/placement polygons and 8–12 purposeful buildings; expand only after usability/performance tests. Paths must actually connect entrances. Buildings cannot overlap blocked cells or trap NPCs; previews show valid/invalid placement and undo. Respect mobile zoom/pan and tap targets. No false promise of fully freeform real-time 3D: existing prerendered/isometric art may be reused with scene metadata and layered sprites.
+
+**Buildings with real functions (initial candidates):** bakery (recipe and delivery co-op), market (traders and rotating offers), plaza (festivals), clocktower (time puzzles), dock (expeditions), theater (improv/date activities), academy (discoveries), enchanted garden (plant crossbreeding), homes (NPC capacity), workshop (cosmetics), park (dates), post office (letters). Select 8–12 for first vertical slice; avoid purely cosmetic buildings unless clearly labeled. Adjacency, paths, terrain and unlocked NPCs determine available interactions, not arbitrary long resource waits.
+
+**Economy:** cap initial currencies at 2: common materials earned from short activities and a rare discovery token earned from branching stories. No real-money purchases, resource decay, or daily attendance tax. All construction costs and rewards must be visible and balanced to avoid farming one activity. Provide free reversible placement preview; charge only on committed construction. Shared balance updates must be atomic and idempotent.
+
+**Two-person governance:** both users can suggest placements and contribute materials asynchronously. Shared landmark decisions have propose → review → approve/decline/expire → commit; either partner can veto without punishment. Avoid a single permanent 'mayor' controlling the other. Temporary asymmetric roles during quests (architect/scout, cook/courier, planner/decorator) rotate and are optional. Undo, conflict notices and audit history protect against accidental edits.
+
+**NPC simulation:** use a deterministic/lightweight schedule and finite-state machine rather than costly always-on AI. NPCs have home/job, preferred locations, 2–4 personality traits, a small relationship score and event-specific memory flags. Start with five authored NPCs: baker, courier, gardener, merchant and curious cat. Their dialogue must reflect concrete player choices and avoid repeating the same line in adjacent sessions. Memories are bounded, explainable and editable; do not silently infer sensitive relationship details from chats.
+
+**Event director:** seeded, condition-based event deck, weighted by district/buildings, previous outcomes, recent events and NPC flags. Event types: micro (1–3 min), story (5–15 min), multi-session chapter, seasonal cosmetic. Examples: silent clocktower bell; falling star seed; visiting merchant; lake lantern festival; mysterious parcel; cat disappears. Each event has eligibility, cooldown, explicit expiry or 'play later', branches, rewards, consequences and a fallback. No hard FOMO or disruptive destructive disasters.
+
+**Kingdom sample chain:** build a lakeside park → NPC gardener requests rare lantern plants → partner A gathers clues, partner B designs paths → both decide between festival or conservation → map and NPC dialogue change → Date Director can unlock a lantern picnic → optional keepsake displayed at home. All steps must be testable and replay-safe.
+
+### 9.3 DATE DIRECTOR 2.0 — generated dates with narrative structure
+
+Build dates from **authored, validated components** rather than unbounded random text: theme + intensity + location (home/town/real life) + duration + roles + objective + 1 optional mid-date twist + optional consensual reward/forfeit + keepsake. Themes: cozy, absurd comedy, mystery, adventure, romantic, playful/bold. Support 5/15/30/60-minute sessions and indoor/outdoor/accessibility preferences. Each candidate needs tags, constraints, content rating, setup requirements and fallback for unavailable venues/materials.
+
+**Flow:** both opt in → choose boundaries/preferences → draw 3 candidates or surprise → accept/skip/reroll with no penalty → play sequential steps → optional twist only if both accept → close with mutual feedback and optional memory. Do not automatically publish private date content. Forfeits must be non-humiliating, non-coercive and vetoable; never punish rejection or non-participation. Use per-couple recent-history suppression and diversity targets across themes, mechanics and roles.
+
+**First playable slice:** 40 curated prompt components producing at least 20 validated distinct combinations, 4 distinct story templates, 4 consensual forfeit families (silly, creative, affectionate, teamwork), no immediate duplicates within last 5 accepted dates, and graceful fallback when a generated combination is incompatible. Exact targets are planning acceptance thresholds, not existing inventory.
+
+### 9.4 TINY TOWN & NPC STORY SYSTEM
+
+Town is a **playable spatial layer** of Kingdom 2.0, not a second competing builder. Five NPCs and at least four locations must support actual contextual interactions; a player can walk from home to a location and complete a short activity without returning to a tab menu. Show where residents are going and why, with accessibility fallback for reduced animation. Dialogue branches from bounded state flags and authored scripts; use generative text only if optional, moderated and with predictable offline fallback. NPC story arcs should unlock activities/buildings rather than only currency.
+
+### 9.5 WORLD EVENT DIRECTOR — novelty with coherence
+
+Maintain an event registry with: id, version, trigger predicates, priority/weight, mutually exclusive groups, cooldown, max concurrent events, prerequisites, duration, resume/skip behavior, two-user coordination mode, outcome effects and migration policy. Ensure event choices cannot corrupt building placement or shared currency. Schedule based on saved world state, not a continuous client timer. Seasonal variants must be replayable after the season and never gate critical progress behind a real-world date. The UI shows 'why this happened' through world clues rather than a sterile popup.
+
+### 9.6 Delivery milestones, gates and definition of done
+
+| ID | Deliverable | Exit criteria |
+| --- | --- | --- |
+| K0 | Audit existing kingdom code/data, PR overlaps and M0 security | inventory actual files/schema/feature flags, write paths, active PRs, tests, staging backup/restore and rollback; no production migration |
+| K1 | Core map, build/undo, paths and functional building slice | 8 buildings, validated placement, connected roads, two-client atomic resource spending, reload/reconnect and mobile tests |
+| K2 | Five NPCs with routines and story flags | deterministic schedule, contextual interaction, bounded memory, dialogue non-repeat regression, no stuck NPC |
+| K3 | Event director and branching stories | 10 authored events, at least 3 multi-step chains, cooldown/eligibility tests, restart/resume, consequence visible in world |
+| D2 | Date Director 2.0 | 20 validated date combinations, 4 story templates, consent/skip/reroll, duplicate suppression, 2-client resume |
+| K4 | Town integration and cross-system consequences | 4 playable locations, at least 3 cross-system chains (build → NPC/event → date → keepsake), shared-state sync |
+| K5 | Polish, content expansion and release review | 360/390/430px, keyboard/reduced-motion, low-end performance, offline/reconnect, security/visual review, rollback and CI green |
+
+**Dependencies:** K0 and M0 production safety gates first. K1 before K2/K3/K4 production integration; D2 can prototype with synthetic data in a separate branch, but its shared writes cannot ship before gates. K5 requires explicit independent acceptance. Each milestone is a separate branch/PR with tests and handoff notes. Existing #9, #12, #79 and #84–#91 must be reconciled by actual diff/base/CI, not titles. Do not merge PR #92 merely because documentation checks pass if branch protections require review.
+
+**Data design proposal (not deployed):** `worlds/{worldId}` with explicit membership authorization; `buildings/{id}` (type, grid anchor, orientation, revision); `npcStates/{id}` (routine seed, finite state, bounded flags); `eventInstances/{id}` (seed, version, branch, status, effectApplied); `dateSessions/{id}` (template version, both-user consent, step, history); `proposals/{id}` (voters, expiry, expected revision); `ledger/{transactionId}` (idempotent currency changes). Schema naming must be adapted after inspection of actual Firebase collections. Never perform whole-document overwrite of unrelated fields; use transactions, field-level updates, membership rules and emulator concurrency tests. No real couple records in staging.
+
+**Release test matrix:** unit tests for path connectivity, placement collision, event eligibility/cooldown, deterministic RNG, date constraints and no-repeat; Firestore Emulator rules + concurrent build spend + replayed transaction + two-user permissions; Playwright two-device flows including one partner offline and both choosing simultaneously; actual screenshot comparison at 360/390/430px and six-room-to-town navigation; performance on modest mobile; verify no gift/date secret leakage; rollback drill. A feature is not 'done' until real UI, automated tests, visual review, and verified merge/deploy status are individually recorded.
+
+### 9.7 Next work order / project handoff
+
+1. Review main and existing kingdom implementation, inspect AGENTS.md, current roadmap, #92, #79, #9, #12, and #84–#91; map overlap and verify CI/merge statuses.
+2. Document Kingdom 1.x pain points with actual UI/code evidence; establish safe branch for K0 audit.
+3. Build K1 isolated synthetic-data prototype (one connected district, 3 functional buildings, proposal/undo and one short cooperative interaction), then extend to eight after mobile/two-client validation.
+4. In parallel on a separate mock-only branch, author and validate D2 component library; run date novelty/consent tests.
+5. Add NPCs, event registry and cross-system chains incrementally, preserving production data and feature flags.
+6. Update roadmap with each merged PR SHA, CI run, screenshots, explicit blockers and deployment state. **Documentation is complete as a plan; feature delivery is not claimed.**
