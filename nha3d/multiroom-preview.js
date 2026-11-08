@@ -292,4 +292,15 @@ function frame(now) {
   camera.position.lerp(target, .1); camera.lookAt(avatar.position.x, .4, avatar.position.z);
   renderer.render(scene, camera); requestAnimationFrame(frame);
 }
+// Read-only diagnostic snapshot for end-to-end checks; never exposes user data.
+window.__NHA3D_PREVIEW_STATE__ = () => ({
+  room: roomId,
+  walking: walking.length,
+  pendingActivity: Boolean(pendingActivity),
+  pendingDoor: Boolean(pendingDoor),
+  props: activityProps.children.length,
+  effects: activityVisuals.children.length,
+  acting: performance.now() < activityPoseUntil,
+  counts: { ...activityCounts }
+});
 renderRoom(); requestAnimationFrame(frame);
