@@ -16,6 +16,15 @@ test('in-room chat writes a speech bubble near the avatar and keeps the current 
   const before=await page.evaluate(()=>localStorage.getItem('hu-hen-ho-v2'));
   await root.locator('.gn2-chat-dock input').fill('Ăn bánh rồi đi chơi nhé! 🍰');
   await root.getByRole('button',{name:'Gửi ngay'}).click();
+  console.log('GN2_CHAT_DEBUG',JSON.stringify(await page.evaluate(()=>({
+    scope:location.hash,me:typeof ME==='undefined'?null:ME,
+    input:document.querySelector('#v-bep .gn2-chat-dock input')?.value,
+    bubble:document.querySelector('#v-bep .gn2-scene-speech')?.textContent,
+    toast:document.querySelector('.gn2-toast')?.textContent,
+    roomChat:window.__GN_WORLD_V2__?.roomChat,
+    stage:window.FIREBASE_CONFIG?.projectId==='goc-nho-staging-2026',
+    game:window.__GN_KITCHEN_V2__?.mode
+  }))));
   await expect(root.locator('.gn2-scene-speech')).toContainText('Ăn bánh rồi đi chơi nhé!');
   await expect(root.locator('.gn2-scene-speech')).toContainText('Anh');
   await expect(root.locator('.gn2-chat-dock-caption')).toContainText('chưa gửi sang điện thoại kia');
