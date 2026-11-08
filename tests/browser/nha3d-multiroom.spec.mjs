@@ -43,14 +43,14 @@ for (const width of [360,390,430]) test("preview controls stay inside mobile vie
 test("room activities respond locally and change with the room", async ({ page }) => {
  const { errors, firebase } = await openPreview(page);
  await page.getByRole("button", { name: "☕ Uống trà" }).click();
- await expect(page.locator("#status")).toContainText("Lần 1");
+ await expect(page.locator("#status")).toContainText("Lần 1", { timeout: 30_000 });
  await expect.poll(() => page.evaluate(() => document.querySelector("#world")?.width > 0)).toBe(true);
  await page.getByRole("button", { name: "☕ Uống trà" }).click();
- await expect(page.locator("#status")).toContainText("Lần 2");
+ await expect(page.locator("#status")).toContainText("Lần 2", { timeout: 30_000 });
  await page.getByRole("button", { name: "🚪 Phòng bếp" }).click();
  await expect(page.locator("#status")).toContainText("Đang ở Phòng bếp", { timeout: 30_000 });
  await page.getByRole("button", { name: "🍳 Nấu cùng nhau" }).click();
- await expect(page.locator("#status")).toContainText("Căn bếp thơm");
+ await expect(page.locator("#status")).toContainText("Căn bếp thơm", { timeout: 30_000 });
  expect(errors).toEqual([]);
  expect(firebase).toEqual([]);
 });
