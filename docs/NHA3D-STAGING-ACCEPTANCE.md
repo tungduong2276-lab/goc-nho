@@ -48,3 +48,21 @@ Record device model, OS/browser, tested SHA, screenshot/video, FPS or noticeable
 - PR #93, #95 (rerun), #96, and initial PR #97 integration CI passed as recorded in the master roadmap.
 - PR #97 documentation update commit `28ce1c8` had a workflow in progress when this checklist was drafted. Recheck the current head before sign-off.
 - No staging hosting deployment or two-device manual acceptance is claimed.
+
+
+## 6. Prepared Hosting configuration (not deployed)
+
+- `firebase.nha3d-staging.json` explicitly serves only `dist-nha3d-staging/`. It does not configure Firestore, Functions, Auth or Storage. The build output is gitignored.
+- **Never substitute the production project ID.** A separate, user-approved staging Firebase project ID must be verified in Firebase Console before running any hosting command. This repository deliberately has no `.firebaserc` alias.
+- After confirming a **distinct staging project ID** and permission to deploy to it, an operator may run:
+
+```sh
+npm install
+node --test tests/staging/nha3d-staging-bundle.test.mjs
+node scripts/build-nha3d-staging.mjs
+firebase hosting:channel:deploy nha3d-review --project VERIFIED_STAGING_PROJECT_ID --config firebase.nha3d-staging.json --expires 7d
+```
+
+- Replace `VERIFIED_STAGING_PROJECT_ID` only after checking the Firebase Console project selector and project settings. This command is an **operator-only proposed step**, not a completed action. The preview channel URL must be captured from CLI output; never guess it.
+- Preview channels may still be reachable by anyone holding their URL. Do not put secrets or real user data in this static build. Confirm access controls appropriate to the intended testers.
+- Record the resulting URL, project ID, deployment ID, expiry, SHA and rollback action in PR #97 before distributing to the two testers.
