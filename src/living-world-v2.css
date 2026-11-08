@@ -362,3 +362,79 @@
 @media(prefers-reduced-motion:reduce){
   .gn2-hall-avatar,.gn2-hall-door{transition:none!important;animation:none!important}
 }
+
+
+/* M1.B — actual 8×8 Three.js architecture preview, opt-in and fully read-only. */
+.gn2arch-entry{
+  display:block;width:calc(100% - 24px);max-width:680px;margin:8px auto 15px;
+  padding:12px 16px;min-height:48px;cursor:pointer;touch-action:manipulation;
+  border:2px solid #bd91b1;border-radius:17px;color:#654368;font-weight:900;
+  background:linear-gradient(110deg,#fce9f7,#e8f6fc);
+  box-shadow:0 3px 0 #d7bad2;font-family:Nunito,system-ui,sans-serif;
+}
+.gn2arch-entry:hover{background:linear-gradient(110deg,#f8d8ec,#def3fc)}
+.gn2arch-entry:focus-visible,.gn2arch-dialog button:focus-visible{
+  outline:3px solid #b15892;outline-offset:3px;
+}
+.gn2arch-dialog{
+  box-sizing:border-box;width:min(96vw,760px);max-width:760px;
+  max-height:min(94dvh,960px);padding:0;margin:auto;overflow:auto;
+  background:#fffbf8;color:#5a455d;border:3px solid #f2d2e3;
+  border-radius:24px;box-shadow:0 16px 65px #27315480;
+  font:700 13px/1.5 Nunito,system-ui,sans-serif;
+}
+.gn2arch-dialog::backdrop{background:#1c2645bb;backdrop-filter:blur(3px)}
+.gn2arch-dialog *{box-sizing:border-box}
+.gn2arch-shell{padding:12px;display:grid;gap:10px}
+.gn2arch-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;align-items:center}
+.gn2arch-heading h2{margin:0;font:900 clamp(17px,4vw,23px)/1.25 "Baloo 2",Nunito,sans-serif;color:#80537a}
+.gn2arch-heading p{grid-column:1/-1;margin:0;color:#806a83;font-size:12px}
+.gn2arch-dialog button{font:850 12px/1.25 Nunito,system-ui,sans-serif;color:#624c6a;cursor:pointer;touch-action:manipulation}
+.gn2arch-close{border:2px solid #e5cad9;background:white;padding:8px 12px;border-radius:12px;min-height:44px}
+.gn2arch-room-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.gn2arch-tab{
+  min-height:44px;padding:7px 5px;border:2px solid #eacadd;
+  border-radius:12px;background:#fff;color:#69516e
+}
+.gn2arch-tab[aria-pressed=true]{border-color:#b46c9d;background:#f9e4f0;color:#7b376c}
+.gn2arch-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.gn2arch-button{min-height:44px;padding:8px 4px;background:#faf5e8;border:2px solid #e9d9c0;border-radius:12px}
+.gn2arch-button[aria-pressed=true]{background:#fce0ee;border-color:#b47f9b}
+.gn2arch-viewport{position:relative;isolation:isolate;width:100%;aspect-ratio:1/1;min-width:0;
+  background:radial-gradient(ellipse at 45% 42%,#fcf1ed,#eaf4fd 80%);border:2px solid #e3d8df;border-radius:17px;overflow:hidden}
+.gn2arch-picture{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;user-select:none}
+.gn2arch-image-status{
+  position:absolute;z-index:3;left:10px;right:10px;top:9px;
+  width:fit-content;max-width:calc(100% - 20px);
+  padding:6px 10px;border:1px solid #d7bbd5;border-radius:12px;
+  background:#fffbf5ed;color:#6d4c69;font-size:12px;font-weight:900;
+  pointer-events:none!important;
+}
+.gn2arch-viewport[aria-busy=true] .gn2arch-overlay{opacity:0}
+
+.gn2arch-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none!important}
+.gn2arch-overlay *{pointer-events:none!important}
+.gn2arch-outline{stroke:#26a37d;stroke-width:7;stroke-dasharray:18 13;fill:#43dd9744}
+.gn2arch-walkline{stroke:#d65a82;stroke-width:14;stroke-dasharray:22 12}
+.gn2arch-marker{stroke:#fff;stroke-width:5}
+.gn2arch-marker-door{fill:#c74d8a}
+.gn2arch-marker-inside{fill:#42b492}
+.gn2arch-marker-outside{fill:#4985bc}
+.gn2arch-marker-furniture{fill:#ffb642;stroke:#fff;stroke-width:3}
+.gn2arch-marker-label{font:900 28px Nunito,system-ui,sans-serif;paint-order:stroke;stroke:#fff;
+  stroke-width:8;fill:#ad3472}
+.gn2arch-summary{background:#fff4ed;border:1px solid #efd8d3;padding:9px 12px;border-radius:14px;
+  display:grid;gap:3px;color:#6c536a}
+.gn2arch-summary strong{font-size:15px;color:#7d4e74}
+.gn2arch-summary span{font-size:12px}
+.gn2arch-summary small{font-size:11px;color:#8b7287}
+.gn2arch-disclaimer{font-size:11px;line-height:1.5;margin:0;color:#896f82;font-weight:850}
+@media(max-width:390px){
+  .gn2arch-shell{padding:8px;gap:7px}
+  .gn2arch-room-tabs,.gn2arch-controls{gap:4px}
+  .gn2arch-tab,.gn2arch-button{font-size:11px!important}
+  .gn2arch-heading p{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+  .gn2arch-dialog,.gn2arch-dialog *{animation:none!important;transition:none!important}
+}
