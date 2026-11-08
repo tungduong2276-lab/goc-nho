@@ -6,10 +6,12 @@ on:
       - "index.html"
       - "sw.js"
       - "assets/3d/**"
+      - "_xuong-3d/**"
       - "scripts/**"
       - "src/**"
       - "docs/garden-two-device-test.md"
       - "tests/browser/**"
+      - "tests/staging/**"
       - "tests/firebase/**"
       - "firestore.rules"
       - "firebase.json"
@@ -51,6 +53,24 @@ jobs:
           python3 -m http.server 8901 --directory _xuong-3d >/tmp/house-render.log 2>&1 &
           node _xuong-3d/run.cjs map.js out_house bando
           python3 scripts/pack-house-map.py
+      - name: Render six actual 3D architecture enlargement candidates
+        if: github.event.pull_request.head.ref == 'feature/world-v2-architecture-8x8'
+        run: |
+          npm install --no-save three@0.169.0
+          ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+          cp _xuong-3d/run.js _xuong-3d/run.cjs
+          python3 -m http.server 8901 --directory _xuong-3d >/tmp/room-architecture-render.log 2>&1 &
+          node _xuong-3d/run.cjs architecture.js out_arch
+          node scripts/check-architecture-preview.mjs out_arch
+      - name: Publish spacious 3D room architectural art for independent visual review
+        if: always() && github.event.pull_request.head.ref == 'feature/world-v2-architecture-8x8'
+        uses: actions/upload-artifact@v4
+        with:
+          name: world-v2-architecture-3d-review
+          path: |
+            out_arch/kien_truc_*.png
+            out_arch/meta.json
+          retention-days: 7
       - name: Test app and house navigation
         run: npm test
       - name: Publish Living World V2 screenshots
