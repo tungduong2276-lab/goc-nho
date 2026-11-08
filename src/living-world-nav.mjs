@@ -26,10 +26,27 @@ export function pointInPolygon(point, polygon) {
   }
   return inside;
 }
-export function walkable(room, point) {
+// The avatar is not a mathematical point: keep their feet clear of
+// furniture bases (shadows and wall fixtures are not obstacles).
+export const FOOT_CLEARANCE=12;
+function squaredDistanceToSegment(p,a,b) {
+  const dx=b[0]-a[0],dy=b[1]-a[1],den=dx*dx+dy*dy;
+  const t=den?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/den)):0;
+  const x=a[0]+t*dx-p[0],y=a[1]+t*dy-p[1];
+  return x*x+y*y;
+}
+function touchesObstacle(point,polygon) {
+  if(pointInPolygon(point,polygon))return true;
+  for(let i=0;i<polygon.length;i++){
+    if(squaredDistanceToSegment(point,polygon[i],polygon[(i+1)%polygon.length])<FOOT_CLEARANCE**2)
+      return true;
+  }
+  return false;
+}
+export function walkable(room,point) {
   const layout=ROOM_NAV[room];
   return !!layout && pointInPolygon(point,layout.floor) &&
-    !layout.blocked.some(poly=>pointInPolygon(point,poly));
+    !layout.blocked.some(poly=>touchesObstacle(point,poly));
 }
 export function clearSegment(room, a, b) {
   if (!walkable(room,a) || !walkable(room,b)) return false;
