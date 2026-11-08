@@ -64,7 +64,7 @@ function disposeRoom() { floorGroup.traverse(o => { if (o.isMesh && o.userData.p
 function block(x, y, z, w, h, d, color) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color)); m.position.set(x, y, z); m.userData.previewOwned = true; floorGroup.add(m); return m;
 }
-let roomId = "khach", pos = { i: 8, j: 10 }, walking = [], last = performance.now();
+let roomId = "khach", pos = { i: 8, j: 11 }, walking = [], last = performance.now();
 const names = { khach: "🛋️ Phòng khách", bep: "🍳 Phòng bếp", ngu: "🛏️ Phòng ngủ" };
 function roomInfo() { return house.rooms[roomId]; }
 function renderRoom() {
