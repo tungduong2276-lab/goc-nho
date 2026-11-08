@@ -71,3 +71,15 @@ jobs:
             git commit -m "Render: updated dollhouse exterior and connected rooms"
             git push origin HEAD:feature/house-room-continuity
           fi
+
+      - name: Build isolated Nhà 3D staging review bundle
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'staging/nha3d-integrated-review-20261108'
+        run: node scripts/build-nha3d-staging.mjs
+      - name: Upload Nhà 3D staging review artifact (no deployment)
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'staging/nha3d-integrated-review-20261108'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nha3d-staging-review
+          path: dist-nha3d-staging/
+          if-no-files-found: error
+          retention-days: 7
