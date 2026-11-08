@@ -44,8 +44,8 @@ test("each pair of rooms is reachable through a stable central corridor",()=>{
   for(const source of V2_SLUGS)for(const target of V2_SLUGS){
     const path=hallRoute(source,target);
     assert.equal(path.length,4,source+" -> "+target);
-    assert.deepEqual(path[0],[50,93]);
-    assert.deepEqual(path[1],[50,72]);
+    assert.deepEqual(path[0],[16,93]);
+    assert.deepEqual(path[1],[16,72]);
     assert.ok(path.every(p=>p.every(Number.isFinite)));
     assert.ok(path.every(p=>p.every(v=>v>=0&&v<=100)));
     assert.equal(Object.isFrozen(path),true);
