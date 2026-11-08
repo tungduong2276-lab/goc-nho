@@ -12,7 +12,9 @@ async function openPreview(page,room="bep",width=390){
   const dialog=page.locator("#gn2arch-preview");
   await expect(dialog).toBeVisible();
   const image=dialog.locator("img.gn2arch-picture");
-  await expect.poll(async()=>image.evaluate(el=>el.complete?el.naturalWidth:0),{timeout:12000}).toBe(1170);
+  await expect(image).toHaveAttribute("data-gn2-loaded",
+    "./assets/3d/v2arch/"+room+"_ngay.webp",{timeout:12000});
+  await expect.poll(async()=>image.evaluate(el=>el.complete?el.naturalWidth:0)).toBe(1170);
   return {open,dialog,image};
 }
 test("real renderer WebPs for all six enlarged rooms and both light states load in the app",async({page})=>{
@@ -22,10 +24,14 @@ test("real renderer WebPs for all six enlarged rooms and both light states load 
     for(const light of ["ngay","dem"]){
       const label=light==="ngay"?"☀️ Ban ngày":"🌙 Ban đêm";
       await dialog.getByRole("button",{name:label}).click();
-      await expect(image).toHaveAttribute("src","./assets/3d/v2arch/"+id+"_"+light+".webp");
+      const src="./assets/3d/v2arch/"+id+"_"+light+".webp";
+      await expect(image).toHaveAttribute("data-gn2-loaded",src,{timeout:12000});
+      await expect(image).toHaveAttribute("src",src);
       await expect.poll(async()=>image.evaluate(el=>el.complete?el.naturalWidth:0)).toBe(1170);
       await expect.poll(async()=>image.evaluate(el=>el.complete?el.naturalHeight:0)).toBe(1170);
-      await page.screenshot({path:"test-results/world-v2-architecture-"+id+"-"+light+"-390.png",fullPage:true});
+      await expect(dialog.locator(".gn2arch-image-status")).toBeHidden();
+      await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+      await dialog.screenshot({path:"test-results/world-v2-architecture-"+id+"-"+light+"-390.png"});
     }
   }
   await expect(dialog.locator(".gn2arch-tab")).toHaveCount(6);
@@ -47,7 +53,27 @@ test("floor/corridor inspection uses real projected pixels, never old room geome
   expect(door).toEqual(metadata.doorway.floorPixels);
   expect(metadata.areaSqm).toBe(56);
   expect(metadata.originalAreaSqm).toBe(24);
-  await page.screenshot({path:"test-results/world-v2-architecture-metrics-gac-390.png",fullPage:true});
+  await dialog.screenshot({path:"test-results/world-v2-architecture-metrics-gac-390.png"});
+});
+test("rapid room switching only paints the last fully decoded bitmap, never a blank canvas",async({page})=>{
+  const {dialog,image}=await openPreview(page,"bep");
+  for(const id of ["gac","phong-anh","phong-em","goc-sang-tao","phong-khach"])
+    await dialog.locator('button[data-gn2-arch-room="'+id+'"]').click();
+  const final="./assets/3d/v2arch/phong-khach_ngay.webp";
+  await expect(image).toHaveAttribute("data-gn2-loaded",final,{timeout:12000});
+  await expect(image).toHaveAttribute("src",final);
+  await expect(dialog.locator(".gn2arch-image-status")).toBeHidden();
+  const pixel=await image.evaluate(async el=>{
+    await el.decode();
+    const canvas=document.createElement("canvas");
+    canvas.width=400;canvas.height=400;
+    const ctx=canvas.getContext("2d");
+    ctx.drawImage(el,0,0,400,400);
+    const p=ctx.getImageData(205,184,1,1).data;
+    return [...p];
+  });
+  expect(pixel[3]).toBeGreaterThan(200);
+  await dialog.screenshot({path:"test-results/world-v2-architecture-rapid-switch-390.png"});
 });
 test("existing room controls, kitchen game, and original furniture remain available after viewing",async({page})=>{
   const {dialog}=await openPreview(page,"bep");
@@ -83,8 +109,11 @@ test("preview modal is usable on 360/390/430 px, escape and focus return reliabl
     expect(box.x).toBeGreaterThanOrEqual(-1);
     expect(box.x+box.width).toBeLessThanOrEqual(width+1);
     await dialog.getByRole("button",{name:"🌙 Ban đêm"}).click();
+    await expect(image).toHaveAttribute("data-gn2-loaded",
+      "./assets/3d/v2arch/phong-em_dem.webp",{timeout:12000});
     await expect.poll(async()=>image.evaluate(el=>el.complete?el.naturalWidth:0)).toBe(1170);
-    await page.screenshot({path:"test-results/world-v2-architecture-mobile-"+width+".png",fullPage:true});
+    await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+    await dialog.screenshot({path:"test-results/world-v2-architecture-mobile-"+width+".png"});
     await page.keyboard.press("Escape");
     await expect(dialog).not.toBeVisible();
     await expect(open).toBeFocused();
