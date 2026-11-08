@@ -11,6 +11,8 @@ on:
       - "scripts/**"
       - "docs/garden-two-device-test.md"
       - "tests/browser/**"
+      - "tests/staging/**"
+      - "firebase.nha3d-staging.json"
       - "tests/firebase/**"
       - "firestore.rules"
       - "firebase.json"
