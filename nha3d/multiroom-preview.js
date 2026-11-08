@@ -4,28 +4,13 @@ import * as F from "./xuong/furn.js";
 import { OBJ, plantPot, rugRound, rugRect } from "./xuong/rooms2.js";
 import { C } from "./xuong/lib.js";
 import { CELL, CATALOG, WALL_COLORS, FLOOR_COLORS } from "./catalog.mjs";
+import { PREVIEW_LAYOUTS, PREVIEW_SPAWN } from "./multiroom-preview-layout.mjs";
 import { makeHouse, HOUSE_ROOMS, transitionAtDoor, routeHouse } from "./multiroom.mjs";
 import { cellCenter, blockGrid, worldPath, worldToCell } from "./engine.mjs";
 
 // Furnishing is preview-only: no schema migration or writes to existing saved homes.
-const previewLayouts = {
-  bep: { v: 1, wall: "bo", floor: "da", items: [
-    { uid: "k1", type: "banAn", gx: 5, gz: 5, r: 0 },
-    { uid: "k2", type: "tuLanh", gx: 13, gz: 1, r: 0 },
-    { uid: "k3", type: "bepNau", gx: 10, gz: 1, r: 0 },
-    { uid: "k4", type: "huHenHo", gx: 3, gz: 3, r: 0 },
-    { uid: "k5", type: "chauLuoiHo", gx: 12, gz: 11, r: 0 }
-  ] },
-  ngu: { v: 1, wall: "hong", floor: "go", items: [
-    { uid: "n1", type: "giuong", gx: 1, gz: 4, r: 0 },
-    { uid: "n2", type: "tuDo", gx: 12, gz: 2, r: 0 },
-    { uid: "n3", type: "banTrangDiem", gx: 11, gz: 7, r: 0 },
-    { uid: "n4", type: "keSach", gx: 2, gz: 11, r: 0 },
-    { uid: "n5", type: "oMeo", gx: 8, gz: 10, r: 0 },
-    { uid: "n6", type: "denCay", gx: 14, gz: 11, r: 0 }
-  ] }
-};
-const house = makeHouse(previewLayouts);
+
+const house = makeHouse(PREVIEW_LAYOUTS);
 const canvas = document.querySelector("#world"), status = document.querySelector("#status");
 const doorsUI = document.querySelector("#doors"), roomsUI = document.querySelector("#rooms");
 let renderer;
@@ -64,7 +49,7 @@ function disposeRoom() { floorGroup.traverse(o => { if (o.isMesh && o.userData.p
 function block(x, y, z, w, h, d, color) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color)); m.position.set(x, y, z); m.userData.previewOwned = true; floorGroup.add(m); return m;
 }
-let roomId = "khach", pos = { i: 8, j: 11 }, walking = [], last = performance.now();
+let roomId = PREVIEW_SPAWN.room, pos = { ...PREVIEW_SPAWN.cell }, walking = [], last = performance.now();
 const names = { khach: "🛋️ Phòng khách", bep: "🍳 Phòng bếp", ngu: "🛏️ Phòng ngủ" };
 function roomInfo() { return house.rooms[roomId]; }
 function renderRoom() {
