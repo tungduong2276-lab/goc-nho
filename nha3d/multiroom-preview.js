@@ -27,9 +27,9 @@ const hair = new THREE.Mesh(new THREE.SphereGeometry(.27, 16, 10, 0, Math.PI * 2
 hair.position.y = 1.08; avatar.add(hair);
 const mat = c => new THREE.MeshStandardMaterial({ color: c, roughness: .94 });
 const REAL_MODELS = { "F.sofa": () => F.sofa(), "F.coffeeTable": () => F.coffeeTable(), "F.bookshelfLow": () => F.bookshelfLow(), "F.pothos": () => F.pothos(), "F.petBed": () => F.petBed() };
-function disposeRoom() { floorGroup.traverse(o => { if (o.isMesh) { o.geometry.dispose(); for (const m of (Array.isArray(o.material) ? o.material : [o.material])) m.dispose(); } }); floorGroup.clear(); }
+function disposeRoom() { floorGroup.traverse(o => { if (o.isMesh && o.userData.previewOwned) { o.geometry.dispose(); for (const m of (Array.isArray(o.material) ? o.material : [o.material])) m.dispose(); } }); floorGroup.clear(); }
 function block(x, y, z, w, h, d, color) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color)); m.position.set(x, y, z); floorGroup.add(m); return m;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color)); m.position.set(x, y, z); m.userData.previewOwned = true; floorGroup.add(m); return m;
 }
 let roomId = "khach", pos = { i: 8, j: 10 }, walking = [], last = performance.now();
 const names = { khach: "🛋️ Phòng khách", bep: "🍳 Phòng bếp", ngu: "🛏️ Phòng ngủ" };
@@ -71,7 +71,7 @@ function renderRoom() {
       floorGroup.add(model);
     } else block(x, rug ? .018 : .24, z, w*.92, rug ? .025 : .48, d*.92, rug ? 0xf2a9c4 : 0x9fcbb6);
   }
-  // Visible doors on room boundary. No holes in walls until final geometry pass.
+  // Visible doorway markers align with actual openings in the wall segments.
   for (const door of house.doors) {
     const endpoint = door.a.room === roomId ? door.a : door.b.room === roomId ? door.b : null;
     if (!endpoint) continue;
