@@ -55,6 +55,28 @@ const REAL_MODELS = {
   "rugRect": def => rugRect(def.args[0], def.args[1], C[def.args[2]] ?? C.sky2, C[def.args[3]] ?? C.white),
   "F.rug": () => F.rug()
 };
+function clearActivityProps() {
+  activityProps.traverse(o => { if (o.isMesh) { o.geometry.dispose(); for (const m of (Array.isArray(o.material) ? o.material : [o.material])) m.dispose(); } });
+  activityProps.clear();
+}
+function createActivityProps(room) {
+  clearActivityProps();
+  const material = color => new THREE.MeshStandardMaterial({ color, roughness: .55 });
+  const add = (geometry, color, x, y, z) => {
+    const mesh = new THREE.Mesh(geometry, material(color));
+    mesh.position.set(x, y, z); activityProps.add(mesh); return mesh;
+  };
+  if (room === "khach") {
+    add(new THREE.CylinderGeometry(.10, .085, .16, 16), 0xfff5e9, .28, .79, .10);
+    add(new THREE.TorusGeometry(.07, .023, 8, 12), 0xfff5e9, .40, .79, .10).rotation.y = Math.PI / 2;
+  } else if (room === "bep") {
+    add(new THREE.CylinderGeometry(.028, .028, .38, 10), 0xb78c65, .27, .74, .10).rotation.z = -.5;
+    add(new THREE.SphereGeometry(.09, 12, 8), 0xd9a66c, .34, .56, .10);
+  } else if (room === "ngu") {
+    add(new THREE.BoxGeometry(.28, .012, .20), 0xfff8ed, .26, .66, .14);
+    add(new THREE.CylinderGeometry(.012, .012, .30, 8), 0x9b7ee3, .28, .77, .12).rotation.z = -.6;
+  }
+}
 function clearActivityVisuals() {
   activityVisuals.traverse(o => { if (o.isMesh) { o.geometry.dispose(); for (const m of (Array.isArray(o.material) ? o.material : [o.material])) m.dispose(); } });
   activityVisuals.clear(); activityVisualRoom = null;
@@ -79,6 +101,7 @@ const names = { khach: "🛋️ Phòng khách", bep: "🍳 Phòng bếp", ngu: "
 function roomInfo() { return house.rooms[roomId]; }
 function renderRoom() {
   activityPoseUntil = 0;
+  clearActivityProps();
   avatar.scale.y = 1;
   body.rotation.z = 0;
   head.rotation.z = 0;
@@ -185,6 +208,7 @@ function finishActivity() {
   pendingActivity = null;
   activityCounts[roomId] += 1;
   activityPoseUntil = performance.now() + 2200;
+  createActivityProps(roomId);
   showActivityVisual(roomId);
   status.textContent = action.message + " · Lần " + activityCounts[roomId];
 }
@@ -213,6 +237,7 @@ canvas.addEventListener("pointerup", e => {
   pendingDoor = null;
   pendingActivity = null;
   activityPoseUntil = 0;
+  clearActivityProps();
   clearActivityVisuals();
   const grid = blockGrid(roomInfo().layout, roomInfo().size);
   const path = worldPath(grid, avatar.position.x, avatar.position.z, point.x, point.z, roomInfo().size);
@@ -237,6 +262,7 @@ function frame(now) {
   } else if (pendingDoor) crossDoor();
   else if (pendingActivity) finishActivity();
   const acting = now < activityPoseUntil && !walking.length;
+  if (!acting && activityProps.children.length) clearActivityProps();
   const t = now * .001;
   if (acting && roomId === "khach") {
     // A relaxed tea-time lean and small nod.
