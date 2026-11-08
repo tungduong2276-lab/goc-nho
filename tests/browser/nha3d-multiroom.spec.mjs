@@ -65,3 +65,34 @@ test("activity controls remain reachable on narrow mobile screens", async ({ pag
  await button.click();
  await expect(page.locator("#status")).toContainText("Lần 1", { timeout: 30_000 });
 });
+
+for (const width of [360, 390, 430]) {
+ test("complete 3-room activity lifecycle on " + width + "px mobile", async ({ page }) => {
+  const { errors, firebase } = await openPreview(page, width);
+  const state = () => page.evaluate(() => window.__NHA3D_PREVIEW_STATE__?.());
+  for (const [room, action, next] of [
+   ["khach", "☕ Uống trà", "🚪 Phòng bếp"],
+   ["bep", "🍳 Nấu cùng nhau", "🚪 Phòng khách"],
+   ["khach", null, "🚪 Phòng ngủ"],
+   ["ngu", "💌 Lời nhắn", null]
+  ]) {
+   await expect.poll(async () => (await state())?.room).toBe(room);
+   if (action) {
+    await page.getByRole("button", { name: action }).click();
+    await expect.poll(async () => (await state())?.counts[room], { timeout: 30_000 }).toBe(room === "khach" ? 1 : 1);
+    await expect.poll(async () => (await state())?.props, { timeout: 5_000 }).toBeGreaterThan(0);
+    await expect.poll(async () => (await state())?.acting).toBe(true);
+    await expect.poll(async () => (await state())?.props, { timeout: 8_000 }).toBe(0);
+    await expect.poll(async () => (await state())?.acting).toBe(false);
+   }
+   if (next) {
+    await page.getByRole("button", { name: next }).click();
+    const destination = next.includes("bếp") ? "bep" : next.includes("ngủ") ? "ngu" : "khach";
+    await expect.poll(async () => (await state())?.room, { timeout: 30_000 }).toBe(destination);
+    await expect.poll(async () => (await state())?.props).toBe(0);
+   }
+  }
+  expect(errors).toEqual([]);
+  expect(firebase).toEqual([]);
+ });
+}
