@@ -186,6 +186,8 @@ function renderRoom() {
 function goDoor(id, endpoint, dest) {
   pendingActivity = null;
   activityPoseUntil = 0;
+  clearActivityProps();
+  clearActivityVisuals();
   // A door button must route to its own doorway, not an arbitrary shortest route
   // through another room. Both endpoints must remain free before walking begins.
   const sourceRoom = roomInfo(), targetRoom = house.rooms[dest.room];
