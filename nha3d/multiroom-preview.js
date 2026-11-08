@@ -15,7 +15,6 @@ const canvas = document.querySelector("#world"), status = document.querySelector
 const doorsUI = document.querySelector("#doors"), roomsUI = document.querySelector("#rooms");
 const activitiesUI = document.querySelector("#activities");
 const activityCounts = { khach: 0, bep: 0, ngu: 0 };
-const activityVisuals = new THREE.Group();
 let activityVisualRoom = null;
 const activities = {
   khach: { label: "☕ Uống trà", message: "Hai người cùng ngồi uống trà trong phòng khách." },
@@ -32,7 +31,7 @@ scene.add(new THREE.HemisphereLight(0xffffff, 0xc9c0b7, 2.2));
 const sun = new THREE.DirectionalLight(0xffffff, 1.7); sun.position.set(-4, 9, 6); scene.add(sun);
 const camera = new THREE.OrthographicCamera(-6, 6, 6, -6, .1, 100);
 const floorGroup = new THREE.Group(); scene.add(floorGroup);
-scene.add(activityVisuals);
+const activityVisuals = new THREE.Group(); scene.add(activityVisuals);
 const avatar = new THREE.Group(); scene.add(avatar);
 const body = new THREE.Mesh(new THREE.CapsuleGeometry(.21, .43, 4, 8), new THREE.MeshStandardMaterial({ color: 0xe75b91 }));
 body.position.y = .53; avatar.add(body);
