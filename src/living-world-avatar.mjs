@@ -29,6 +29,38 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
     const canvas=scene.querySelector(".rstage .wcanvas");
     return canvas?{root,scene,canvas}:null;
   }
+  // Visual QA only: ?world2=1&floormap=1 overlays the PHYSICAL walkable
+  // footprint map onto the real artwork; it does not intercept furniture taps.
+  const reviewFloor=new URLSearchParams(location.search).get("floormap")==="1";
+  function paintFloorReview(room,canvas) {
+    if(!reviewFloor||canvas.querySelector(".gn2-floor-review"))return;
+    const spec=ROOM_NAV[room];
+    const ns="http://www.w3.org/2000/svg";
+    const svg=document.createElementNS(ns,"svg");
+    svg.setAttribute("viewBox","0 0 1170 1170");
+    svg.setAttribute("aria-hidden","true");
+    svg.classList.add("gn2-floor-review");
+    svg.dataset.gn2Room=room;
+    const poly=(points,kind,id)=>{
+      const shape=document.createElementNS(ns,"polygon");
+      shape.setAttribute("points",points.map(p=>p.join(",")).join(" "));
+      shape.classList.add("gn2-floor-"+kind);
+      if(id)shape.dataset.gn2Furniture=id;
+      svg.appendChild(shape);
+    };
+    poly(spec.floor,"walkable");
+    for(const [id,footprint] of Object.entries(spec.furniture))poly(footprint,"blocked",id);
+    const spot=document.createElementNS(ns,"circle");
+    spot.classList.add("gn2-floor-exit");
+    spot.setAttribute("cx",spec.exit[0]);spot.setAttribute("cy",spec.exit[1]);
+    spot.setAttribute("r","24");svg.appendChild(spot);
+    const label=document.createElementNS(ns,"text");
+    label.classList.add("gn2-floor-exit-label");
+    label.setAttribute("x",spec.exit[0]);label.setAttribute("y",spec.exit[1]+56);
+    label.setAttribute("text-anchor","middle");label.textContent="Lối ra nền trước";
+    svg.appendChild(label);
+    canvas.appendChild(svg);
+  }
   function basePoint(room){
     const key=sceneKeys[room]||room;
     if(room==="phong-khach")return SC3?.room?.dung?.[0];
@@ -183,6 +215,7 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
     const avatar=findAvatar(room,parts.canvas,base);if(!avatar)return;
     const pos=cache.get(room);const safe=pos&&walkable(room,pos)?pos:base.slice();
     const bar=addToolbar(parts.scene);
+    paintFloorReview(room,parts.canvas);
     active={room,root:parts.root,scene:parts.scene,canvas:parts.canvas,avatar,
       base:base.slice(),pos:safe.slice(),route:null,bubble:null,bar};
     applyPosition(active);
