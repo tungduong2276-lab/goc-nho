@@ -144,10 +144,16 @@ function crossDoor() {
 }
 const ray = new THREE.Raycaster(), pointer = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 canvas.addEventListener("pointerup", e => {
-  pointer.set(e.clientX / innerWidth * 2 - 1, 1 - e.clientY / innerHeight * 2);
+  const bounds = canvas.getBoundingClientRect();
+  if (!bounds.width || !bounds.height) return;
+  pointer.set((e.clientX - bounds.left) / bounds.width * 2 - 1,
+              1 - (e.clientY - bounds.top) / bounds.height * 2);
   ray.setFromCamera(pointer, camera);
   const point = new THREE.Vector3();
   if (!ray.ray.intersectPlane(plane, point)) return;
+  const { size } = roomInfo();
+  const halfW = size.w * CELL / 2, halfD = size.d * CELL / 2;
+  if (Math.abs(point.x) >= halfW || Math.abs(point.z) >= halfD) return;
   pendingDoor = null;
   const grid = blockGrid(roomInfo().layout, roomInfo().size);
   const path = worldPath(grid, avatar.position.x, avatar.position.z, point.x, point.z, roomInfo().size);
