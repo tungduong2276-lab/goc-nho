@@ -20,7 +20,7 @@ async function openHouse(page, { width = 390, height = 844 } = {}) {
   }
   await page.route("https://fonts.googleapis.com/**", route => route.abort());
   await page.route("https://fonts.gstatic.com/**", route => route.abort());
-  await page.goto("/nha3d/");
+  await page.goto("/nha3d/index.html");
   await page.waitForFunction(() => window.__NHA3D__?.ready, null, { timeout: 90_000 });
   await page.evaluate(() => window.__NHA3D__.pauseAI(true));
   const N = (f, ...a) => page.evaluate(([f, a]) => window.__NHA3D__[f](...a), [f, a]);
