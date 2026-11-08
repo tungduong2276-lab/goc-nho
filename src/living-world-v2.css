@@ -1,4 +1,55 @@
 /* Góc Nhỏ — experimental living-world UI: scene object close-ups and contextual chat */
+
+/* World V2 chat dock — speech beside actual avatar; no 3D menu or fake online. */
+.gn2-chat-dock{
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  gap:8px;align-items:center;margin:6px 0 14px;padding:10px;
+  border:2px solid #f4d9e7;border-radius:18px;
+  background:linear-gradient(120deg,#fff9fc,#f0faf7);
+  box-shadow:0 3px 12px #5d3f6b12;
+  scroll-margin-bottom:calc(110px + env(safe-area-inset-bottom));
+}
+.gn2-chat-dock-icon{font-size:22px;line-height:1;user-select:none}
+.gn2-chat-dock input{
+  min-width:0;width:100%;box-sizing:border-box;
+  border:2px solid #e6d3e2;background:#fff;
+  border-radius:14px;padding:11px 12px;color:#4a3952;
+  font:750 14px Nunito,system-ui,sans-serif;min-height:44px;
+}
+.gn2-chat-dock input:focus-visible,.gn2-chat-dock-send:focus-visible{
+  outline:3px solid #956ac1;outline-offset:2px;
+}
+.gn2-chat-dock-send{
+  appearance:none;border:2px solid #df77a7;border-radius:14px;
+  background:#f483aa;color:#fff;font:900 14px Nunito,system-ui,sans-serif;
+  min-width:58px;min-height:44px;padding:9px 12px;cursor:pointer;
+}
+.gn2-chat-dock-send:disabled{opacity:.56;cursor:wait}
+.gn2-chat-dock-caption{grid-column:1/-1;margin:0;font-size:11px;
+  line-height:1.4;color:#826a7e;font-weight:750}
+.gn2-scene-speech{
+  position:absolute;z-index:4000;transform:translate(-50%,-100%);
+  pointer-events:none;max-width:min(220px,78vw);min-width:115px;
+  padding:9px 12px;border:2px solid #e7aacb;border-radius:18px 18px 18px 5px;
+  background:#fffdfa;color:#624c6a;box-shadow:0 5px 12px #59415d36;
+  word-break:break-word;animation:gn2Talk .3s cubic-bezier(.2,.8,.25,1) both
+}
+.gn2-scene-speech::after{content:"";position:absolute;bottom:-11px;left:24px;
+  width:15px;height:15px;background:#fffdfa;border-right:2px solid #e7aacb;
+  border-bottom:2px solid #e7aacb;transform:rotate(45deg)}
+.gn2-scene-speech-remote{border-color:#a9dad0;background:#f1fff9}
+.gn2-scene-speech-remote::after{background:#f1fff9;border-color:#a9dad0}
+.gn2-scene-speech-name{font-weight:900;color:#b45b91;font-size:11px;margin-bottom:3px}
+.gn2-scene-speech-text{font:800 13px/1.45 Nunito,system-ui,sans-serif;
+  white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;
+  -webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
+@keyframes gn2Talk{from{opacity:0;transform:translate(-50%,-85%) scale(.92)}
+  to{opacity:1;transform:translate(-50%,-100%) scale(1)}}
+@media(max-width:370px){.gn2-chat-dock{gap:6px;padding:8px}
+  .gn2-chat-dock-icon{font-size:19px}.gn2-chat-dock-send{min-width:53px;padding:8px}
+  .gn2-scene-speech{max-width:168px;padding:7px 9px}}
+@media(prefers-reduced-motion:reduce){.gn2-scene-speech{animation:none}}
+
 .gn2-enabled .room3d,.gn2-enabled .garden3d,.gn2-enabled .world {position:relative;}
 .gn2-chat-toggle,.gn2-fridge-toggle {
   position:absolute;right:12px;bottom:14px;z-index:3500;

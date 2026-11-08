@@ -82,7 +82,9 @@
     el.appendChild(content);
     el.addEventListener("close", function () {
       if (lastFocus && lastFocus.isConnected) lastFocus.focus();
-      if (id === "gn2-chat" && chatUnsubscribe) {
+      // While the room is visible, keep a single staging stream alive so
+      // incoming chat can appear beside avatars even with the history closed.
+      if (id === "gn2-chat" && chatUnsubscribe && !canChatHere()) {
         chatUnsubscribe(); chatUnsubscribe = null; chatScope = "";
       }
     });
@@ -253,26 +255,119 @@
     return ["nha","phong-khach","bep","phong-anh","phong-em",
       "goc-sang-tao","gac","khu-vuon"].includes(scope);
   }
-  function mountHud() {
-    if (!canChatHere()) return;
-    var scope=locationScope(),root=document.getElementById("v-"+scope);
-    if (!root || root.hidden) return;
-    var scene=root.querySelector(".room3d,.garden3d,.world");
-    if(!scene || scene.querySelector(".gn2-chat-toggle"))return;
-    var trigger=button("💬 Trò chuyện", "gn2-chat-toggle", openChat);
-    scene.appendChild(trigger);
-    if(scope==="bep") {
-      var open=button("🧲 Mở tủ lạnh", "gn2-fridge-toggle", openFridge);
-      scene.appendChild(open);
+  // Contextual room conversation: visible chat dock and real scene speech bubbles.
+  // This uses the EXISTING worldChat staging stream; production V2 is local only.
+  var lastRoomBubble=null,chatHydrated=false,seenRoomChat=new Set();
+  function paintRoomBubble(message) {
+    if(!message || message.scope!==locationScope() || Date.now()-message.shownAt>6200)return;
+    var root=document.getElementById("v-"+message.scope);
+    var scene=root&&!root.hidden?root.querySelector(".room3d,.garden3d,.world"):null;
+    if(!scene)return;
+    var old=scene.querySelector(".gn2-scene-speech");
+    if(old)old.remove();
+    var bubble=div("gn2-scene-speech");
+    bubble.setAttribute("role","status");
+    bubble.setAttribute("aria-live","polite");
+    bubble.appendChild(div("gn2-scene-speech-name",ownLabel(message.who)));
+    bubble.appendChild(div("gn2-scene-speech-text",String(message.text).slice(0,160)));
+    var tag=scene.querySelector(".ctag.c-"+(message.who===0?"anh":"em"));
+    var box=scene.getBoundingClientRect();
+    if(tag) {
+      var rect=tag.getBoundingClientRect();
+      bubble.style.left=Math.max(90,Math.min(box.width-90,rect.left+rect.width/2-box.left))+"px";
+      bubble.style.top=Math.max(72,Math.min(box.height-15,rect.top-box.top-9))+"px";
+    }else {
+      // Do not fabricate an avatar for someone who is not actually in the room.
+      bubble.classList.add("gn2-scene-speech-remote");
+      bubble.style.left=Math.max(90,box.width/2)+"px";
+      bubble.style.top="78px";
     }
+    scene.appendChild(bubble);
+  }
+  function showRoomBubble(message) {
+    lastRoomBubble={who:message.who,scope:message.scope,
+      text:String(message.text||"").slice(0,160),shownAt:Date.now()};
+    paintRoomBubble(lastRoomBubble);
+    clearTimeout(showRoomBubble._timer);
+    var captured=lastRoomBubble;
+    showRoomBubble._timer=setTimeout(function(){
+      if(lastRoomBubble===captured)lastRoomBubble=null;
+      var box=document.querySelector(".gn2-scene-speech");
+      if(box)box.remove();
+    },6200);
+  }
+  async function commitRoomChat(op) {
+    if(ME===null || !op || !op.text || !canChatHere())throw new Error("invalid chat context");
+    var stage=staging(),message={id:op.id,who:ME,text:op.text,scope:op.scope,at:Date.now()};
+    if(op.scope!==locationScope())throw new Error("room changed while sending");
+    if(stage) {
+      await DB.collection("worldChat").doc(op.id).set({
+        who:ME,authorUid:UID,text:op.text,
+        at:firebase.firestore.FieldValue.serverTimestamp(),scope:op.scope
+      });
+      seenRoomChat.add(op.id);
+    }else demoChat.push(message);
+    showRoomBubble(message);
+    if(chat.open)renderChat();
+    return stage;
+  }
+  function makeChatDock(scene,root) {
+    if(root.querySelector(".gn2-chat-dock"))return;
+    var form=document.createElement("form");form.className="gn2-chat-dock";
+    form.setAttribute("aria-label","Nói chuyện ngay trong phòng");
+    var icon=div("gn2-chat-dock-icon","💬");
+    var input=document.createElement("input");
+    input.type="text";input.maxLength=160;input.required=true;
+    input.setAttribute("aria-label","Lời nhắn trong phòng");
+    input.placeholder="Nói gì với người ấy đi...";
+    var send=button("Gửi ngay","gn2-chat-dock-send");send.type="submit";
+    if(ME===null){input.disabled=true;send.disabled=true;}
+    var note=div("gn2-chat-dock-caption",staging()?
+      "Chat thử qua Firebase staging · không phải dữ liệu thật":
+      "Tin nhắn thử trên máy này · chưa gửi sang điện thoại kia");
+    form.append(icon,input,send,note);
+    var op=null;
+    form.addEventListener("submit",async function(event){
+      event.preventDefault();
+      var text=input.value.trim();if(!text||ME===null)return;
+      send.disabled=true;send.textContent="...";
+      if(!op||op.text!==text||op.scope!==locationScope())op={
+        text:text,scope:locationScope(),id:"chat-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,9)
+      };
+      try{
+        var stage=await commitRoomChat(op);
+        op=null;input.value="";send.disabled=false;send.textContent="Gửi ngay";
+        if(stage)hint("Đã gửi tin nhắn qua staging");
+      }catch(err){
+        send.disabled=false;send.textContent="Thử lại";
+        hint("Chưa gửi được. Tin nhắn vẫn nằm trong khung để thử lại.");
+      }
+    });
+    scene.insertAdjacentElement("afterend",form);
+  }
+  function mountHud() {
+    if (!canChatHere())return;
+    var scope=locationScope(),root=document.getElementById("v-"+scope);
+    if(!root||root.hidden)return;
+    var scene=root.querySelector(".room3d,.garden3d,.world");
+    if(!scene)return;
+    if(!scene.querySelector(".gn2-chat-toggle")) {
+      scene.appendChild(button("💬 Lịch sử chat","gn2-chat-toggle",openChat));
+      if(scope==="bep")scene.appendChild(button("🧲 Mở tủ lạnh","gn2-fridge-toggle",openFridge));
+    }
+    makeChatDock(scene,root);
+    if(lastRoomBubble&&lastRoomBubble.scope===scope)paintRoomBubble(lastRoomBubble);
+    if(staging())subscribeChat();
   }
   function renderChat() {
     var content=chat.querySelector(".gn2-dialog-content");
     content.replaceChildren();
     status(content);
-    content.appendChild(div("gn2-muted", "💬 Hai người có thể trò chuyện trong phòng, không cần rời khỏi không gian chung."));
+    content.appendChild(div("gn2-muted","💬 Cửa sổ này lưu lịch sử; có thể nhắn ngay bên dưới phòng."));
     var messages=div("gn2-chat-messages");
-    (staging()?chatMessages.filter(function(m){return m.scope===locationScope();}):demoChat).slice(-40).forEach(function(m){
+    (staging()?chatMessages:demoChat).filter(function(m){
+      return m.scope===locationScope();
+    }).slice(-40).forEach(function(m){
       var row=div("gn2-chat-message"+(m.who===ME?" mine":""));
       row.appendChild(div("gn2-chat-bubble",m.text));
       row.appendChild(div("gn2-chat-person",ownLabel(m.who)));
@@ -284,27 +379,21 @@
     var input=document.createElement("input");
     input.maxLength=280;input.placeholder="Nói gì đó với người ấy...";
     input.required=true;input.setAttribute("aria-label","Tin nhắn");
-    var send=button("Gửi", "gn2-primary");send.type="submit";
+    var send=button("Gửi","gn2-primary");send.type="submit";
     if(ME===null){input.disabled=true;send.disabled=true;}
     form.appendChild(input);form.appendChild(send);content.appendChild(form);
-    var chatOp=null;
+    var op=null;
     form.addEventListener("submit",async function(e) {
       e.preventDefault();
-      var text=input.value.trim();if(!text)return;
+      var text=input.value.trim();if(!text||ME===null)return;
       send.disabled=true;send.textContent="Đang gửi...";
-      if(!chatOp||chatOp.text!==text)chatOp={text:text,id:"chat-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,9)};
+      if(!op||op.text!==text||op.scope!==locationScope())op={
+        text:text,scope:locationScope(),id:"chat-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,9)
+      };
       try{
-        if(staging()){
-          await DB.collection("worldChat").doc(chatOp.id).set({
-            who:ME,authorUid:UID,text:text,
-            at:firebase.firestore.FieldValue.serverTimestamp(),
-            scope:locationScope()
-          });
-        }else {
-          demoChat.push({who:ME,text:text,at:Date.now()});
-          renderChat();
-        }
-        chatOp=null;lastChat=text;hint(staging()?"Tin nhắn đã gửi qua staging":"Tin nhắn thử chỉ ở trên thiết bị này");
+        var stage=await commitRoomChat(op);
+        op=null;lastChat=text;
+        hint(stage?"Tin nhắn đã gửi qua staging":"Tin nhắn thử chỉ ở trên thiết bị này");
       }catch(err){hint("Chưa gửi được. Bạn có thể thử lại.");send.disabled=false;send.textContent="Thử lại";}
     });
     messages.scrollTop=messages.scrollHeight;
@@ -313,10 +402,22 @@
     if(!staging())return;
     var scope=locationScope();
     if(chatUnsubscribe&&chatScope===scope)return;
-    if(chatUnsubscribe)chatUnsubscribe();
-    chatScope=scope;
-    chatUnsubscribe=DB.collection("worldChat").orderBy("at","desc").limit(50).onSnapshot(function(snap){
+    if(chatUnsubscribe){chatUnsubscribe();chatUnsubscribe=null;}
+    chatScope=scope;chatHydrated=false;seenRoomChat=new Set();
+    chatUnsubscribe=DB.collection("worldChat").orderBy("at","desc").limit(50).onSnapshot(function(snap) {
       chatMessages=snap.docs.map(function(d){return d.data();}).reverse();
+      if(!chatHydrated) {
+        snap.docs.forEach(function(d){seenRoomChat.add(d.id);});
+        chatHydrated=true;
+      }else {
+        snap.docChanges().forEach(function(change) {
+          if(change.type!=="added"||seenRoomChat.has(change.doc.id))return;
+          seenRoomChat.add(change.doc.id);
+          var m=change.doc.data();
+          if(m && m.scope===locationScope() && typeof m.text==="string" && (m.who===0||m.who===1))
+            showRoomBubble(m);
+        });
+      }
       if(chat.open)renderChat();
     },function(){hint("Mất kết nối chat staging. Vui lòng kiểm tra mạng.");});
   }
@@ -344,6 +445,12 @@
     if(!link)return;
     event.preventDefault();openFridge();
   },true);
-  window.addEventListener("hashchange",function() {requestAnimationFrame(mountHud);});
+  window.addEventListener("hashchange",function() {
+    if(!canChatHere()&&chatUnsubscribe) {
+      chatUnsubscribe();chatUnsubscribe=null;chatScope="";seenRoomChat.clear();chatHydrated=false;
+    }
+    requestAnimationFrame(mountHud);
+  });
+  window.__GN_WORLD_V2__.roomChat={mode:"staging-only",inlineDock:true,bubbles:true};
   mountHud();
 })();

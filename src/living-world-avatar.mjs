@@ -89,7 +89,11 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
       feelings.appendChild(b);
     }
     bar.appendChild(feelings);
-    scene.insertAdjacentElement("afterend",bar);
+    // Keep in-room chat directly next to the visual world; movement controls
+    // follow it instead of pushing the chat input behind the fixed bottom nav.
+    const dock=scene.nextElementSibling;
+    if(dock?.classList.contains("gn2-chat-dock"))dock.insertAdjacentElement("afterend",bar);
+    else scene.insertAdjacentElement("afterend",bar);
     return bar;
   }
   function applyPosition(a){
