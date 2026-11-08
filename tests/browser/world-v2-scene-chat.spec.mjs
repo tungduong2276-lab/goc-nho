@@ -25,6 +25,23 @@ test('in-room chat writes a speech bubble near the avatar and keeps the current 
   await root.locator('.gn2-chat-toggle').click();
   await expect(page.locator('#gn2-chat .gn2-chat-bubble')).toContainText('Ăn bánh rồi đi chơi nhé!');
 });
+test('chat draft and keyboard focus survive repeated reactive room rebuilds',async({page})=>{
+  const root=await visitRoom(page);
+  const input=root.locator('.gn2-chat-dock input');
+  await input.fill('Đây là lời nhắn chưa gửi 🌷');
+  await input.focus();
+  await page.evaluate(()=>{renderRooms();renderRooms();});
+  await expect(input).toHaveValue('Đây là lời nhắn chưa gửi 🌷');
+  await expect(input).toBeFocused();
+  await input.press('Enter');
+  await expect(input).toHaveValue('');
+  await expect(root.locator('.gn2-scene-speech')).toContainText('Đây là lời nhắn chưa gửi');
+  await page.evaluate(()=>renderRooms());
+  await expect(root.locator('.gn2-scene-speech')).toContainText('Đây là lời nhắn chưa gửi');
+  await root.locator('.gn2-chat-toggle').click();
+  await expect(page.locator('#gn2-chat .gn2-chat-bubble')).toContainText('Đây là lời nhắn chưa gửi');
+  await expect(page.locator('#gn2-chat .gn2-chat-bubble')).toHaveCount(1);
+});
 test('speech in one room does not appear in other rooms or leak into other room history',async({page})=>{
   const kitchen=await visitRoom(page);
   const entry=kitchen.locator('.gn2-chat-dock input');
