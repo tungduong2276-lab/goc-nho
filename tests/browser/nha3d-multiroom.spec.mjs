@@ -96,3 +96,17 @@ for (const width of [360, 390, 430]) {
   expect(firebase).toEqual([]);
  });
 }
+
+test("interrupting an activity with a door clears temporary props", async ({ page }) => {
+ const { errors, firebase } = await openPreview(page);
+ const state = () => page.evaluate(() => window.__NHA3D_PREVIEW_STATE__());
+ await page.getByRole("button", { name: "☕ Uống trà" }).click();
+ await expect.poll(async () => (await state()).acting, { timeout: 30_000 }).toBe(true);
+ await expect.poll(async () => (await state()).props).toBeGreaterThan(0);
+ await page.getByRole("button", { name: "🚪 Phòng bếp" }).click();
+ await expect.poll(async () => (await state()).props).toBe(0);
+ await expect.poll(async () => (await state()).acting).toBe(false);
+ await expect.poll(async () => (await state()).room, { timeout: 30_000 }).toBe("bep");
+ expect(errors).toEqual([]);
+ expect(firebase).toEqual([]);
+});
