@@ -7,6 +7,7 @@ import { CELL, CATALOG, WALL_COLORS, FLOOR_COLORS } from "./catalog.mjs";
 import { PREVIEW_LAYOUTS, PREVIEW_SPAWN } from "./multiroom-preview-layout.mjs";
 import { makeHouse, HOUSE_ROOMS, transitionAtDoor } from "./multiroom.mjs";
 import { cellCenter, blockGrid, cellFree, findPath, worldPath, worldToCell } from "./engine.mjs";
+import { routeToFurniture } from "./multiroom-activities.mjs";
 
 // Furnishing is preview-only: no schema migration or writes to existing saved homes.
 
@@ -72,6 +73,7 @@ function block(x, y, z, w, h, d, color) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color)); m.position.set(x, y, z); m.userData.previewOwned = true; floorGroup.add(m); return m;
 }
 let roomId = PREVIEW_SPAWN.room, pos = { ...PREVIEW_SPAWN.cell }, walking = [], last = performance.now();
+let pendingActivity = null;
 const names = { khach: "🛋️ Phòng khách", bep: "🍳 Phòng bếp", ngu: "🛏️ Phòng ngủ" };
 function roomInfo() { return house.rooms[roomId]; }
 function renderRoom() {
@@ -132,9 +134,14 @@ function renderRoom() {
   const activityButton = document.createElement("button");
   activityButton.textContent = action.label;
   activityButton.addEventListener("click", () => {
-    activityCounts[roomId] += 1;
-    showActivityVisual(roomId);
-    status.textContent = action.message + " · Lần " + activityCounts[roomId];
+    const route = routeToFurniture(roomInfo(), pos, roomId);
+    if (!route) { status.textContent = "Không có lối đến đồ vật để thực hiện hoạt động."; return; }
+    pendingDoor = null;
+    clearActivityVisuals();
+    walking = route.slice(1).map(c => cellCenter(c.i, c.j, roomInfo().size));
+    pendingActivity = { room: roomId, action };
+    status.textContent = "Đang đi đến đồ vật để " + action.label;
+    if (!walking.length) finishActivity();
   });
   activitiesUI.append(activityButton);
   doorsUI.replaceChildren();
@@ -148,6 +155,7 @@ function renderRoom() {
   status.textContent = "Đang ở " + HOUSE_ROOMS[roomId].name;
 }
 function goDoor(id, endpoint, dest) {
+  pendingActivity = null;
   // A door button must route to its own doorway, not an arbitrary shortest route
   // through another room. Both endpoints must remain free before walking begins.
   const sourceRoom = roomInfo(), targetRoom = house.rooms[dest.room];
@@ -165,6 +173,14 @@ function goDoor(id, endpoint, dest) {
   if (!walking.length) crossDoor();
 }
 let pendingDoor = null;
+function finishActivity() {
+  if (!pendingActivity || pendingActivity.room !== roomId) return;
+  const { action } = pendingActivity;
+  pendingActivity = null;
+  activityCounts[roomId] += 1;
+  showActivityVisual(roomId);
+  status.textContent = action.message + " · Lần " + activityCounts[roomId];
+}
 function crossDoor() {
   if (!pendingDoor) return;
   const { id, endpoint } = pendingDoor;
@@ -188,6 +204,7 @@ canvas.addEventListener("pointerup", e => {
   const halfW = size.w * CELL / 2, halfD = size.d * CELL / 2;
   if (Math.abs(point.x) >= halfW || Math.abs(point.z) >= halfD) return;
   pendingDoor = null;
+  pendingActivity = null;
   const grid = blockGrid(roomInfo().layout, roomInfo().size);
   const path = worldPath(grid, avatar.position.x, avatar.position.z, point.x, point.z, roomInfo().size);
   if (!path) { status.textContent = "Không tìm thấy đường đi."; return; }
@@ -209,6 +226,7 @@ function frame(now) {
     else { avatar.position.x += dx/d*step; avatar.position.z += dz/d*step; }
     pos = worldToCell(avatar.position.x, avatar.position.z, roomInfo().size);
   } else if (pendingDoor) crossDoor();
+  else if (pendingActivity) finishActivity();
   if (activityVisualRoom === roomId) {
     activityVisuals.position.y = Math.sin(now * .003) * .10;
     activityVisuals.rotation.y += dt * .6;
