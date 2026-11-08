@@ -108,7 +108,7 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
     [["←",-1,0],["↑",0,-1],["↓",0,1],["→",1,0]].forEach(([text,dx,dy])=>{
       const b=document.createElement("button");b.type="button";b.textContent=text;
       b.className="gn2-walk-button";b.setAttribute("aria-label","Di chuyển "+({ "←":"trái","↑":"lên","↓":"xuống","→":"phải" }[text]));
-      b.addEventListener("click",()=>{if(!active)return;moveTo([active.pos[0]+dx*68,active.pos[1]+dy*68]);});
+      b.addEventListener("click",()=>moveDirectional(dx,dy));
       arrows.appendChild(b);
     });
     bar.appendChild(arrows);
@@ -178,6 +178,31 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
     }else frame=requestAnimationFrame(step);
     return true;
   }
+  function moveDirectional(dx,dy) {
+    const a=active;if(!a||standingPose(a.room))return false;
+    const target=[a.pos[0]+dx*68,a.pos[1]+dy*68];
+    if(moveTo(target))return true;
+    // When a table blocks the intended cardinal direction, try the nearest
+    // reachable aisle rather than leaving the arrow seemingly broken.
+    // The detour is animated by the same collision-aware A* path, never a jump.
+    const tangent=[-dy,dx];
+    let best=null,score=Infinity;
+    for(const offset of [32,64,96,128,160,192,224]){
+      for(const sign of [-1,1]){
+        const candidate=[target[0]+tangent[0]*offset*sign,
+          target[1]+tangent[1]*offset*sign];
+        if(!walkable(a.room,candidate))continue;
+        const path=walkPath(a.room,a.pos,candidate);
+        if(!path)continue;
+        const dist=path.reduce((total,p,i)=>i?total+Math.hypot(
+          p[0]-path[i-1][0],p[1]-path[i-1][1]):0,0);
+        const cost=dist+offset*.24;
+        if(cost<score){best=candidate;score=cost;}
+      }
+      if(best)break; // smallest sidestep with a genuine path
+    }
+    return best?moveTo(best):false;
+  }
   function blockedByInteractiveItem(canvas,event) {
     if(event.target.closest?.(".lay,.chr,.gn2-chat-toggle,.gn2-fridge-toggle"))return true;
     for(const el of canvas.querySelectorAll(".lay.hot")){
@@ -241,7 +266,7 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
     if(!dir)return;
     const focused=document.activeElement;
     if(!focused?.closest(".gn2-walk-toolbar"))return;
-    event.preventDefault();moveTo([active.pos[0]+dir[0]*68,active.pos[1]+dir[1]*68]);
+    event.preventDefault();moveDirectional(dir[0],dir[1]);
   });
   queueInstall();
 }
