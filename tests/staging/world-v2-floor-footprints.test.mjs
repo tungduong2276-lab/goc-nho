@@ -65,6 +65,7 @@ test("real table and fixture bases are blocked but long sprite shadows are not",
         assert.equal(walkable(room,middle),false,room+" "+name+" base should block movement");
     }
   }
+  assert.equal(walkable("phong-khach",[498,554]),false,"living-room stairs cannot be walked through");
   assert.equal(walkable("bep",[582,691]),false,"dining table cannot be walked through");
   assert.equal(walkable("bep",[815,685]),false,"counter cannot be walked through");
   assert.equal(walkable("bep",[585,598.7]),true,"kitchen spawn remains safe");
