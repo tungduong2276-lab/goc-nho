@@ -42,7 +42,7 @@ export function createHallway({onSelect}={}) {
     sequence++;
     if(travel){travel.cancel();travel=null;}
     for(const b of doors)b.disabled=false;
-    avatar.style.left="50%";avatar.style.top="93%";
+    avatar.style.left="16%";avatar.style.top="93%";
     avatar.classList.remove("is-travelling");
   };
   for(const entry of V2_DOORS){
