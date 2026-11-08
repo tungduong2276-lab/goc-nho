@@ -39,3 +39,17 @@ for (const width of [360,390,430]) test("preview controls stay inside mobile vie
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
 });
+
+test("room activities respond locally and change with the room", async ({ page }) => {
+ const { errors, firebase } = await openPreview(page);
+ await page.getByRole("button", { name: "☕ Uống trà" }).click();
+ await expect(page.locator("#status")).toContainText("Lần 1");
+ await page.getByRole("button", { name: "☕ Uống trà" }).click();
+ await expect(page.locator("#status")).toContainText("Lần 2");
+ await page.getByRole("button", { name: "🚪 Phòng bếp" }).click();
+ await expect(page.locator("#status")).toContainText("Đang ở Phòng bếp", { timeout: 30_000 });
+ await page.getByRole("button", { name: "🍳 Nấu cùng nhau" }).click();
+ await expect(page.locator("#status")).toContainText("Căn bếp thơm");
+ expect(errors).toEqual([]);
+ expect(firebase).toEqual([]);
+});
