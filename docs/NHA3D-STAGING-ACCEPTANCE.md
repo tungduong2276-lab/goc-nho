@@ -66,3 +66,16 @@ firebase hosting:channel:deploy nha3d-review --project VERIFIED_STAGING_PROJECT_
 - Replace `VERIFIED_STAGING_PROJECT_ID` only after checking the Firebase Console project selector and project settings. This command is an **operator-only proposed step**, not a completed action. The preview channel URL must be captured from CLI output; never guess it.
 - Preview channels may still be reachable by anyone holding their URL. Do not put secrets or real user data in this static build. Confirm access controls appropriate to the intended testers.
 - Record the resulting URL, project ID, deployment ID, expiry, SHA and rollback action in PR #97 before distributing to the two testers.
+
+
+### Operator command for confirmed project
+
+The user has confirmed that the separate staging project `goc-nho-staging-2026` exists. **Existence is user-confirmed; project access, IAM permissions, and actual Console configuration have not been independently verified.** The guarded command below refuses to run without an explicit approval environment variable and hardcodes the staging project ID, not the production project:
+
+```sh
+npm install
+npx firebase login
+NHA3D_STAGING_APPROVED=goc-nho-staging-2026 node scripts/deploy-nha3d-staging.mjs
+```
+
+Before running, verify the active Google account has Hosting deploy permission **only** for the intended staging project. This is an operator-run command, not an automatic CI action. Capture the exact URL printed by Firebase CLI; do not invent one. If Firebase Hosting is not initialized or permissions are missing, stop and review rather than changing production settings.
