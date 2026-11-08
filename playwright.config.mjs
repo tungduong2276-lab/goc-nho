@@ -3,6 +3,8 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests/browser",
   fullyParallel: true,
+  // Keep every test; bound CI Chromium workers to avoid timing races in live scene rerenders.
+  workers: process.env.CI ? 1 : undefined,
   reporter: "list",
   timeout: 30_000,
   use: {

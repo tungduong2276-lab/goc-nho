@@ -1,0 +1,440 @@
+/* Góc Nhỏ — experimental living-world UI: scene object close-ups and contextual chat */
+
+/* World V2 chat dock — speech beside actual avatar; no 3D menu or fake online. */
+.gn2-chat-dock{
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  gap:8px;align-items:center;margin:6px 0 14px;padding:10px;
+  border:2px solid #f4d9e7;border-radius:18px;
+  background:linear-gradient(120deg,#fff9fc,#f0faf7);
+  box-shadow:0 3px 12px #5d3f6b12;
+  scroll-margin-bottom:calc(110px + env(safe-area-inset-bottom));
+}
+.gn2-chat-dock-icon{font-size:22px;line-height:1;user-select:none}
+.gn2-chat-dock input{
+  min-width:0;width:100%;box-sizing:border-box;
+  border:2px solid #e6d3e2;background:#fff;
+  border-radius:14px;padding:11px 12px;color:#4a3952;
+  font:750 14px Nunito,system-ui,sans-serif;min-height:44px;
+}
+.gn2-chat-dock input:focus-visible,.gn2-chat-dock-send:focus-visible{
+  outline:3px solid #956ac1;outline-offset:2px;
+}
+.gn2-chat-dock-send{
+  appearance:none;border:2px solid #df77a7;border-radius:14px;
+  background:#f483aa;color:#fff;font:900 14px Nunito,system-ui,sans-serif;
+  min-width:58px;min-height:44px;padding:9px 12px;cursor:pointer;
+}
+.gn2-chat-dock-send:disabled{opacity:.56;cursor:wait}
+.gn2-chat-dock-caption{grid-column:1/-1;margin:0;font-size:11px;
+  line-height:1.4;color:#826a7e;font-weight:750}
+.gn2-scene-speech{
+  position:absolute;z-index:4000;transform:translate(-50%,-100%);
+  pointer-events:none;max-width:min(220px,78vw);min-width:115px;
+  padding:9px 12px;border:2px solid #e7aacb;border-radius:18px 18px 18px 5px;
+  background:#fffdfa;color:#624c6a;box-shadow:0 5px 12px #59415d36;
+  word-break:break-word;animation:gn2Talk .3s cubic-bezier(.2,.8,.25,1) both
+}
+.gn2-scene-speech::after{content:"";position:absolute;bottom:-11px;left:24px;
+  width:15px;height:15px;background:#fffdfa;border-right:2px solid #e7aacb;
+  border-bottom:2px solid #e7aacb;transform:rotate(45deg)}
+.gn2-scene-speech-remote{border-color:#a9dad0;background:#f1fff9}
+.gn2-scene-speech-remote::after{background:#f1fff9;border-color:#a9dad0}
+.gn2-scene-speech-name{font-weight:900;color:#b45b91;font-size:11px;margin-bottom:3px}
+.gn2-scene-speech-text{font:800 13px/1.45 Nunito,system-ui,sans-serif;
+  white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;
+  -webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
+@keyframes gn2Talk{from{opacity:0;transform:translate(-50%,-85%) scale(.92)}
+  to{opacity:1;transform:translate(-50%,-100%) scale(1)}}
+@media(max-width:370px){.gn2-chat-dock{gap:6px;padding:8px}
+  .gn2-chat-dock-icon{font-size:19px}.gn2-chat-dock-send{min-width:53px;padding:8px}
+  .gn2-scene-speech{max-width:168px;padding:7px 9px}}
+@media(prefers-reduced-motion:reduce){.gn2-scene-speech{animation:none}}
+
+.gn2-enabled .room3d,.gn2-enabled .garden3d,.gn2-enabled .world {position:relative;}
+.gn2-chat-toggle,.gn2-fridge-toggle {
+  position:absolute;right:12px;bottom:14px;z-index:3500;
+  border:2px solid #fff;border-radius:20px;padding:10px 14px;
+  background:#fff1f6;color:#633c62;font:800 13px/1.2 Nunito,system-ui,sans-serif;
+  box-shadow:0 4px 14px #33243a33;cursor:pointer;min-height:44px;
+}
+.gn2-fridge-toggle{right:auto;left:12px;background:#e4fcf2;color:#315c4e;}
+.gn2-chat-toggle:focus-visible,.gn2-fridge-toggle:focus-visible,.gn2-dialog button:focus-visible {
+  outline:3px solid #6a8bec;outline-offset:3px;
+}
+.gn2-dialog {
+  width:min(94vw,550px);max-height:88dvh;border:3px solid #ffe4ef;
+  border-radius:28px;padding:0;background:linear-gradient(#fffdfb,#fff6fa);
+  color:#433049;box-shadow:0 15px 70px #27213e55;
+}
+.gn2-dialog::backdrop{background:#2b183a8a;backdrop-filter:blur(3px);}
+.gn2-dialog-header {
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:14px 18px;background:linear-gradient(100deg,#ffe3ee,#e5f6ff);
+  border-bottom:2px solid #ffcfdf;
+}
+.gn2-dialog-title{font:800 19px/1.2 "Baloo 2",Nunito,sans-serif;}
+.gn2-dialog-content{padding:16px;display:flex;flex-direction:column;gap:14px;max-height:calc(88dvh - 68px);overflow:auto;}
+.gn2-dialog button{border:0;font:800 14px Nunito,system-ui,sans-serif;cursor:pointer;}
+.gn2-close,.gn2-back,.gn2-secondary{background:#fff;border:2px solid #e3d8e6!important;color:#66486b;border-radius:14px;padding:8px 12px;}
+.gn2-primary{background:#ee739e;color:#fff;border-radius:14px;padding:12px 15px;min-height:44px;box-shadow:0 3px 0 #cf5d86;}
+.gn2-primary:disabled{opacity:.55;box-shadow:none;}
+.gn2-status{background:#ecf5ff;border-radius:12px;padding:8px 12px;font-size:12px;font-weight:800;color:#476583;}
+.gn2-muted{font-size:13px;color:#7d667c;font-weight:650;}
+.gn2-empty{text-align:center;color:#816c81;padding:22px 10px;font-weight:750;}
+.gn2-fridge-shell{
+  border-radius:28px;border:8px solid #b6dbe0;background:#e7faf9;
+  padding:13px 15px 20px;box-shadow:inset 2px 2px 7px #6b9fb022,6px 8px 0 #e2edf1;
+}
+.gn2-fridge-top{text-align:center;color:#588b95;font:800 18px "Baloo 2",Nunito,sans-serif;padding:4px 0 10px;}
+.gn2-fridge-door {
+  min-height:260px;padding:19px 16px 22px;border-radius:24px;
+  border:3px solid #badde3;background:linear-gradient(115deg,#fff,#e7f7fa 80%);
+  box-shadow:inset -12px 2px 24px #bcd9e744;position:relative;transform-origin:left;
+  animation:gn2-open .55s cubic-bezier(.1,.7,.2,1);
+}
+.gn2-fridge-handle{position:absolute;right:8px;top:26%;width:7px;height:76px;background:#a9cbd3;border-radius:8px;box-shadow:2px 1px 2px #709fa344;}
+.gn2-note-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:8px 18px 8px 0;}
+.gn2-note {
+  text-align:left;min-height:96px;padding:15px 12px 13px;line-height:1.4;
+  color:#654a5a;box-shadow:3px 7px 9px #36465020;
+  transform:rotate(var(--tilt,0deg));white-space:normal;word-break:break-word;
+  clip-path:polygon(0 0,100% 0,100% 95%,95% 100%,0 100%);
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
+}
+.gn2-note:hover{transform:rotate(0deg) translateY(-3px);}
+.gn2-paper-0{background:#ffe5ec}.gn2-paper-1{background:#dff6ea}
+.gn2-paper-2{background:#fff0bb}.gn2-paper-3{background:#ebe3ff}
+.gn2-paper-detail{
+  padding:22px 20px;min-height:240px;border-radius:5px 20px 18px 4px;
+  box-shadow:4px 8px 0 #64546a16;display:flex;flex-direction:column;gap:12px;
+  animation:gn2-paper .3s ease-out;
+}
+.gn2-note-author{font-size:13px;font-weight:900;color:#8d7187;}
+.gn2-note-body{font-size:19px;line-height:1.5;font-weight:800;white-space:pre-wrap;overflow-wrap:anywhere;}
+.gn2-note-sticker{font-size:32px;}
+.gn2-reply{border-left:3px solid #c38cad;background:#ffffff7d;border-radius:4px 11px 11px 4px;padding:9px 12px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere;}
+.gn2-note-actions{display:flex;gap:9px;flex-wrap:wrap;}
+.gn2-editor,.gn2-paper-reply{display:flex;flex-direction:column;gap:10px;}
+.gn2-editor label{font-weight:900;display:flex;flex-direction:column;gap:6px;}
+.gn2-dialog textarea,.gn2-dialog input,.gn2-dialog select{
+  border:2px solid #eed7e6;border-radius:15px;background:#fffdfa;
+  color:#433049;padding:12px;font:700 15px Nunito,system-ui,sans-serif;width:100%;box-sizing:border-box;
+}
+.gn2-chat-messages{
+  height:270px;overflow:auto;display:flex;flex-direction:column;gap:10px;
+  padding:12px;border-radius:18px;background:#fff;box-shadow:inset 0 0 0 2px #fbe6f0;
+}
+.gn2-chat-message{align-self:flex-start;max-width:88%;display:flex;flex-direction:column;gap:2px;}
+.gn2-chat-message.mine{align-self:flex-end;align-items:flex-end;}
+.gn2-chat-bubble{background:#e9f7f3;border-radius:18px 18px 18px 4px;padding:11px 13px;font-weight:750;white-space:pre-wrap;overflow-wrap:anywhere;}
+.gn2-chat-message.mine .gn2-chat-bubble{background:#ffe3ef;border-radius:18px 18px 4px 18px;}
+.gn2-chat-person{font-size:11px;color:#836e86;font-weight:800;}
+.gn2-chat-form{display:flex;gap:8px;}
+.gn2-chat-form input{min-width:0;flex:1;}
+.gn2-toast{
+  position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+  z-index:100000;background:#3b314c;color:white;padding:12px 18px;border-radius:17px;
+  max-width:min(92vw,500px);box-shadow:0 6px 28px #32253b55;font-size:13px;font-weight:800;
+}
+.gn2-toast[hidden]{display:none;}
+.gn2-sticker-glyph{display:inline-flex;align-items:center;justify-content:center;font-size:29px;line-height:1;width:100%;height:100%;}
+@keyframes gn2-open{from{transform:perspective(700px) rotateY(-20deg);opacity:.4}to{transform:perspective(700px) rotateY(0);opacity:1}}
+@keyframes gn2-paper{from{transform:translateY(18px) scale(.95);opacity:.5}to{transform:translateY(0) scale(1);opacity:1}}
+@media(max-width:390px){.gn2-note-grid{gap:12px}.gn2-dialog-content{padding:12px}.gn2-dialog-header{padding:12px}}
+@media(prefers-reduced-motion:reduce){.gn2-fridge-door,.gn2-paper-detail{animation:none}.gn2-note,.gn2-note:hover{transform:none}}
+
+.gn2-mini-head{font:800 21px "Baloo 2",Nunito,sans-serif;color:#ce5c8c}
+.gn2-mini-question{font-size:16px;line-height:1.5}
+.gn2-mini-menu,.gn2-mini-actions{display:flex;flex-direction:column;gap:10px}
+.gn2-mini-options,.gn2-mini-keys{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.gn2-mini-keys button,.gn2-mini-options button{background:#fff;border:2px solid #f6dbe8;border-radius:14px;padding:12px 8px;min-height:48px}
+.gn2-mini-keys button:hover,.gn2-mini-options button:hover{background:#fff0f6}
+.gn2-code{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.gn2-code-cell{min-width:42px;padding:14px 9px;background:#ffedf2;border:2px solid #f2cbd9;border-radius:12px;font-size:17px;font-weight:900;text-align:center}
+.gn2-mini-reveal{padding:12px 14px;border-radius:14px;background:#edfaf1;font-size:16px;font-weight:850}
+.gn2-game-area{margin:16px 0;padding:18px;border:2px solid #f6dbe8;background:#fffafc;border-radius:22px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+@media(max-width:370px){.gn2-mini-options{grid-template-columns:1fr}.gn2-code-cell{min-width:35px;padding:10px 6px}}
+
+/* Visual review: a lone paper needs legible width, not a tiny two-column tile. */
+.gn2-note-grid:has(> .gn2-note:only-child){grid-template-columns:minmax(0,1fr);}
+.gn2-note-grid:has(> .gn2-note:only-child) .gn2-note{width:min(230px,100%);min-height:110px;justify-self:center;line-height:1.5;-webkit-line-clamp:5;}
+.gn2-note{position:relative;padding-top:19px!important;font-size:14px!important;font-weight:800;transform-origin:50% 15%}
+.gn2-note::before{content:"";position:absolute;top:4px;left:calc(50% - 6px);width:12px;height:12px;border-radius:100%;background:#f3a0ba;box-shadow:inset 0 2px 2px #fff8,0 2px 2px #69466455;}
+.gn2-fridge-shell{background:linear-gradient(130deg,#d5f8f4 0%,#f0fffe 48%,#c4e7e9 100%)}
+.gn2-fridge-door{background:linear-gradient(120deg,#fefefe,#eaf9fb 72%,#d7edf1)}
+
+.gn2-dialog-header .gn2-close{white-space:nowrap;flex:0 0 auto;padding:9px 10px;font-size:13px}
+.gn2-dialog-title{font-size:18px;overflow-wrap:anywhere}
+
+
+/* V2 local walking — real floor taps and a small mobile-first control strip. */
+.gn2-enabled .gn2-walk-avatar{pointer-events:none!important;will-change:transform}
+.gn2-enabled .gn2-walk-avatar .cstack,.gn2-enabled .gn2-walk-avatar .spr,
+.gn2-enabled .gn2-walk-avatar .ctag{pointer-events:none!important}
+.gn2-walk-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:10px 12px;margin:4px 0 14px;border:1px solid #ead6e4;border-radius:18px;
+  background:linear-gradient(115deg,#fff4fa,#edf9fa);box-shadow:0 4px 10px #3d2a450a}
+.gn2-walk-help{flex:1 1 190px;min-width:0;font-size:12px;color:#73546a;font-weight:700}
+.gn2-walk-arrows,.gn2-walk-feelings{display:flex;gap:5px;align-items:center}
+.gn2-walk-button{font:inherit;display:grid;place-items:center;min-width:35px;height:35px;
+  padding:0 5px;border:1.5px solid #e0bfd1;background:white;border-radius:11px;
+  color:#6c3d61;box-shadow:0 2px 0 #f0d9e7;font-weight:900;cursor:pointer;touch-action:manipulation}
+.gn2-walk-button:active{transform:translateY(2px);box-shadow:none}
+.gn2-walk-button:focus-visible{outline:3px solid #ae63a2;outline-offset:2px}
+.gn2-walk-bubble{position:absolute;z-index:9000;display:grid;place-items:center;
+  width:70px;height:62px;border-radius:32px 32px 32px 8px;background:#fff9f9;
+  border:3px solid #f3c3d9;filter:drop-shadow(0 5px 5px #40364b25);
+  font-size:37px;transform:translate(-50%,-100%);pointer-events:none;
+  animation:gn2Hello .4s ease both}
+@keyframes gn2Hello{from{opacity:0;transform:translate(-50%,-75%) scale(.7)}to{opacity:1;transform:translate(-50%,-100%) scale(1)}}
+@media(max-width:420px){.gn2-walk-toolbar{gap:7px;padding:9px}.gn2-walk-help{flex-basis:100%}
+ .gn2-walk-button{min-width:34px;height:34px}}
+@media(prefers-reduced-motion:reduce){.gn2-walk-avatar{will-change:auto!important}
+ .gn2-walk-bubble{animation:none}}
+
+/* Góc Nhỏ V2 — physically manipulable kitchen (local prototype, no writes). */
+.gn2-kitchen-content{gap:12px}
+.gn2-kitchen-dialog .gn2-mini-head{margin:4px 0 0}
+.gn2-kitchen-stove{
+  position:relative;isolation:isolate;display:grid;place-items:center;min-height:168px;overflow:hidden;
+  padding:14px 12px;border:3px solid #e6d5ca;border-radius:24px;
+  background:radial-gradient(circle at 50% 70%,#d0f0ea 0 23%,transparent 24%),
+    linear-gradient(135deg,#f5fbf9,#ffe7e5 74%);box-shadow:inset 0 -10px 0 #eedfd55c,0 4px 12px #3e35470d
+}
+.gn2-kitchen-stove::before{
+  content:"";position:absolute;top:67px;width:min(65%,260px);height:56px;border-radius:50%;
+  background:#c2d5dd;border:6px solid #618b9e;box-shadow:0 11px 0 #47758a,0 17px 6px #33587138;
+}
+.gn2-kitchen-pot{position:relative;z-index:2;font-size:65px;line-height:1.3;filter:drop-shadow(0 6px 3px #475c7f35)}
+.gn2-kitchen-steam{position:absolute;z-index:1;top:3px;left:51%;font-size:26px;letter-spacing:9px;
+  color:#82adae;transform:translateX(-50%);opacity:.7}
+.gn2-kitchen-stove.is-hot .gn2-kitchen-steam{animation:gn2CookSteam 2s ease-in-out infinite}
+.gn2-kitchen-stove-sub{position:relative;z-index:3;padding:6px 13px;border:2px solid #d1e5e7;border-radius:14px;
+  background:#fffefa;color:#5e617d;font-size:13px;font-weight:850;text-align:center}
+.gn2-kitchen-recipe{background:linear-gradient(125deg,#fff5cb,#fffdf0);border:2px dashed #d5ad72;border-radius:19px;
+  padding:13px 16px;box-shadow:3px 5px 0 #ad8c6b12}
+.gn2-kitchen-recipe h4{font-size:20px;margin:2px 0 8px;color:#764f54}
+.gn2-kitchen-modifier{margin:0 0 12px;font-size:13px;font-weight:800;color:#786a81}
+.gn2-kitchen-recipe-steps{padding-left:23px;margin:0;display:grid;gap:9px;font-weight:850;color:#655463}
+.gn2-kitchen-heat{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px;border:2px solid #f5dcca;
+  background:#fff4eb;border-radius:17px}
+.gn2-kitchen-heat strong{flex-basis:100%;color:#8c5862}
+.gn2-kitchen-heat-button{border:2px solid #edd2c9!important;border-radius:12px;background:#fff;color:#805c5d;
+  padding:9px 10px;min-height:43px;font-size:13px;font-weight:850;flex:1;min-width:100px}
+.gn2-kitchen-heat-button[aria-pressed="true"]{background:#ffe0ca;border-color:#df9878!important;box-shadow:inset 0 0 0 1px #f9bd9f}
+.gn2-kitchen-label{font-size:14px;color:#7b5c73}
+.gn2-kitchen-ingredients{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.gn2-kitchen-ingredient{min-height:54px;padding:8px 10px;border:2px solid #e7d2dd!important;border-radius:15px;
+  background:#fffdfb;font-size:14px;font-weight:850;color:#79526c;box-shadow:0 2px 0 #efe3e7}
+.gn2-kitchen-ingredient:active{transform:translateY(2px);box-shadow:none}
+.gn2-kitchen-ingredient:hover{background:#fef1fa;border-color:#ec9fbd!important}
+.gn2-kitchen-ingredient:focus-visible,.gn2-kitchen-heat-button:focus-visible{
+  outline:3px solid #8c6aca;outline-offset:2px}
+.gn2-kitchen-chaos{display:flex;flex-direction:column;gap:7px;min-height:52px;
+  border-radius:14px;background:#f6ecff;color:#705a85;padding:11px 13px;font-size:13px}
+.gn2-kitchen-score{font-size:17px;font-weight:900;color:#8b4872;margin:2px 0}
+.gn2-kitchen-results{display:grid;gap:8px;margin:0;padding:0 0 0 20px;font-weight:850;color:#694f70}
+.gn2-kitchen-plate{
+  position:absolute;left:512px;top:625px;z-index:880;
+  display:grid;place-items:center;width:82px;height:56px;border:5px solid #f8fcff;
+  border-radius:50%;background:radial-gradient(ellipse,#f8e1ec 0%,#bde8f0 78%,#92bcd6 100%);
+  box-shadow:0 5px 2px #33416d43,0 1px 0 4px #fff6;transform:rotate(-6deg);
+  font-size:37px!important;line-height:1;cursor:pointer;touch-action:manipulation;
+  animation:gn2PlateArrive .5s cubic-bezier(.2,.8,.3,1.2) both
+}
+.gn2-kitchen-plate:focus-visible{outline:5px solid #e383ab;outline-offset:6px}
+.gn2-kitchen-plate-hearts{position:absolute;top:-35px;right:-9px;color:#f0598e;font-size:22px;
+  text-shadow:0 2px 3px #8b5b7666;pointer-events:none}
+@keyframes gn2CookSteam{50%{opacity:.35;transform:translate(-50%,-9px)}}
+@keyframes gn2PlateArrive{from{opacity:0;transform:scale(.5) translateY(-30px)}to{opacity:1;transform:rotate(-6deg)}}
+@media(max-width:420px){.gn2-kitchen-dialog .gn2-dialog-content{padding:12px}
+ .gn2-kitchen-heat-button{min-width:0;padding:8px 5px;font-size:12px}
+ .gn2-kitchen-ingredient{font-size:13px;min-height:48px}}
+@media(prefers-reduced-motion:reduce){.gn2-kitchen-plate,.gn2-kitchen-stove.is-hot .gn2-kitchen-steam{animation:none}}
+
+
+/* World V2 geometry QA: opt-in ?floormap=1. Never intercept real taps. */
+.gn2-floor-review{
+  position:absolute;inset:0;width:1170px;height:1170px;
+  z-index:2000;overflow:visible;pointer-events:none!important;
+  opacity:.83;user-select:none
+}
+.gn2-floor-review *{pointer-events:none!important}
+.gn2-floor-walkable{fill:rgba(87,211,155,.18);stroke:#21aa79;stroke-width:7;stroke-dasharray:20 14}
+.gn2-floor-blocked{fill:rgba(244,100,135,.27);stroke:#cb3565;stroke-width:7}
+.gn2-floor-exit{fill:#e3eaff;stroke:#426bd7;stroke-width:8}
+.gn2-floor-exit-label{fill:#233764;stroke:#f4f9ff;paint-order:stroke;stroke-width:9;
+ font:bold 34px/1.1 Nunito,system-ui,sans-serif}
+@media(prefers-reduced-motion:reduce){.gn2-floor-review{transition:none!important}}
+
+
+/* V2 local-only world continuity: walk to the visible front porch first. */
+.gn2-enabled .gn2-porch-threshold{
+  position:absolute;z-index:7000;isolation:isolate;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;
+  width:260px;height:168px;padding:43px 12px 20px;
+  color:#5a3558;cursor:pointer;touch-action:manipulation;
+  border:0;outline:0;background:transparent;box-shadow:none;
+}
+.gn2-enabled .gn2-porch-threshold::before{
+  content:"";position:absolute;inset:38px 0 4px;
+  z-index:0;border-radius:50%;
+  background:linear-gradient(145deg,#fff8e2,#ffdfc4 60%,#edb6c6);
+  border:7px solid #fffcf5;box-shadow:0 7px 0 #b481a5,0 10px 9px #38263f30;
+  transform:perspective(300px) rotateX(30deg) rotate(-4deg)
+}
+.gn2-porch-threshold .gn2-porch-symbol{
+  position:relative;z-index:1;font-size:47px;line-height:1
+}
+.gn2-porch-threshold .gn2-porch-words{
+  position:relative;z-index:1;font-weight:900;font-size:30px;line-height:1.1;white-space:nowrap
+}
+.gn2-porch-threshold:focus-visible::before{outline:11px solid #a14e86;outline-offset:5px}
+.gn2-porch-threshold:active::before{filter:brightness(.94);transform:perspective(300px) rotateX(30deg) translateY(6px)}
+.gn2-hall-dialog{
+  width:min(96vw,540px);max-width:540px;max-height:min(94dvh,850px);
+  margin:auto;padding:0;border:3px solid #ffe2ee;border-radius:26px;
+  box-shadow:0 25px 90px #352c46a0;background:#fff9f8;color:#5a465b;overflow:auto
+}
+.gn2-hall-dialog::backdrop{background:#1c2c4ab8;backdrop-filter:blur(3px)}
+.gn2-hall-shell{padding:14px;display:grid;gap:10px}
+.gn2-hall-head{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:start}
+.gn2-hall-head h2{font-family:"Baloo 2",Nunito,sans-serif;font-size:22px;line-height:1.2;color:#865577;margin:0}
+.gn2-hall-head p{grid-column:1/-1;font-size:12px;font-weight:750;line-height:1.5;margin:0;color:#775e7d}
+.gn2-hall-close{
+  grid-row:1;grid-column:2;
+  border:2px solid #e6c6d5;border-radius:14px;background:white;
+  color:#745477;font-size:13px;font-weight:850;min-height:40px;padding:7px 12px;
+  cursor:pointer;touch-action:manipulation
+}
+.gn2-hall-close:focus-visible,.gn2-hall-door:focus-visible{outline:3px solid #b456aa;outline-offset:3px}
+.gn2-hall-scene{
+  position:relative;width:100%;aspect-ratio:1/1.04;min-height:320px;
+  overflow:hidden;isolation:isolate;border-radius:23px;border:4px solid #e9bccc;
+  background:linear-gradient(155deg,#fef2dd 0 17%,#e5d4eb 18% 43%,
+      #d2e4e1 43.4%,#eceddd 54%,#f6d5c6 100%);
+  box-shadow:inset 0 0 0 6px #fff7ef,0 5px 0 #e8c0c6
+}
+.gn2-hall-scenery{position:absolute;inset:0;pointer-events:none}
+.gn2-hall-scenery::before{
+  content:"";position:absolute;inset:39% 0 0;
+  background:repeating-linear-gradient(90deg,transparent 0 51px,#bc9c9961 52px 54px),
+      repeating-linear-gradient(0deg,transparent 0 42px,#d5a99a55 43px 45px),
+      linear-gradient(160deg,#e8dac8,#efbcb2);
+  clip-path:polygon(9% 0,91% 0,100% 100%,0 100%)
+}
+.gn2-hall-window{position:absolute;top:3%;left:50%;transform:translateX(-50%);
+  font-size:21px;color:#ad6a88;letter-spacing:7px;opacity:.7}
+.gn2-hall-rug{position:absolute;bottom:6%;left:50%;width:55%;height:18%;
+  transform:translateX(-50%) rotate(-2deg);border-radius:50%;
+  background:radial-gradient(ellipse,#ffe1f2 0 44%,#ffd3dc 46% 58%,#e5a4bb 60% 65%,transparent 68%)}
+.gn2-hall-floor-lights{position:absolute;bottom:4%;left:8%;right:8%;
+  display:flex;justify-content:space-around;font-size:20px;opacity:.7}
+.gn2-hall-door{
+  position:absolute;transform:translate(-50%,-50%);
+  z-index:2;width:27%;max-width:128px;height:25%;min-height:78px;
+  padding:5px 3px 9px;border:5px solid #fff1e4;border-bottom-width:10px;
+  border-radius:38px 38px 13px 13px;
+  background:linear-gradient(115deg,#a8d6e9,#f3e5ff 50%,#f8b9ca);
+  color:#5b4977;display:flex;align-items:center;justify-content:center;gap:2px;
+  flex-direction:column;box-shadow:5px 7px 0 #83617b7a;
+  cursor:pointer;touch-action:manipulation;
+}
+.gn2-hall-door:nth-child(4n+2){background:linear-gradient(120deg,#f8d29f,#eec5df 74%)}
+.gn2-hall-door-emoji{font-size:30px;line-height:1.18}
+.gn2-hall-door-name{font-size:clamp(9px,2.8vw,13px);font-weight:900;line-height:1.1;text-align:center}
+.gn2-hall-door.gn2-hall-current{border-color:#fff;border-style:dashed}
+.gn2-hall-door.gn2-hall-door-selected{background:#ffdf9a}
+.gn2-hall-door:disabled{cursor:progress;opacity:.82}
+.gn2-hall-avatar{
+  position:absolute;left:16%;top:93%;transform:translate(-50%,-60%);
+  z-index:15;font-size:37px;line-height:1.1;pointer-events:none;
+  filter:drop-shadow(0 6px 3px #3b3b5b4d)
+}
+.gn2-hall-avatar.is-travelling{filter:drop-shadow(0 9px 6px #58314c77)}
+.gn2-hall-foot{text-align:center;font-size:11px;font-weight:700;color:#826d80}
+@media(max-width:430px){
+  .gn2-hall-shell{padding:10px;gap:8px}
+  .gn2-hall-head h2{font-size:19px}
+  .gn2-hall-head p{font-size:11px}
+  .gn2-hall-door{border-width:4px;border-bottom-width:8px}
+}
+@media(prefers-reduced-motion:reduce){
+  .gn2-hall-avatar,.gn2-hall-door{transition:none!important;animation:none!important}
+}
+
+
+/* M1.B — actual 8×8 Three.js architecture preview, opt-in and fully read-only. */
+.gn2arch-entry{
+  display:block;width:calc(100% - 24px);max-width:680px;margin:8px auto 15px;
+  padding:12px 16px;min-height:48px;cursor:pointer;touch-action:manipulation;
+  border:2px solid #bd91b1;border-radius:17px;color:#654368;font-weight:900;
+  background:linear-gradient(110deg,#fce9f7,#e8f6fc);
+  box-shadow:0 3px 0 #d7bad2;font-family:Nunito,system-ui,sans-serif;
+}
+.gn2arch-entry:hover{background:linear-gradient(110deg,#f8d8ec,#def3fc)}
+.gn2arch-entry:focus-visible,.gn2arch-dialog button:focus-visible{
+  outline:3px solid #b15892;outline-offset:3px;
+}
+.gn2arch-dialog{
+  box-sizing:border-box;width:min(96vw,760px);max-width:760px;
+  max-height:min(94dvh,960px);padding:0;margin:auto;overflow:auto;
+  background:#fffbf8;color:#5a455d;border:3px solid #f2d2e3;
+  border-radius:24px;box-shadow:0 16px 65px #27315480;
+  font:700 13px/1.5 Nunito,system-ui,sans-serif;
+}
+.gn2arch-dialog::backdrop{background:#1c2645bb;backdrop-filter:blur(3px)}
+.gn2arch-dialog *{box-sizing:border-box}
+.gn2arch-shell{padding:12px;display:grid;gap:10px}
+.gn2arch-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;align-items:center}
+.gn2arch-heading h2{margin:0;font:900 clamp(17px,4vw,23px)/1.25 "Baloo 2",Nunito,sans-serif;color:#80537a}
+.gn2arch-heading p{grid-column:1/-1;margin:0;color:#806a83;font-size:12px}
+.gn2arch-dialog button{font:850 12px/1.25 Nunito,system-ui,sans-serif;color:#624c6a;cursor:pointer;touch-action:manipulation}
+.gn2arch-close{border:2px solid #e5cad9;background:white;padding:8px 12px;border-radius:12px;min-height:44px}
+.gn2arch-room-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.gn2arch-tab{
+  min-height:44px;padding:7px 5px;border:2px solid #eacadd;
+  border-radius:12px;background:#fff;color:#69516e
+}
+.gn2arch-tab[aria-pressed=true]{border-color:#b46c9d;background:#f9e4f0;color:#7b376c}
+.gn2arch-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.gn2arch-button{min-height:44px;padding:8px 4px;background:#faf5e8;border:2px solid #e9d9c0;border-radius:12px}
+.gn2arch-button[aria-pressed=true]{background:#fce0ee;border-color:#b47f9b}
+.gn2arch-viewport{position:relative;isolation:isolate;width:100%;aspect-ratio:1/1;min-width:0;
+  background:radial-gradient(ellipse at 45% 42%,#fcf1ed,#eaf4fd 80%);border:2px solid #e3d8df;border-radius:17px;overflow:hidden}
+.gn2arch-picture{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;user-select:none}
+.gn2arch-image-status{
+  position:absolute;z-index:3;left:10px;right:10px;top:9px;
+  width:fit-content;max-width:calc(100% - 20px);
+  padding:6px 10px;border:1px solid #d7bbd5;border-radius:12px;
+  background:#fffbf5ed;color:#6d4c69;font-size:12px;font-weight:900;
+  pointer-events:none!important;
+}
+.gn2arch-viewport[aria-busy=true] .gn2arch-overlay{opacity:0}
+
+.gn2arch-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none!important}
+.gn2arch-overlay *{pointer-events:none!important}
+.gn2arch-outline{stroke:#26a37d;stroke-width:7;stroke-dasharray:18 13;fill:#43dd9744}
+.gn2arch-walkline{stroke:#d65a82;stroke-width:14;stroke-dasharray:22 12}
+.gn2arch-marker{stroke:#fff;stroke-width:5}
+.gn2arch-marker-door{fill:#c74d8a}
+.gn2arch-marker-inside{fill:#42b492}
+.gn2arch-marker-outside{fill:#4985bc}
+.gn2arch-marker-furniture{fill:#ffb642;stroke:#fff;stroke-width:3}
+.gn2arch-marker-label{font:900 28px Nunito,system-ui,sans-serif;paint-order:stroke;stroke:#fff;
+  stroke-width:8;fill:#ad3472}
+.gn2arch-summary{background:#fff4ed;border:1px solid #efd8d3;padding:9px 12px;border-radius:14px;
+  display:grid;gap:3px;color:#6c536a}
+.gn2arch-summary strong{font-size:15px;color:#7d4e74}
+.gn2arch-summary span{font-size:12px}
+.gn2arch-summary small{font-size:11px;color:#8b7287}
+.gn2arch-disclaimer{font-size:11px;line-height:1.5;margin:0;color:#896f82;font-weight:850}
+@media(max-width:390px){
+  .gn2arch-shell{padding:8px;gap:7px}
+  .gn2arch-room-tabs,.gn2arch-controls{gap:4px}
+  .gn2arch-tab,.gn2arch-button{font-size:11px!important}
+  .gn2arch-heading p{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+  .gn2arch-dialog,.gn2arch-dialog *{animation:none!important;transition:none!important}
+}

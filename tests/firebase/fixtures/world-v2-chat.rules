@@ -1,0 +1,149 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Mỗi người chỉ đọc/ghi hồ sơ của chính mình (ghi nhớ mình thuộc nhà nào).
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Mã nhà: người đã đăng nhập tra được mã; tạo mới được;
+    // chỉ thành viên của nhà đó mới xoá được mã (khi bỏ nhà).
+    match /codes/{code} {
+      allow get: if request.auth != null;
+      allow create: if request.auth != null;
+      allow delete: if request.auth != null
+        && request.auth.uid in get(/databases/$(database)/documents/couples/$(resource.data.cid)).data.members;
+    }
+
+    // Nhà của hai người.
+    match /couples/{cid} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.members;
+      allow create: if request.auth != null
+        && request.resource.data.members == [request.auth.uid];
+      allow update: if request.auth != null && (
+        // thành viên sửa thông tin nhà, không đổi danh sách thành viên
+        (request.auth.uid in resource.data.members
+          && request.resource.data.members == resource.data.members)
+        ||
+        // rời nhà: chỉ bỏ đúng mình ra
+        (request.auth.uid in resource.data.members
+          && request.resource.data.members == resource.data.members.removeAll([request.auth.uid])
+          && request.resource.data.code == resource.data.code)
+        ||
+        // bạn ấy mất tài khoản: người còn lại mời tài khoản cũ ra
+        (request.auth.uid in resource.data.members
+          && resource.data.members.size() == 2
+          && request.resource.data.members == [request.auth.uid]
+          && request.resource.data.code == resource.data.code)
+        ||
+        // người thứ hai vào nhà bằng mã: nhà đang có đúng 1 người, chỉ thêm đúng mình
+        (resource.data.members.size() == 1
+          && request.resource.data.members.size() == 2
+          && request.resource.data.members.hasAll(resource.data.members)
+          && request.auth.uid in request.resource.data.members
+          && request.resource.data.code == resource.data.code
+          && request.resource.data.roles == resource.data.roles)
+      );
+
+      // Chỉ các document TRONG subcollection thuộc nhà mới dùng quyền thành viên.
+      // Rules v2: {document=**} khớp cả 0 segment, vô tình bao phủ
+      // chính /couples/{cid} và vượt qua các ràng buộc membership ở trên.
+      // Bắt buộc có ít nhất một collection segment trước đệ quy.
+      // M0 RULES CANDIDATE ONLY. NOT THE PRODUCTION firestore.rules.
+      // The legacy recursive match MUST exclude these named collections:
+      // Firestore allow rules are OR-combined; a narrower deny cannot override it.
+      function inHouse() {
+        return request.auth != null &&
+          request.auth.uid in get(/databases/$(database)/documents/couples/$(cid)).data.members;
+      }
+      function ledgerPath(opId) {
+        return /databases/$(database)/documents/couples/$(cid)/writeOps/$(opId);
+      }
+      function objectPath(objectId) {
+        return /databases/$(database)/documents/couples/$(cid)/roomObjects/$(objectId);
+      }
+
+      match /roomObjects/{objectId} {
+        allow get, list: if inHouse();
+        // Initial creation and deletion are not exposed to clients in this candidate.
+        // Test fixtures are inserted with Emulator admin security rules disabled.
+        allow create, delete: if false;
+        allow update: if inHouse()
+          && request.resource.data.keys().hasOnly([
+            'revision', 'left', 'right', 'name', 'lastOperationId', 'updatedBy'
+          ])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'revision', 'left', 'right', 'name', 'lastOperationId', 'updatedBy'
+          ])
+          && request.resource.data.revision is int
+          && resource.data.revision is int
+          && request.resource.data.revision == resource.data.revision + 1
+          && request.resource.data.lastOperationId is string
+          && request.resource.data.updatedBy == request.auth.uid
+          && !exists(ledgerPath(request.resource.data.lastOperationId))
+          && getAfter(ledgerPath(request.resource.data.lastOperationId)).data.operationId
+             == request.resource.data.lastOperationId
+          && getAfter(ledgerPath(request.resource.data.lastOperationId)).data.targetId
+             == objectId
+          && getAfter(ledgerPath(request.resource.data.lastOperationId)).data.actorUid
+             == request.auth.uid
+          && getAfter(ledgerPath(request.resource.data.lastOperationId)).data.expectedRevision
+             == resource.data.revision
+          && getAfter(ledgerPath(request.resource.data.lastOperationId)).data.appliedRevision
+             == request.resource.data.revision;
+      }
+
+      match /writeOps/{opId} {
+        allow get, list: if inHouse();
+        allow update, delete: if false;
+        allow create: if inHouse()
+          && request.resource.data.keys().hasOnly([
+            'operationId', 'actorUid', 'targetPath', 'targetId', 'expectedRevision',
+            'appliedRevision', 'fingerprint'
+          ])
+          && request.resource.data.keys().hasAll([
+            'operationId', 'actorUid', 'targetPath', 'targetId', 'expectedRevision',
+            'appliedRevision', 'fingerprint'
+          ])
+          && request.resource.data.operationId == opId
+          && request.resource.data.actorUid == request.auth.uid
+          && request.resource.data.targetId is string
+          && request.resource.data.targetPath ==
+            'couples/' + cid + '/roomObjects/' + request.resource.data.targetId
+          && request.resource.data.expectedRevision is int
+          && request.resource.data.appliedRevision ==
+             request.resource.data.expectedRevision + 1
+          && request.resource.data.fingerprint is string
+          && get(objectPath(request.resource.data.targetId)).data.revision ==
+             request.resource.data.expectedRevision
+          && getAfter(objectPath(request.resource.data.targetId)).data.revision ==
+             request.resource.data.appliedRevision
+          && getAfter(objectPath(request.resource.data.targetId)).data.lastOperationId == opId
+          && getAfter(objectPath(request.resource.data.targetId)).data.updatedBy ==
+             request.auth.uid;
+      }
+
+      // CANDIDATE ONLY. Secure chat write ownership; do not deploy without M0 review.
+      match /worldChat/{messageId} {
+        allow read: if inHouse();
+        allow create: if inHouse()
+          && request.resource.data.keys().hasAll(['who', 'authorUid', 'text', 'scope', 'at'])
+          && request.resource.data.keys().hasOnly(['who', 'authorUid', 'text', 'scope', 'at'])
+          && request.resource.data.authorUid == request.auth.uid
+          && request.resource.data.who == get(/databases/$(database)/documents/couples/$(cid)).data.roles[request.auth.uid]
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 280
+          && request.resource.data.scope in ['nha','phong-khach','bep','phong-anh','phong-em','goc-sang-tao','gac','khu-vuon']
+          && request.resource.data.at == request.time;
+        allow update, delete: if false;
+      }
+
+      match /{collection}/{document=**} {
+        allow read, write: if collection != 'roomObjects' && collection != 'writeOps' && collection != 'worldChat'
+          && inHouse();
+      }
+    }
+  }
+}
