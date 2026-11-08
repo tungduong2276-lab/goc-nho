@@ -34,6 +34,7 @@ const camera = new THREE.OrthographicCamera(-6, 6, 6, -6, .1, 100);
 const floorGroup = new THREE.Group(); scene.add(floorGroup);
 const activityVisuals = new THREE.Group(); scene.add(activityVisuals);
 const avatar = new THREE.Group(); scene.add(avatar);
+const activityProps = new THREE.Group(); avatar.add(activityProps);
 const body = new THREE.Mesh(new THREE.CapsuleGeometry(.21, .43, 4, 8), new THREE.MeshStandardMaterial({ color: 0xe75b91 }));
 body.position.y = .53; avatar.add(body);
 const head = new THREE.Mesh(new THREE.SphereGeometry(.26, 16, 12), new THREE.MeshStandardMaterial({ color: 0xffd9b9 }));
