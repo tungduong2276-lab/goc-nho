@@ -1,0 +1,44 @@
+name: Nhà 3D isolated staging artifact
+
+on:
+  push:
+    branches:
+      - staging/nha3d-integrated-review-20261108
+    paths:
+      - "nha3d/**"
+      - "scripts/build-nha3d-staging.mjs"
+      - "tests/staging/nha3d-staging-bundle.test.mjs"
+      - ".github/workflows/nha3d-staging-artifact.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validate isolated staging bundle
+        run: node --test tests/staging/nha3d-staging-bundle.test.mjs
+      - name: Build isolated static bundle
+        run: node scripts/build-nha3d-staging.mjs
+      - name: Confirm no Firebase or legacy app files in artifact
+        shell: bash
+        run: |
+          test -f dist-nha3d-staging/nha3d/multiroom-preview.html
+          test ! -e dist-nha3d-staging/firebase.json
+          test ! -e dist-nha3d-staging/firestore.rules
+          test ! -e dist-nha3d-staging/sw.js
+          test ! -e dist-nha3d-staging/nha3d/app.js
+      - name: Upload review-only artifact (not deployed)
+        uses: actions/upload-artifact@v4
+        with:
+          name: nha3d-staging-static-${{ github.sha }}
+          path: dist-nha3d-staging/
+          if-no-files-found: error
+          retention-days: 7
