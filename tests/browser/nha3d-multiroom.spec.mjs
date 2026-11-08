@@ -6,7 +6,7 @@ async function openPreview(page, width = 390) {
   await page.setViewportSize({ width, height: 844 });
   const errors = [], firebase = [];
   page.on("pageerror", e => errors.push(e.message));
-  page.on("request", req => { if (/firestore|firebaseio|identitytoolkit|securetoken|gstatic\\.com\\/firebasejs/.test(req.url())) firebase.push(req.url()); });
+  page.on("request", req => { const url = req.url(); if (["firestore", "firebaseio", "identitytoolkit", "securetoken", "gstatic.com/firebasejs"].some(token => url.includes(token))) firebase.push(url); });
   if (existsSync(resolve("node_modules/three"))) {
     await page.route("https://cdn.jsdelivr.net/npm/three@0.169.0/**", route => {
       const rel = new URL(route.request().url()).pathname.replace("/npm/three@0.169.0/", "");
