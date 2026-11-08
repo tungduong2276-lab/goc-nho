@@ -360,7 +360,7 @@
     form.addEventListener("submit",async function(event){
       event.preventDefault();
       var text=input.value.trim();if(!text||ME===null)return;
-      send.disabled=true;send.textContent="...";
+      send.disabled=true;send.dataset.submitting="1";send.textContent="...";
       if(!op||op.text!==text||op.scope!==locationScope())op={
         text:text,scope:locationScope(),id:"chat-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,9)
       };
@@ -369,10 +369,10 @@
         // Do not clear a newer draft that someone typed during the send.
         if(roomChatDrafts[op.scope]===op.text)roomChatDrafts[op.scope]="";
         if(input.value===op.text)input.value="";
-        op=null;send.disabled=false;send.textContent="Gửi ngay";
+        op=null;delete send.dataset.submitting;send.disabled=false;send.textContent="Gửi ngay";
         if(stage)hint("Đã gửi tin nhắn qua staging");
       }catch(err){
-        send.disabled=false;send.textContent="Thử lại";
+        delete send.dataset.submitting;send.disabled=false;send.textContent="Thử lại";
         hint("Chưa gửi được. Tin nhắn vẫn nằm trong khung để thử lại.");
       }
     });
