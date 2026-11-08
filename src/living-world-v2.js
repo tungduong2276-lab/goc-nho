@@ -260,6 +260,31 @@
   var lastRoomBubble=null,chatHydrated=false,seenRoomChat=new Set();
   // Readable on small phones, including while other room layers rerender.
   var CHAT_BUBBLE_MS=12000;
+  var roomChatDrafts=Object.create(null);
+  // A room may be rebuilt after presence or decoration updates. Keep the live
+  // form node (and its submit handler) rather than replacing it mid-typing.
+  function rememberDraft(scope,dock) {
+    var entry=dock&&dock.querySelector("input");
+    if(entry)roomChatDrafts[scope]=entry.value;
+  }
+  function rerenderWithChat(renderMethod,context,args) {
+    var scope=locationScope(),root=document.getElementById("v-"+scope);
+    var dock=root&&!root.hidden?root.querySelector(".gn2-chat-dock"):null;
+    var entry=dock?dock.querySelector("input"):null;
+    var focused=!!entry&&entry===document.activeElement;
+    var cursor=focused?{start:entry.selectionStart,end:entry.selectionEnd}:null;
+    if(dock){rememberDraft(scope,dock);dock.remove();}
+    var result=renderMethod.apply(context,args);
+    var fresh=root&&!root.hidden?root.querySelector(".room3d,.garden3d,.world"):null;
+    if(dock&&fresh)fresh.insertAdjacentElement("afterend",dock);
+    mountHud();
+    if(focused&&entry?.isConnected) {
+      entry.focus({preventScroll:true});
+      if(cursor&&cursor.start!==null&&cursor.end!==null)
+        entry.setSelectionRange(cursor.start,cursor.end);
+    }
+    return result;
+  }
   function paintRoomBubble(message) {
     if(!message || message.scope!==locationScope() || Date.now()-message.shownAt>CHAT_BUBBLE_MS)return;
     var root=document.getElementById("v-"+message.scope);
@@ -322,6 +347,9 @@
     input.type="text";input.maxLength=160;input.required=true;
     input.setAttribute("aria-label","Lời nhắn trong phòng");
     input.placeholder="Nói gì với người ấy đi...";
+    var dockScope=locationScope();
+    input.value=roomChatDrafts[dockScope]||"";
+    input.addEventListener("input",function(){roomChatDrafts[dockScope]=input.value;});
     var send=button("Gửi ngay","gn2-chat-dock-send");send.type="submit";
     if(ME===null){input.disabled=true;send.disabled=true;}
     var note=div("gn2-chat-dock-caption",staging()?
@@ -338,7 +366,10 @@
       };
       try{
         var stage=await commitRoomChat(op);
-        op=null;input.value="";send.disabled=false;send.textContent="Gửi ngay";
+        // Do not clear a newer draft that someone typed during the send.
+        if(roomChatDrafts[op.scope]===op.text)roomChatDrafts[op.scope]="";
+        if(input.value===op.text)input.value="";
+        op=null;send.disabled=false;send.textContent="Gửi ngay";
         if(stage)hint("Đã gửi tin nhắn qua staging");
       }catch(err){
         send.disabled=false;send.textContent="Thử lại";
@@ -358,6 +389,10 @@
       if(scope==="bep")scene.appendChild(button("🧲 Mở tủ lạnh","gn2-fridge-toggle",openFridge));
     }
     makeChatDock(scene,root);
+    var activeInput=root.querySelector(".gn2-chat-dock input");
+    var activeSend=root.querySelector(".gn2-chat-dock-send");
+    if(activeInput)activeInput.disabled=ME===null;
+    if(activeSend&&!activeSend.dataset.submitting)activeSend.disabled=ME===null;
     if(lastRoomBubble&&lastRoomBubble.scope===scope)paintRoomBubble(lastRoomBubble);
     if(staging())subscribeChat();
   }
@@ -432,11 +467,11 @@
     return formerRoomItem.apply(this,arguments);
   };
   var formerRooms=renderRooms;
-  renderRooms=function() {var value=formerRooms.apply(this,arguments);mountHud();return value;};
+  renderRooms=function(){return rerenderWithChat(formerRooms,this,arguments);};
   var formerHome=renderHome;
-  renderHome=function() {var value=formerHome.apply(this,arguments);mountHud();return value;};
+  renderHome=function(){return rerenderWithChat(formerHome,this,arguments);};
   var formerGarden=renderGarden;
-  renderGarden=function() {var value=formerGarden.apply(this,arguments);mountHud();return value;};
+  renderGarden=function(){return rerenderWithChat(formerGarden,this,arguments);};
   document.addEventListener("keydown",function(e) {
     if(e.key==="Escape"&&activeDialog())activeDialog().close();
   });
