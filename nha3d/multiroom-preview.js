@@ -5,8 +5,8 @@ import { OBJ, plantPot, rugRound, rugRect } from "./xuong/rooms2.js";
 import { C } from "./xuong/lib.js";
 import { CELL, CATALOG, WALL_COLORS, FLOOR_COLORS } from "./catalog.mjs";
 import { PREVIEW_LAYOUTS, PREVIEW_SPAWN } from "./multiroom-preview-layout.mjs";
-import { makeHouse, HOUSE_ROOMS, transitionAtDoor, routeHouse } from "./multiroom.mjs";
-import { cellCenter, blockGrid, worldPath, worldToCell } from "./engine.mjs";
+import { makeHouse, HOUSE_ROOMS, transitionAtDoor } from "./multiroom.mjs";
+import { cellCenter, blockGrid, cellFree, findPath, worldPath, worldToCell } from "./engine.mjs";
 
 // Furnishing is preview-only: no schema migration or writes to existing saved homes.
 
@@ -115,17 +115,20 @@ function renderRoom() {
   status.textContent = "Đang ở " + HOUSE_ROOMS[roomId].name;
 }
 function goDoor(id, endpoint, dest) {
-  const start = { room: roomId, cell: pos };
-  const route = routeHouse(house, start, { room: dest.room, cell: dest.cell });
-  if (!route) { status.textContent = "Lối đi bị chặn, hãy dời đồ khỏi cửa."; return; }
-  const doorStep = route.find(s => s.type === "door" && s.id === id);
-  if (!doorStep || doorStep.from.room !== roomId) { status.textContent = "Không tìm thấy lối qua cửa này."; return; }
-  const walk = route.find(s => s.type === "walk" && s.room === roomId);
-  if (walk) {
-    walking = walk.cells.slice(1).map(c => cellCenter(c.i, c.j, roomInfo().size));
-    // Route might begin at the same cell; transition after walking in the frame loop.
-  } else walking = [];
-  pendingDoor = { id, endpoint: doorStep.from, dest };
+  // A door button must route to its own doorway, not an arbitrary shortest route
+  // through another room. Both endpoints must remain free before walking begins.
+  const sourceRoom = roomInfo(), targetRoom = house.rooms[dest.room];
+  const sourceGrid = blockGrid(sourceRoom.layout, sourceRoom.size);
+  const targetGrid = blockGrid(targetRoom.layout, targetRoom.size);
+  if (!cellFree(sourceGrid, endpoint.cell.i, endpoint.cell.j) ||
+      !cellFree(targetGrid, dest.cell.i, dest.cell.j)) {
+    status.textContent = "Cửa đang bị đồ đạc chắn."; return;
+  }
+  const path = findPath(sourceGrid, pos, endpoint.cell);
+  if (!path) { status.textContent = "Lối đi bị chặn, hãy dời đồ khỏi cửa."; return; }
+  walking = path.slice(1).map(c => cellCenter(c.i, c.j, sourceRoom.size));
+  pendingDoor = { id, endpoint: { room: roomId, cell: endpoint.cell }, dest };
+  status.textContent = "Đang đi đến cửa " + HOUSE_ROOMS[dest.room].name;
   if (!walking.length) crossDoor();
 }
 let pendingDoor = null;
