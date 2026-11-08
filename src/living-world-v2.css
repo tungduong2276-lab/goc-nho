@@ -251,3 +251,18 @@
  .gn2-kitchen-heat-button{min-width:0;padding:8px 5px;font-size:12px}
  .gn2-kitchen-ingredient{font-size:13px;min-height:48px}}
 @media(prefers-reduced-motion:reduce){.gn2-kitchen-plate,.gn2-kitchen-stove.is-hot .gn2-kitchen-steam{animation:none}}
+
+
+/* World V2 geometry QA: opt-in ?floormap=1. Never intercept real taps. */
+.gn2-floor-review{
+  position:absolute;inset:0;width:1170px;height:1170px;
+  z-index:2000;overflow:visible;pointer-events:none!important;
+  opacity:.83;user-select:none
+}
+.gn2-floor-review *{pointer-events:none!important}
+.gn2-floor-walkable{fill:rgba(87,211,155,.18);stroke:#21aa79;stroke-width:7;stroke-dasharray:20 14}
+.gn2-floor-blocked{fill:rgba(244,100,135,.27);stroke:#cb3565;stroke-width:7}
+.gn2-floor-exit{fill:#e3eaff;stroke:#426bd7;stroke-width:8}
+.gn2-floor-exit-label{fill:#233764;stroke:#f4f9ff;paint-order:stroke;stroke-width:9;
+ font:bold 34px/1.1 Nunito,system-ui,sans-serif}
+@media(prefers-reduced-motion:reduce){.gn2-floor-review{transition:none!important}}
