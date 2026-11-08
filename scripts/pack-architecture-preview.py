@@ -7,6 +7,7 @@ room metadata. Source: _xuong-3d/architecture.js / architecture-plan.js.
 import json
 import pathlib
 import sys
+import hashlib
 from PIL import Image
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
@@ -22,6 +23,37 @@ ROOMS = (
 )
 TIMES = ("ngay", "dem")
 
+SOURCE_FILES = [
+    "_xuong-3d/architecture-plan.js", "_xuong-3d/architecture.js",
+    "_xuong-3d/lib.js", "_xuong-3d/furn.js", "_xuong-3d/run.js",
+    "scripts/pack-architecture-preview.py",
+]
+
+
+def fingerprint():
+    digest = hashlib.sha256()
+    for name in SOURCE_FILES:
+        digest.update(name.encode("utf-8"))
+        digest.update((REPO / name).read_bytes())
+    return digest.hexdigest()
+
+
+def is_current():
+    file = DEST / "preview.json"
+    if not file.is_file():
+        return False
+    try:
+        m = json.loads(file.read_text(encoding="utf-8"))
+        if m.get("sourceHash") != fingerprint():
+            return False
+        return all(
+            (DEST / (slug + "_" + when + ".webp")).is_file()
+            for slug, _ in ROOMS for when in TIMES
+        )
+    except (OSError, ValueError, TypeError):
+        return False
+
+
 
 def main():
     meta = json.loads((SOURCE / "meta.json").read_text(encoding="utf-8"))
@@ -29,6 +61,7 @@ def main():
     manifest = {
         "schemaVersion": 1,
         "mode": "render-only",
+        "sourceHash": fingerprint(),
         "source": "_xuong-3d/architecture.js",
         "canvas": [1170, 1170],
         "rooms": {},
@@ -62,4 +95,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if "--check" in sys.argv:
+        if not is_current():
+            print("Need regenerate architecture gallery")
+            sys.exit(1)
+        print("Architecture gallery source hash and 12 images verified")
+    else:
+        main()
