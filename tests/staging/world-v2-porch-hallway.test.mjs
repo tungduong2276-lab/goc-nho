@@ -2,6 +2,7 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {walkable,clearSegment,walkDistance} from "../../src/living-world-nav.mjs";
+import {ROOM_FLOORS} from "../../src/living-world-floor-geometry.mjs";
 import {
   V2_DOORS,V2_SLUGS,floorThreshold,pathToPorch,
   arrivalFromCorridor,hallRoute
@@ -39,6 +40,15 @@ test("walking to the shared porch follows collision-safe floor segments in all r
     }
     assert.deepEqual(arrivalFromCorridor(slug),exit);
   }
+});
+test("attic threshold is inset from the painted wall and clear of the treasure chest",()=>{
+  const exit=floorThreshold("gac");
+  assert.deepEqual(exit,[765,796]);
+  assert.equal(walkable("gac",exit),true);
+  const chest=ROOM_FLOORS.gac.furniture.ruong;
+  const chestRight=Math.max(...chest.map(point=>point[0]));
+  // The actual 260px touchable porch cannot cover the chest's footprint.
+  assert.ok(exit[0]-130>chestRight);
 });
 test("each pair of rooms is reachable through a stable central corridor",()=>{
   for(const source of V2_SLUGS)for(const target of V2_SLUGS){
