@@ -10,7 +10,7 @@ if(qs.get("world2")==="1" && qs.get("archpreview")==="1" && window.__GN_WORLD_V2
   const IDS=["phong-khach","bep","phong-anh","phong-em","goc-sang-tao","gac"];
   const ALLOWED=new Set(IDS);
   let manifestPromise=null,manifest=null,selected="bep",lighting="ngay";
-  let overlay=false,focusBefore=null,pending=false;
+  let overlay=false,focusBefore=null,pending=false,imageTicket=0;
   const elem=(name,cls,text)=>{
     const el=document.createElement(name);if(cls)el.className=cls;
     if(text!==undefined)el.textContent=String(text);return el;
@@ -52,7 +52,10 @@ if(qs.get("world2")==="1" && qs.get("archpreview")==="1" && window.__GN_WORLD_V2
   svg.setAttribute("viewBox","0 0 1170 1170");
   svg.setAttribute("preserveAspectRatio","xMidYMid meet");
   svg.setAttribute("aria-hidden","true");
-  viewport.append(picture,svg);
+  const imageStatus=elem("div","gn2arch-image-status","Đang chuẩn bị ảnh 3D...");
+  imageStatus.setAttribute("role","status");
+  imageStatus.setAttribute("aria-live","polite");
+  viewport.append(picture,svg,imageStatus);
   shell.append(viewport);
   const info=elem("div","gn2arch-summary");
   shell.append(info);
@@ -98,12 +101,43 @@ if(qs.get("world2")==="1" && qs.get("archpreview")==="1" && window.__GN_WORLD_V2
     circle(d.outsidePixels,"outside");
     for(const f of room.furniture)circle(f.px,"furniture");
   }
+  function showDecodedImage(room){
+    const file="./assets/3d/v2arch/"+room.images[lighting];
+    const title="Bản dựng Three.js "+room.title+" · "+(lighting==="ngay"?"ban ngày":"ban đêm");
+    if(picture.dataset.gn2Loaded===file){
+      picture.alt=title;
+      imageStatus.hidden=true;
+      viewport.setAttribute("aria-busy","false");
+      return;
+    }
+    const ticket=++imageTicket;
+    viewport.setAttribute("aria-busy","true");
+    imageStatus.textContent="Đang tải ảnh "+room.title+"...";
+    imageStatus.hidden=false;
+    // Predecode off-DOM, then swap. The previous bitmap stays visible until
+    // the next one is fully decoded; rapid room toggles cannot paint blank.
+    const next=new Image();
+    next.decoding="async";
+    next.src=file;
+    next.decode().then(()=>{
+      if(ticket!==imageTicket||!dialog.open)return;
+      picture.src=file;
+      picture.alt=title;
+      picture.dataset.gn2Loaded=file;
+      viewport.setAttribute("aria-busy","false");
+      imageStatus.hidden=true;
+    }).catch(()=>{
+      if(ticket!==imageTicket||!dialog.open)return;
+      viewport.setAttribute("aria-busy","false");
+      imageStatus.textContent="Không tải được ảnh mẫu. Phòng đang chơi vẫn bình thường.";
+      imageStatus.hidden=false;
+    });
+  }
   function update(){
     if(!manifest)return;
     const room=manifest.rooms[selected];
     if(!room){info.textContent="Chưa có bản dựng phòng này.";return;}
-    picture.src="./assets/3d/v2arch/"+room.images[lighting];
-    picture.alt="Bản dựng Three.js "+room.title+" · "+(lighting==="ngay"?"ban ngày":"ban đêm");
+    showDecodedImage(room);
     tabs.replaceChildren();
     for(const id of IDS){
       const value=manifest.rooms[id];
@@ -150,6 +184,9 @@ if(qs.get("world2")==="1" && qs.get("archpreview")==="1" && window.__GN_WORLD_V2
     const another=document.querySelector("dialog[open]");
     if(another && another!==dialog)another.close();
     selected=room;lighting="ngay";overlay=false;
+    imageTicket++;
+    picture.removeAttribute("src");
+    delete picture.dataset.gn2Loaded;
     if(!dialog.open)dialog.showModal();
     info.textContent="Đang mở bản dựng 3D...";
     try{
@@ -158,10 +195,16 @@ if(qs.get("world2")==="1" && qs.get("archpreview")==="1" && window.__GN_WORLD_V2
     }catch(err){if(dialog.open)info.textContent="Không thể mở bản xem thử: "+err.message;}
     return true;
   }
-  dialog.addEventListener("close",()=>{if(focusBefore?.isConnected)focusBefore.focus();});
+  dialog.addEventListener("close",()=>{
+    imageTicket++;
+    viewport.setAttribute("aria-busy","false");
+    if(focusBefore?.isConnected)focusBefore.focus();
+  });
   dialog.addEventListener("click",event=>{if(event.target===dialog)dialog.close();});
   picture.addEventListener("error",()=>{
-    if(dialog.open)info.textContent="Ảnh mẫu này chưa được dựng hoặc tải thất bại. Phòng cũ vẫn hoạt động bình thường.";
+    if(!dialog.open)return;
+    imageStatus.textContent="Không hiển thị được ảnh mẫu. Phòng cũ vẫn hoạt động bình thường.";
+    imageStatus.hidden=false;
   });
   function install(){
     const hash=decodeURIComponent(location.hash.slice(1));
