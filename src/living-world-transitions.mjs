@@ -40,6 +40,6 @@ export function hallRoute(source,target) {
   const door=byId.get(target);
   // Topological corridor in percentages. The avatar approaches a door at a
   // visible point on the open central passage, then enters that room.
-  const path=[[50,93],[50,72],[door.x,72],[door.x,Math.min(door.y+12,91)]];
+  const path=[[16,93],[16,72],[door.x,72],[door.x,Math.min(door.y+12,91)]];
   return Object.freeze(path.map(point=>Object.freeze(point)));
 }
