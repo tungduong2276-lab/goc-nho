@@ -71,8 +71,43 @@ jobs:
             out_arch/kien_truc_*.png
             out_arch/meta.json
           retention-days: 7
+      - name: Generate or verify separate architecture gallery WebPs
+        if: github.event.pull_request.head.ref == 'feature/world-v2-architecture-preview'
+        run: |
+          python3 -m pip install --break-system-packages Pillow
+          if ! python3 scripts/pack-architecture-preview.py --check; then
+            npm install --no-save three@0.169.0
+            ln -s "$GITHUB_WORKSPACE/node_modules/three" _xuong-3d/three
+            cp _xuong-3d/run.js _xuong-3d/run.cjs
+            python3 -m http.server 8901 --directory _xuong-3d >/tmp/arch-preview-render.log 2>&1 &
+            node _xuong-3d/run.cjs architecture.js out_arch
+            node scripts/check-architecture-preview.mjs out_arch
+            python3 scripts/pack-architecture-preview.py out_arch
+          fi
+          node scripts/check-architecture-gallery.mjs
+      - name: Publish preview PNG and WebP evidence
+        if: always() && github.event.pull_request.head.ref == 'feature/world-v2-architecture-preview'
+        uses: actions/upload-artifact@v4
+        with:
+          name: world-v2-gallery-render-evidence
+          path: |
+            out_arch/kien_truc_*.png
+            out_arch/meta.json
+            assets/3d/v2arch/*.webp
+            assets/3d/v2arch/preview.json
+          retention-days: 7
       - name: Test app and house navigation
         run: npm test
+      - name: Commit validated gallery images to isolated V2 feature branch
+        if: github.event.pull_request.head.ref == 'feature/world-v2-architecture-preview'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/3d/v2arch/
+          if ! git diff --cached --quiet; then
+            git commit -m "render(v2): validated 12 spacious room WebPs and geometric metadata"
+            git push origin HEAD:feature/world-v2-architecture-preview
+          fi
       - name: Publish Living World V2 screenshots
         if: always() && (startsWith(github.event.pull_request.head.ref, 'feature/living-world-v2-') || startsWith(github.event.pull_request.head.ref, 'feature/world-v2-'))
         uses: actions/upload-artifact@v4
