@@ -15,6 +15,8 @@ const canvas = document.querySelector("#world"), status = document.querySelector
 const doorsUI = document.querySelector("#doors"), roomsUI = document.querySelector("#rooms");
 const activitiesUI = document.querySelector("#activities");
 const activityCounts = { khach: 0, bep: 0, ngu: 0 };
+const activityVisuals = new THREE.Group();
+let activityVisualRoom = null;
 const activities = {
   khach: { label: "☕ Uống trà", message: "Hai người cùng ngồi uống trà trong phòng khách." },
   bep: { label: "🍳 Nấu cùng nhau", message: "Căn bếp thơm mùi bữa ăn hai người chuẩn bị." },
@@ -30,6 +32,7 @@ scene.add(new THREE.HemisphereLight(0xffffff, 0xc9c0b7, 2.2));
 const sun = new THREE.DirectionalLight(0xffffff, 1.7); sun.position.set(-4, 9, 6); scene.add(sun);
 const camera = new THREE.OrthographicCamera(-6, 6, 6, -6, .1, 100);
 const floorGroup = new THREE.Group(); scene.add(floorGroup);
+scene.add(activityVisuals);
 const avatar = new THREE.Group(); scene.add(avatar);
 const body = new THREE.Mesh(new THREE.CapsuleGeometry(.21, .43, 4, 8), new THREE.MeshStandardMaterial({ color: 0xe75b91 }));
 body.position.y = .53; avatar.add(body);
@@ -52,6 +55,19 @@ const REAL_MODELS = {
   "rugRect": def => rugRect(def.args[0], def.args[1], C[def.args[2]] ?? C.sky2, C[def.args[3]] ?? C.white),
   "F.rug": () => F.rug()
 };
+function clearActivityVisuals() {
+  activityVisuals.traverse(o => { if (o.isMesh) { o.geometry.dispose(); for (const m of (Array.isArray(o.material) ? o.material : [o.material])) m.dispose(); } });
+  activityVisuals.clear(); activityVisualRoom = null;
+}
+function showActivityVisual(room) {
+  clearActivityVisuals(); activityVisualRoom = room;
+  const colors = { khach: 0xf8b6d0, bep: 0xffd87c, ngu: 0xe8b8ff };
+  const geometry = room === "khach" ? new THREE.TorusGeometry(.25, .065, 10, 24) :
+    room === "bep" ? new THREE.SphereGeometry(.29, 18, 12) : new THREE.OctahedronGeometry(.28);
+  const visual = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: colors[room], emissive: colors[room], emissiveIntensity: .22 }));
+  visual.position.set(avatar.position.x, 1.75, avatar.position.z);
+  activityVisuals.add(visual);
+}
 function disposeRoom() { floorGroup.traverse(o => { if (o.isMesh && o.userData.previewOwned) { o.geometry.dispose(); for (const m of (Array.isArray(o.material) ? o.material : [o.material])) m.dispose(); } }); floorGroup.clear(); }
 function block(x, y, z, w, h, d, color) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color)); m.position.set(x, y, z); m.userData.previewOwned = true; floorGroup.add(m); return m;
@@ -60,6 +76,7 @@ let roomId = PREVIEW_SPAWN.room, pos = { ...PREVIEW_SPAWN.cell }, walking = [], 
 const names = { khach: "🛋️ Phòng khách", bep: "🍳 Phòng bếp", ngu: "🛏️ Phòng ngủ" };
 function roomInfo() { return house.rooms[roomId]; }
 function renderRoom() {
+  clearActivityVisuals();
   disposeRoom();
   const { size, layout } = roomInfo(), W = size.w * CELL, D = size.d * CELL;
   const wall = WALL_COLORS.find(c => c.id === layout.wall)?.wall ?? 0xeaf5ff;
@@ -117,6 +134,7 @@ function renderRoom() {
   activityButton.textContent = action.label;
   activityButton.addEventListener("click", () => {
     activityCounts[roomId] += 1;
+    showActivityVisual(roomId);
     status.textContent = action.message + " · Lần " + activityCounts[roomId];
   });
   activitiesUI.append(activityButton);
@@ -192,6 +210,10 @@ function frame(now) {
     else { avatar.position.x += dx/d*step; avatar.position.z += dz/d*step; }
     pos = worldToCell(avatar.position.x, avatar.position.z, roomInfo().size);
   } else if (pendingDoor) crossDoor();
+  if (activityVisualRoom === roomId) {
+    activityVisuals.position.y = Math.sin(now * .003) * .10;
+    activityVisuals.rotation.y += dt * .6;
+  }
   const target = avatar.position.clone().add(new THREE.Vector3(10, 12, 12));
   camera.position.lerp(target, .1); camera.lookAt(avatar.position.x, .4, avatar.position.z);
   renderer.render(scene, camera); requestAnimationFrame(frame);
