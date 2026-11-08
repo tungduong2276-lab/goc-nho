@@ -2,6 +2,7 @@
 import * as THREE from "three";
 import * as F from "./xuong/furn.js";
 import { OBJ, plantPot, rugRound, rugRect } from "./xuong/rooms2.js";
+import { C } from "./xuong/lib.js";
 import { CELL, CATALOG, WALL_COLORS, FLOOR_COLORS } from "./catalog.mjs";
 import { makeHouse, HOUSE_ROOMS, transitionAtDoor, routeHouse } from "./multiroom.mjs";
 import { cellCenter, blockGrid, worldPath, worldToCell } from "./engine.mjs";
@@ -55,8 +56,8 @@ const REAL_MODELS = {
   "OBJ.tudo": () => OBJ.tudo("dong"), "OBJ.bantrangdiem": () => OBJ.bantrangdiem(),
   "OBJ.ruong": () => OBJ.ruong("dong"),
   "plantPot": () => plantPot(),
-  "rugRound": def => rugRound(...def.args),
-  "rugRect": def => rugRect(...def.args),
+  "rugRound": def => rugRound(def.args[0], C[def.args[1]] ?? C.pinkL, C[def.args[2]] ?? C.petal),
+  "rugRect": def => rugRect(def.args[0], def.args[1], C[def.args[2]] ?? C.sky2, C[def.args[3]] ?? C.white),
   "F.rug": () => F.rug()
 };
 function disposeRoom() { floorGroup.traverse(o => { if (o.isMesh && o.userData.previewOwned) { o.geometry.dispose(); for (const m of (Array.isArray(o.material) ? o.material : [o.material])) m.dispose(); } }); floorGroup.clear(); }
