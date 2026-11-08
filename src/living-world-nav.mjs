@@ -1,21 +1,20 @@
 /**
- * Góc Nhỏ V2 — synthetic, local-only navigation geometry.
- * Derived from visually inspected base room renders. NOT approved furniture hit geometry.
- * No Firebase dependency, no personal data, no random movement through walls.
+ * Góc Nhỏ V2 — local navigation; collision data from the photographed floor
+ * and furniture FOOTPRINTS, not the transparent sprite bounding boxes.
+ * No Firebase operations. Physical geometry remains visual-review gated.
  */
-const diamond = [[585,444],[977,679],[585,919],[193,679]];
-const garden = [[585,472],[997,665],[585,888],[173,665]];
-const attic = [[466,505],[903,737],[622,920],[189,737]];
-const rect = (x1,y1,x2,y2) => [[x1,y1],[x2,y1],[x2,y2],[x1,y2]];
-export const ROOM_NAV = Object.freeze({
-  "phong-khach": {floor:diamond, blocked:[rect(512,682,693,779),rect(842,630,972,734),rect(423,498,585,613)]},
-  "bep": {floor:diamond, blocked:[rect(772,626,957,742)]},
-  "phong-anh": {floor:diamond, blocked:[rect(925,651,980,732)]},
-  "phong-em": {floor:diamond, blocked:[rect(921,632,990,719)]},
-  "goc-sang-tao": {floor:diamond, blocked:[]},
-  "gac": {floor:attic, blocked:[rect(257,567,392,673)]},
-  "khu-vuon": {floor:garden, blocked:[rect(508,535,655,691),rect(245,520,511,614),rect(665,520,923,616)]}
-});
+import {ROOM_FLOORS} from "./living-world-floor-geometry.mjs";
+
+export const ROOM_NAV=Object.freeze(Object.fromEntries(
+  Object.entries(ROOM_FLOORS).map(([name,def])=>[
+    name,Object.freeze({
+      floor:def.floor,exit:def.exit,
+      furniture:def.furniture,
+      blocked:Object.freeze(Object.values(def.furniture))
+    })
+  ])
+));
+
 export function pointInPolygon(point, polygon) {
   if (!Array.isArray(point) || !polygon || polygon.length < 3) return false;
   const [x,y]=point;
