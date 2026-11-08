@@ -74,6 +74,7 @@ function block(x, y, z, w, h, d, color) {
 }
 let roomId = PREVIEW_SPAWN.room, pos = { ...PREVIEW_SPAWN.cell }, walking = [], last = performance.now();
 let pendingActivity = null;
+let activityPoseUntil = 0;
 const names = { khach: "🛋️ Phòng khách", bep: "🍳 Phòng bếp", ngu: "🛏️ Phòng ngủ" };
 function roomInfo() { return house.rooms[roomId]; }
 function renderRoom() {
@@ -156,6 +157,7 @@ function renderRoom() {
 }
 function goDoor(id, endpoint, dest) {
   pendingActivity = null;
+  activityPoseUntil = 0;
   // A door button must route to its own doorway, not an arbitrary shortest route
   // through another room. Both endpoints must remain free before walking begins.
   const sourceRoom = roomInfo(), targetRoom = house.rooms[dest.room];
@@ -178,6 +180,7 @@ function finishActivity() {
   const { action } = pendingActivity;
   pendingActivity = null;
   activityCounts[roomId] += 1;
+  activityPoseUntil = performance.now() + 2200;
   showActivityVisual(roomId);
   status.textContent = action.message + " · Lần " + activityCounts[roomId];
 }
@@ -205,6 +208,8 @@ canvas.addEventListener("pointerup", e => {
   if (Math.abs(point.x) >= halfW || Math.abs(point.z) >= halfD) return;
   pendingDoor = null;
   pendingActivity = null;
+  activityPoseUntil = 0;
+  clearActivityVisuals();
   const grid = blockGrid(roomInfo().layout, roomInfo().size);
   const path = worldPath(grid, avatar.position.x, avatar.position.z, point.x, point.z, roomInfo().size);
   if (!path) { status.textContent = "Không tìm thấy đường đi."; return; }
@@ -227,6 +232,10 @@ function frame(now) {
     pos = worldToCell(avatar.position.x, avatar.position.z, roomInfo().size);
   } else if (pendingDoor) crossDoor();
   else if (pendingActivity) finishActivity();
+  const acting = now < activityPoseUntil && !walking.length;
+  body.rotation.z = acting ? Math.sin(now * .009) * .12 : 0;
+  head.rotation.z = acting ? Math.sin(now * .006) * .10 : 0;
+  avatar.scale.y = acting ? .93 + Math.sin(now * .012) * .035 : 1;
   if (activityVisualRoom === roomId) {
     activityVisuals.position.y = Math.sin(now * .003) * .10;
     activityVisuals.rotation.y += dt * .6;
