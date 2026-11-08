@@ -58,3 +58,25 @@ test("actual furnished preview layouts preserve valid, reachable door routes", (
   assert.ok(back?.some(step => step.type === "door" && step.id === door.id), "cannot return through " + door.id);
  }
 });
+
+test("preview furniture stays within room bounds and solid footprints never overlap", () => {
+ const house = makeHouse(PREVIEW_LAYOUTS);
+ for (const [roomId, room] of Object.entries(house.rooms)) {
+  const occupied = new Set();
+  for (const item of room.layout.items) {
+   const def = CATALOG[item.type];
+   assert.ok(def, roomId + ": unknown furniture " + item.type);
+   if (def.kind === "wall") continue;
+   const width = (item.r & 1) ? def.d : def.w;
+   const depth = (item.r & 1) ? def.w : def.d;
+   assert.ok(item.gx >= 0 && item.gz >= 0 && item.gx + width <= room.size.w && item.gz + depth <= room.size.d,
+     roomId + ": out-of-bounds furniture " + item.uid);
+   if (def.kind !== "floor") continue;
+   for (let j = item.gz; j < item.gz + depth; j++) for (let i = item.gx; i < item.gx + width; i++) {
+    const key = i + "," + j;
+    assert.ok(!occupied.has(key), roomId + ": overlapping furniture at " + key + " (" + item.uid + ")");
+    occupied.add(key);
+   }
+  }
+ }
+});
