@@ -67,7 +67,7 @@ const definitions={
     }
   },
   "gac":{
-    floor:atticFloor,exit:[621,907],
+    floor:atticFloor,exit:[765,796],
     furniture:{
       ghenho:rectangle(239,572,396,678),
       tukinh:rectangle(387,518,534,617),

@@ -1,4 +1,6 @@
 import {ROOM_NAV,walkable,walkPath} from "./living-world-nav.mjs";
+import {floorThreshold,pathToPorch,arrivalFromCorridor} from "./living-world-transitions.mjs";
+import {createHallway} from "./living-world-hallway.mjs";
 
 /**
  * Góc Nhỏ V2: local 2.5D movement on the existing isometric room artwork.
@@ -14,6 +16,16 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
   const sceneKeys={"phong-anh":"phong_anh","phong-em":"phong_em",
     "goc-sang-tao":"sang_tao","khu-vuon":"khu_vuon"};
   const cache=new Map(),travelGoal=new Map();
+  // Only in local V2: a visible corridor connects the seven rooms.
+  // Joining a new room always spawns at the annotated front-edge threshold.
+  const hallway=createHallway({onSelect:destination=>{
+    const entry=arrivalFromCorridor(destination);
+    if(!entry)return;
+    cache.set(destination,entry);
+    travelGoal.delete(destination);
+    location.hash=destination;
+    queueInstall();
+  }});
   let active=null,frame=0,lastTime=0;
   const prefersReduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const vector=(x,y)=>[x,y];
@@ -60,6 +72,37 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
     label.setAttribute("text-anchor","middle");label.textContent="Lối ra nền trước";
     svg.appendChild(label);
     canvas.appendChild(svg);
+  }
+  function mountPorch(room,canvas) {
+    const exit=floorThreshold(room);
+    if(!exit||canvas.querySelector(".gn2-porch-threshold"))return;
+    // Keep the hit area at least 260×168 scene px: ~71×46px on 360px
+    // phones, larger than the ordinary tiny prop sprites. Visual mat sits entirely on the painted floor.
+    const door=document.createElement("button");
+    door.type="button";door.className="gn2-porch-threshold";
+    door.style.left=(exit[0]-130)+"px";
+    door.style.top=(exit[1]-154)+"px";
+    door.setAttribute("aria-label","Đi bộ ra hiên và vào hành lang chung");
+    door.dataset.gn2Room=room;
+    door.innerHTML='<span aria-hidden="true" class="gn2-porch-symbol">🚪</span><span class="gn2-porch-words">Lối ra hiên</span>';
+    door.addEventListener("click",event=>{
+      event.preventDefault();event.stopPropagation();walkToPorch();
+    });
+    canvas.appendChild(door);
+  }
+  function walkToPorch() {
+    const a=active;if(!a||!a.canvas.isConnected)return false;
+    if(standingPose(a.room)){
+      const b=a.canvas.querySelector(".gn2-porch-threshold");
+      if(b)b.title="Đứng dậy trước khi đi sang phòng khác";
+      return false;
+    }
+    const path=pathToPorch(a.room,a.pos);
+    if(!path)return false;
+    const room=a.room;
+    return moveTo(floorThreshold(room),()=>{
+      if(active?.room===room&&active.canvas.isConnected)hallway.open(room);
+    });
   }
   function basePoint(room){
     const key=sceneKeys[room]||room;
@@ -148,7 +191,7 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
   }
   function stop(){
     if(frame)cancelAnimationFrame(frame);frame=0;lastTime=0;
-    if(active)active.route=null;
+    if(active){active.route=null;active.onArrive=null;}
   }
   function step(t){
     frame=0;
@@ -165,16 +208,17 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
     }
     cache.set(a.room,a.pos.slice());applyPosition(a);
     if(a.route.length)frame=requestAnimationFrame(step);
-    else {a.route=null;lastTime=0;travelGoal.delete(a.room);}
+    else {const arrived=a.onArrive;a.route=null;a.onArrive=null;lastTime=0;travelGoal.delete(a.room);if(arrived)arrived();}
   }
-  function moveTo(target){
+  function moveTo(target,onArrive=null){
     const a=active;if(!a||standingPose(a.room))return false;
     if(!walkable(a.room,target))return false;
     const path=walkPath(a.room,a.pos,target);
     if(!path)return false;
-    stop();travelGoal.set(a.room,target.slice());a.route=path.slice(1);lastTime=0;
+    stop();travelGoal.set(a.room,target.slice());a.route=path.slice(1);a.onArrive=onArrive;lastTime=0;
     if(prefersReduced()){
       a.pos=target.slice();cache.set(a.room,a.pos.slice());a.route=null;travelGoal.delete(a.room);applyPosition(a);
+      const arrived=a.onArrive;a.onArrive=null;if(arrived)arrived();
     }else frame=requestAnimationFrame(step);
     return true;
   }
@@ -204,7 +248,7 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
     return best?moveTo(best):false;
   }
   function blockedByInteractiveItem(canvas,event) {
-    if(event.target.closest?.(".lay,.chr,.gn2-chat-toggle,.gn2-fridge-toggle"))return true;
+    if(event.target.closest?.(".lay,.chr,.gn2-chat-toggle,.gn2-fridge-toggle,.gn2-porch-threshold"))return true;
     for(const el of canvas.querySelectorAll(".lay.hot")){
       const box=el.getBoundingClientRect();
       if(event.clientX<box.left||event.clientX>box.right||
@@ -228,12 +272,14 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
   }
   function install(){
     if(!SC3||ME===null)return;
-    const room=locationRoom();if(!room||!ROOM_NAV[room]){if(active)travelGoal.delete(active.room);stop();active=null;return;}
+    const room=locationRoom();if(!room||!ROOM_NAV[room]){hallway.close();if(active)travelGoal.delete(active.room);stop();active=null;return;}
+    if(hallway.isOpen&&active?.room!==room)hallway.close();
     const parts=currentCanvas(room);
     if(!parts){stop();active=null;return;}
     if(active?.canvas===parts.canvas)return;
     const previous=active;
     const resumeGoal=previous?.room===room?travelGoal.get(room):null;
+    const resumeArrival=previous?.room===room?previous.onArrive:null;
     if(previous && previous.room!==room)travelGoal.delete(previous.room);
     stop();
     const base=basePoint(room);if(!base||!walkable(room,base))return;
@@ -241,12 +287,13 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
     const pos=cache.get(room);const safe=pos&&walkable(room,pos)?pos:base.slice();
     const bar=addToolbar(parts.scene);
     paintFloorReview(room,parts.canvas);
+    mountPorch(room,parts.canvas);
     active={room,root:parts.root,scene:parts.scene,canvas:parts.canvas,avatar,
-      base:base.slice(),pos:safe.slice(),route:null,bubble:null,bar};
+      base:base.slice(),pos:safe.slice(),route:null,onArrive:null,bubble:null,bar};
     applyPosition(active);
-    if(resumeGoal && walkable(room,resumeGoal))moveTo(resumeGoal);
+    if(resumeGoal && walkable(room,resumeGoal))moveTo(resumeGoal,resumeArrival);
     parts.canvas.addEventListener("click",onCanvasClick);
-    window.__GN_WORLD_V2__.walking={mode:"local-preview",rooms:Object.keys(ROOM_NAV)};
+    window.__GN_WORLD_V2__.walking={mode:"local-preview",rooms:Object.keys(ROOM_NAV),corridor:"local-only"};
   }
   let pending=false;
   function queueInstall(){
