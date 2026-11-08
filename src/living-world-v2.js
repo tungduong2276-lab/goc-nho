@@ -258,8 +258,10 @@
   // Contextual room conversation: visible chat dock and real scene speech bubbles.
   // This uses the EXISTING worldChat staging stream; production V2 is local only.
   var lastRoomBubble=null,chatHydrated=false,seenRoomChat=new Set();
+  // Readable on small phones, including while other room layers rerender.
+  var CHAT_BUBBLE_MS=12000;
   function paintRoomBubble(message) {
-    if(!message || message.scope!==locationScope() || Date.now()-message.shownAt>6200)return;
+    if(!message || message.scope!==locationScope() || Date.now()-message.shownAt>CHAT_BUBBLE_MS)return;
     var root=document.getElementById("v-"+message.scope);
     var scene=root&&!root.hidden?root.querySelector(".room3d,.garden3d,.world"):null;
     if(!scene)return;
@@ -294,7 +296,7 @@
       if(lastRoomBubble===captured)lastRoomBubble=null;
       var box=document.querySelector(".gn2-scene-speech");
       if(box)box.remove();
-    },6200);
+    },CHAT_BUBBLE_MS);
   }
   async function commitRoomChat(op) {
     if(ME===null || !op || !op.text || !canChatHere())throw new Error("invalid chat context");
