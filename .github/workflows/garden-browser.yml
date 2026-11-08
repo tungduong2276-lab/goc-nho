@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "index.html"
+      - "nha3d/**"
+      - "_xuong-3d/**"
       - "sw.js"
       - "assets/3d/**"
       - "scripts/**"
