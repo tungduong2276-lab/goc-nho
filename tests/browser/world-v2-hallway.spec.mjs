@@ -84,6 +84,29 @@ test("another movement cancels a pending porch transition rather than opening a 
   await expect(page.locator("#gn2-hall")).not.toBeVisible();
   expect(new URL(page.url()).hash).toBe("#bep");
 });
+test("visual porch is anchored to the painted floor threshold, not below the scenery",async({page})=>{
+  const {button}=await visit(page,"bep");
+  const bounds=await button.evaluate(async el=>{
+    const {floorThreshold}=await import("./src/living-world-transitions.mjs");
+    const [x,y]=floorThreshold("bep");
+    return {x,y,left:Number.parseFloat(el.style.left),top:Number.parseFloat(el.style.top)};
+  });
+  expect(bounds.left).toBe(bounds.x-130);
+  expect(bounds.top).toBe(bounds.y-154);
+  expect(bounds.top+168).toBeLessThan(945);
+});
+test("Escape cancels animated hall travel without a late room change",async({page})=>{
+  const {button}=await visit(page,"bep",390,false);
+  await button.click();
+  await expect(page.locator("#gn2-hall")).toBeVisible({timeout:11000});
+  await page.getByRole("button",{name:"Vào Phòng Anh"}).click();
+  await page.waitForTimeout(90);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#gn2-hall")).not.toBeVisible();
+  await page.waitForTimeout(950);
+  expect(new URL(page.url()).hash).toBe("#bep");
+  await expect(page.locator("#v-bep .gn2-walk-avatar")).toHaveCount(1);
+});
 test("mobile hallway fits 360/390/430 and vanilla app stays fully opt-out",async({page})=>{
   for(const width of [360,390,430]){
     const {button}=await visit(page,"bep",width);
