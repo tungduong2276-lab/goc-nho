@@ -54,3 +54,14 @@ test("room activities respond locally and change with the room", async ({ page }
  expect(errors).toEqual([]);
  expect(firebase).toEqual([]);
 });
+
+test("activity controls remain reachable on narrow mobile screens", async ({ page }) => {
+ await openPreview(page, 360);
+ const button = page.getByRole("button", { name: "☕ Uống trà" });
+ await expect(button).toBeVisible();
+ const rect = await button.boundingBox();
+ expect(rect && rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= 360).toBeTruthy();
+
+ await button.click();
+ await expect(page.locator("#status")).toContainText("Lần 1", { timeout: 30_000 });
+});
