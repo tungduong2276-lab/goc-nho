@@ -191,3 +191,63 @@
  .gn2-walk-button{min-width:34px;height:34px}}
 @media(prefers-reduced-motion:reduce){.gn2-walk-avatar{will-change:auto!important}
  .gn2-walk-bubble{animation:none}}
+
+/* Góc Nhỏ V2 — physically manipulable kitchen (local prototype, no writes). */
+.gn2-kitchen-content{gap:12px}
+.gn2-kitchen-dialog .gn2-mini-head{margin:4px 0 0}
+.gn2-kitchen-stove{
+  position:relative;isolation:isolate;display:grid;place-items:center;min-height:168px;overflow:hidden;
+  padding:14px 12px;border:3px solid #e6d5ca;border-radius:24px;
+  background:radial-gradient(circle at 50% 70%,#d0f0ea 0 23%,transparent 24%),
+    linear-gradient(135deg,#f5fbf9,#ffe7e5 74%);box-shadow:inset 0 -10px 0 #eedfd55c,0 4px 12px #3e35470d
+}
+.gn2-kitchen-stove::before{
+  content:"";position:absolute;top:67px;width:min(65%,260px);height:56px;border-radius:50%;
+  background:#c2d5dd;border:6px solid #618b9e;box-shadow:0 11px 0 #47758a,0 17px 6px #33587138;
+}
+.gn2-kitchen-pot{position:relative;z-index:2;font-size:65px;line-height:1.3;filter:drop-shadow(0 6px 3px #475c7f35)}
+.gn2-kitchen-steam{position:absolute;z-index:1;top:3px;left:51%;font-size:26px;letter-spacing:9px;
+  color:#82adae;transform:translateX(-50%);opacity:.7}
+.gn2-kitchen-stove.is-hot .gn2-kitchen-steam{animation:gn2CookSteam 2s ease-in-out infinite}
+.gn2-kitchen-stove-sub{position:relative;z-index:3;padding:6px 13px;border:2px solid #d1e5e7;border-radius:14px;
+  background:#fffefa;color:#5e617d;font-size:13px;font-weight:850;text-align:center}
+.gn2-kitchen-recipe{background:linear-gradient(125deg,#fff5cb,#fffdf0);border:2px dashed #d5ad72;border-radius:19px;
+  padding:13px 16px;box-shadow:3px 5px 0 #ad8c6b12}
+.gn2-kitchen-recipe h4{font-size:20px;margin:2px 0 8px;color:#764f54}
+.gn2-kitchen-modifier{margin:0 0 12px;font-size:13px;font-weight:800;color:#786a81}
+.gn2-kitchen-recipe-steps{padding-left:23px;margin:0;display:grid;gap:9px;font-weight:850;color:#655463}
+.gn2-kitchen-heat{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px;border:2px solid #f5dcca;
+  background:#fff4eb;border-radius:17px}
+.gn2-kitchen-heat strong{flex-basis:100%;color:#8c5862}
+.gn2-kitchen-heat-button{border:2px solid #edd2c9!important;border-radius:12px;background:#fff;color:#805c5d;
+  padding:9px 10px;min-height:43px;font-size:13px;font-weight:850;flex:1;min-width:100px}
+.gn2-kitchen-heat-button[aria-pressed="true"]{background:#ffe0ca;border-color:#df9878!important;box-shadow:inset 0 0 0 1px #f9bd9f}
+.gn2-kitchen-label{font-size:14px;color:#7b5c73}
+.gn2-kitchen-ingredients{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.gn2-kitchen-ingredient{min-height:54px;padding:8px 10px;border:2px solid #e7d2dd!important;border-radius:15px;
+  background:#fffdfb;font-size:14px;font-weight:850;color:#79526c;box-shadow:0 2px 0 #efe3e7}
+.gn2-kitchen-ingredient:active{transform:translateY(2px);box-shadow:none}
+.gn2-kitchen-ingredient:hover{background:#fef1fa;border-color:#ec9fbd!important}
+.gn2-kitchen-ingredient:focus-visible,.gn2-kitchen-heat-button:focus-visible{
+  outline:3px solid #8c6aca;outline-offset:2px}
+.gn2-kitchen-chaos{display:flex;flex-direction:column;gap:7px;min-height:52px;
+  border-radius:14px;background:#f6ecff;color:#705a85;padding:11px 13px;font-size:13px}
+.gn2-kitchen-score{font-size:17px;font-weight:900;color:#8b4872;margin:2px 0}
+.gn2-kitchen-results{display:grid;gap:8px;margin:0;padding:0 0 0 20px;font-weight:850;color:#694f70}
+.gn2-kitchen-plate{
+  position:absolute;left:512px;top:625px;z-index:880;
+  display:grid;place-items:center;width:82px;height:56px;border:5px solid #f8fcff;
+  border-radius:50%;background:radial-gradient(ellipse,#f8e1ec 0%,#bde8f0 78%,#92bcd6 100%);
+  box-shadow:0 5px 2px #33416d43,0 1px 0 4px #fff6;transform:rotate(-6deg);
+  font-size:37px!important;line-height:1;cursor:pointer;touch-action:manipulation;
+  animation:gn2PlateArrive .5s cubic-bezier(.2,.8,.3,1.2) both
+}
+.gn2-kitchen-plate:focus-visible{outline:5px solid #e383ab;outline-offset:6px}
+.gn2-kitchen-plate-hearts{position:absolute;top:-35px;right:-9px;color:#f0598e;font-size:22px;
+  text-shadow:0 2px 3px #8b5b7666;pointer-events:none}
+@keyframes gn2CookSteam{50%{opacity:.35;transform:translate(-50%,-9px)}}
+@keyframes gn2PlateArrive{from{opacity:0;transform:scale(.5) translateY(-30px)}to{opacity:1;transform:rotate(-6deg)}}
+@media(max-width:420px){.gn2-kitchen-dialog .gn2-dialog-content{padding:12px}
+ .gn2-kitchen-heat-button{min-width:0;padding:8px 5px;font-size:12px}
+ .gn2-kitchen-ingredient{font-size:13px;min-height:48px}}
+@media(prefers-reduced-motion:reduce){.gn2-kitchen-plate,.gn2-kitchen-stove.is-hot .gn2-kitchen-steam{animation:none}}

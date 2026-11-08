@@ -27,9 +27,15 @@ test('in-room chat writes a speech bubble near the avatar and keeps the current 
 });
 test('speech in one room does not appear in other rooms or leak into other room history',async({page})=>{
   const kitchen=await visitRoom(page);
-  await kitchen.locator('.gn2-chat-dock input').fill('Bí mật chỉ trong bếp 🌸');
-  await kitchen.getByRole('button',{name:'Gửi ngay'}).click();
-  await expect(kitchen.locator('.gn2-scene-speech')).toBeVisible();
+  const entry=kitchen.locator('.gn2-chat-dock input');
+  await entry.fill('Bí mật chỉ trong bếp 🌸');
+  await entry.press('Enter');
+  await expect(entry).toHaveValue('');
+  // Test room separation against the durable modal history, not a speech
+  // bubble that intentionally expires after a few seconds.
+  await kitchen.locator('.gn2-chat-toggle').click();
+  await expect(page.locator('#gn2-chat .gn2-chat-bubble')).toContainText('Bí mật chỉ trong bếp');
+  await page.locator('#gn2-chat .gn2-close').click();
   // Navigate within the SAME app session; demoChat stays in memory, so this
   // genuinely checks room scoping rather than clearing history by reloading.
   await page.evaluate(()=>{location.hash='#phong-anh';});
@@ -61,9 +67,15 @@ test('mobile dock and speech remain within 360/390/430 screens and support Enter
 test('chat uses text nodes for HTML-like input, not interpolated markup',async({page})=>{
   const root=await visitRoom(page);
   const unsafe='<img src=x onerror=alert(1)> 🌷';
-  await root.locator('.gn2-chat-dock input').fill(unsafe);
-  await root.getByRole('button',{name:'Gửi ngay'}).click();
-  await expect(root.locator('.gn2-scene-speech-text')).toHaveText(unsafe);
+  const entry=root.locator('.gn2-chat-dock input');
+  await entry.fill(unsafe);
+  await entry.press('Enter');
+  await expect(entry).toHaveValue('');
+  // Chat history preserves the exact user text via textContent; a transient
+  // 6-second bubble may have already expired while Playwright awaits.
+  await root.locator('.gn2-chat-toggle').click();
+  await expect(page.locator('#gn2-chat .gn2-chat-bubble')).toHaveText(unsafe);
+  await expect(page.locator('#gn2-chat img')).toHaveCount(0);
   await expect(root.locator('.gn2-scene-speech img')).toHaveCount(0);
 });
 test('new scene chat is disabled when world2 flag is absent',async({page})=>{
