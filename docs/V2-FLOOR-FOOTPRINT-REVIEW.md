@@ -10,6 +10,10 @@ The 1170×1170 room backgrounds are orthographic/isometric pre-rendered WebP ima
 
 A key correction is in the kitchen: the dining table/chairs, refrigerator, stove and built-in counter are separate collision footprints. Previously, a counter-only bounding rectangle missed the actual dining table.
 
+
+
+**Directional controls:** if an arrow points into a table, the avatar searches for the nearest reachable aisle offset and takes a real A* path around it. It does not teleport across furniture or silently ignore an otherwise possible movement. The test keeps the original 'down arrow must move' behavior and adds a collision-valid sidestep check.
+
 **No room art currently displays a distinct door.** The `exit` coordinates mark a **safe location near the open front edge**, not a completed traversable doorway. Do not call these locations an implemented doorway transition; add an actual visible threshold/doorway and test transitions in a follow-up slice.
 
 ## How to inspect the overlay
