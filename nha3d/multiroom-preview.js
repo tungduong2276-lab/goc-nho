@@ -237,9 +237,27 @@ function frame(now) {
   } else if (pendingDoor) crossDoor();
   else if (pendingActivity) finishActivity();
   const acting = now < activityPoseUntil && !walking.length;
-  body.rotation.z = acting ? Math.sin(now * .009) * .12 : 0;
-  head.rotation.z = acting ? Math.sin(now * .006) * .10 : 0;
-  avatar.scale.y = acting ? .93 + Math.sin(now * .012) * .035 : 1;
+  const t = now * .001;
+  if (acting && roomId === "khach") {
+    // A relaxed tea-time lean and small nod.
+    body.rotation.z = Math.sin(t * 2.8) * .045;
+    head.rotation.z = Math.sin(t * 3.5) * .08;
+    avatar.scale.y = .94;
+  } else if (acting && roomId === "bep") {
+    // Brisk cooking motion, as if stirring at the counter.
+    body.rotation.z = Math.sin(t * 10) * .11;
+    head.rotation.z = Math.sin(t * 5) * .045;
+    avatar.scale.y = .98 + Math.sin(t * 9) * .025;
+  } else if (acting && roomId === "ngu") {
+    // Quiet writing: gentle forward bend and small head movements.
+    body.rotation.z = -.10 + Math.sin(t * 3) * .015;
+    head.rotation.z = -.12 + Math.sin(t * 4) * .025;
+    avatar.scale.y = .92;
+  } else {
+    body.rotation.z = 0;
+    head.rotation.z = 0;
+    avatar.scale.y = 1;
+  }
   if (activityVisualRoom === roomId) {
     activityVisuals.position.y = Math.sin(now * .003) * .10;
     activityVisuals.rotation.y += dt * .6;
