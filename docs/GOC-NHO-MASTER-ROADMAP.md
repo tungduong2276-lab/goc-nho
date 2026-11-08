@@ -336,3 +336,71 @@ Next safe action:
 - Earlier CI #149 and #150 on the memory-only M1 prototype exposed recurring intermittent keyboard navigation failures; #154 initially failed due to a malformed new test insertion, which was repaired before passing CI #156. These failures were not waived.
 - **Still no live M1:** the placement state is pure memory-only and candidate slots remain reused character standing coordinates, **not visual-approved furniture footprints**. PR #9 stays Draft. Separate real Cloud Firestore staging managed export/restore and deployed production Rules/Auth/App Check/IAM/rollback verification remain M0 blockers.
 - **Next safe action:** verify post-merge PR #9 CI (the #157 job was triggered), then design visually approved floor slots and local-only user-visible preview. Do not enable shared Firebase writes or merge PR #9 to main before all gates.
+
+
+## 8. GÓC NHỎ V2 — PRODUCT ROADMAP REFRESH (2026-11-08)
+
+> This section supersedes the *product priorities* in section 3, while preserving M0 safety gates, the original milestone definitions and historical handoffs. **Planned ≠ implemented ≠ merged ≠ deployed.** Existing production Firebase couple data must remain intact.
+
+### 8.1 Product north star and design principles
+
+Góc Nhỏ should feel like **a private, explorable world built by two people**, not a collection of isolated tabs or a daily checklist. The house, garden, games, dating, gifts and memories must connect through persistent, meaningful consequences.
+
+- **Two-person identity:** recognizable avatars, shared home, meaningful choices, affectionate interactions, and personal customization. Preserve the current cute Vietnamese-language visual identity.
+- **World over menus:** continuous navigable spaces, legible doors/corridors, believable room scale, accessible objects and contextual activities. Do not fake physical expansion by merely zooming/cropping art.
+- **Replayability without chores:** varied situations, meaningful choices, multiple endings, surprise combinations and optional sessions. No punishing streaks or manipulative FOMO.
+- **Dating with personality:** surprising date draws, optional playful/romantic/bold categories, mutually agreed boundaries, skip/reroll, creative non-humiliating forfeits; never pressure or override consent.
+- **Mobile first:** 360/390/430px touch targets, performant animation, reduced motion, keyboard access, reliable reconnect and low network use.
+- **Safety first:** staging + emulator, two-client concurrency, versioned writes and Firestore Rules; never expose unopened gifts or use production personal data as test fixtures.
+
+### 8.2 Reconciled workstreams and delivery order
+
+| Track | Scope / tangible first release | Gate / dependency |
+| --- | --- | --- |
+| V2-G0 Safety & baseline | Reconcile current main, PRs, CI, actual Rules/Auth/App Check; staging-only managed backup/restore proof and rollback; feature flags | Mandatory before shared persistent schema/write changes or production release |
+| V2-W1 Navigable world | Physical six-room floor expansion, doors and connected walkable corridors, avatar navigation, collision and furniture footprints, room-chat and context actions | Visual review of actual source/render geometry; no invisible barriers; mobile + 2-client tests |
+| V2-W2 Living house | Editable furniture and decoration, contextual fridge, kitchen, room-specific interactions, expressions, small surprises, persistent shared state | Approved placement geometry, safe transactional writes, ownership and conflict resolution |
+| V2-D1 Dating engine | Themed draws (cozy, adventurous, funny, romantic, bold), adjustable intensity, reroll, date plans, escalating optional challenges and diverse consensual forfeits | Couple opt-in, safety/skip controls, no repeated draws within configurable sessions |
+| V2-G1 Replayable games | Reusable two-person sessions with cooperative, competitive, deduction, improv and real-life hybrid games; variable prompts/roles/difficulty and fair scoring | Reconnect, abandoned session recovery, server-side validation where needed |
+| V2-S1 Shared living systems | Garden growth and gifts, seasonal weather, room surprises, secret boxes, object-attached memories, evolving environment | Existing data compatibility, secure secret unlock, reduced-motion, no chore loops |
+| V2-M1 Memory world | Museum displays, photo/object histories, scrapbook and PDF keepsakes; meaningful traces from optional activities | Explicit consent/selection; no covert logs; permissions/unlock enforced |
+| V2-Q1 Polish and launch | Visual/audio consistency, accessibility, performance, battery, error recovery, responsive and real-device QA | All tests green plus independent visual/security acceptance and rollback |
+
+These tracks can be prototyped in parallel **only in isolated branches with mock data**; releases follow the dependencies above. The original M0–M8 remain traceability anchors: M0→V2-G0, M1→W1/W2, M2→M1, M3→S1, M4/M5→S1, M6/M8→M1, M7→G1. Dating engine is a new explicit workstream.
+
+### 8.3 Concrete backlog / acceptance checks
+
+**W1:** review six real floor meshes at multiple heights, interior furnishings and door cutouts; define world coordinates and walkable polygons; verify route from porch through corridor to all six rooms. Two avatars must never pass through blocked furniture. Test navigation, hitboxes and actual screenshot geometry at 360/390/430px.
+
+**W2:** ship a small vertical slice: enter a room → approach fridge/table → perform a meaningful interaction → both clients observe a consistent result after reload. Preview-only before shared writes. Support undo/restore and collision-free placement; do not claim arbitrary real-time 3D editing with prerendered sprites.
+
+**D1:** launch a curated pool of date prompts with category/intensity/indoor-outdoor/time filters; draw, accept, skip, reroll and record an optional keepsake. Provide diverse forfeits by category (silly, creative, affectionate, teamwork) with veto and no mandatory penalty. Test variety across repeated draws, duplicate avoidance and accessibility.
+
+**G1:** start with 3 genuinely distinct playable loops (co-op asymmetric puzzle, competitive bluff/guess, real-life randomized challenge), each with changing prompts/roles/outcomes; add more only after replay tests with two real devices. Session state must survive disconnect and avoid duplicate turns.
+
+**S1/M1:** opt-in memory linking, secure scheduled gift unlock, garden/season progression without streak punishment, museum referencing original records and protected PDF export.
+
+**Success metrics (qualitative first):** both partners can identify their home as personal; can find an enjoyable spontaneous activity in under a minute; have reasons to return because of novel content and shared consequences, not notifications; no regression/data loss or intrusive tracking. Gather feedback without collecting private couple content.
+
+### 8.4 Repository reconciliation snapshot (2026-11-08; not release verification)
+
+- Default-branch roadmap was still a historical document with last appended handoff on 2026-11-05; this refresh is a planning update, **not** proof of completion.
+- Latest commit returned by repository commit search: `e79f97870c4ea1797ba22c8a6d7011c66e5c9d4a` (verify actual main HEAD again before implementation).
+- Open-PR search showed #79 (V2 fridge/chat/dating/sticker draft), #12 (M0 audit), #9 (house/weather/garden) and #4 (drawing fix). Recent PR history also includes #84–#91 covering avatar movement, room chat, kitchen, collision/footprints, porch/corridor and physically expanded room previews. **Their titles are discovery leads, not evidence of merge, CI, quality or deployment.**
+- Prior handoff described local-only M1 placement engine and outstanding M0 cloud/visual gates. Reinspect latest main, PR bases and CI to establish whether any gates have since closed; never infer this from historical handoffs.
+
+### 8.5 Next execution sequence
+
+1. Produce a verified main/PR/CI/branch inventory; inspect #79 and #84–#91 diffs, bases and visual artifacts; map each to W1/W2/D1/G1 and mark merged / open / draft / blocked with evidence.
+2. Reconcile #9 and #12 against newer V2 branches; do not merge overlapping scene changes without a geometry and regression review.
+3. Complete or explicitly document unresolved M0 staging export/restore, deployed Rules/Auth/App Check and rollback gates. No production schema changes until approved.
+4. Select one isolated, testable W1 vertical slice: connected entrance/corridor and six-room navigability; independently review actual renders and mobile touch zones.
+5. Prototype D1 prompt engine and G1 replayable game loops on mock data in separate branches, without bypassing the W1/M0 production release gates.
+6. Update this section's evidence table and session handoff after every verified merge; record exact PR, commit SHA, CI run, visual approval and deployment status separately.
+
+### 8.6 Handoff — 2026-11-08 documentation refresh
+
+- Change: product vision, new V2 tracks, dating/game replayability and phased acceptance criteria documented; historical M0–M8 retained.
+- Firebase / Rules / deployment: **none changed** by this documentation-only update.
+- Verification: content review only; no code tests or production deployment asserted.
+- Next action: verify current V2 PRs and CI, then implement first safe W1 slice behind flags while completing M0 gates.
