@@ -51,6 +51,22 @@ test("floor overlay never catches floor taps, and scene room does not navigate a
   await page.mouse.click(point.x,point.y);
   expect(new URL(page.url()).hash).toBe("#bep");
 });
+test("down arrow steers around the physical kitchen table rather than freezing",async({page})=>{
+  const root=await openFloor(page,"bep",390);
+  const avatar=root.locator(".gn2-walk-avatar");
+  const origin=await avatar.evaluate(el=>[Number(el.dataset.gn2X),Number(el.dataset.gn2Y)]);
+  await root.getByRole("button",{name:"Di chuyển xuống"}).click();
+  await expect.poll(async()=>Number(await avatar.getAttribute("data-gn2-y")),{timeout:7000})
+    .toBeGreaterThan(origin[1]+55);
+  const last=await avatar.evaluate(el=>[Number(el.dataset.gn2X),Number(el.dataset.gn2Y)]);
+  expect(Math.abs(last[0]-origin[0])).toBeGreaterThan(25);
+  const valid=await page.evaluate(async ([x,y])=>{
+    const mod=await import("./src/living-world-nav.mjs");
+    return mod.walkable("bep",[x,y]);
+  },last);
+  expect(valid).toBe(true);
+  expect(new URL(page.url()).hash).toBe("#bep");
+});
 test("QA map fits mobile widths and is disabled by default and without V2",async({page})=>{
   for(const width of [360,390,430]){
     const root=await openFloor(page,"bep",width);
