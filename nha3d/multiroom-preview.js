@@ -25,6 +25,7 @@ head.position.y = 1.02; avatar.add(head);
 const hair = new THREE.Mesh(new THREE.SphereGeometry(.27, 16, 10, 0, Math.PI * 2, 0, Math.PI * .48), new THREE.MeshStandardMaterial({ color: 0x41384c }));
 hair.position.y = 1.08; avatar.add(hair);
 const mat = c => new THREE.MeshStandardMaterial({ color: c, roughness: .94 });
+function disposeRoom() { floorGroup.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); floorGroup.clear(); }
 function block(x, y, z, w, h, d, color) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color)); m.position.set(x, y, z); floorGroup.add(m); return m;
 }
@@ -32,13 +33,29 @@ let roomId = "khach", pos = { i: 8, j: 10 }, walking = [], last = performance.no
 const names = { khach: "🛋️ Phòng khách", bep: "🍳 Phòng bếp", ngu: "🛏️ Phòng ngủ" };
 function roomInfo() { return house.rooms[roomId]; }
 function renderRoom() {
-  floorGroup.clear();
+  disposeRoom();
   const { size, layout } = roomInfo(), W = size.w * CELL, D = size.d * CELL;
   const wall = WALL_COLORS.find(c => c.id === layout.wall)?.wall ?? 0xeaf5ff;
   const fc = FLOOR_COLORS.find(c => c.id === layout.floor)?.floor ?? 0xe8c9a0;
   block(0, -.09, 0, W, .18, D, fc);
-  block(-W/2, size.wallH ? size.wallH/2 : 1.35, 0, .14, size.wallH || 2.7, D, wall);
-  block(0, size.wallH ? size.wallH/2 : 1.35, -D/2, W, size.wallH || 2.7, .14, wall);
+  const H = size.wallH || 2.7, opening = 1.05;
+  // Wall segments leave real openings at door positions, including the two visible walls.
+  for (const side of ["L", "R", "T", "B"]) {
+    const length = (side === "L" || side === "R") ? D : W;
+    const cuts = house.doors.flatMap(door => [door.a, door.b]).filter(ep => ep.room === roomId)
+      .filter(ep => side === "L" ? ep.cell.i === 0 : side === "R" ? ep.cell.i === size.w-1 : side === "T" ? ep.cell.j === 0 : ep.cell.j === size.d-1)
+      .map(ep => (side === "L" || side === "R" ? ep.cell.j : ep.cell.i) * CELL + CELL/2);
+    const intervals = cuts.map(c => [Math.max(0,c-opening/2),Math.min(length,c+opening/2)]).sort((a,b)=>a[0]-b[0]);
+    let at = 0;
+    const segment = (from,to) => {
+      if (to-from < .01) return;
+      const center = (from+to)/2-length/2;
+      if (side === "L" || side === "R") block(side === "L" ? -W/2 : W/2,H/2,center,.14,H,to-from,wall);
+      else block(center,H/2,side === "T" ? -D/2 : D/2,to-from,H,.14,wall);
+    };
+    for (const [a,b] of intervals) { segment(at,a); at=Math.max(at,b); }
+    segment(at,length);
+  }
   // Low-poly visual placeholders, footprints correspond to the collision engine.
   for (const it of layout.items) {
     const def = CATALOG[it.type]; if (!def || def.kind === "wall") continue;
@@ -76,19 +93,23 @@ function goDoor(id, endpoint, dest) {
   const start = { room: roomId, cell: pos };
   const route = routeHouse(house, start, { room: dest.room, cell: dest.cell });
   if (!route) { status.textContent = "Lối đi bị chặn, hãy dời đồ khỏi cửa."; return; }
+  const doorStep = route.find(s => s.type === "door" && s.id === id);
+  if (!doorStep || doorStep.from.room !== roomId) { status.textContent = "Không tìm thấy lối qua cửa này."; return; }
   const walk = route.find(s => s.type === "walk" && s.room === roomId);
   if (walk) {
     walking = walk.cells.slice(1).map(c => cellCenter(c.i, c.j, roomInfo().size));
     // Route might begin at the same cell; transition after walking in the frame loop.
   } else walking = [];
-  pendingDoor = { id, endpoint, dest };
+  pendingDoor = { id, endpoint: doorStep.from, dest };
   if (!walking.length) crossDoor();
 }
 let pendingDoor = null;
 function crossDoor() {
   if (!pendingDoor) return;
   const { id, endpoint } = pendingDoor;
-  const result = transitionAtDoor(house, { room: roomId, cell: endpoint.cell }, id);
+  const current = worldToCell(avatar.position.x, avatar.position.z, roomInfo().size);
+  if (current.i !== endpoint.cell.i || current.j !== endpoint.cell.j) { pendingDoor = null; status.textContent = "Chưa tới cửa, hãy thử lại."; return; }
+  const result = transitionAtDoor(house, { room: roomId, cell: current }, id);
   pendingDoor = null;
   if (!result) { status.textContent = "Cửa đang bị chặn."; return; }
   roomId = result.room; pos = result.cell; renderRoom();
