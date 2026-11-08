@@ -1,6 +1,6 @@
 // Lưu sẵn khung app để mở được cả khi mạng chập chờn. Dữ liệu do Firebase tự đồng bộ.
 // Mỗi lần sửa app, tăng số phiên bản dưới đây để điện thoại nhận bản mới.
-const CACHE = "goc-nho-v16";
+const CACHE = "goc-nho-v17";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest", "./firebase-config.js",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png",
@@ -42,6 +42,7 @@ const SHELL = [
   "./assets/3d/living-motion.js",
   "./src/living-world-games.js", "./src/living-world-v2.js",
   "./src/living-world-v2.css", "./src/living-world-minigames.js",
+  "./src/living-world-floor-geometry.mjs",
   "./src/living-world-nav.mjs", "./src/living-world-avatar.mjs",
   "./src/living-world-kitchen-engine.mjs", "./src/living-world-kitchen.mjs"
 ];
