@@ -26,6 +26,8 @@ const definitions={
   "phong-khach":{
     floor:mainFloor,exit:[585,909],
     furniture:{
+      // The stairs are baked into the living-room background, not a sprite.
+      cautang:[[373,539],[520,470],[627,544],[478,603]],
       sofa:[[174,584],[302,515],[442,579],[330,710]],
       bantra:rectangle(502,677,694,781),
       radio:rectangle(906,619,994,736)
