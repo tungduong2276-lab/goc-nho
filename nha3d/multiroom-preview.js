@@ -1,6 +1,7 @@
 // Three-room visual prototype. No Firebase, no localStorage, no edits to legacy house.
 import * as THREE from "three";
 import * as F from "./xuong/furn.js";
+import { OBJ, plantPot, rugRound, rugRect } from "./xuong/rooms2.js";
 import { CELL, CATALOG, WALL_COLORS, FLOOR_COLORS } from "./catalog.mjs";
 import { makeHouse, HOUSE_ROOMS, transitionAtDoor, routeHouse } from "./multiroom.mjs";
 import { cellCenter, blockGrid, worldPath, worldToCell } from "./engine.mjs";
@@ -44,7 +45,20 @@ head.position.y = 1.02; avatar.add(head);
 const hair = new THREE.Mesh(new THREE.SphereGeometry(.27, 16, 10, 0, Math.PI * 2, 0, Math.PI * .48), new THREE.MeshStandardMaterial({ color: 0x41384c }));
 hair.position.y = 1.08; avatar.add(hair);
 const mat = c => new THREE.MeshStandardMaterial({ color: c, roughness: .94 });
-const REAL_MODELS = { "F.sofa": () => F.sofa(), "F.coffeeTable": () => F.coffeeTable(), "F.bookshelfLow": () => F.bookshelfLow(), "F.pothos": () => F.pothos(), "F.petBed": () => F.petBed() };
+const REAL_MODELS = {
+  "F.sofa": () => F.sofa(), "F.coffeeTable": () => F.coffeeTable(),
+  "F.bookshelfLow": () => F.bookshelfLow(), "F.pothos": () => F.pothos(),
+  "F.petBed": () => F.petBed(), "F.jar": () => F.jar(),
+  "F.floorLamp": () => F.floorLamp(), "F.radio": () => F.radio(),
+  "OBJ.banan": () => OBJ.banan("trong"), "OBJ.tulanh": () => OBJ.tulanh("dong"),
+  "OBJ.bepnau": () => OBJ.bepnau("tat"), "OBJ.giuong": () => OBJ.giuong("gon"),
+  "OBJ.tudo": () => OBJ.tudo("dong"), "OBJ.bantrangdiem": () => OBJ.bantrangdiem(),
+  "OBJ.ruong": () => OBJ.ruong("dong"),
+  "plantPot": () => plantPot(),
+  "rugRound": def => rugRound(...def.args),
+  "rugRect": def => rugRect(...def.args),
+  "F.rug": () => F.rug()
+};
 function disposeRoom() { floorGroup.traverse(o => { if (o.isMesh && o.userData.previewOwned) { o.geometry.dispose(); for (const m of (Array.isArray(o.material) ? o.material : [o.material])) m.dispose(); } }); floorGroup.clear(); }
 function block(x, y, z, w, h, d, color) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color)); m.position.set(x, y, z); m.userData.previewOwned = true; floorGroup.add(m); return m;
@@ -83,8 +97,8 @@ function renderRoom() {
     const x = -W/2 + (it.gx + w/CELL/2)*CELL, z = -D/2 + (it.gz + d/CELL/2)*CELL;
     const rug = def.kind === "rug";
     const builder = REAL_MODELS[def.model];
-    if (builder && !rug) {
-      const model = builder(); model.position.set(x + (def.off?.[0] || 0), 0, z + (def.off?.[1] || 0));
+    if (builder) {
+      const model = builder(def); model.position.set(x + (def.off?.[0] || 0), 0, z + (def.off?.[1] || 0));
       model.rotation.y = (it.r & 3) * Math.PI/2; model.scale.multiplyScalar(def.scale || 1);
       floorGroup.add(model);
     } else block(x, rug ? .018 : .24, z, w*.92, rug ? .025 : .48, d*.92, rug ? 0xf2a9c4 : 0x9fcbb6);
