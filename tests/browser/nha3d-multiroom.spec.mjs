@@ -44,6 +44,7 @@ test("room activities respond locally and change with the room", async ({ page }
  const { errors, firebase } = await openPreview(page);
  await page.getByRole("button", { name: "☕ Uống trà" }).click();
  await expect(page.locator("#status")).toContainText("Lần 1");
+ await expect.poll(() => page.evaluate(() => document.querySelector("#world")?.width > 0)).toBe(true);
  await page.getByRole("button", { name: "☕ Uống trà" }).click();
  await expect(page.locator("#status")).toContainText("Lần 2");
  await page.getByRole("button", { name: "🚪 Phòng bếp" }).click();
