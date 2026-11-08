@@ -270,20 +270,27 @@
 
 /* V2 local-only world continuity: walk to the visible front porch first. */
 .gn2-enabled .gn2-porch-threshold{
-  position:absolute;z-index:7000;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:0;
-  width:260px;height:168px;padding:15px 10px 24px;
+  position:absolute;z-index:7000;isolation:isolate;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;
+  width:260px;height:168px;padding:43px 12px 20px;
   color:#5a3558;cursor:pointer;touch-action:manipulation;
-  background:linear-gradient(160deg,#fff7d9 0%,#ffdbad 55%,#f1bacf 100%);
-  border:8px solid #fff3e3;outline:4px solid #b985a7;
-  border-radius:42px 42px 62px 62px;
-  box-shadow:0 17px 0 #a9697c90,0 22px 16px #38263f30;
-  transform:rotate(-2deg);
+  border:0;outline:0;background:transparent;box-shadow:none;
 }
-.gn2-porch-threshold .gn2-porch-symbol{font-size:54px;line-height:1}
-.gn2-porch-threshold .gn2-porch-words{font-weight:900;font-size:34px;line-height:1.1;white-space:nowrap}
-.gn2-porch-threshold:focus-visible{outline:12px solid #a14e86;outline-offset:7px}
-.gn2-porch-threshold:active{filter:brightness(.94);transform:rotate(-2deg) translateY(5px)}
+.gn2-enabled .gn2-porch-threshold::before{
+  content:"";position:absolute;inset:38px 0 4px;
+  z-index:0;border-radius:50%;
+  background:linear-gradient(145deg,#fff8e2,#ffdfc4 60%,#edb6c6);
+  border:7px solid #fffcf5;box-shadow:0 7px 0 #b481a5,0 10px 9px #38263f30;
+  transform:perspective(300px) rotateX(30deg) rotate(-4deg)
+}
+.gn2-porch-threshold .gn2-porch-symbol{
+  position:relative;z-index:1;font-size:47px;line-height:1
+}
+.gn2-porch-threshold .gn2-porch-words{
+  position:relative;z-index:1;font-weight:900;font-size:30px;line-height:1.1;white-space:nowrap
+}
+.gn2-porch-threshold:focus-visible::before{outline:11px solid #a14e86;outline-offset:5px}
+.gn2-porch-threshold:active::before{filter:brightness(.94);transform:perspective(300px) rotateX(30deg) translateY(6px)}
 .gn2-hall-dialog{
   width:min(96vw,540px);max-width:540px;max-height:min(94dvh,850px);
   margin:auto;padding:0;border:3px solid #ffe2ee;border-radius:26px;
@@ -340,7 +347,7 @@
 .gn2-hall-door.gn2-hall-door-selected{background:#ffdf9a}
 .gn2-hall-door:disabled{cursor:progress;opacity:.82}
 .gn2-hall-avatar{
-  position:absolute;left:50%;top:93%;transform:translate(-50%,-60%);
+  position:absolute;left:16%;top:93%;transform:translate(-50%,-60%);
   z-index:15;font-size:37px;line-height:1.1;pointer-events:none;
   filter:drop-shadow(0 6px 3px #3b3b5b4d)
 }
