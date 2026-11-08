@@ -78,6 +78,10 @@ let activityPoseUntil = 0;
 const names = { khach: "🛋️ Phòng khách", bep: "🍳 Phòng bếp", ngu: "🛏️ Phòng ngủ" };
 function roomInfo() { return house.rooms[roomId]; }
 function renderRoom() {
+  activityPoseUntil = 0;
+  avatar.scale.y = 1;
+  body.rotation.z = 0;
+  head.rotation.z = 0;
   clearActivityVisuals();
   disposeRoom();
   const { size, layout } = roomInfo(), W = size.w * CELL, D = size.d * CELL;
