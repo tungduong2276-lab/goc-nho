@@ -77,11 +77,11 @@ if (new URLSearchParams(location.search).get("world2")==="1" && window.__GN_WORL
     const exit=floorThreshold(room);
     if(!exit||canvas.querySelector(".gn2-porch-threshold"))return;
     // Keep the hit area at least 260×168 scene px: ~71×46px on 360px
-    // phones, larger than the ordinary tiny prop sprites.
+    // phones, larger than the ordinary tiny prop sprites. Visual mat sits entirely on the painted floor.
     const door=document.createElement("button");
     door.type="button";door.className="gn2-porch-threshold";
     door.style.left=(exit[0]-130)+"px";
-    door.style.top=(exit[1]-84)+"px";
+    door.style.top=(exit[1]-154)+"px";
     door.setAttribute("aria-label","Đi bộ ra hiên và vào hành lang chung");
     door.dataset.gn2Room=room;
     door.innerHTML='<span aria-hidden="true" class="gn2-porch-symbol">🚪</span><span class="gn2-porch-words">Lối ra hiên</span>';
