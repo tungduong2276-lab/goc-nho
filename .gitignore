@@ -5,3 +5,6 @@ _xuong-3d/three
 node_modules/
 test-results/
 playwright-report/
+
+# Gói xem trước tạo ra
+dist/

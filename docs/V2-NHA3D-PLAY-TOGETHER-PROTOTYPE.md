@@ -29,6 +29,18 @@ Phòng 8 × 7 m (16 × 14 ô). Mở: `…/goc-nho/nha3d/` sau khi lên GitHub Pa
 - `_xuong-3d/rig.js` thêm `buildAvatar(look)`; `_xuong-3d/rooms2.js` thêm `export { OBJ, plantPot, rugRound, rugRect, bookStack }`. Chỉ thêm export, **không đổi hình đã dựng**.
 - three.js r169 nạp từ jsDelivr (đúng bản xưởng 3D dùng); test trong CI chuyển sang `node_modules/three`.
 
+## Xem thử trên Firebase Hosting Preview Channel (staging)
+
+Chỉ dùng project **`goc-nho-staging-2026`** (không phải project thật). Cấu hình riêng `firebase.nha3d-preview.json` chỉ phát hành `dist/nha3d-preview/` = trang `nha3d/` + một trang chuyển hướng; **không** kèm `index.html` của app chính, không đụng Firestore Rules.
+
+```bash
+npm ci
+npx firebase login            # tài khoản có quyền Hosting trên goc-nho-staging-2026
+npm run preview:nha3d:staging # build + hosting:channel:deploy nha3d, hết hạn sau 7 ngày
+```
+
+Lệnh in ra đường dẫn dạng `https://goc-nho-staging-2026--nha3d-xxxx.web.app/`. Lần đầu có thể cần bấm *Get started* ở Hosting trong Firebase Console của staging. GitHub cố ý chưa giữ khoá deploy (xem `docs/M0-STAGING-GITHUB-SETUP.md`), nên lệnh chạy từ máy đã đăng nhập.
+
 ## Test
 
 - `tests/staging/nha3d-engine.test.mjs` — 11 test Node: mọi mô hình vừa dấu chân (≤ 5 cm), bố cục mặc định hợp lệ, chặn chồng/ra ngoài/sai góc, đồ treo tường, xoay khớp three.js, A* không cắt góc và báo bị nhốt, đường rút gọn không xuyên đồ, trượt va chạm, ghế + điểm tiếp cận ở 4 góc xoay đều tới được, nạp dữ liệu hỏng/lạ, tìm chỗ trống, hoàn tác.

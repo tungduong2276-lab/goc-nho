@@ -49,7 +49,7 @@ const S = {
 S.G = E.blockGrid(S.layout);
 const saveLayout = () => store.set(KEY.layout, E.serialize(S.layout));
 // Nút "Về" chỉ có nghĩa khi bản thử nằm cạnh app Góc Nhỏ (…/goc-nho/nha3d/ hoặc máy test).
-if (!/\/goc-nho\/nha3d\/|^\/nha3d\//.test(location.pathname)) $(".back").hidden = true;
+if (!/\/goc-nho\/nha3d\/|^\/nha3d\//.test(location.pathname) || /\.(web\.app|firebaseapp\.com)$/.test(location.hostname)) $(".back").hidden = true;
 
 // ---------- three.js ----------
 const canvas = $("#world");
