@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const project = "goc-nho-staging-2026";
@@ -25,4 +26,10 @@ const run = (bin, args) => execFileSync(bin, args, { cwd: root, stdio: "inherit"
 run(process.execPath, ["--test", "tests/staging/nha3d-staging-bundle.test.mjs", "tests/staging/nha3d-hosting-config.test.mjs"]);
 run(process.execPath, ["scripts/build-nha3d-staging.mjs"]);
 console.log("Deploying only a Hosting preview channel to explicitly approved staging project:", project);
-run("npx", ["firebase", "hosting:channel:deploy", "nha3d-review", "--project", project, "--config", "firebase.nha3d-staging.json", "--expires", "7d"]);
+const require = createRequire(import.meta.url);
+const firebasePkgPath = require.resolve("firebase-tools/package.json");
+const firebasePkg = JSON.parse(readFileSync(firebasePkgPath, "utf8"));
+const firebaseBin = typeof firebasePkg.bin === "string" ? firebasePkg.bin : firebasePkg.bin?.firebase;
+if (!firebaseBin) throw new Error("STOP: installed firebase-tools does not declare the Firebase CLI entrypoint.");
+// Node invokes the installed CLI directly, avoiding npx.cmd/.cmd spawn issues on Windows.
+run(process.execPath, [resolve(dirname(firebasePkgPath), firebaseBin), "hosting:channel:deploy", "nha3d-review", "--project", project, "--config", "firebase.nha3d-staging.json", "--expires", "7d"]);
