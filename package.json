@@ -3,16 +3,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:static": "node scripts/check-garden.mjs",
+    "test:static": "node scripts/check-garden.mjs && node scripts/sync-nha3d.mjs --check",
     "test:browser": "playwright test",
     "test": "npm run test:static && npm run test:staging && npm run test:browser && npm run test:firebase",
     "test:firebase": "firebase emulators:exec --project demo-goc-nho-safety --only firestore \"node --test --test-concurrency=1 tests/firebase/*.test.mjs\"",
-    "test:staging": "node --test tests/staging/*.test.mjs"
+    "test:staging": "node --test tests/staging/*.test.mjs",
+    "preview:nha3d:build": "node scripts/build-nha3d-preview.mjs",
+    "preview:nha3d:staging": "npm run preview:nha3d:build && firebase hosting:channel:deploy nha3d --project goc-nho-staging-2026 --config firebase.nha3d-preview.json --expires 7d"
   },
   "devDependencies": {
     "@playwright/test": "1.55.0",
     "@firebase/rules-unit-testing": "^4.0.1",
     "firebase": "^11.10.0",
-    "firebase-tools": "^14.15.0"
+    "firebase-tools": "^14.15.0",
+    "three": "0.169.0"
   }
 }
