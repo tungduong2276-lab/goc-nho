@@ -8,7 +8,7 @@ const CHANNEL_NAME = "goc-nho-nha3d-two-tabs-lab-v1";
 export function createTwoTabPresenceLab({ getLocalState, canOccupy, onRemoteChange }) {
   if (typeof getLocalState !== "function" || typeof canOccupy !== "function" ||
       typeof onRemoteChange !== "function") throw new TypeError("Missing presence lab hooks");
-  let channel = null, protocol = null, lastSentAt = 0, lastKey = "";
+  let channel = null, protocol = null, lastSentAt = 0, lastKey = "", lastHelloAt = 0;
   let lastRemoteKey = "";
   const randomId = () => {
     const bytes = new Uint8Array(16);
@@ -48,7 +48,7 @@ export function createTwoTabPresenceLab({ getLocalState, canOccupy, onRemoteChan
         if (outcome.kind === "hello") publish(true);
         else if (outcome.kind === "updated" || outcome.kind === "left") notify();
       };
-      lastRemoteKey = ""; lastSentAt = 0; lastKey = "";
+      lastRemoteKey = ""; lastSentAt = 0; lastKey = ""; lastHelloAt = Date.now();
       emit(protocol.packet("hello"));
       publish(true);
       notify();
@@ -61,13 +61,20 @@ export function createTwoTabPresenceLab({ getLocalState, canOccupy, onRemoteChan
   function stop() {
     if (channel && protocol) emit(protocol.packet("bye"));
     channel?.close(); channel = null; protocol = null;
-    lastKey = ""; lastSentAt = 0; lastRemoteKey = "";
+    lastKey = ""; lastSentAt = 0; lastRemoteKey = ""; lastHelloAt = 0;
     onRemoteChange(null);
   }
   function tick() {
     if (!channel) return;
     publish();
-    notify(); // expires absent peers without a background timer
+    // Background tabs can pause requestAnimationFrame. A foreground tab
+    // periodically asks peers for state via a handshake, which is answered
+    // by the BroadcastChannel message event (not dependent on animation).
+    if (Date.now() - lastHelloAt >= 2_500) {
+      emit(protocol.packet("hello"));
+      lastHelloAt = Date.now();
+    }
+    notify(); // expires truly absent peers
   }
   return { start, stop, tick, publish, remote, get active() { return Boolean(channel); } };
 }
