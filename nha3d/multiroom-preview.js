@@ -139,7 +139,12 @@ function syncRemoteAvatar() {
   partner.visible = visible;
   partnerCell = visible ? { ...remoteTabState.cell } : null;
   if (visible) {
-    const xy = cellCenter(partnerCell.i, partnerCell.j, roomInfo().size);
+    // Both fresh tabs spawn at the same tile. Render the blue marker on a
+    // neighboring free tile in that case, so two people stay visually distinct.
+    // This changes display ONLY, never the transmitted or diagnostic location.
+    const sameTile = partnerCell.i === pos.i && partnerCell.j === pos.j;
+    const shown = sameTile ? (companionSpawn(roomInfo(), pos) ?? partnerCell) : partnerCell;
+    const xy = cellCenter(shown.i, shown.j, roomInfo().size);
     partner.position.set(xy.x, 0, xy.z);
   }
 }
