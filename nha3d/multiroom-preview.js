@@ -8,6 +8,7 @@ import { PREVIEW_LAYOUTS, PREVIEW_SPAWN } from "./multiroom-preview-layout.mjs";
 import { makeHouse, HOUSE_ROOMS, transitionAtDoor } from "./multiroom.mjs";
 import { cellCenter, blockGrid, cellFree, findPath, worldPath, worldToCell } from "./engine.mjs";
 import { routeToFurniture } from "./multiroom-activities.mjs";
+import { companionSpawn, routeCompanionToPlayer } from "./partner-preview.mjs";
 
 // Furnishing is preview-only: no schema migration or writes to existing saved homes.
 
@@ -35,6 +36,14 @@ const floorGroup = new THREE.Group(); scene.add(floorGroup);
 const activityVisuals = new THREE.Group(); scene.add(activityVisuals);
 const avatar = new THREE.Group(); scene.add(avatar);
 const activityProps = new THREE.Group(); avatar.add(activityProps);
+// A second character is a local demonstration, not a remotely connected partner.
+const partner = new THREE.Group(); scene.add(partner); partner.visible = false;
+const partnerBody = new THREE.Mesh(new THREE.CapsuleGeometry(.21, .43, 4, 8), new THREE.MeshStandardMaterial({ color: 0x74b8c6 }));
+partnerBody.position.y = .53; partner.add(partnerBody);
+const partnerHead = new THREE.Mesh(new THREE.SphereGeometry(.26, 16, 12), new THREE.MeshStandardMaterial({ color: 0xf5cbaa }));
+partnerHead.position.y = 1.02; partner.add(partnerHead);
+const partnerHair = new THREE.Mesh(new THREE.SphereGeometry(.27, 16, 10, 0, Math.PI * 2, 0, Math.PI * .48), new THREE.MeshStandardMaterial({ color: 0x66536a }));
+partnerHair.position.y = 1.08; partner.add(partnerHair);
 const body = new THREE.Mesh(new THREE.CapsuleGeometry(.21, .43, 4, 8), new THREE.MeshStandardMaterial({ color: 0xe75b91 }));
 body.position.y = .53; avatar.add(body);
 const head = new THREE.Mesh(new THREE.SphereGeometry(.26, 16, 12), new THREE.MeshStandardMaterial({ color: 0xffd9b9 }));
@@ -98,10 +107,24 @@ function block(x, y, z, w, h, d, color) {
 let roomId = PREVIEW_SPAWN.room, pos = { ...PREVIEW_SPAWN.cell }, walking = [], last = performance.now();
 let pendingActivity = null;
 let activityPoseUntil = 0;
+let partnerActive = false, partnerCell = null, partnerWalking = [], pendingPartnerGesture = false;
+let partnerGestureUntil = 0;
+function clearPartnerGesture() {
+  pendingPartnerGesture = false; partnerWalking = []; partnerGestureUntil = 0;
+  partner.scale.y = 1; partnerBody.rotation.z = 0; partnerHead.rotation.z = 0;
+}
+function finishPartnerGesture() {
+  if (!pendingPartnerGesture || !partnerActive) return;
+  pendingPartnerGesture = false;
+  partnerGestureUntil = performance.now() + 2200;
+  showActivityVisual(roomId);
+  status.textContent = "💞 Hai nhân vật chạm tay! (Mô phỏng cục bộ, không đồng bộ hai máy.)";
+}
 const names = { khach: "🛋️ Phòng khách", bep: "🍳 Phòng bếp", ngu: "🛏️ Phòng ngủ" };
 function roomInfo() { return house.rooms[roomId]; }
 function renderRoom() {
   activityPoseUntil = 0;
+  clearPartnerGesture();
   clearActivityProps();
   avatar.scale.y = 1;
   body.rotation.z = 0;
@@ -151,6 +174,13 @@ function renderRoom() {
     const m = block(c.x, .025, c.z, .45, .045, .45, 0xffd36e); m.userData.doorId = door.id;
   }
   const c = cellCenter(pos.i, pos.j, size); avatar.position.set(c.x, 0, c.z);
+  const companionCell = partnerActive ? companionSpawn(roomInfo(), pos) : null;
+  partnerCell = companionCell;
+  partner.visible = Boolean(companionCell);
+  if (companionCell) {
+    const cp = cellCenter(companionCell.i, companionCell.j, size);
+    partner.position.set(cp.x, 0, cp.z);
+  } else if (partnerActive) partnerActive = false;
   walking = [];
   roomsUI.replaceChildren();
   for (const [id, def] of Object.entries(HOUSE_ROOMS)) {
@@ -166,6 +196,7 @@ function renderRoom() {
     const route = routeToFurniture(roomInfo(), pos, roomId);
     if (!route) { status.textContent = "Không có lối đến đồ vật để thực hiện hoạt động."; return; }
     pendingDoor = null;
+    clearPartnerGesture();
     clearActivityVisuals();
     walking = route.slice(1).map(c => cellCenter(c.i, c.j, roomInfo().size));
     pendingActivity = { room: roomId, action };
@@ -173,6 +204,39 @@ function renderRoom() {
     if (!walking.length) finishActivity();
   });
   activitiesUI.append(activityButton);
+  const companionButton = document.createElement("button");
+  companionButton.textContent = partnerActive ? "🙋 Ẩn bạn mô phỏng" : "🧑‍🤝‍🧑 Gọi bạn mô phỏng";
+  const highFiveButton = document.createElement("button");
+  highFiveButton.textContent = "💞 Chạm tay";
+  highFiveButton.disabled = !partnerActive;
+  companionButton.addEventListener("click", () => {
+    clearPartnerGesture(); clearActivityVisuals();
+    partnerActive = !partnerActive;
+    partnerCell = partnerActive ? companionSpawn(roomInfo(), pos) : null;
+    partner.visible = Boolean(partnerCell);
+    if (partnerCell) {
+      const cp = cellCenter(partnerCell.i, partnerCell.j, roomInfo().size);
+      partner.position.set(cp.x, 0, cp.z);
+      status.textContent = "Bạn mô phỏng đã tới! Đây chưa phải người thứ hai trên thiết bị khác.";
+    } else {
+      partnerActive = false;
+      status.textContent = "Đã ẩn bạn mô phỏng (hoặc không tìm được ô trống).";
+    }
+    companionButton.textContent = partnerActive ? "🙋 Ẩn bạn mô phỏng" : "🧑‍🤝‍🧑 Gọi bạn mô phỏng";
+    highFiveButton.disabled = !partnerActive;
+  });
+  highFiveButton.addEventListener("click", () => {
+    if (!partnerActive || !partnerCell) return;
+    const route = routeCompanionToPlayer(roomInfo(), partnerCell, pos);
+    if (!route) { status.textContent = "Chưa tìm được đường trống để chạm tay."; return; }
+    walking = []; pendingDoor = null; pendingActivity = null; activityPoseUntil = 0;
+    clearActivityProps(); clearPartnerGesture(); clearActivityVisuals();
+    partnerWalking = route.slice(1).map(c => cellCenter(c.i, c.j, roomInfo().size));
+    pendingPartnerGesture = true;
+    status.textContent = "Bạn mô phỏng đang đi tới để chạm tay...";
+    if (!partnerWalking.length) finishPartnerGesture();
+  });
+  activitiesUI.append(companionButton, highFiveButton);
   doorsUI.replaceChildren();
   for (const door of house.doors) {
     const endpoint = door.a.room === roomId ? door.a : door.b.room === roomId ? door.b : null;
@@ -184,6 +248,7 @@ function renderRoom() {
   status.textContent = "Đang ở " + HOUSE_ROOMS[roomId].name;
 }
 function goDoor(id, endpoint, dest) {
+  clearPartnerGesture();
   pendingActivity = null;
   activityPoseUntil = 0;
   clearActivityProps();
@@ -239,6 +304,7 @@ canvas.addEventListener("pointerup", e => {
   if (Math.abs(point.x) >= halfW || Math.abs(point.z) >= halfD) return;
   pendingDoor = null;
   pendingActivity = null;
+  clearPartnerGesture();
   activityPoseUntil = 0;
   clearActivityProps();
   clearActivityVisuals();
@@ -264,6 +330,24 @@ function frame(now) {
     pos = worldToCell(avatar.position.x, avatar.position.z, roomInfo().size);
   } else if (pendingDoor) crossDoor();
   else if (pendingActivity) finishActivity();
+  if (partnerWalking.length) {
+    const target = partnerWalking[0], dx = target.x-partner.position.x, dz = target.z-partner.position.z;
+    const distance = Math.hypot(dx, dz), step = dt * 2.2;
+    if (distance <= step) {
+      partner.position.set(target.x, 0, target.z); partnerWalking.shift();
+    } else {
+      partner.position.x += dx / distance * step; partner.position.z += dz / distance * step;
+    }
+    partnerCell = worldToCell(partner.position.x, partner.position.z, roomInfo().size);
+  } else if (pendingPartnerGesture) finishPartnerGesture();
+  const partnerActing = partner.visible && now < partnerGestureUntil;
+  partnerBody.rotation.z = partnerActing ? Math.sin(now * .009) * .13 : 0;
+  partnerHead.rotation.z = partnerActing ? Math.sin(now * .007) * .09 : 0;
+  partner.scale.y = partnerActing ? .96 : 1;
+  if (partnerGestureUntil && !partnerActing) {
+    partnerGestureUntil = 0;
+    clearActivityVisuals();
+  }
   const acting = now < activityPoseUntil && !walking.length;
   if (!acting && activityProps.children.length) clearActivityProps();
   const t = now * .001;
@@ -304,6 +388,7 @@ window.__NHA3D_PREVIEW_STATE__ = () => ({
   props: activityProps.children.length,
   effects: activityVisuals.children.length,
   acting: performance.now() < activityPoseUntil,
-  counts: { ...activityCounts }
+  counts: { ...activityCounts },
+  partner: { mode: "local-demo", visible: partner.visible, cell: partnerCell && { ...partnerCell }, walking: partnerWalking.length, gesture: performance.now() < partnerGestureUntil }
 });
 renderRoom(); requestAnimationFrame(frame);
