@@ -9,6 +9,7 @@ import { makeHouse, HOUSE_ROOMS, transitionAtDoor } from "./multiroom.mjs";
 import { cellCenter, blockGrid, cellFree, findPath, worldPath, worldToCell } from "./engine.mjs";
 import { routeToFurniture } from "./multiroom-activities.mjs";
 import { companionSpawn, routeCompanionToPlayer } from "./partner-preview.mjs";
+import { createTwoTabPresenceLab } from "./two-tab-lab-browser.mjs";
 
 // Furnishing is preview-only: no schema migration or writes to existing saved homes.
 
@@ -122,6 +123,38 @@ function finishPartnerGesture() {
 }
 const names = { khach: "🛋️ Phòng khách", bep: "🍳 Phòng bếp", ngu: "🛏️ Phòng ngủ" };
 function roomInfo() { return house.rooms[roomId]; }
+// Explicit opt-in. BroadcastChannel connects browser tabs with the SAME origin/profile,
+// never separate phones. The normal staging preview remains unchanged.
+const twoTabRequested = new URLSearchParams(location.search).get("lab") === "two-tabs";
+let twoTabLab = null, remoteTabState = null;
+function canOccupyLabCell(id, cell) {
+  if (typeof id !== "string" || !Object.hasOwn(house.rooms, id) ||
+      !cell || !Number.isInteger(cell.i) || !Number.isInteger(cell.j)) return false;
+  const room = house.rooms[id];
+  return cellFree(blockGrid(room.layout, room.size), cell.i, cell.j);
+}
+function syncRemoteAvatar() {
+  if (!twoTabRequested) return;
+  const visible = Boolean(twoTabLab?.active && remoteTabState && remoteTabState.room === roomId);
+  partner.visible = visible;
+  partnerCell = visible ? { ...remoteTabState.cell } : null;
+  if (visible) {
+    const xy = cellCenter(partnerCell.i, partnerCell.j, roomInfo().size);
+    partner.position.set(xy.x, 0, xy.z);
+  }
+}
+if (twoTabRequested) {
+  document.querySelector("header span.pill").textContent = "🧪 Chỉ 2 tab cùng trình duyệt · Không kết nối điện thoại";
+  twoTabLab = createTwoTabPresenceLab({
+    getLocalState: () => ({ room: roomId, cell: { ...pos } }),
+    canOccupy: canOccupyLabCell,
+    onRemoteChange: state => { remoteTabState = state; syncRemoteAvatar(); }
+  });
+  addEventListener("pagehide", () => twoTabLab.stop());
+  addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") twoTabLab.publish(true);
+  });
+}
 function renderRoom() {
   activityPoseUntil = 0;
   clearPartnerGesture();
@@ -174,13 +207,18 @@ function renderRoom() {
     const m = block(c.x, .025, c.z, .45, .045, .45, 0xffd36e); m.userData.doorId = door.id;
   }
   const c = cellCenter(pos.i, pos.j, size); avatar.position.set(c.x, 0, c.z);
-  const companionCell = partnerActive ? companionSpawn(roomInfo(), pos) : null;
-  partnerCell = companionCell;
-  partner.visible = Boolean(companionCell);
-  if (companionCell) {
-    const cp = cellCenter(companionCell.i, companionCell.j, size);
-    partner.position.set(cp.x, 0, cp.z);
-  } else if (partnerActive) partnerActive = false;
+  if (twoTabRequested) {
+    // In lab mode this mesh belongs ONLY to the other tab, not the AI companion.
+    partner.visible = false; partnerCell = null; syncRemoteAvatar();
+  } else {
+    const companionCell = partnerActive ? companionSpawn(roomInfo(), pos) : null;
+    partnerCell = companionCell;
+    partner.visible = Boolean(companionCell);
+    if (companionCell) {
+      const cp = cellCenter(companionCell.i, companionCell.j, size);
+      partner.position.set(cp.x, 0, cp.z);
+    } else if (partnerActive) partnerActive = false;
+  }
   walking = [];
   roomsUI.replaceChildren();
   for (const [id, def] of Object.entries(HOUSE_ROOMS)) {
@@ -204,6 +242,22 @@ function renderRoom() {
     if (!walking.length) finishActivity();
   });
   activitiesUI.append(activityButton);
+  if (twoTabRequested) {
+    const tabButton = document.createElement("button");
+    tabButton.textContent = twoTabLab.active ? "⛔ Ngắt kết nối tab" : "🔗 Kết nối hai tab";
+    tabButton.addEventListener("click", () => {
+      if (twoTabLab.active) {
+        twoTabLab.stop();
+        status.textContent = "Đã ngắt kết nối. Không có dữ liệu nào được lưu.";
+      } else if (twoTabLab.start()) {
+        status.textContent = "Đã bật! Mở cùng URL trên tab thứ hai và nhấn Kết nối hai tab.";
+      } else {
+        status.textContent = "Trình duyệt chưa hỗ trợ BroadcastChannel. Chế độ này không hoạt động.";
+      }
+      tabButton.textContent = twoTabLab.active ? "⛔ Ngắt kết nối tab" : "🔗 Kết nối hai tab";
+    });
+    activitiesUI.append(tabButton);
+  } else {
   const companionButton = document.createElement("button");
   companionButton.textContent = partnerActive ? "🙋 Ẩn bạn mô phỏng" : "🧑‍🤝‍🧑 Gọi bạn mô phỏng";
   const highFiveButton = document.createElement("button");
@@ -237,6 +291,7 @@ function renderRoom() {
     if (!partnerWalking.length) finishPartnerGesture();
   });
   activitiesUI.append(companionButton, highFiveButton);
+  }
   doorsUI.replaceChildren();
   for (const door of house.doors) {
     const endpoint = door.a.room === roomId ? door.a : door.b.room === roomId ? door.b : null;
@@ -380,6 +435,8 @@ function frame(now) {
     activityVisuals.position.y = Math.sin(now * .003) * .10;
     activityVisuals.rotation.y += dt * .6;
   }
+  // Publish only a coarse, validated tile; no Firebase/network, no per-frame writes.
+  if (twoTabLab?.active) twoTabLab.tick();
   const target = avatar.position.clone().add(new THREE.Vector3(10, 12, 12));
   camera.position.lerp(target, .1); camera.lookAt(avatar.position.x, .4, avatar.position.z);
   renderer.render(scene, camera); requestAnimationFrame(frame);
@@ -394,6 +451,10 @@ window.__NHA3D_PREVIEW_STATE__ = () => ({
   effects: activityVisuals.children.length,
   acting: performance.now() < activityPoseUntil,
   counts: { ...activityCounts },
-  partner: { mode: "local-demo", visible: partner.visible, cell: partnerCell && { ...partnerCell }, walking: partnerWalking.length, gesture: performance.now() < partnerGestureUntil }
+  partner: { mode: twoTabRequested ? "two-tab-lab" : "local-demo", visible: partner.visible,
+    cell: partnerCell && { ...partnerCell }, walking: partnerWalking.length,
+    gesture: performance.now() < partnerGestureUntil,
+    labActive: Boolean(twoTabLab?.active),
+    remoteRoom: remoteTabState?.room ?? null }
 });
 renderRoom(); requestAnimationFrame(frame);
