@@ -47,7 +47,7 @@ Record device model, OS/browser, tested SHA, screenshot/video, FPS or noticeable
 
 - PR #93, #95 (rerun), #96, and initial PR #97 integration CI passed as recorded in the master roadmap.
 - PR #97 documentation update commit `28ce1c8` had a workflow in progress when this checklist was drafted. Recheck the current head before sign-off.
-- No staging hosting deployment or two-device manual acceptance is claimed.
+- This statement described the initial documentation state; see the later user-reported staging acceptance in section 7.
 
 
 ## 6. Prepared Hosting configuration (not deployed)
@@ -79,3 +79,18 @@ NHA3D_STAGING_APPROVED=goc-nho-staging-2026 node scripts/deploy-nha3d-staging.mj
 ```
 
 Before running, verify the active Google account has Hosting deploy permission **only** for the intended staging project. This is an operator-run command, not an automatic CI action. Capture the exact URL printed by Firebase CLI; do not invent one. If Firebase Hosting is not initialized or permissions are missing, stop and review rather than changing production settings.
+
+
+## 7. User-reported staging acceptance — 2026-11-10
+
+**Deployed staging Preview Channel reported from the user's Firebase CLI output:**
+- Project: `goc-nho-staging-2026`, channel: `nha3d-review`
+- URL: https://goc-nho-staging-2026--nha3d-review-iivw5f6z.web.app
+- Reported expiry: **2026-11-17 14:46:26**, local time (+07:00)
+- The exact deployed Git SHA and the actual phones/browser versions were **not recorded**. This deployment predates the local-companion prototype below.
+
+**Six functional checks — user-reported PASS (6/6):** 3D renders, three-room navigation, collision-aware walking, tea/cooking/note interactions, interruption cleanup on changing rooms, and successful independent loading/control on a second phone. No failures reported in these six scenarios. The assistant did not independently operate the phones; FPS, Chrome/Safari versions, accessibility, offline/reconnect, cross-device synchronization, and production security were not measured by this report.
+
+**Following the six checks:** a visibly labeled **local-only companion simulation** was added on the PR branch. It can be summoned, approach the player along a collision-safe route, high-five and appear in the next room. It is deliberately **not a real second user**, has no network/storage connection, and is not yet part of the already-deployed URL until an operator rebuilds and redeploys that PR head to staging. Companion implementation and tests must pass CI again before redeployment.
+
+**Promotion remains BLOCKED:** real staging managed export/restore, deployed Rules/Auth/App Check/IAM audit, reviewed room placement geometry, and future two-user concurrency/reconnect security checks. Keep PR #97 Draft; no production Firebase writes.
