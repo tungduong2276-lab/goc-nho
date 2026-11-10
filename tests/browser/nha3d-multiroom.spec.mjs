@@ -110,3 +110,39 @@ test("interrupting an activity with a door clears temporary props", async ({ pag
  expect(errors).toEqual([]);
  expect(firebase).toEqual([]);
 });
+
+
+test("local-only companion can high-five and follow a doorway without Firebase", async ({ page }) => {
+ const { errors, firebase } = await openPreview(page);
+ const state = () => page.evaluate(() => window.__NHA3D_PREVIEW_STATE__());
+ await expect(page.locator("header")).toContainText("Chưa đồng bộ hai máy");
+ await expect.poll(async () => (await state()).partner.visible).toBe(false);
+ await page.getByRole("button", { name: /Gọi bạn mô phỏng/ }).click();
+ await expect.poll(async () => (await state()).partner.visible).toBe(true);
+ expect((await state()).partner.mode).toBe("local-demo");
+ expect((await state()).partner.cell).not.toBeNull();
+ await page.getByRole("button", { name: /Chạm tay/ }).click();
+ await expect.poll(async () => (await state()).partner.gesture, { timeout: 30_000 }).toBe(true);
+ await expect(page.locator("#status")).toContainText("Mô phỏng cục bộ");
+ await page.getByRole("button", { name: "🚪 Phòng bếp" }).click();
+ await expect.poll(async () => (await state()).room, { timeout: 30_000 }).toBe("bep");
+ await expect.poll(async () => (await state()).partner.visible).toBe(true);
+ await expect.poll(async () => (await state()).partner.gesture).toBe(false);
+ await page.getByRole("button", { name: /Ẩn bạn mô phỏng/ }).click();
+ await expect.poll(async () => (await state()).partner.visible).toBe(false);
+ expect(errors).toEqual([]);
+ expect(firebase).toEqual([]);
+});
+
+for (const width of [360, 390, 430]) {
+ test("companion controls stay reachable at " + width + "px", async ({ page }) => {
+  await openPreview(page, width);
+  for (const button of await page.locator("#activities button").all()) {
+   const rect = await button.boundingBox();
+   expect(rect).not.toBeNull();
+   expect(rect.x).toBeGreaterThanOrEqual(0);
+   expect(rect.x + rect.width).toBeLessThanOrEqual(width + 1);
+   expect(rect.height).toBeGreaterThanOrEqual(44);
+  }
+ });
+}
