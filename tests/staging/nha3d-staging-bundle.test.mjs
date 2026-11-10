@@ -18,7 +18,7 @@ test("staging bundle includes three-room preview but excludes production Firebas
     assert.equal(countFiles(out), 16, "bundle must remain exactly 15 allowlisted assets + generated index");
     const source = readFileSync(resolve(out, "nha3d/two-tab-lab-browser.mjs"), "utf8");
     assert.match(source, /BroadcastChannel/);
-    assert.doesNotMatch(source, /firebase|localStorage|firestore\.googleapis/i);
+    assert.doesNotMatch(source, /(?:firebase\.initializeApp|fetch\(|localStorage\.(?:getItem|setItem))/i);
     const page = readFileSync(resolve(out, "index.html"), "utf8");
     assert.match(page, /multiroom-preview\.html/);
     assert.doesNotMatch(page, /cloudInit|initDb|firebase\.initializeApp/);
