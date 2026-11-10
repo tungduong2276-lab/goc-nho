@@ -24,10 +24,12 @@ export function routeCompanionToPlayer(room, from, player) {
   if (!room || !from || !player || equal(from, player)) return null;
   const grid = blockGrid(room.layout, room.size);
   if (!cellFree(grid, from.i, from.j) || !cellFree(grid, player.i, player.j)) return null;
+  // Reserve the player's tile: the companion may never walk through it.
+  grid.g[player.j * grid.w + player.i] = 1;
   let best = null;
   for (const [dx, dz] of OFFSETS) {
     const cell = { i: player.i + dx, j: player.j + dz };
-    if (!cellFree(grid, cell.i, cell.j) || equal(cell, from) && best) continue;
+    if (!cellFree(grid, cell.i, cell.j)) continue;
     const path = findPath(grid, from, cell);
     if (path && (!best || path.length < best.length)) best = path;
   }
