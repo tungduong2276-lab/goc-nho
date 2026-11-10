@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 test.describe.configure({ timeout: 90_000 });
-async function openPreview(page, width = 390) {
+async function openPreview(page, width = 390, search = "") {
   await page.setViewportSize({ width, height: 844 });
   const errors = [], firebase = [];
   page.on("pageerror", e => errors.push(e.message));
@@ -13,7 +13,7 @@ async function openPreview(page, width = 390) {
       route.fulfill({ contentType: "text/javascript", body: readFileSync(resolve("node_modules/three", rel)) });
     });
   }
-  await page.goto("/nha3d/multiroom-preview.html");
+  await page.goto("/nha3d/multiroom-preview.html" + search);
   await expect(page.locator("#status")).toContainText("Phòng khách", { timeout: 60_000 });
   return { errors, firebase };
 }
@@ -146,3 +146,57 @@ for (const width of [360, 390, 430]) {
   }
  });
 }
+
+
+test("two-tab opt-in lab shows the other tab only in the same room and disconnects safely", async ({ browser }) => {
+ const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+ const a = await context.newPage(), b = await context.newPage();
+ const left = await openPreview(a, 390, "?lab=two-tabs");
+ const right = await openPreview(b, 390, "?lab=two-tabs");
+ const state = p => p.evaluate(() => window.__NHA3D_PREVIEW_STATE__());
+ await expect(a.locator("header")).toContainText("Chỉ 2 tab cùng trình duyệt");
+ await expect.poll(async () => (await state(a)).partner.labActive).toBe(false);
+ await expect.poll(async () => (await state(a)).partner.visible).toBe(false);
+ await a.getByRole("button", { name: /Kết nối hai tab/ }).click();
+ await b.getByRole("button", { name: /Kết nối hai tab/ }).click();
+ await expect.poll(async () => (await state(a)).partner.visible, { timeout: 12_000 }).toBe(true);
+ await expect.poll(async () => (await state(b)).partner.visible, { timeout: 12_000 }).toBe(true);
+ expect((await state(a)).partner.mode).toBe("two-tab-lab");
+ expect((await state(b)).partner.cell).not.toBeNull();
+ await b.getByRole("button", { name: "🚪 Phòng bếp" }).click();
+ await expect.poll(async () => (await state(b)).room, { timeout: 30_000 }).toBe("bep");
+ await expect.poll(async () => (await state(a)).partner.remoteRoom, { timeout: 10_000 }).toBe("bep");
+ await expect.poll(async () => (await state(a)).partner.visible).toBe(false);
+ await a.getByRole("button", { name: "🚪 Phòng bếp" }).click();
+ await expect.poll(async () => (await state(a)).room, { timeout: 30_000 }).toBe("bep");
+ await expect.poll(async () => (await state(a)).partner.visible, { timeout: 10_000 }).toBe(true);
+ await b.getByRole("button", { name: /Ngắt kết nối tab/ }).click();
+ await expect.poll(async () => (await state(a)).partner.visible, { timeout: 10_000 }).toBe(false);
+ await expect.poll(async () => (await state(a)).partner.remoteRoom).toBe(null);
+ await expect.poll(async () => (await state(b)).partner.labActive).toBe(false);
+ expect(left.errors).toEqual([]);
+ expect(right.errors).toEqual([]);
+ expect(left.firebase).toEqual([]);
+ expect(right.firebase).toEqual([]);
+ await context.close();
+});
+
+test("two-tab lab stays opt-in and touch controls fit at 360px", async ({ page }) => {
+ const { errors, firebase } = await openPreview(page, 360, "?lab=two-tabs");
+ const status = () => page.evaluate(() => window.__NHA3D_PREVIEW_STATE__());
+ await expect.poll(async () => (await status()).partner.labActive).toBe(false);
+ await expect(page.getByRole("button", { name: /Gọi bạn mô phỏng/ })).toHaveCount(0);
+ const connect = page.getByRole("button", { name: /Kết nối hai tab/ });
+ const rect = await connect.boundingBox();
+ expect(rect).not.toBeNull();
+ expect(rect.x).toBeGreaterThanOrEqual(0);
+ expect(rect.x + rect.width).toBeLessThanOrEqual(361);
+ expect(rect.height).toBeGreaterThanOrEqual(44);
+ await connect.click();
+ await expect.poll(async () => (await status()).partner.labActive).toBe(true);
+ await expect.poll(async () => (await status()).partner.visible).toBe(false, "a single tab has no remote partner");
+ await page.getByRole("button", { name: /Ngắt kết nối tab/ }).click();
+ await expect.poll(async () => (await status()).partner.labActive).toBe(false);
+ expect(errors).toEqual([]);
+ expect(firebase).toEqual([]);
+});
