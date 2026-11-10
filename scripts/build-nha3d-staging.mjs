@@ -9,6 +9,7 @@ const files = [
   "nha3d/multiroom-preview.js",
   "nha3d/multiroom-preview-layout.mjs",
   "nha3d/multiroom-activities.mjs",
+  "nha3d/partner-preview.mjs",
   "nha3d/multiroom.mjs",
   "nha3d/catalog.mjs",
   "nha3d/engine.mjs",
