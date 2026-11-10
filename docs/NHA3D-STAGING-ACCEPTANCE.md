@@ -94,3 +94,13 @@ Before running, verify the active Google account has Hosting deploy permission *
 **Following the six checks:** a visibly labeled **local-only companion simulation** was added on the PR branch. It can be summoned, approach the player along a collision-safe route, high-five and appear in the next room. It is deliberately **not a real second user**, has no network/storage connection, and is not yet part of the already-deployed URL until an operator rebuilds and redeploys that PR head to staging. Companion implementation and tests must pass CI again before redeployment.
 
 **Promotion remains BLOCKED:** real staging managed export/restore, deployed Rules/Auth/App Check/IAM audit, reviewed room placement geometry, and future two-user concurrency/reconnect security checks. Keep PR #97 Draft; no production Firebase writes.
+
+
+## 8. User-reported clean companion acceptance — 2026-11-10
+
+The operator explicitly confirmed a **clean, 14-file** staging Preview Channel deploy to `goc-nho-staging-2026`, channel `nha3d-review`, with Firebase CLI response `Deploy complete!`, URL
+https://goc-nho-staging-2026--nha3d-review-iivw5f6z.web.app, reported local expiry **2026-11-17 22:53:03 +07:00**. The user verified `partner-preview.mjs` exists in that bundle. File count matches the GitHub Actions artifact from successful run `42780426505` (`532af49`); the CLI output does not independently prove byte-for-byte artifact identity.
+
+**Second set of six operator-reported device checks: 6/6 PASS.** Summon simulated partner; high-five with both characters reacting; switch between living/kitchen/bedroom without stuck companion; cancel high-five effects on room change; hide and summon again; second phone loads and its control buttons fit without overlaps. **No failures reported**. This is manual user testimony, not independent on-device instrumentation. It does **not** demonstrate remote control or live syncing between the phones; each phone still hosts a separate local simulation.
+
+**Next isolated experiment:** `docs/NHA3D-TWO-TAB-LAB.md` describes an opt-in same-origin `BroadcastChannel` lab. It is intentionally limited to **two tabs of the same browser profile** and has **no Firebase transport**; it cannot connect two phones. The lab is NOT part of the just-accepted 14-file build. Verify fresh CI on exact PR head before preparing another staging artifact/deployment. Keep PR Draft and M0 production gates open.
