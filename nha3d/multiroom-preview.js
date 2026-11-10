@@ -366,6 +366,11 @@ function frame(now) {
     body.rotation.z = -.10 + Math.sin(t * 3) * .015;
     head.rotation.z = -.12 + Math.sin(t * 4) * .025;
     avatar.scale.y = .92;
+  } else if (partnerActing) {
+    // Both characters react to the local high-five, not just the companion.
+    body.rotation.z = Math.sin(t * 9) * .12;
+    head.rotation.z = Math.sin(t * 7) * .065;
+    avatar.scale.y = .96;
   } else {
     body.rotation.z = 0;
     head.rotation.z = 0;
