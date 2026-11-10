@@ -10,6 +10,8 @@ const files = [
   "nha3d/multiroom-preview-layout.mjs",
   "nha3d/multiroom-activities.mjs",
   "nha3d/partner-preview.mjs",
+  "nha3d/presence-lab.mjs",
+  "nha3d/two-tab-lab-browser.mjs",
   "nha3d/multiroom.mjs",
   "nha3d/catalog.mjs",
   "nha3d/engine.mjs",
@@ -25,5 +27,5 @@ for (const name of files) {
   mkdirSync(dirname(dest), { recursive: true });
   cpSync(resolve(root, name), dest);
 }
-writeFileSync(resolve(out, "index.html"), '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="robots" content="noindex"><title>Góc Nhỏ · Nhà 3D thử nghiệm</title><p><a href="/nha3d/multiroom-preview.html">Mở Nhà 3D thử nghiệm (không Firebase)</a></p></html>');
+writeFileSync(resolve(out, "index.html"), '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="robots" content="noindex"><title>Góc Nhỏ · Nhà 3D thử nghiệm</title><p><a href="/nha3d/multiroom-preview.html">Mở Nhà 3D thử nghiệm (không Firebase)</a></p><p><a href="/nha3d/multiroom-preview.html?lab=two-tabs">Phòng thí nghiệm hai tab cùng trình duyệt (không kết nối điện thoại khác)</a></p></html>');
 console.log("Staging-only static bundle built:", files.length, "assets. No Firebase config or live app copied.");
