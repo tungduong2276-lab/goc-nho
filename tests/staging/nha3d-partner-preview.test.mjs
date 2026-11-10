@@ -18,6 +18,7 @@ test("companion spawns on a separate walkable tile in each furnished room", () =
     const path = routeCompanionToPlayer(room, spawn, player);
     assert.ok(path);
     assert.deepEqual(path[0], spawn);
+    assert.ok(path.every(cell => cell.i !== player.i || cell.j !== player.j), "route must not cross player cell");
     assert.ok(Math.abs(path.at(-1).i-player.i) <= 1 && Math.abs(path.at(-1).j-player.j) <= 1);
     assert.ok(findPath(grid, spawn, path.at(-1)), "path must be reachable");
   }
@@ -31,6 +32,7 @@ test("companion routes to a new player position without entering player cell", (
   assert.ok(path);
   assert.deepEqual(path[0], start);
   assert.notDeepEqual(path.at(-1), target);
+  assert.ok(path.every(cell => cell.i !== target.i || cell.j !== target.j), "route must avoid player");
   assert.ok(Math.abs(path.at(-1).i-target.i) <= 1);
   assert.ok(Math.abs(path.at(-1).j-target.j) <= 1);
 });
