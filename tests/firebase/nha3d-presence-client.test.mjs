@@ -1,10 +1,10 @@
-import { before, after, beforeEach, test } from "node:test";
+import { before, after, beforeEach, afterEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { initializeTestEnvironment, assertFails } from "@firebase/rules-unit-testing";
 import {
   doc, getDoc, setDoc, onSnapshot, serverTimestamp, Timestamp,
-  disableNetwork, enableNetwork,
+  disableNetwork, enableNetwork, terminate,
 } from "firebase/firestore";
 import {
   createEmulatorPresenceClient, WRITE_INTERVAL_MS,
@@ -32,6 +32,12 @@ const waitFor = async (check, ms = 6_000) => {
   assert.fail("Timed out waiting for synthetic presence snapshot");
 };
 let env;
+const liveClientDatabases = new Set();
+function trackedFirestore(uid) {
+  const fs = env.authenticatedContext(uid).firestore();
+  liveClientDatabases.add(fs);
+  return fs;
+}
 function sdkTransport(fs, uid, partnerUid) {
   const self = doc(fs, ownPath(uid)), partner = doc(fs, ownPath(partnerUid));
   return {
@@ -54,7 +60,7 @@ function client(uid, partnerUid, { online = () => true, onPeer = () => {}, onErr
   return createEmulatorPresenceClient({
     projectId: PROJECT, emulatorHost: HOST, cid: CID, uid, partnerUid,
     sessionId: uid === ALICE ? "alice_session_0001" : "bob_session_0000001",
-    transport: sdkTransport(env.authenticatedContext(uid).firestore(), uid, partnerUid),
+    transport: sdkTransport(trackedFirestore(uid), uid, partnerUid),
     canOccupy: occupy, isOnline: online, onPeer, onError,
   });
 }
@@ -67,6 +73,15 @@ before(async () => {
       rules: readFileSync("tests/firebase/fixtures/m1-nha3d-presence.rules", "utf8"),
     },
   });
+});
+// Listener streams can remain active briefly after unsubscribe. Explicitly
+// terminate every test-owned SDK Firestore instance before deleting the
+// rules-test environment. Without this, CI waited until its 20-minute limit
+// despite all three integration assertions having passed.
+afterEach(async () => {
+  const clients = [...liveClientDatabases];
+  liveClientDatabases.clear();
+  await Promise.all(clients.map(fs => terminate(fs)));
 });
 after(async () => { await env?.cleanup(); });
 beforeEach(async () => {
@@ -99,7 +114,7 @@ test("two separate authenticated emulator clients exchange short-lease positions
 });
 
 test("application offline guard refuses queued write while SDK network is disabled", async () => {
-  const fs = env.authenticatedContext(ALICE).firestore();
+  const fs = trackedFirestore(ALICE);
   let online = true;
   const a = createEmulatorPresenceClient({
     projectId: PROJECT, emulatorHost: HOST, cid: CID, uid: ALICE, partnerUid: BOB,
@@ -125,7 +140,7 @@ test("application offline guard refuses queued write while SDK network is disabl
 });
 
 test("emulator still rejects outsider forging a real member even if adapter guard bypassed", async () => {
-  const c = env.authenticatedContext(EVE).firestore();
+  const c = trackedFirestore(EVE);
   await assertFails(setDoc(doc(c, ownPath(ALICE)), {
     v: 1, uid: ALICE, room: "khach", i: 8, j: 11,
     sessionId: "alice_session_0001", seq: 1,
