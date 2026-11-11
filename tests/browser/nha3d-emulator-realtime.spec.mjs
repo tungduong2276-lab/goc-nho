@@ -10,6 +10,9 @@ const host = process.env.FIRESTORE_EMULATOR_HOST ?? "";
 const authHost = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? "";
 const emulatorsReady = /^(localhost|127\.0\.0\.1):\d+$/.test(host) &&
   /^(localhost|127\.0\.0\.1):\d+$/.test(authHost);
+if (process.env.NHA3D_EMULATOR_REALTIME_REQUIRED === "1" && !emulatorsReady) {
+  throw new Error("REALTIME_GATE_NOT_RUN: required local Firestore+Auth Emulator host missing");
+}
 test.skip(!emulatorsReady, "Requires loopback Firestore and Auth Emulators");
 test.describe.configure({ timeout: 120_000 });
 
