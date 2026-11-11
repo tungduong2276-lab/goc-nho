@@ -49,7 +49,7 @@ jobs:
       - run: npm install
       - name: Run isolated authenticated presence / Emulator teardown tests
         # Fail quickly on leaked SDK listeners. Never mask the exit status.
-        run: timeout --signal=TERM --kill-after=3s 75s npx firebase emulators:exec --project demo-goc-nho-safety --only firestore "node --test --test-concurrency=1 tests/firebase/nha3d-presence-client.test.mjs"
+        run: timeout --signal=TERM --kill-after=3s 45s npx firebase emulators:exec --project demo-goc-nho-safety --only firestore "node --test --test-concurrency=1 tests/firebase/nha3d-presence-client.test.mjs"
 
   chromium:
     runs-on: ubuntu-24.04
