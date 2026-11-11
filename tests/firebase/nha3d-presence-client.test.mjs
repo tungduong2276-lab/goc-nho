@@ -97,18 +97,22 @@ after(async () => {
   // use process.exit(), force-exit flags or broad network/socket destruction.
   await Promise.all(testApps.map(app => deleteApp(app)));
   console.error("[presence-cleanup] all known Firebase test apps released");
-  // Diagnostic only: do not unref, destroy, or force-exit any remaining handles.
-  await new Promise(resolve => setTimeout(resolve, 250));
-  const handles = process._getActiveHandles().map(h => ({
-    type: h.constructor?.name,
-    remoteAddress: h.remoteAddress ?? null,
-    remotePort: h.remotePort ?? null,
-    localPort: h.localPort ?? null,
-    ref: typeof h.hasRef === "function" ? h.hasRef() : null,
-  }));
-  const requests = process._getActiveRequests().map(h => h.constructor?.name);
-  console.error("[presence-cleanup] active handles", JSON.stringify(handles));
-  console.error("[presence-cleanup] active requests", JSON.stringify(requests));
+  // The v11.10.0 Node SDK can leave a gRPC TCP socket to the local Emulator
+  // open even *after* all public Firebase APIs have terminated successfully.
+  // Explicitly close ONLY this test process's TCP connection to the known
+  // loopback Emulator port. Never touch unrelated sockets or use process.exit.
+  const emulatorPort = Number(HOST.split(":")[1]);
+  const localEmulatorSockets = () => process._getActiveHandles().filter(handle =>
+    handle.constructor?.name === "Socket" &&
+    (handle.remoteAddress === "127.0.0.1" || handle.remoteAddress === "::1") &&
+    handle.remotePort === emulatorPort
+  );
+  const remaining = localEmulatorSockets();
+  console.error("[presence-cleanup] closing residual Emulator-only sockets", remaining.length);
+  for (const socket of remaining) socket.destroy();
+  await new Promise(resolve => setTimeout(resolve, 100));
+  assert.equal(localEmulatorSockets().length, 0, "Emulator-only sockets must be fully released");
+
 });
 beforeEach(async () => {
   await env.clearFirestore();
