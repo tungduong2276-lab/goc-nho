@@ -94,3 +94,20 @@ This change does not immediately remove a disconnected person's document from th
 - Runs only in CI's new `emulator-browser-realtime` job under `.github/workflows/garden-browser.yml` when the PR branch is `staging/nha3d-integrated-review-20261108`. The command starts **`--only firestore,auth`** with `--project demo-goc-nho-safety` and an explicit timeout. The normal `npm test` browser suite sees no Emulator environment variables and skips this one test, avoiding accidental live calls.
 - **Important scope:** separate browser contexts on a CI host + loopback Emulators do NOT prove remote two-phone networking, the production Auth setup, actual deployed Firestore Rules, App Check, cloud operation safety or mobile gesture quality. These still block any live sync, merging PR #97 or changing existing staging Hosting.
 - **Verification:** require the exact-head CI to show the dedicated browser Emulator job passed with the test **actually executed, not skipped**, alongside the previous staging/browser/Rules jobs. No preview artifact changes (16 files), no deployment.
+
+
+### Browser offline/reconnect acceptance — 2026-11-11 (PR #97, Emulator only)
+
+The dedicated Chromium browser test now includes the following **automated** scenarios in the same isolated two-profile test:
+
+1. Alice and Bob start with two distinct synthetic anonymous Auth Emulator accounts. Each sees the other's committed position through genuine Firestore browser `onSnapshot`.
+2. Alice's browser context goes `offline`; assert `navigator.onLine === false`. Import the local presence adapter **before** going offline and verify its `isOnline` guard throws `OFFLINE_BLOCKED` with **zero calls** to `writeOwn`. Do not attempt an SDK `setDoc` while offline, since the SDK may queue writes.
+3. Bob remains online and publishes an incremented valid room/cell update. Alice must **not** see the new sequence while still offline.
+4. Alice's context returns online. The existing listener must catch up with Bob's latest room/sequence without reloading the page.
+5. Bob explicitly unsubscribes, Alice publishes another valid update, and Bob must not receive it while unsubscribed. After Bob subscribes again, he must receive the latest committed state.
+6. Eve is denied access to another couple's presence. No request from the browser context may actually reach any non-loopback host: a strict Playwright route aborts all external requests, and any unknown external attempt fails CI. The SDK's known `www.google.com` reachability probe may be attempted but is **always blocked**, never sent.
+7. Finally, the harness unsubscribes each listener, closes Chromium contexts and calls RulesTestEnvironment cleanup.
+
+**Limitations:** This is simulated network loss in headless Chromium, not radio/Wi-Fi loss on Android/iOS; it does not prove the real deployed Cloud IAM/App Check/Auth or exact mobile UX. It covers only short disconnects within the 10-second lease and a two-person test account with a deliberately seeded synthetic house. Real two-phone acceptance and longer offline/session-recovery behavior remain blocked by M0 and future tests.
+
+**Verification requirement:** do not mark this subsection PASS until the **new exact-head CI run** reports the `emulator-browser-realtime` job **executed and passed**, as well as the full regression and standalone Emulator jobs. The earlier 1/1 push test at `cbb464f` did not include these offline scenarios; initial new runs exposed an import-while-offline setup mistake and an attempted `www.google.com` connectivity probe, both addressed without allowing outside network traffic.
