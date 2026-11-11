@@ -81,13 +81,16 @@ before(async () => {
 afterEach(async () => {
   const clients = [...liveClientDatabases];
   liveClientDatabases.clear();
-  // rules-unit-testing creates the Firestore *compat* facade here.
-  // Its instance method terminates the underlying connection; the modular
-  // terminate(fs) function expects a different Firestore object and throws
-  // TypeError: firestore._delete is not a function.
+  console.error("[presence-cleanup] afterEach begin", clients.length);
+  // rules-unit-testing returns a compat Firestore facade, not a modular one.
   await Promise.all(clients.map(fs => fs.terminate()));
+  console.error("[presence-cleanup] afterEach complete");
 });
-after(async () => { await env?.cleanup(); });
+after(async () => {
+  console.error("[presence-cleanup] environment begin");
+  await env?.cleanup();
+  console.error("[presence-cleanup] environment complete");
+});
 beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async ctx => {
