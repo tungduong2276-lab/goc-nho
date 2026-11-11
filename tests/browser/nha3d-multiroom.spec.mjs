@@ -200,3 +200,69 @@ test("two-tab lab stays opt-in and touch controls fit at 360px", async ({ page }
  expect(errors).toEqual([]);
  expect(firebase).toEqual([]);
 });
+
+
+test("diagnostic lab one-click opens same-profile second tab and confirms real handshake", async ({ browser }) => {
+ const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+ const a = await context.newPage();
+ const { errors, firebase } = await openPreview(a, 390, "?lab=two-tabs&rev=20261111b");
+ await expect(a.locator("#lab-help")).toBeVisible();
+ await expect(a.locator("#lab-help")).toContainText("Bản sửa V2.2");
+ await expect(a.locator("#lab-state")).toContainText("Chưa bật");
+ await expect(a.getByRole("button", { name: /Kết nối hai tab/ })).toBeVisible();
+ const [b] = await Promise.all([
+   context.waitForEvent("page"),
+   a.locator("#lab-open").click()
+ ]);
+ await b.waitForLoadState("domcontentloaded");
+ expect(new URL(b.url()).origin).toBe(new URL(a.url()).origin);
+ expect(new URL(b.url()).searchParams.get("join")).toBe("1");
+ await expect(b.locator("#lab-help")).toBeVisible();
+ const state = p => p.evaluate(() => window.__NHA3D_PREVIEW_STATE__());
+ await expect.poll(async () => (await state(a)).partner.diagnostics?.phase, { timeout: 30_000 }).toBe("connected");
+ await expect.poll(async () => (await state(b)).partner.diagnostics?.phase, { timeout: 30_000 }).toBe("connected");
+ await expect(a.locator("#lab-state")).toContainText("Đã kết nối thành công");
+ await expect(b.locator("#lab-state")).toContainText("Đã kết nối thành công");
+ expect((await state(a)).partner.diagnostics.received).toBeGreaterThan(0);
+ expect((await state(b)).partner.diagnostics.received).toBeGreaterThan(0);
+ await b.getByRole("button", { name: /Ngắt kết nối tab/ }).click();
+ await expect.poll(async () => (await state(a)).partner.diagnostics?.phase, { timeout: 12_000 }).toBe("waiting");
+ await expect(a.locator("#lab-state")).toContainText("đang tìm tab thứ hai");
+ await expect.poll(async () => (await state(b)).partner.diagnostics?.phase).toBe("off");
+ expect(errors).toEqual([]);
+ expect(firebase).toEqual([]);
+ await context.close();
+});
+
+test("two-tab lab does not falsely connect across isolated browser profiles", async ({ browser }) => {
+ const aContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+ const bContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+ const a = await aContext.newPage(), b = await bContext.newPage();
+ await openPreview(a, 390, "?lab=two-tabs&rev=20261111b");
+ await openPreview(b, 390, "?lab=two-tabs&rev=20261111b");
+ await a.getByRole("button", { name: /Kết nối hai tab/ }).click();
+ await b.getByRole("button", { name: /Kết nối hai tab/ }).click();
+ await expect(a.locator("#lab-state")).toContainText("đang tìm tab thứ hai");
+ await expect(b.locator("#lab-state")).toContainText("đang tìm tab thứ hai");
+ const state = p => p.evaluate(() => window.__NHA3D_PREVIEW_STATE__());
+ await a.waitForTimeout(2_200);
+ expect((await state(a)).partner.diagnostics.phase).toBe("waiting");
+ expect((await state(b)).partner.diagnostics.phase).toBe("waiting");
+ await aContext.close();
+ await bContext.close();
+});
+
+test("versioned two-tab lab diagnosis is visible on 360px viewport", async ({ page }) => {
+ await openPreview(page, 360, "?lab=two-tabs&rev=20261111b");
+ await expect(page.locator("#lab-help")).toBeVisible();
+ await expect(page.locator("#lab-state")).toContainText("Chưa bật");
+ const link = page.locator("#lab-open");
+ const box = await link.boundingBox();
+ expect(box).not.toBeNull();
+ expect(box.x).toBeGreaterThanOrEqual(0);
+ expect(box.x + box.width).toBeLessThanOrEqual(361);
+ expect(box.height).toBeGreaterThanOrEqual(44);
+ const rev = await page.evaluate(() => document.querySelector('script[src*="multiroom-preview.js"]').src);
+ expect(rev).toContain("rev=20261111b");
+ await expect(page.getByRole("button", { name: /Kết nối hai tab/ })).toBeVisible();
+});
