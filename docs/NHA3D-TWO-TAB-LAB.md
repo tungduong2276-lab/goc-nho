@@ -32,3 +32,17 @@
 
 - **Trước thay đổi này**, user báo **6/6** hạng mục nhân vật đồng hành mô phỏng trên staging đạt vào 2026-11-10, không ghi nhận lỗi. Kết quả đó không áp dụng tự động cho tính năng hai tab vừa thêm.
 - Code lab và tests mới phải qua CI trên **head chính xác**, review artifact rồi mới được người dùng deploy lại trên Hosting Preview Channel `nha3d-review`; phải ghi lại URL, expiry và số tệp thực tế. **Không tự coi commit là deployed.**
+
+
+## Báo lỗi thực tế và bản khắc phục V2.2 — 2026-11-11
+
+- **Operator report:** sau khi deploy Preview Channel 16 tệp (CLI thành công), nghiệm thu chế độ hai tab báo **0/6 đạt; chưa kết nối được hai tab**. Sáu mục được đánh dấu chưa đạt/chưa thử, vì vậy **không** suy diễn rằng cả sáu chức năng cùng lỗi độc lập; trở ngại đầu tiên là thiết lập kết nối. Bản trước đó **KHÔNG ĐẠT** nghiệm thu thủ công.
+- **Giới hạn điều tra:** chưa có ảnh/DevTools/network log từ trình duyệt người dùng; chưa xác minh nguyên nhân gốc. Các giả thuyết phải kiểm chứng: URL thiếu `?lab=two-tabs` ở một tab, khác Chrome profile/ẩn danh/khác origin hoặc storage partition; cache JS cũ; tab nền bị throttling; UI báo bật kênh mà không xác nhận có peer.
+- **Fixes implemented (code, không tự nhận deployed):**
+  1. Hộp **Bản sửa V2.2** có trạng thái minh bạch: chưa bật / đang tìm peer / đã kết nối cùng phòng / đã kết nối ở phòng khác / API không khả dụng; các bộ đếm số tín hiệu gửi/nhận/bỏ qua. `#lab-help` hiện trên HTML ngay cả khi module JS tải lỗi và đưa ra nhắc kiểm tra sau 30s.
+  2. Link **Mở tab thứ hai trong Chrome này** tự bật kết nối ở tab gốc (user click) và mở tab mới trên **chính cùng origin/profile** qua `?join=1`; tab mới chỉ tự kết nối khi user khởi tạo từ link đó. Vẫn có nút bật/tắt thủ công.
+  3. Heartbeat của `BroadcastChannel` được tách khỏi `requestAnimationFrame` bằng interval và xử lý `hello` trực tiếp trong event. Do browser throttling ở nền, điều này cải thiện khả năng giữ phiên nhưng không bảo đảm tab đã bị OS sleep sẽ duy trì realtime.
+  4. Versioned HTML URL và asset imports `rev=20261111b` nhằm tránh dùng JS cache cũ sau deploy. Gói staging vẫn **16 file** và không có Firebase.
+  5. Browser tests cover manual pairing, one-click new-tab pairing/diagnostic text, isolated Chrome profiles DO NOT sync, mobile widths, and no Firebase network in existing suite. **CI trên head cuối phải được kiểm tra lại.**
+- **Hướng dẫn nghiệm thu phiên bản V2.2:** sau khi CI và deploy mới thật sự hoàn thành, dùng **một cửa sổ Chrome thường** (không ẩn danh) mở đường dẫn `/nha3d/multiroom-preview.html?lab=two-tabs&rev=20261111b`, xác nhận nhìn thấy chữ **Bản sửa V2.2**, nhấn **Mở tab thứ hai trong Chrome này** tại trang này, không tự mở URL khác; quan sát hai panel từ `🟠 đang tìm` sang `🟢 đã kết nối`. Nếu không xanh, chụp *hai panel* kèm bộ đếm gửi/nhận để chẩn đoán; không yêu cầu ghi nhật ký chứa dữ liệu thật.
+- Chỉ thử với cùng Chrome profile, top-level origin/partition. Theo tài liệu chuẩn web, `BroadcastChannel` **không hoạt động giữa hai điện thoại, các profile khác nhau hoặc hai partition khác nhau**. Không bật vận chuyển Firebase nếu M0 chưa được xác nhận.
