@@ -146,18 +146,9 @@ service cloud.firestore {
           && request.resource.data.i >= 0 && request.resource.data.i < 16
           && request.resource.data.j >= 0 && request.resource.data.j < 14
           && request.resource.data.sessionId is string
-          && request.resource.data.sessionId.matches('^[a-zA-Z0-9_-]{16,64}
-        allow read, write: if collection != 'roomObjects' && collection != 'writeOps'
-          && collection != 'nha3dPresence'
-          && inHouse();
-      }
-    }
-  }
-}
-)
+          && request.resource.data.sessionId.matches('^[a-zA-Z0-9_-]{16,64}$')
           && request.resource.data.seq is int
           && request.resource.data.seq >= 1 && request.resource.data.seq <= 1000000000
-          // Require Firestore serverTimestamp() rather than client wall clock.
           && request.resource.data.updatedAt == request.time
           && request.resource.data.expiresAt is timestamp
           && request.resource.data.expiresAt > request.time
@@ -185,6 +176,7 @@ service cloud.firestore {
 
       match /{collection}/{document=**} {
         allow read, write: if collection != 'roomObjects' && collection != 'writeOps'
+          && collection != 'nha3dPresence'
           && inHouse();
       }
     }
