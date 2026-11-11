@@ -166,3 +166,16 @@ test("writes in flight cannot schedule another write, stop cannot re-enable a cl
   assert.equal(client.status, "closed");
   await assert.rejects(client.join("khach", { i: 8, j: 11 }), /ALREADY_JOINED_OR_CLOSED/);
 });
+
+test("disconnect before publish microtask prevents sending any location", async () => {
+  clock.value = 100_000;
+  const f = setup(), client = f.client();
+  await client.join("khach", { i: 8, j: 11 });
+  const accepted = f.writes.length;
+  clock.value += WRITE_INTERVAL_MS + 1;
+  const pending = client.publish("bep", { i: 0, j: 10 });
+  client.disconnect();
+  assert.deepEqual(await pending, { status: "stopped-before-write" });
+  assert.equal(f.writes.length, accepted, "no transport writes after immediate disconnect");
+  assert.equal(client.sequence, 1);
+});
