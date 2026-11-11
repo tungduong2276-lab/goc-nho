@@ -48,3 +48,25 @@ Legacy `firestore.rules` grants members broad recursive write access to nested c
 Run the exact full test command using `npm test`. In particular, `npm run test:firebase` invokes only `demo-goc-nho-safety` Firestore Emulator. Expected security cases: Alice/Bob own-write/partner-read, Eve/anonymous denied, third-house isolation, extra fields/bounds/timestamps rejected, stale sequence/duplicate update denied, active-session takeover denied, expired-session replacement, owner-only leave, membership revocation, other M0 roomObjects/writeOps still protected, legacy notes preserved.
 
 **This does not close M0.** Before real two-phone staging connection or merging PR #97: independently verify managed Cloud Firestore **staging-source → separate staging-target** export/restore with real operation records; audit deployed Rules/Auth/App Check/IAM and rollback in the exact staging project; review potential Rules call-budget/Firestore billing/TTL; test authenticated device pair, offline/reconnect and revision conflicts; obtain PR #9 visual room approval. Real data of the two users is never a test fixture. Do not copy production documents.
+
+
+## Next slice — injectable Emulator client, no cloud release (2026-11-11)
+
+- `nha3d/emulator-presence-client.mjs` is an **unwired** adapter prototype: no Firebase SDK imports, no HTTP calls and **no import in either preview page or production app**. It requires an injected transport, exact project `demo-goc-nho-safety` and loopback `127.0.0.1:PORT` or `localhost:PORT`. This is a defense-in-depth testing guard, not a formal guarantee against malicious dependencies.
+- Integration harness `tests/firebase/nha3d-presence-client.test.mjs` supplies Firestore SDK `getDoc`, `setDoc`, `onSnapshot`, `serverTimestamp` and `Timestamp` bound to the Emulator, with two authenticated synthetic clients. `tests/staging/nha3d-emulator-presence-client.test.mjs` supplies a deterministic fake transport to test stale snapshots, TTL/room validation, lifecycle, offline stop and boundary checks.
+- Outgoing data is limited to `{v,uid,room,i,j,sessionId,seq,updatedAt,expiresAt}` and authenticated member collection path. Use absolute expiration at approximately 10s and server timestamp for the write time; **the client clock is only an estimate for expiry**, so production must account for clock skew. The Rules fixture keeps a maximum 15s lease and a minimum 1s interval. The adapter adds a 1.25s local write guard and never schedules background retries or maintains a location history.
+- Incoming snapshots must match authenticated partner UID, valid room/grid, `canOccupy` cell validation, fresh server-time lease, increasing sequence and compatible session; ignore uncommitted/pending snapshots. A local tick hides expired peers even when Firestore has not deleted the document.
+- `disconnect()` only unsubscribes and clears the UI; it intentionally **does not delete** the Firestore document. An older device could otherwise delete a newer session's document under the current owner-only delete rule. The other device may see the last state until its lease expires (up to ~10s). An additional Rules proposal should deny delete by default or use a trusted, session-specific conditional mutation before enabling live clients.
+- Offline gate `isOnline()` blocks writes while explicitly offline. **Caveat:** an SDK may still queue a write if the network disappears *after* the preflight check; this cannot be prevented by the pure adapter alone. Its absolute deadline helps reject delayed stale writes at the Rules boundary. Never enable persistent offline cache for this feature without security/reconnect acceptance.
+- If a previous active session occupies the same UID, joining with a different session ID fails closed until the lease expires. Backoff/retry scheduling, client/server clock differences, actual reconnect under unstable connectivity and quota management remain future tests.
+- The isolated 16-file static review bundle explicitly excludes `nha3d/emulator-presence-client.mjs` and the fixture Rules. **No deploy or update to the already accepted V2.2 Preview Channel is warranted by this increment.**
+
+### Engineering tests for this slice
+
+1. Strict target guard rejects real staging, production and non-loopback hosts.
+2. Deterministic snapshots reject forged UID, malformed sessions, blocked cells, stale sequence, future timestamps, pending writes and old leases.
+3. Offline guard rejects direct writes, 1.25s throttling and disconnect (without persistent delete).
+4. Two independent authenticated Firestore Emulator instances can create and observe presence for each other and see a room transition; Eve cannot forge a write.
+5. The build manifest excludes this module; the original simulated-companion and same-browser two-tab demos remain unchanged.
+
+**The exact-head CI result is required before treating these tests as verified.** Emulator success alone cannot satisfy the still-open cloud M0 export/restore, deployed Rules/Auth/App Check/IAM and rollback, PR #9 geometry review, or two-device usability gates.
