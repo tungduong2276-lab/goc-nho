@@ -173,11 +173,24 @@ if (twoTabRequested) {
     getLocalState: () => ({ room: roomId, cell: { ...pos } }),
     canOccupy: canOccupyLabCell,
     onRemoteChange: state => { remoteTabState = state; syncRemoteAvatar(); },
-    onStatusChange: updateLabPanel
+    onStatusChange: updateLabPanel,
+    getPairKey: () => new URLSearchParams(location.search).get("pair") || "default"
   });
   addEventListener("pagehide", () => twoTabLab.stop());
-  document.getElementById("lab-open")?.addEventListener("click", () => {
-    // This user click starts tab A and opens same-origin tab B with ?join=1.
+  document.getElementById("lab-open")?.addEventListener("click", e => {
+    // One explicit click pairs two tabs from this same top-level origin/profile.
+    // Use a fresh ephemeral channel per attempt so old open labs cannot hijack it.
+    const here = new URL(location.href);
+    if (!twoTabLab.active && !/^[a-f0-9]{20}$/.test(here.searchParams.get("pair") || "") &&
+        globalThis.crypto?.getRandomValues) {
+      const raw = new Uint8Array(10);
+      crypto.getRandomValues(raw);
+      here.searchParams.set("pair", Array.from(raw, v => v.toString(16).padStart(2, "0")).join(""));
+      here.searchParams.set("rev", "20261111b");
+      history.replaceState(null, "", here.pathname + here.search + here.hash);
+    }
+    here.searchParams.set("join", "1");
+    e.currentTarget.href = here.href;
     if (!twoTabLab.active && !twoTabLab.start()) {
       status.textContent = "Không thể bật kênh giữa hai tab trên trình duyệt này.";
     }
