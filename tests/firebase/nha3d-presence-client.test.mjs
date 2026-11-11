@@ -1,6 +1,7 @@
 import { before, after, beforeEach, afterEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { getApps, deleteApp } from "firebase/app";
 import { initializeTestEnvironment, assertFails } from "@firebase/rules-unit-testing";
 import {
   doc, getDoc, setDoc, onSnapshot, serverTimestamp, Timestamp,
@@ -90,6 +91,12 @@ after(async () => {
   console.error("[presence-cleanup] environment begin");
   await env?.cleanup();
   console.error("[presence-cleanup] environment complete");
+  const testApps = getApps().filter(app => app.options.projectId === PROJECT);
+  console.error("[presence-cleanup] remaining Firebase test apps", testApps.map(app => app.name));
+  // Public SDK cleanup, restricted to synthetic Emulator apps only. Do not
+  // use process.exit(), force-exit flags or broad network/socket destruction.
+  await Promise.all(testApps.map(app => deleteApp(app)));
+  console.error("[presence-cleanup] all known Firebase test apps released");
   // Diagnostic only: do not unref, destroy, or force-exit any remaining handles.
   await new Promise(resolve => setTimeout(resolve, 250));
   const handles = process._getActiveHandles().map(h => ({
