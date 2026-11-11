@@ -107,9 +107,15 @@ export function createEmulatorPresenceClient({
     // No offline queue, timers or automatic retries at this layer. The caller
     // must never turn on SDK offline persistence for this ephemeral feature.
     // The absolute expiry timestamp also rejects queued stale writes at Rules.
-    writePromise = Promise.resolve().then(() => transport.writeOwn(payload));
+    // The Promise defers dispatch to a microtask. A synchronous disconnect
+    // between publish() and dispatch must not send any location afterwards.
+    writePromise = Promise.resolve().then(() => {
+      if (!active || closed) return false;
+      return Promise.resolve(transport.writeOwn(payload)).then(() => true);
+    });
     try {
-      await writePromise;
+      const dispatched = await writePromise;
+      if (!dispatched) return { status: "stopped-before-write" };
       if (!active) return { status: "stopped-after-write" };
       seq = candidate;
       lastWrittenAt = now();
