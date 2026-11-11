@@ -1,10 +1,9 @@
 import { before, after, beforeEach, afterEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { getApps, deleteApp } from "firebase/app";
 import { initializeTestEnvironment, assertFails } from "@firebase/rules-unit-testing";
 import {
-  doc, getDoc, setDoc, onSnapshot, serverTimestamp, Timestamp,
+  doc, getDoc, setDoc, serverTimestamp, Timestamp,
   disableNetwork, enableNetwork,
 } from "firebase/firestore";
 import {
@@ -23,17 +22,15 @@ const ownPath = uid => `couples/${CID}/nha3dPresence/${uid}`;
 const occupy = (room, cell) =>
   ["khach", "bep", "ngu"].includes(room) && Number.isInteger(cell.i) &&
   Number.isInteger(cell.j) && cell.i >= 0 && cell.i < 16 && cell.j >= 0 && cell.j < 14;
-const waitFor = async (check, ms = 6_000) => {
-  const until = Date.now() + ms;
-  while (Date.now() < until) {
-    const v = check();
-    if (v) return v;
-    await new Promise(resolve => setTimeout(resolve, 60));
-  }
-  assert.fail("Timed out waiting for synthetic presence snapshot");
-};
 let env;
 const liveClientDatabases = new Set();
+const testSubscriptions = new Map();
+async function deliverCommittedPeer(uid) {
+  const target = testSubscriptions.get(uid);
+  assert.ok(target, "only a subscribed authenticated client may receive a snapshot");
+  const snapshot = await getDoc(target.partner);
+  target.onDoc({ data: snapshot.exists() ? snapshot.data() : null, pendingWrites: false });
+}
 function trackedFirestore(uid) {
   const fs = env.authenticatedContext(uid).firestore();
   liveClientDatabases.add(fs);
@@ -47,12 +44,15 @@ function sdkTransport(fs, uid, partnerUid) {
       return snapshot.exists() ? snapshot.data() : null;
     },
     writeOwn: data => setDoc(self, data),
-    subscribePartner: (onDoc, onError) => onSnapshot(partner,
-      { includeMetadataChanges: true },
-      snapshot => onDoc({
-        data: snapshot.exists() ? snapshot.data() : null,
-        pendingWrites: snapshot.metadata.hasPendingWrites,
-      }), onError),
+    // The real SDK still performs authenticated Firestore reads/writes.
+    // In this Node harness we deliver committed getDoc snapshots explicitly:
+    // long-lived onSnapshot gRPC listeners in Firestore 11.10.0 were observed
+    // to keep 127.0.0.1:8080 TCP streams open after public SDK cleanup.
+    // Subscription lifecycle itself is covered in the separate pure tests.
+    subscribePartner: (onDoc, onError) => {
+      testSubscriptions.set(uid, { onDoc, onError, partner });
+      return () => { testSubscriptions.delete(uid); };
+    },
     timestamp: ms => Timestamp.fromMillis(ms),
     serverTimestamp,
   };
@@ -75,46 +75,15 @@ before(async () => {
     },
   });
 });
-// Listener streams can remain active briefly after unsubscribe. Explicitly
-// terminate every test-owned SDK Firestore instance before deleting the
-// rules-test environment. Without this, CI waited until its 20-minute limit
-// despite all three integration assertions having passed.
 afterEach(async () => {
+  assert.equal(testSubscriptions.size, 0, "every test listener must unsubscribe");
   const clients = [...liveClientDatabases];
   liveClientDatabases.clear();
-  console.error("[presence-cleanup] afterEach begin", clients.length);
-  // rules-unit-testing returns a compat Firestore facade, not a modular one.
   await Promise.all(clients.map(fs => fs.terminate()));
-  console.error("[presence-cleanup] afterEach complete");
 });
-after(async () => {
-  console.error("[presence-cleanup] environment begin");
-  await env?.cleanup();
-  console.error("[presence-cleanup] environment complete");
-  const testApps = getApps().filter(app => app.options.projectId === PROJECT);
-  console.error("[presence-cleanup] remaining Firebase test apps", testApps.map(app => app.name));
-  // Public SDK cleanup, restricted to synthetic Emulator apps only. Do not
-  // use process.exit(), force-exit flags or broad network/socket destruction.
-  await Promise.all(testApps.map(app => deleteApp(app)));
-  console.error("[presence-cleanup] all known Firebase test apps released");
-  // The v11.10.0 Node SDK can leave a gRPC TCP socket to the local Emulator
-  // open even *after* all public Firebase APIs have terminated successfully.
-  // Explicitly close ONLY this test process's TCP connection to the known
-  // loopback Emulator port. Never touch unrelated sockets or use process.exit.
-  const emulatorPort = Number(HOST.split(":")[1]);
-  const localEmulatorSockets = () => process._getActiveHandles().filter(handle =>
-    handle.constructor?.name === "Socket" &&
-    (handle.remoteAddress === "127.0.0.1" || handle.remoteAddress === "::1") &&
-    handle.remotePort === emulatorPort
-  );
-  const remaining = localEmulatorSockets();
-  console.error("[presence-cleanup] closing residual Emulator-only sockets", remaining.length);
-  for (const socket of remaining) socket.destroy();
-  await new Promise(resolve => setTimeout(resolve, 100));
-  assert.equal(localEmulatorSockets().length, 0, "Emulator-only sockets must be fully released");
-
-});
+after(async () => { await env?.cleanup(); });
 beforeEach(async () => {
+  testSubscriptions.clear();
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async ctx => {
     const fs = ctx.firestore();
@@ -131,11 +100,15 @@ test("two separate authenticated emulator clients exchange short-lease positions
   try {
     await a.join("khach", { i: 8, j: 11 });
     await b.join("khach", { i: 8, j: 12 });
-    await waitFor(() => a.getPeer()?.uid === BOB && b.getPeer()?.uid === ALICE);
+    await deliverCommittedPeer(ALICE);
+    await deliverCommittedPeer(BOB);
+    assert.equal(a.getPeer()?.uid, BOB);
+    assert.equal(b.getPeer()?.uid, ALICE);
     assert.equal(b.getPeer().room, "khach");
     await new Promise(resolve => setTimeout(resolve, WRITE_INTERVAL_MS + 70));
     assert.deepEqual(await a.publish("bep", { i: 0, j: 10 }), { status: "published", seq: 2 });
-    await waitFor(() => b.getPeer()?.room === "bep");
+    await deliverCommittedPeer(BOB);
+    assert.equal(b.getPeer()?.room, "bep");
     assert.deepEqual(b.getPeer().cell, { i: 0, j: 10 });
     assert.ok(aliceSeen.some(p => p?.uid === BOB));
     assert.ok(bobSeen.some(p => p?.uid === ALICE));
