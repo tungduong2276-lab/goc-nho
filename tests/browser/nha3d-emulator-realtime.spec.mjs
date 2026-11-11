@@ -133,6 +133,58 @@ test("two isolated Chromium profiles receive genuine authenticated onSnapshot up
       window.__nha3dLab.errors.includes("permission-denied")),
     { timeout: 15_000 }).toBe(true);
 
+    // Simulate loss of network on Alice's *entire isolated browser profile*.
+    // Bob must still commit his next room state; Alice must not receive it
+    // until her WebChannel reconnects and catches up from the Emulator.
+    await alice.context.setOffline(true);
+    await expect.poll(() => alice.page.evaluate(() => navigator.onLine)).toBe(false);
+    const blocked = await alice.page.evaluate(async ({ uid, partnerUid, host }) => {
+      const { createEmulatorPresenceClient } =
+        await import("/nha3d/emulator-presence-client.mjs");
+      let writes = 0;
+      const client = createEmulatorPresenceClient({
+        projectId: "demo-goc-nho-safety",
+        emulatorHost: host, cid: "fixture-couple",
+        uid, partnerUid, sessionId: "offline_guard_test_01",
+        canOccupy: () => true,
+        isOnline: () => navigator.onLine,
+        transport: {
+          readOwn: async () => null,
+          writeOwn: async () => { writes++; },
+          subscribePartner: () => () => {},
+          serverTimestamp: () => "sentinel",
+          timestamp: ms => ({ toMillis: () => ms }),
+        },
+      });
+      let code = null;
+      try { await client.join("khach", { i: 8, j: 11 }); }
+      catch (error) { code = error.code; }
+      return { code, writes };
+    }, { uid: alice.uid, partnerUid: bob.uid, host });
+    expect(blocked).toEqual({ code: "OFFLINE_BLOCKED", writes: 0 });
+
+    await publish(bob.page, "bep", 0, 9, 2, SESSION_B);
+    await alice.page.waitForTimeout(250);
+    expect(await received(alice.page, bob.uid, 2, "bep")).toBe(false);
+    await alice.context.setOffline(false);
+    await expect.poll(() => alice.page.evaluate(() => navigator.onLine)).toBe(true);
+    await expect.poll(() => received(alice.page, bob.uid, 2, "bep"),
+      { timeout: 15_000 }).toBe(true);
+
+    // Disconnect the actual subscription and prove it cannot receive new
+    // data until the user explicitly subscribes again.
+    await bob.page.evaluate(() => {
+      window.__nha3dLab.unsubscribe?.();
+      window.__nha3dLab.unsubscribe = null;
+    });
+    await alice.page.waitForTimeout(1_300);
+    await publish(alice.page, "ngu", 8, 0, 3, SESSION_A);
+    await bob.page.waitForTimeout(250);
+    expect(await received(bob.page, alice.uid, 3, "ngu")).toBe(false);
+    await subscribe(bob.page, alice.uid);
+    await expect.poll(() => received(bob.page, alice.uid, 3, "ngu"),
+      { timeout: 15_000 }).toBe(true);
+
     for (const c of clients) {
       expect(c.unexpected).toEqual([]);
       if (c !== eve) expect(await c.page.evaluate(() => window.__nha3dLab.errors)).toEqual([]);
