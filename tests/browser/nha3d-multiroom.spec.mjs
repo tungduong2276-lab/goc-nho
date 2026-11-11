@@ -217,6 +217,10 @@ test("diagnostic lab one-click opens same-profile second tab and confirms real h
  await b.waitForLoadState("domcontentloaded");
  expect(new URL(b.url()).origin).toBe(new URL(a.url()).origin);
  expect(new URL(b.url()).searchParams.get("join")).toBe("1");
+ const pairA = new URL(a.url()).searchParams.get("pair");
+ const pairB = new URL(b.url()).searchParams.get("pair");
+ expect(pairA).toMatch(/^[a-f0-9]{20}$/);
+ expect(pairB).toBe(pairA);
  await expect(b.locator("#lab-help")).toBeVisible();
  const state = p => p.evaluate(() => window.__NHA3D_PREVIEW_STATE__());
  await expect.poll(async () => (await state(a)).partner.diagnostics?.phase, { timeout: 30_000 }).toBe("connected");
