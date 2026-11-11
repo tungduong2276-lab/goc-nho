@@ -6,9 +6,10 @@ const CHANNEL_NAME = "goc-nho-nha3d-two-tabs-lab-v1";
 const HEARTBEAT_MS = 1_700;
 
 export function createTwoTabPresenceLab({
-  getLocalState, canOccupy, onRemoteChange, onStatusChange = () => {}
+  getLocalState, canOccupy, onRemoteChange, onStatusChange = () => {},
+  getPairKey = () => "default"
 }) {
-  if ([getLocalState, canOccupy, onRemoteChange, onStatusChange].some(f => typeof f !== "function")) {
+  if ([getLocalState, canOccupy, onRemoteChange, onStatusChange, getPairKey].some(f => typeof f !== "function")) {
     throw new TypeError("Missing two-tab lab callback");
   }
   let channel = null, protocol = null, timer = null;
@@ -89,7 +90,12 @@ export function createTwoTabPresenceLab({
     }
     try {
       protocol = createPresenceProtocol({ selfId: randomId(), canOccupy });
-      channel = new BroadcastChannel(CHANNEL_NAME);
+      const requestedKey = getPairKey();
+      const pairKey = typeof requestedKey === "string" && /^[a-zA-Z0-9_-]{8,40}$/.test(requestedKey)
+        ? requestedKey : "default";
+      // An explicit pair code isolates this test from forgotten older lab tabs.
+      // It is ONLY a local channel name; it is NOT an authentication secret.
+      channel = new BroadcastChannel(CHANNEL_NAME + ":" + pairKey);
       channel.onmessage = ({ data }) => {
         received++;
         const outcome = protocol.receive(data);
