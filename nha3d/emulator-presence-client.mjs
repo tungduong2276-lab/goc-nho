@@ -29,7 +29,7 @@ export function readPeerPresence(data, {
       updated > now + 2_000 || expires <= now ||
       expires > updated + 15_000 || expires <= updated) return null;
   if (previous && previous.uid === partnerUid) {
-    if (previous.sessionId === data.sessionId && data.seq < previous.seq) return null;
+    if (previous.sessionId === data.sessionId && data.seq <= previous.seq) return null;
     if (previous.sessionId !== data.sessionId && previous.expiresAt > now) return null;
   }
   return Object.freeze({
