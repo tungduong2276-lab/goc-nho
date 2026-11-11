@@ -53,7 +53,7 @@ function inspectOperation(op, expectedProject, operationType) {
     throw new M0EvidenceError("INVALID_OPERATION_COMPLETION_TIME");
   if (typeof op.uriPrefix !== "string" ||
       !/^gs:\/\/[a-z0-9][a-z0-9._-]{2,61}[a-z0-9]\/[A-Za-z0-9_./-]+$/.test(op.uriPrefix) ||
-      op.uriPrefix.includes("..") || op.uriPrefix.includes("//"))
+      op.uriPrefix.includes("..") || op.uriPrefix.slice(5).includes("//"))
     throw new M0EvidenceError("INVALID_EXPORT_URI");
   return [];
 }
