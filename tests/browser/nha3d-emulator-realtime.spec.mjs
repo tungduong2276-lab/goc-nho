@@ -40,8 +40,13 @@ async function start(browser, label) {
       [4173, Number(host.split(":")[1]), Number(authHost.split(":")[1])].includes(Number(u.port));
     if (local) return route.continue();
     blockedExternal.push(u.hostname);
-    if (u.hostname !== "www.google.com")
-      unexpected.push("Unexpected blocked external request: " + u.hostname);
+    if (u.hostname === "www.google.com") {
+      // The SDK's connectivity probe must complete successfully to keep
+      // browser WebChannel online. Respond LOCALLY with an HTTP 204 and
+      // never contact Google; all other external destinations are denied.
+      return route.fulfill({ status: 204, body: "" });
+    }
+    unexpected.push("Unexpected blocked external request: " + u.hostname);
     return route.abort("blockedbyclient");
   });
   const page = await context.newPage();
