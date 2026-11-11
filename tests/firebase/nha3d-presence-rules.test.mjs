@@ -159,12 +159,16 @@ test("expired session may be replaced by a fresh session, but not by a stale rep
   await assertFails(setDoc(target, payload(ALICE, { seq: 1, sessionId: SESSION_B })));
 });
 
-test("only document owner can disconnect by delete; peer can observe absence", async () => {
+test("no client including owner can delete presence while a session is active", async () => {
   const a = db(ALICE), b = db(BOB);
   await assertSucceeds(setDoc(presence(a, ALICE), payload(ALICE)));
+  // An older client authenticating as Alice cannot be distinguished from a
+  // new Alice client by the previous owner-only delete rule. Deny both.
   await assertFails(deleteDoc(presence(b, ALICE)));
-  await assertSucceeds(deleteDoc(presence(a, ALICE)));
-  assert.equal((await assertSucceeds(getDoc(presence(b, ALICE)))).exists(), false);
+  await assertFails(deleteDoc(presence(a, ALICE)));
+  const stillPresent = await assertSucceeds(getDoc(presence(b, ALICE)));
+  assert.equal(stillPresent.exists(), true);
+  assert.equal(stillPresent.data().sessionId, SESSION_A);
 });
 
 test("revoking Alice membership immediately denies her reading/writing despite old presence", async () => {
