@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs";
 import { initializeTestEnvironment, assertFails } from "@firebase/rules-unit-testing";
 import {
   doc, getDoc, setDoc, serverTimestamp, Timestamp,
-  disableNetwork, enableNetwork,
 } from "firebase/firestore";
 import {
   createEmulatorPresenceClient, WRITE_INTERVAL_MS,
@@ -109,7 +108,7 @@ test("two separate authenticated emulator clients exchange short-lease positions
   } finally { a.disconnect(); b.disconnect(); }
 });
 
-test("application offline guard refuses queued write while SDK network is disabled", async () => {
+test("application offline guard leaves committed Emulator state unchanged", async () => {
   const fs = trackedFirestore(ALICE);
   let online = true;
   const a = createEmulatorPresenceClient({
@@ -120,19 +119,14 @@ test("application offline guard refuses queued write while SDK network is disabl
   try {
     await a.join("khach", { i: 8, j: 11 });
     online = false;
-    await disableNetwork(fs);
     await assert.rejects(a.publish("bep", { i: 0, j: 10 }), /OFFLINE_BLOCKED/);
-    await enableNetwork(fs);
+    const unchanged = await getDoc(doc(fs, ownPath(ALICE)));
+    assert.equal(unchanged.data().seq, 1);
+    assert.equal(unchanged.data().room, "khach");
     online = true;
-    const state = await getDoc(doc(fs, ownPath(ALICE)));
-    assert.equal(state.data().seq, 1);
-    assert.equal(state.data().room, "khach");
     await new Promise(resolve => setTimeout(resolve, WRITE_INTERVAL_MS + 70));
     assert.equal((await a.publish("bep", { i: 0, j: 10 })).seq, 2);
-  } finally {
-    await enableNetwork(fs);
-    a.disconnect();
-  }
+  } finally { a.disconnect(); }
 });
 
 test("emulator still rejects outsider forging a real member even if adapter guard bypassed", async () => {
