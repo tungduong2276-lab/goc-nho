@@ -120,6 +120,8 @@ test("live snapshots update the peer, stale replay cannot roll back, expired pee
   assert.equal(a.getPeer().room, "bep");
   f.receive({ data: peerData({ seq: 1, room: "ngu", i: 8, j: 0 }) });
   assert.equal(a.getPeer().room, "bep", "old seq must never roll back new location");
+  f.receive({ data: peerData({ seq: 2, room: "ngu", i: 8, j: 0 }) });
+  assert.equal(a.getPeer().room, "bep", "equal seq with altered cell must never replace committed state");
   f.receive({ data: peerData({ seq: 3, i: 16 }) });
   assert.equal(a.getPeer().room, "bep", "invalid cell must not erase current peer");
   f.receive({ data: peerData({ seq: 3, room: "ngu", i: 8, j: 0 }), pendingWrites: true });
