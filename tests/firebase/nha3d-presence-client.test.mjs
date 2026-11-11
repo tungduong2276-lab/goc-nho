@@ -90,6 +90,18 @@ after(async () => {
   console.error("[presence-cleanup] environment begin");
   await env?.cleanup();
   console.error("[presence-cleanup] environment complete");
+  // Diagnostic only: do not unref, destroy, or force-exit any remaining handles.
+  await new Promise(resolve => setTimeout(resolve, 250));
+  const handles = process._getActiveHandles().map(h => ({
+    type: h.constructor?.name,
+    remoteAddress: h.remoteAddress ?? null,
+    remotePort: h.remotePort ?? null,
+    localPort: h.localPort ?? null,
+    ref: typeof h.hasRef === "function" ? h.hasRef() : null,
+  }));
+  const requests = process._getActiveRequests().map(h => h.constructor?.name);
+  console.error("[presence-cleanup] active handles", JSON.stringify(handles));
+  console.error("[presence-cleanup] active requests", JSON.stringify(requests));
 });
 beforeEach(async () => {
   await env.clearFirestore();
