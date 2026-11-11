@@ -75,3 +75,41 @@ console.log(report);
 A match proves only that **two supplied offline synthetic snapshots** have equal document paths and canonicalized field hashes. It cannot prove a managed Firestore export/import ran, that the snapshots came from separate projects, that the database is complete, or that the real staging target was empty before import. These claims require independent admin Cloud operation logs, project/IAM evidence, reviewed source/target inventory and actual post-restore SDK reads. Do not upload any real user data, credential, personal content or private GCP logs to this repository.
 
 Run `npm run test:staging` for no-network negative tests: missing/extra/nested records, content/timestamp changes, duplicate paths, unsafe fields, altered manifest. A genuine M0 restore gate remains open until a reviewer verifies the Cloud operation and the manifest comparison using **authorized staging-only synthetic source and target datasets**.
+
+
+## Offline evidence packet checker for the managed cross-project gate (2026-11-11)
+
+The new pure module `scripts/m0-staging-evidence-review.mjs` is **not a cloud client or deploy script**. It cross-checks the existing `makeStagingPlan` output and `compareSyntheticRestore` hash results against a manually sanitized operator evidence packet:
+
+- Export and import operation names must be for the **two distinct** staging projects, scoped to the `(default)` database; each is marked done, and the import must complete after the export.
+- The reported `outputUriPrefix` must remain under the pre-approved staging-only bucket/run prefix; the import must use that **same** completed output URI, not a guessed/older export.
+- The nested synthetic restore must match the expected hash/paths. Missing or modified data rejects the packet.
+- Manual assertions must explicitly cover synthetic-only source, verified-empty target, independently confirmed project separation, bucket IAM/retention and a rollback procedure.
+- Unexpected fields (including private keys or extra payloads) are rejected. Only synthetic fixture paths accepted by `m0-restore-manifest.mjs` are permitted.
+
+Usage from an authorized **offline** JavaScript review session (not CI deployment):
+
+```js
+import { reviewM0StagingEvidence } from "./scripts/m0-staging-evidence-review.mjs";
+const report = reviewM0StagingEvidence({
+  plan,                  // output from makeStagingPlan with real, manually checked STAGING IDs
+  expectedManifest,      // createSyntheticManifest(sourceRows)
+  restoredRows,          // destination's sanitized synthetic rows only
+  exportOperation: { projectId, name, done: true, uriPrefix, completedAt },
+  importOperation: { projectId, name, done: true, uriPrefix, completedAt },
+  assertions: {
+    sourceContainsOnlySyntheticRecords: true,
+    targetWasEmptyBeforeImport: true,
+    sourceAndTargetIndependentlyConfirmed: true,
+    bucketIamAndRetentionReviewed: true,
+    rollbackProcedureReviewed: true,
+  },
+});
+console.log(report.status, report.blockers);
+```
+
+An apparently complete packet returns `READY_FOR_INDEPENDENT_ADMIN_REVIEW` — **not** `M0_PASS`. The returned `m0Approved`, `cloudOperationsVerified`, `dataReadFromCloud` and `productionAccessed` fields are always `false`. This validates the **internal consistency of self-reported evidence**, not the authenticity of Cloud logs or database contents. The independent administrator must still confirm the actual operations in Google Cloud Console, IAM, indexes, deployed Rules/Auth/App Check, billing, target pre-import emptiness, restore query results and rollback.
+
+Google Cloud's managed Firestore export/import requires a billing-enabled project (Firebase Blaze), can incur document read/write and Cloud Storage charges, and **import overwrites matching document IDs**. The managed export is not necessarily an atomic snapshot of writes occurring during the operation, and export files do not include Firestore index definitions. See https://firebase.google.com/docs/firestore/manage-data/export-import . Never enable billing, start export/import, or accept a nonempty destination based merely on this review script.
+
+Test the offline reviewer with `npm run test:staging` or the full `npm test`; negative tests cover mismatched project/operation, completed state, invalid URI/time, stale or modified synthetic hash, injection fields and fabricated claims of cloud verification. No new secrets are required.
