@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:static": "node scripts/check-garden.mjs",
+    "test:static": "node scripts/check-garden.mjs && node scripts/sync-nha3d.mjs --check",
     "test:browser": "playwright test",
     "test": "npm run test:static && npm run test:staging && npm run test:browser && npm run test:firebase",
     "test:firebase": "firebase emulators:exec --project demo-goc-nho-safety --only firestore \"node --test --test-concurrency=1 tests/firebase/*.test.mjs\"",
@@ -13,6 +13,7 @@
     "@playwright/test": "1.55.0",
     "@firebase/rules-unit-testing": "^4.0.1",
     "firebase": "^11.10.0",
-    "firebase-tools": "^14.15.0"
+    "firebase-tools": "^14.15.0",
+    "three": "0.169.0"
   }
 }

@@ -203,3 +203,24 @@ export function layer(kind, opt, pose) {
 }
 // ghép đủ bộ (dùng cho bản đồ, màn hình chờ, ảnh chân dung)
 export const DEFAULT_LOOK = { anh: { hair: 'nganxu', hc: 'dennau', top: 'hoodie', bot: 'quandai', hat: 'khong', acc: 'tainghe' }, em: { hair: 'daixoa', hc: 'hatde', top: 'vayyem', bot: 'giayvai', hat: 'khong', acc: 'kepla' } };
+
+// Ghép đủ bộ thành MỘT nhân vật sống (không lớp che) để dùng trong cảnh 3D trực tiếp (nha3d/).
+// Trả về khung xương có head/arms/legs để app tự làm hoạt ảnh đi, ngồi, vẫy tay; setFace đổi biểu cảm tại chỗ.
+export function buildAvatar(look, expr = 'vui') {
+  MODE = 'show';
+  const R = rig('dung');
+  base(R);
+  BOT[look.bot](R);
+  TOP[look.top](R);
+  HAIR[look.hair](R, HAIR_COLORS[look.hc][1]);
+  HAT[look.hat](R);
+  ACC[look.acc](R);
+  const faceG = new THREE.Group(); R.head.add(faceG);
+  R.setFace = ex => {
+    while (faceG.children.length) faceG.remove(faceG.children[0]);
+    face({ head: faceG }, ex); R.expr = ex;
+  };
+  R.setFace(expr);
+  R.look = look;
+  return R;
+}
