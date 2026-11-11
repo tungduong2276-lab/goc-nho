@@ -27,5 +27,5 @@ for (const name of files) {
   mkdirSync(dirname(dest), { recursive: true });
   cpSync(resolve(root, name), dest);
 }
-writeFileSync(resolve(out, "index.html"), '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="robots" content="noindex"><title>Góc Nhỏ · Nhà 3D thử nghiệm</title><p><a href="/nha3d/multiroom-preview.html">Mở Nhà 3D thử nghiệm (không Firebase)</a></p><p><a href="/nha3d/multiroom-preview.html?lab=two-tabs">Phòng thí nghiệm hai tab cùng trình duyệt (không kết nối điện thoại khác)</a></p></html>');
+writeFileSync(resolve(out, "index.html"), '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="robots" content="noindex"><title>Góc Nhỏ · Nhà 3D thử nghiệm</title><p><a href="/nha3d/multiroom-preview.html">Mở Nhà 3D thử nghiệm (không Firebase)</a></p><p><a href="/nha3d/multiroom-preview.html?lab=two-tabs&amp;rev=20261111b">Phòng thí nghiệm hai tab cùng trình duyệt (không kết nối điện thoại khác)</a></p></html>');
 console.log("Staging-only static bundle built:", files.length, "assets. No Firebase config or live app copied.");
