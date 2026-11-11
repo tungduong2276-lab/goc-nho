@@ -170,8 +170,11 @@ service cloud.firestore {
             || (request.time >= resource.data.expiresAt
               && request.resource.data.sessionId != resource.data.sessionId)
           );
-        // Only the owner may leave; not a write path for the other member.
-        allow delete: if inHouse() && request.auth.uid == uid;
+        // Client deletes are forbidden. An older tab authenticated as the
+        // same UID could otherwise delete a newer session's live document.
+        // Leaving is client-local; short leases expire for the peer's UI.
+        // Any future physical TTL cleanup must use a reviewed trusted server.
+        allow delete: if false;
       }
 
       match /{collection}/{document=**} {
