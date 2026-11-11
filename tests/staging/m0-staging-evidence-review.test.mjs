@@ -107,7 +107,7 @@ test("strictly rejects extra fields to stop credentials or private payloads ente
   a.assertions.productionDataSample = true;
   assert.throws(() => reviewM0StagingEvidence(a), /INVALID_ASSERTIONS/);
   const corrupted = example();
-  corrupted.plan.exportOutputPrefix = "gs://unapproved/backups";
+  corrupted.plan = { ...corrupted.plan, exportOutputPrefix: "gs://unapproved/backups" };
   assert.throws(() => reviewM0StagingEvidence(corrupted), /PLAN_PREFIX_MISMATCH/);
   const bad = example();
   bad.importOperation.uriPrefix = "gs://bucket/../../other";
@@ -116,7 +116,7 @@ test("strictly rejects extra fields to stop credentials or private payloads ente
 
 test("rejects unapproved or modified preflight and modified synthetic fixture manifests", () => {
   const e = example();
-  e.plan.verifiedAgainstCloud = true;
+  e.plan = { ...e.plan, verifiedAgainstCloud: true };
   assert.throws(() => reviewM0StagingEvidence(e), /INVALID_PREFLIGHT_PLAN/);
   const f = example();
   f.expectedManifest.documents[0].hash = "f".repeat(64);
