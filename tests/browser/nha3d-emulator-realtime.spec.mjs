@@ -136,13 +136,17 @@ test("two isolated Chromium profiles receive genuine authenticated onSnapshot up
     // Simulate loss of network on Alice's *entire isolated browser profile*.
     // Bob must still commit his next room state; Alice must not receive it
     // until her WebChannel reconnects and catches up from the Emulator.
+    // Warm only the LOCAL source module before deliberately cutting network;
+    // this test is about the offline guard, not whether offline import works.
+    await alice.page.evaluate(async () => {
+      const module = await import("/nha3d/emulator-presence-client.mjs");
+      window.__createOfflinePresenceClient = module.createEmulatorPresenceClient;
+    });
     await alice.context.setOffline(true);
     await expect.poll(() => alice.page.evaluate(() => navigator.onLine)).toBe(false);
     const blocked = await alice.page.evaluate(async ({ uid, partnerUid, host }) => {
-      const { createEmulatorPresenceClient } =
-        await import("/nha3d/emulator-presence-client.mjs");
       let writes = 0;
-      const client = createEmulatorPresenceClient({
+      const client = window.__createOfflinePresenceClient({
         projectId: "demo-goc-nho-safety",
         emulatorHost: host, cid: "fixture-couple",
         uid, partnerUid, sessionId: "offline_guard_test_01",
