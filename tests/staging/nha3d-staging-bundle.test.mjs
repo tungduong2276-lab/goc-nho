@@ -22,9 +22,9 @@ test("staging bundle includes three-room preview but excludes production Firebas
     const labPage = readFileSync(resolve(out, "nha3d/multiroom-preview.html"), "utf8");
     assert.match(labPage, /id="lab-help"/);
     assert.match(labPage, /id="lab-open"/);
-    assert.match(labPage, /multiroom-preview\\.js\\?rev=20261111b/);
+    assert.ok(labPage.includes("multiroom-preview.js?rev=20261111b"), "must request versioned preview JS");
     const preview = readFileSync(resolve(out, "nha3d/multiroom-preview.js"), "utf8");
-    assert.match(preview, /two-tab-lab-browser\\.mjs\\?rev=20261111b/);
+    assert.ok(preview.includes("two-tab-lab-browser.mjs?rev=20261111b"), "must request versioned two-tab module");
     const page = readFileSync(resolve(out, "index.html"), "utf8");
     assert.match(page, /multiroom-preview\.html/);
     assert.doesNotMatch(page, /cloudInit|initDb|firebase\.initializeApp/);
