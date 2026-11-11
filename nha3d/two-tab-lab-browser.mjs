@@ -1,80 +1,133 @@
-// Browser-only same-origin/same-profile transport for the opt-in two-tab laboratory.
-// BroadcastChannel does NOT connect separate phones, and does not authenticate users.
-// No Firebase SDK, network requests, cookies, localStorage or persistent writes.
-import { createPresenceProtocol } from "./presence-lab.mjs";
+// Opt-in same-origin two-tab LAB. No Firebase, network calls or persistent storage.
+// NOTE: tabs must use the same Chrome profile and top-level storage partition.
+import { createPresenceProtocol } from "./presence-lab.mjs?rev=20261111b";
 
 const CHANNEL_NAME = "goc-nho-nha3d-two-tabs-lab-v1";
+const HEARTBEAT_MS = 1_700;
 
-export function createTwoTabPresenceLab({ getLocalState, canOccupy, onRemoteChange }) {
-  if (typeof getLocalState !== "function" || typeof canOccupy !== "function" ||
-      typeof onRemoteChange !== "function") throw new TypeError("Missing presence lab hooks");
-  let channel = null, protocol = null, lastSentAt = 0, lastKey = "", lastHelloAt = 0;
-  let lastRemoteKey = "";
+export function createTwoTabPresenceLab({
+  getLocalState, canOccupy, onRemoteChange, onStatusChange = () => {}
+}) {
+  if ([getLocalState, canOccupy, onRemoteChange, onStatusChange].some(f => typeof f !== "function")) {
+    throw new TypeError("Missing two-tab lab callback");
+  }
+  let channel = null, protocol = null, timer = null;
+  let lastSentAt = 0, lastKey = "", lastHelloAt = 0, lastTickAt = 0, lastRemoteKey = "";
+  let sent = 0, received = 0, ignored = 0, lastStatusKey = "", lastFailure = "";
   const randomId = () => {
     const bytes = new Uint8Array(16);
     crypto.getRandomValues(bytes);
     return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
   };
-  const emit = message => { if (channel) channel.postMessage(message); };
   const remote = () => protocol?.current() ?? null;
+  function snapshot() {
+    const peer = remote();
+    const local = getLocalState();
+    return {
+      active: Boolean(channel),
+      phase: channel ? (peer ? (peer.room === local?.room ? "connected" : "other-room") : "waiting") :
+        (lastFailure ? "unsupported" : "off"),
+      remoteRoom: peer?.room ?? null,
+      sent, received, ignored, lastFailure,
+      supported: typeof BroadcastChannel !== "undefined" && Boolean(globalThis.crypto?.getRandomValues)
+    };
+  }
+  function report(force = false) {
+    const state = snapshot();
+    const key = state.phase + ":" + state.remoteRoom + ":" + state.lastFailure;
+    if (force || key !== lastStatusKey) {
+      lastStatusKey = key;
+      onStatusChange(state);
+    }
+  }
+  const emit = packet => {
+    if (!channel) return;
+    channel.postMessage(packet);
+    sent++;
+  };
   function notify() {
-    const state = remote();
-    const key = state ? [state.id, state.seq, state.room, state.cell.i, state.cell.j].join(":") : "none";
+    const peer = remote();
+    const key = peer ? [peer.id, peer.seq, peer.room, peer.cell.i, peer.cell.j].join(":") : "none";
     if (key !== lastRemoteKey) {
       lastRemoteKey = key;
-      onRemoteChange(state);
+      onRemoteChange(peer);
     }
+    report();
   }
   function publish(force = false) {
     if (!channel || !protocol) return false;
     const local = getLocalState();
     if (!local || !canOccupy(local.room, local.cell)) return false;
     const key = local.room + ":" + local.cell.i + ":" + local.cell.j;
-    const time = Date.now();
-    if (!force && key === lastKey && time - lastSentAt < 1_500) return false;
-    if (!force && time - lastSentAt < 140) return false;
-    lastKey = key; lastSentAt = time;
+    const now = Date.now();
+    if (!force && key === lastKey && now - lastSentAt < HEARTBEAT_MS) return false;
+    if (!force && now - lastSentAt < 140) return false;
+    lastSentAt = now; lastKey = key;
     emit(protocol.packet("state", local));
     return true;
   }
+  function tick(force = false) {
+    if (!channel || !protocol) return;
+    const now = Date.now();
+    if (!force && now - lastTickAt < 300) return;
+    lastTickAt = now;
+    publish();
+    // Background requestAnimationFrame is frequently paused by browsers.
+    // Respond to incoming "hello" in onmessage; setInterval is a backup
+    // heartbeat while either tab is obscured.
+    if (now - lastHelloAt > 2_700) {
+      emit(protocol.packet("hello"));
+      lastHelloAt = now;
+    }
+    notify(); // also expires silent/stale remote tabs
+  }
   function start() {
     if (channel) return true;
-    if (typeof BroadcastChannel === "undefined" || !globalThis.crypto?.getRandomValues) return false;
+    lastFailure = "";
+    if (typeof BroadcastChannel === "undefined" || !globalThis.crypto?.getRandomValues) {
+      lastFailure = "api-unavailable"; report(true); return false;
+    }
     try {
       protocol = createPresenceProtocol({ selfId: randomId(), canOccupy });
       channel = new BroadcastChannel(CHANNEL_NAME);
       channel.onmessage = ({ data }) => {
+        received++;
         const outcome = protocol.receive(data);
         if (outcome.kind === "hello") publish(true);
         else if (outcome.kind === "updated" || outcome.kind === "left") notify();
+        else ignored++;
+        report();
       };
-      lastRemoteKey = ""; lastSentAt = 0; lastKey = ""; lastHelloAt = Date.now();
+      channel.onmessageerror = () => {
+        ignored++; lastFailure = "message-unreadable"; report(true);
+      };
+      lastRemoteKey = ""; lastSentAt = 0; lastKey = "";
+      lastHelloAt = Date.now(); lastTickAt = 0;
       emit(protocol.packet("hello"));
       publish(true);
+      timer = setInterval(() => tick(true), HEARTBEAT_MS);
       notify();
+      report(true);
       return true;
     } catch {
       channel?.close(); channel = null; protocol = null;
+      if (timer !== null) clearInterval(timer);
+      timer = null;
+      lastFailure = "channel-init-failed"; report(true);
       return false;
     }
   }
   function stop() {
-    if (channel && protocol) emit(protocol.packet("bye"));
+    if (channel && protocol) {
+      try { emit(protocol.packet("bye")); } catch { /* page unloading */ }
+    }
+    if (timer !== null) clearInterval(timer);
+    timer = null;
     channel?.close(); channel = null; protocol = null;
     lastKey = ""; lastSentAt = 0; lastRemoteKey = ""; lastHelloAt = 0;
+    lastFailure = ""; lastTickAt = 0;
     onRemoteChange(null);
+    report(true);
   }
-  function tick() {
-    if (!channel) return;
-    publish();
-    // Background tabs can pause requestAnimationFrame. A foreground tab
-    // periodically asks peers for state via a handshake, which is answered
-    // by the BroadcastChannel message event (not dependent on animation).
-    if (Date.now() - lastHelloAt >= 2_500) {
-      emit(protocol.packet("hello"));
-      lastHelloAt = Date.now();
-    }
-    notify(); // expires truly absent peers
-  }
-  return { start, stop, tick, publish, remote, get active() { return Boolean(channel); } };
+  return { start, stop, tick, publish, remote, snapshot, get active() { return Boolean(channel); } };
 }
