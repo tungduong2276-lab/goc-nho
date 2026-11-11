@@ -10,7 +10,7 @@ test("staging bundle includes three-room preview but excludes production Firebas
     for (const p of ["index.html", "nha3d/multiroom-preview.html", "nha3d/multiroom-preview.js", "nha3d/xuong/lib.js", "nha3d/presence-lab.mjs", "nha3d/two-tab-lab-browser.mjs"]) {
       assert.ok(existsSync(resolve(out, p)), p);
     }
-    for (const p of ["firebase.json", ".firebaserc", "firestore.rules", "assets", "sw.js", "nha3d/app.js"]) {
+    for (const p of ["firebase.json", ".firebaserc", "firestore.rules", "assets", "sw.js", "nha3d/app.js", "nha3d/emulator-presence-client.mjs", "tests/firebase/fixtures/m1-nha3d-presence.rules"]) {
       assert.equal(existsSync(resolve(out, p)), false, p);
     }
     const countFiles = dir => readdirSync(dir, { withFileTypes: true }).reduce(
