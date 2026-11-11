@@ -113,3 +113,35 @@ An apparently complete packet returns `READY_FOR_INDEPENDENT_ADMIN_REVIEW` — *
 Google Cloud's managed Firestore export/import requires a billing-enabled project (Firebase Blaze), can incur document read/write and Cloud Storage charges, and **import overwrites matching document IDs**. The managed export is not necessarily an atomic snapshot of writes occurring during the operation, and export files do not include Firestore index definitions. See https://firebase.google.com/docs/firestore/manage-data/export-import . Never enable billing, start export/import, or accept a nonempty destination based merely on this review script.
 
 Test the offline reviewer with `npm run test:staging` or the full `npm test`; negative tests cover mismatched project/operation, completed state, invalid URI/time, stale or modified synthetic hash, injection fields and fabricated claims of cloud verification. No new secrets are required.
+
+
+## Staging administrator verification record — next required acceptance gate
+
+**Current status: BLOCKED — no independent real cloud evidence has been provided.** This form is deliberately separate from local Emulator passes; `goc-nho-staging-2026` is an existing **Hosting** staging project, not proof that a second empty *Firestore restore* project exists. Do not treat the user's real-production project or this existing Hosting preview as an import target.
+
+| Gate | What an authorized reviewer must inspect | Current verified state |
+|---|---|---|
+| Production exclusion | Production ID compared against source, destination and active CLI/Console selector; neither staging ID equals production | Not independently verified |
+| Source inventory | Nonproduction Firestore `(default)` database; only synthetic Alice/Bob/Eve fixture IDs and nested docs | Not independently verified |
+| Empty destination | Separate staging target project, correct database location, verified empty **before** import | Target project not confirmed |
+| Export completion | Google Cloud Firestore Operations record with exact source project/database ID, `done`, output `gs://` URI, completion time | Not supplied |
+| Import completion | Separate destination Operations record with exact verified export URI, `done`, completion time after export | Not supplied |
+| Integrity | Independent reads of restored synthetic document paths, nested data and timestamp precision; canonical manifest hashes match | Not supplied |
+| Rules | Check Firebase Console's **deployed** Firestore Rules in the selected staging project; compare to reviewed commit/rules candidate and overlapping-wildcard exclusions | Only Emulator fixture tested |
+| Auth / App Check | Read currently enabled Auth providers and authorized domains; read App Check provider/metrics/enforcement for Firestore, and plan an explicit staging-only rollback | Not independently verified |
+| IAM / storage / billing | Read roles and principals for project, service accounts and export bucket; confirm bucket access/location/retention, billing and budget controls | Not independently verified |
+| Indexes / rollback | Read deployed index definitions (managed export **does not include indexes**); document exact restore/rules rollback and approver | Not independently verified |
+
+Recommended **read-only** Console review locations (do not paste secrets, tokens or personal records):
+- Existing staging project overview: https://console.firebase.google.com/project/goc-nho-staging-2026/overview
+- Staging Firestore data and deployed Rules: Firebase Console → Build → Firestore Database → **Rules**, verify project selector every time
+- Authentication: Firebase Console → Build → Authentication → Sign-in method, and Settings → Authorized domains
+- App Check: Firebase Console → App Check → registered apps, Firestore enforcement and metrics
+- Cloud project operation log and IAM: Google Cloud Console → Firestore → Import/Export and IAM & Admin
+- Cloud Storage bucket IAM, location, retention and Billing: the dedicated staging-only destination selected in the approved preflight
+
+For managed Firestore export/import, consult the **official** reference: https://firebase.google.com/docs/firestore/manage-data/export-import . Its import **overwrites matching document IDs**, it does not export index definitions, and it incurs document read/write and Cloud Storage costs. Managed export may reflect writes occurring during the export and is not guaranteed to be an atomic point-in-time snapshot. The target must therefore be a fresh, independently verified empty staging database before any write operation.
+
+**No automation may set these items to PASS from user-declared JSON alone.** The offline reviewer `scripts/m0-staging-evidence-review.mjs` can return only `READY_FOR_INDEPENDENT_ADMIN_REVIEW`, never `m0Approved: true`. Keep operation evidence sanitized (project ID, operation ID/status, URI bucket prefix, date and independent verifier confirmation only), omit account emails and document contents. A reviewer with correct access must verify operation authenticity in the Cloud Console; source code and GitHub CI cannot prove deployed settings. Until these gates pass, PR #97 remains Draft; do not deploy the candidate Rules or enable real phone presence.
+
+**Important:** Firebase App Check and Firestore Rules serve different roles. A valid Auth user does not automatically have access to another house, and server SDK/admin IAM privileges can bypass client Rules. Confirm Auth+Rules+App Check *and* server/IAM restrictions separately before authorizing device access.
