@@ -9,7 +9,7 @@ import { makeHouse, HOUSE_ROOMS, transitionAtDoor } from "./multiroom.mjs";
 import { cellCenter, blockGrid, cellFree, findPath, worldPath, worldToCell } from "./engine.mjs";
 import { routeToFurniture } from "./multiroom-activities.mjs";
 import { companionSpawn, routeCompanionToPlayer } from "./partner-preview.mjs";
-import { createTwoTabPresenceLab } from "./two-tab-lab-browser.mjs";
+import { createTwoTabPresenceLab } from "./two-tab-lab-browser.mjs?rev=20261111b";
 
 // Furnishing is preview-only: no schema migration or writes to existing saved homes.
 
@@ -126,7 +126,26 @@ function roomInfo() { return house.rooms[roomId]; }
 // Explicit opt-in. BroadcastChannel connects browser tabs with the SAME origin/profile,
 // never separate phones. The normal staging preview remains unchanged.
 const twoTabRequested = new URLSearchParams(location.search).get("lab") === "two-tabs";
-let twoTabLab = null, remoteTabState = null;
+let twoTabLab = null, remoteTabState = null, labControlButton = null;
+const labPanelState = document.querySelector("#lab-state");
+const labPanelDetail = document.querySelector("#lab-detail");
+function updateLabPanel(info) {
+  if (!twoTabRequested || !info || !labPanelState) return;
+  const roomName = info.remoteRoom && HOUSE_ROOMS[info.remoteRoom]?.name;
+  const messages = {
+    off: "⚪ Chưa bật kết nối. Nhấn Mở tab thứ hai để tự bật cả hai tab.",
+    waiting: "🟠 Kênh đã bật, đang tìm tab thứ hai. Chưa có tín hiệu phản hồi.",
+    connected: "🟢 Đã kết nối thành công! Hai nhân vật đang cùng phòng.",
+    "other-room": "🟡 Đã kết nối, nhưng tab còn lại đang ở " + (roomName || "phòng khác") + ".",
+    unsupported: "🔴 Không thể mở kênh hai tab. Hãy dùng Chrome thường, cùng một hồ sơ."
+  };
+  labPanelState.textContent = messages[info.phase] || messages.waiting;
+  labPanelDetail.textContent = "Tín hiệu nhận: " + info.received +
+    " · Đã gửi: " + info.sent +
+    " · Bỏ qua: " + info.ignored +
+    ". Hai tab cần cùng tên miền và cùng hồ sơ Chrome; không dùng ẩn danh/nhúng trang.";
+  if (labControlButton) labControlButton.textContent = info.active ? "⛔ Ngắt kết nối tab" : "🔗 Kết nối hai tab";
+}
 function canOccupyLabCell(id, cell) {
   if (typeof id !== "string" || !Object.hasOwn(house.rooms, id) ||
       !cell || !Number.isInteger(cell.i) || !Number.isInteger(cell.j)) return false;
@@ -153,11 +172,18 @@ if (twoTabRequested) {
   twoTabLab = createTwoTabPresenceLab({
     getLocalState: () => ({ room: roomId, cell: { ...pos } }),
     canOccupy: canOccupyLabCell,
-    onRemoteChange: state => { remoteTabState = state; syncRemoteAvatar(); }
+    onRemoteChange: state => { remoteTabState = state; syncRemoteAvatar(); },
+    onStatusChange: updateLabPanel
   });
   addEventListener("pagehide", () => twoTabLab.stop());
+  document.getElementById("lab-open")?.addEventListener("click", () => {
+    // This user click starts tab A and opens same-origin tab B with ?join=1.
+    if (!twoTabLab.active && !twoTabLab.start()) {
+      status.textContent = "Không thể bật kênh giữa hai tab trên trình duyệt này.";
+    }
+  });
   addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") twoTabLab.publish(true);
+    if (document.visibilityState === "visible") { twoTabLab.publish(true); twoTabLab.tick(true); }
   });
 }
 function renderRoom() {
@@ -249,6 +275,7 @@ function renderRoom() {
   activitiesUI.append(activityButton);
   if (twoTabRequested) {
     const tabButton = document.createElement("button");
+    labControlButton = tabButton;
     tabButton.textContent = twoTabLab.active ? "⛔ Ngắt kết nối tab" : "🔗 Kết nối hai tab";
     tabButton.addEventListener("click", () => {
       if (twoTabLab.active) {
@@ -456,10 +483,19 @@ window.__NHA3D_PREVIEW_STATE__ = () => ({
   effects: activityVisuals.children.length,
   acting: performance.now() < activityPoseUntil,
   counts: { ...activityCounts },
-  partner: { mode: twoTabRequested ? "two-tab-lab" : "local-demo", visible: partner.visible,
+  partner: { mode: twoTabRequested ? "two-tab-lab" : "local-demo",
+    diagnostics: twoTabRequested ? twoTabLab?.snapshot() : null, visible: partner.visible,
     cell: partnerCell && { ...partnerCell }, walking: partnerWalking.length,
     gesture: performance.now() < partnerGestureUntil,
     labActive: Boolean(twoTabLab?.active),
     remoteRoom: remoteTabState?.room ?? null }
 });
-renderRoom(); requestAnimationFrame(frame);
+renderRoom();
+if (twoTabRequested) {
+  updateLabPanel(twoTabLab.snapshot());
+  if (new URLSearchParams(location.search).get("join") === "1") {
+    if (!twoTabLab.start()) status.textContent = "Không thể tự kết nối tab mới.";
+    else status.textContent = "Đã bật tab mới. Đang tìm tab đầu tiên...";
+  }
+}
+requestAnimationFrame(frame);
