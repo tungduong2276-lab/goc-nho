@@ -43,7 +43,12 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: npm install
-      - run: npx playwright install --with-deps chromium
+      # GitHub ubuntu-24.04 runners already include Chromium's core system libs.
+      # Avoid apt-get font downloads in --with-deps: the Ubuntu archive mirror
+      # had a DNS outage on 2026-11-11, failing CI before any tests executed.
+      # Browser tests still run; missing runtime libs will fail the test job.
+      - name: Install Playwright Chromium (no apt mirror dependency)
+        run: npx playwright install chromium
       - name: Render and validate updated 3D house geometry
         if: github.event.pull_request.head.ref == 'feature/house-room-continuity'
         run: |
