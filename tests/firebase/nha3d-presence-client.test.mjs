@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { initializeTestEnvironment, assertFails } from "@firebase/rules-unit-testing";
 import {
   doc, getDoc, setDoc, onSnapshot, serverTimestamp, Timestamp,
-  disableNetwork, enableNetwork, terminate,
+  disableNetwork, enableNetwork,
 } from "firebase/firestore";
 import {
   createEmulatorPresenceClient, WRITE_INTERVAL_MS,
@@ -81,7 +81,11 @@ before(async () => {
 afterEach(async () => {
   const clients = [...liveClientDatabases];
   liveClientDatabases.clear();
-  await Promise.all(clients.map(fs => terminate(fs)));
+  // rules-unit-testing creates the Firestore *compat* facade here.
+  // Its instance method terminates the underlying connection; the modular
+  // terminate(fs) function expects a different Firestore object and throws
+  // TypeError: firestore._delete is not a function.
+  await Promise.all(clients.map(fs => fs.terminate()));
 });
 after(async () => { await env?.cleanup(); });
 beforeEach(async () => {
