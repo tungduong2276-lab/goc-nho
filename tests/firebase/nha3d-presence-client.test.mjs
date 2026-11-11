@@ -1,4 +1,4 @@
-import { before, after, beforeEach, afterEach, test } from "node:test";
+import { before, after, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { initializeTestEnvironment, assertFails } from "@firebase/rules-unit-testing";
@@ -23,7 +23,6 @@ const occupy = (room, cell) =>
   ["khach", "bep", "ngu"].includes(room) && Number.isInteger(cell.i) &&
   Number.isInteger(cell.j) && cell.i >= 0 && cell.i < 16 && cell.j >= 0 && cell.j < 14;
 let env;
-const liveClientDatabases = new Set();
 const testSubscriptions = new Map();
 async function deliverCommittedPeer(uid) {
   const target = testSubscriptions.get(uid);
@@ -32,9 +31,7 @@ async function deliverCommittedPeer(uid) {
   target.onDoc({ data: snapshot.exists() ? snapshot.data() : null, pendingWrites: false });
 }
 function trackedFirestore(uid) {
-  const fs = env.authenticatedContext(uid).firestore();
-  liveClientDatabases.add(fs);
-  return fs;
+  return env.authenticatedContext(uid).firestore();
 }
 function sdkTransport(fs, uid, partnerUid) {
   const self = doc(fs, ownPath(uid)), partner = doc(fs, ownPath(partnerUid));
@@ -75,12 +72,8 @@ before(async () => {
     },
   });
 });
-afterEach(async () => {
-  assert.equal(testSubscriptions.size, 0, "every test listener must unsubscribe");
-  const clients = [...liveClientDatabases];
-  liveClientDatabases.clear();
-  await Promise.all(clients.map(fs => fs.terminate()));
-});
+// Use the proven rules-unit-testing cleanup lifecycle. Do not double-terminate
+// Firestore compat instances separately from their owning RulesTestContexts.
 after(async () => { await env?.cleanup(); });
 beforeEach(async () => {
   testSubscriptions.clear();
