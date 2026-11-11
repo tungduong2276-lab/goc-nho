@@ -34,7 +34,7 @@ export function createTwoTabPresenceLab({
   }
   function report(force = false) {
     const state = snapshot();
-    const key = state.phase + ":" + state.remoteRoom + ":" + state.lastFailure;
+    const key = [state.phase, state.remoteRoom, state.lastFailure, state.sent, state.received, state.ignored].join(":");
     if (force || key !== lastStatusKey) {
       lastStatusKey = key;
       onStatusChange(state);
