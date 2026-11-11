@@ -29,15 +29,23 @@ async function start(browser, label) {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 }, serviceWorkers: "block",
   });
-  const page = await context.newPage();
-  const unexpected = [];
-  page.on("pageerror", err => unexpected.push(err.message));
-  page.on("request", req => {
-    const u = new URL(req.url());
-    if (!["127.0.0.1", "localhost"].includes(u.hostname) ||
-        ![4173, Number(host.split(":")[1]), Number(authHost.split(":")[1])].includes(Number(u.port)))
-      unexpected.push("Unexpected external request: " + u.hostname);
+  const unexpected = [], blockedExternal = [];
+  // Simulating browser network loss can trigger the Firebase SDK's own
+  // connectivity probe against www.google.com. Block *every* non-loopback
+  // request before transmission; only that known probe is tolerated.
+  // A request to a real Firebase endpoint or unknown host still fails CI.
+  await context.route("**/*", async route => {
+    const u = new URL(route.request().url());
+    const local = ["127.0.0.1", "localhost"].includes(u.hostname) &&
+      [4173, Number(host.split(":")[1]), Number(authHost.split(":")[1])].includes(Number(u.port));
+    if (local) return route.continue();
+    blockedExternal.push(u.hostname);
+    if (u.hostname !== "www.google.com")
+      unexpected.push("Unexpected blocked external request: " + u.hostname);
+    return route.abort("blockedbyclient");
   });
+  const page = await context.newPage();
+  page.on("pageerror", err => unexpected.push(err.message));
   await page.goto("/tests/browser/fixtures/nha3d-firestore-emulator.html");
   for (const module of ["app", "auth", "firestore"]) {
     await page.addScriptTag({ path: bundled(module) });
@@ -59,7 +67,7 @@ async function start(browser, label) {
     };
     return credential.user.uid;
   }, { label, host, authHost, projectId: PROJECT });
-  return { context, page, uid, unexpected };
+  return { context, page, uid, unexpected, blockedExternal };
 }
 async function subscribe(page, partnerUid) {
   await page.evaluate(({ cid, partnerUid }) => {
@@ -191,6 +199,7 @@ test("two isolated Chromium profiles receive genuine authenticated onSnapshot up
 
     for (const c of clients) {
       expect(c.unexpected).toEqual([]);
+      expect(c.blockedExternal.every(hostname => hostname === "www.google.com")).toBe(true);
       if (c !== eve) expect(await c.page.evaluate(() => window.__nha3dLab.errors)).toEqual([]);
     }
   } finally {
