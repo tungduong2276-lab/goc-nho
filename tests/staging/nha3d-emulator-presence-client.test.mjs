@@ -179,3 +179,20 @@ test("disconnect before publish microtask prevents sending any location", async 
   assert.equal(f.writes.length, accepted, "no transport writes after immediate disconnect");
   assert.equal(client.sequence, 1);
 });
+
+test("subscription callback stops delivering remote updates after disconnect", async () => {
+  clock.value = 100_000;
+  const f = setup(), events = [];
+  const a = f.client({ onPeer: peer => events.push(peer) });
+  await a.join("khach", { i: 8, j: 11 });
+  f.receive({ data: peerData({ seq: 1 }) });
+  assert.equal(a.getPeer().uid, BOB);
+  const before = events.length;
+  a.disconnect();
+  assert.equal(f.closed, true);
+  assert.equal(events.length, before + 1, "disconnect hides the remote avatar");
+  assert.equal(events.at(-1), null);
+  f.receive({ data: peerData({ seq: 2, room: "bep", i: 0, j: 10 }) });
+  assert.equal(events.length, before + 1, "stale callback cannot reappear");
+  assert.equal(a.getPeer(), null);
+});
