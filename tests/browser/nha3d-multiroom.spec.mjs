@@ -40,6 +40,31 @@ for (const width of [360,390,430]) test("preview controls stay inside mobile vie
   expect(await page.evaluate(() => document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
 });
 
+for (const width of [360,390,430]) test("furnished room stays between mobile controls at "+width+"px", async ({ page }) => {
+  const { errors, firebase } = await openPreview(page,width);
+  const assertView = async () => {
+    const view = await page.evaluate(() => window.__NHA3D_PREVIEW_STATE__().view);
+    expect(view.safe.bottom).toBeGreaterThan(view.safe.top+100);
+    expect(view.nearWallHeight).toBeLessThan(1);
+    for (const p of view.bounds) {
+      expect(p.x).toBeGreaterThanOrEqual(view.safe.left);
+      expect(p.x).toBeLessThanOrEqual(view.safe.right);
+      expect(p.y).toBeGreaterThanOrEqual(view.safe.top);
+      expect(p.y).toBeLessThanOrEqual(view.safe.bottom);
+    }
+  };
+  await assertView();
+  for (const [label, room] of [['🚪 Phòng bếp','bep'],['🚪 Phòng khách','khach'],['🚪 Phòng ngủ','ngu']]) {
+    await page.getByRole('button',{name:label,exact:true}).click();
+    await expect.poll(() => page.evaluate(() => window.__NHA3D_PREVIEW_STATE__().room), {timeout:30_000}).toBe(room);
+    await assertView();
+  }
+  await page.setViewportSize({width:430,height:900});
+  await expect.poll(() => page.evaluate(() => window.__NHA3D_PREVIEW_STATE__().view.safe.right)).toBe(418);
+  await assertView();
+  expect(errors).toEqual([]); expect(firebase).toEqual([]);
+});
+
 test("room activities respond locally and change with the room", async ({ page }) => {
  const { errors, firebase } = await openPreview(page);
  await page.getByRole("button", { name: "☕ Uống trà" }).click();
