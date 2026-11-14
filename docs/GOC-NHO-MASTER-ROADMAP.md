@@ -1,5 +1,15 @@
 # GÓC NHỎ — MASTER ROADMAP & AI HANDOFF
 
+## Latest operational handoff — 2026-11-14
+
+- Main verified at `e84a5d5b075252a0ac7d9ac3c44942e781fd26c0` after PR #98 squash merge. PR #97 remains open Draft.
+- User elected to skip managed cloud export/import and not enable billing. Backup/restore remains unverified; this is not M0 completion.
+- Read-only live Console review found production still running Nov 2 Rules with the recursive parent-membership bypass, despite main containing a narrower fix. Production Auth uses Email/Password; App Check shows Get started. See [deployed security review](M0-DEPLOYED-SECURITY-REVIEW-20261114.md) for bounded IAM and staging observations.
+- No production data/configuration, billing or IAM changes occurred. Earlier local validation: 24/24 offline staging tests and static checks passed.
+- A membership-compatible production candidate (identical to current main Rules) and differential Emulator regression are prepared on `fix/m0-production-membership-gate`; see [release scope and rollback review](M0-PRODUCTION-MEMBERSHIP-HOTFIX.md). Explicit leave/remove-partner conditions preserve app operations that a one-line-only fix would reject. This is not a production Rules publication.
+- Local final Emulator suite passed **57/57** tests (33 top-level tests plus nested cases); static checks and 24/24 staging tests passed. Full `npm test` stopped in browser tests: local Windows navigation timeouts; retry with two workers still had 10/15 failures. No assertions were removed or timeouts raised. Exact-head GitHub CI remains required before merge/release.
+- Next safe action: verify the candidate's full test results and exact-head CI, then obtain explicit production-publication authorization after compatibility review. Keep PR #97 Draft and M1 persistence disabled.
+
 > **Status:** Approved planning baseline, **not implemented**. Updated: 2026-11-03.
 > **Repo:** `tungduong2276-lab/goc-nho`. **Language:** Vietnamese.
 > **Audience:** future ChatGPT/Claude coding sessions, developer, reviewer.
