@@ -1,4 +1,6 @@
-# Production membership hotfix — candidate, not deployed
+# Production membership hotfix — reviewed release
+
+**Deployment update:** PR #99 merged at `46d16e0b6a64edb6ad8cf2832bf9b17418ca1d03`; both exact-head CI checks passed. With explicit user approval, root `firestore.rules` was published to production `goc-nho` on 2026-11-14 at 09:37 Asia/Saigon. Reloaded Console confirmed the active Rules match the reviewed policy. No document data was mutated, and no attack probes were run against real couple records. The following describes the reviewed change and release procedure; App Check, device acceptance and backup/restore remain separate gates.
 
 ## Problem and exact scope
 
