@@ -215,6 +215,8 @@ function renderRoom() {
   const H = size.wallH || 2.7, opening = 1.05;
   // Wall segments leave real openings at door positions, including the two visible walls.
   for (const side of ["L", "R", "T", "B"]) {
+    // Camera looks from +X/+Z: cut away the near walls without changing collision/doors.
+    const height = side === "R" || side === "B" ? .45 : H;
     const length = (side === "L" || side === "R") ? D : W;
     const cuts = house.doors.flatMap(door => [door.a, door.b]).filter(ep => ep.room === roomId)
       .filter(ep => side === "L" ? ep.cell.i === 0 : side === "R" ? ep.cell.i === size.w-1 : side === "T" ? ep.cell.j === 0 : ep.cell.j === size.d-1)
@@ -224,8 +226,8 @@ function renderRoom() {
     const segment = (from,to) => {
       if (to-from < .01) return;
       const center = (from+to)/2-length/2;
-      if (side === "L" || side === "R") block(side === "L" ? -W/2 : W/2,H/2,center,.14,H,to-from,wall);
-      else block(center,H/2,side === "T" ? -D/2 : D/2,to-from,H,.14,wall);
+      if (side === "L" || side === "R") block(side === "L" ? -W/2 : W/2,height/2,center,.14,height,to-from,wall);
+      else block(center,height/2,side === "T" ? -D/2 : D/2,to-from,height,.14,wall);
     };
     for (const [a,b] of intervals) { segment(at,a); at=Math.max(at,b); }
     segment(at,length);
@@ -346,6 +348,7 @@ function renderRoom() {
     b.addEventListener("click", () => goDoor(door.id, endpoint, dest)); doorsUI.append(b);
   }
   status.textContent = "Đang ở " + HOUSE_ROOMS[roomId].name;
+  resize();
 }
 function goDoor(id, endpoint, dest) {
   clearPartnerGesture();
@@ -413,12 +416,39 @@ canvas.addEventListener("pointerup", e => {
   if (!path) { status.textContent = "Không tìm thấy đường đi."; return; }
   walking = path.slice(1); status.textContent = "Đang đi trong " + HOUSE_ROOMS[roomId].name;
 });
+let cameraView = null;
 function resize() {
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w, h, false);
-  const aspect = w/h, span = 6.6;
-  camera.left = -span * aspect; camera.right = span * aspect; camera.top = span; camera.bottom = -span;
+  if (!floorGroup.children.length) return;
+  // Keep the entire furnished room in the free space between header and controls.
+  // Tracking the avatar instead would crop most of a portrait room at a doorway.
+  camera.position.set(10, 12, 12);
+  camera.lookAt(0, .7, 0);
+  camera.updateMatrixWorld(true);
+  const bounds = new THREE.Box3().setFromObject(floorGroup);
+  const corners = [];
+  for (const x of [bounds.min.x, bounds.max.x])
+    for (const y of [bounds.min.y, bounds.max.y])
+      for (const z of [bounds.min.z, bounds.max.z]) corners.push(new THREE.Vector3(x,y,z));
+  const projected = corners.map(p => p.clone().applyMatrix4(camera.matrixWorldInverse));
+  const xs = projected.map(p => p.x), ys = projected.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const topPanels = [document.querySelector('header'), document.querySelector('#lab-help')]
+    .filter(el => el && !el.hidden).map(el => el.getBoundingClientRect().bottom);
+  const bottomPanels = [status.closest('.status'), doorsUI, activitiesUI]
+    .filter(el => el.children.length || el === status.closest('.status'))
+    .map(el => el.getBoundingClientRect().top);
+  const safe = { left: 12, right: w-12, top: Math.max(12,...topPanels)+12, bottom: Math.min(h-12,...bottomPanels)-12 };
+  // Tiny/landscape screens still receive a finite projection; portrait is the review baseline.
+  const availableH = Math.max(80, safe.bottom-safe.top);
+  const units = Math.max((maxX-minX)/Math.max(80,w-24), (maxY-minY)/availableH)*1.08;
+  const cx = (minX+maxX)/2;
+  const cy = (minY+maxY)/2 + ((safe.top+safe.bottom)/2-h/2)*units;
+  camera.left = cx-w*units/2; camera.right = cx+w*units/2;
+  camera.top = cy+h*units/2; camera.bottom = cy-h*units/2;
   camera.updateProjectionMatrix();
+  cameraView = { safe, bounds: corners.map(p => { const v=p.clone().project(camera); return {x:(v.x+1)*w/2,y:(1-v.y)*h/2}; }), nearWallHeight: .45 };
 }
 addEventListener("resize", resize); resize();
 function frame(now) {
@@ -482,8 +512,6 @@ function frame(now) {
   }
   // Publish only a coarse, validated tile; no Firebase/network, no per-frame writes.
   if (twoTabLab?.active) twoTabLab.tick();
-  const target = avatar.position.clone().add(new THREE.Vector3(10, 12, 12));
-  camera.position.lerp(target, .1); camera.lookAt(avatar.position.x, .4, avatar.position.z);
   renderer.render(scene, camera); requestAnimationFrame(frame);
 }
 // Read-only diagnostic snapshot for end-to-end checks; never exposes user data.
@@ -496,6 +524,7 @@ window.__NHA3D_PREVIEW_STATE__ = () => ({
   effects: activityVisuals.children.length,
   acting: performance.now() < activityPoseUntil,
   counts: { ...activityCounts },
+  view: cameraView && structuredClone(cameraView),
   partner: { mode: twoTabRequested ? "two-tab-lab" : "local-demo",
     diagnostics: twoTabRequested ? twoTabLab?.snapshot() : null, visible: partner.visible,
     cell: partnerCell && { ...partnerCell }, walking: partnerWalking.length,
