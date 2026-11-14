@@ -2,6 +2,13 @@
 
 ## Latest operational handoff — 2026-11-14
 
+- **Deployment checkpoint, 09:37 Asia/Saigon:** PR #99 squash merged as `46d16e0b6a64edb6ad8cf2832bf9b17418ca1d03`. Both exact-head CI runs at `e389ca79101a498f9a045c28ff3f041e340c83cc` passed: [pull_request](https://github.com/tungduong2276-lab/goc-nho/actions/runs/43546347132), [push](https://github.com/tungduong2276-lab/goc-nho/actions/runs/43546343399). After explicit user authorization, root `firestore.rules` from that main revision was published to production project `goc-nho`, database `(default)`. The prior policy matched the captured baseline before publication; after reloading Console, the active starred release at 09:37 matched the reviewed Rules (ignoring whitespace). The parent-membership bypass fix is now deployed. This is configuration verification, not a live attack or two-device acceptance test.
+- No production document writes/deletes, billing, IAM, Auth or App Check changes were made. Cloud export/import remains skipped at user request, not passed. App Check remains unconfigured at last inspection.
+- PR #97 stays Draft at `8695d1cf46738a33528d971d94cf5b35d2eccfd3`; exact-head CI [43061586928](https://github.com/tungduong2276-lab/goc-nho/actions/runs/43061586928) passed. This does not establish visual/device acceptance, production App Check, or M0 completion. M1 shared persistence remains disabled.
+- **Next safe action:** perform independent visual/mobile review of PR #97 artifacts and staging-only synthetic authorization/device checks; prepare App Check integration in monitoring mode before considering enforcement. Do not re-publish Rules simply because earlier notes below say they were not deployed. No immediate rollback to the prior vulnerable policy is authorized.
+
+### Earlier pre-deployment observations (historical)
+
 - Main verified at `e84a5d5b075252a0ac7d9ac3c44942e781fd26c0` after PR #98 squash merge. PR #97 remains open Draft.
 - User elected to skip managed cloud export/import and not enable billing. Backup/restore remains unverified; this is not M0 completion.
 - Read-only live Console review found production still running Nov 2 Rules with the recursive parent-membership bypass, despite main containing a narrower fix. Production Auth uses Email/Password; App Check shows Get started. See [deployed security review](M0-DEPLOYED-SECURITY-REVIEW-20261114.md) for bounded IAM and staging observations.

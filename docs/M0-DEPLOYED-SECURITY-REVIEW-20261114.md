@@ -1,5 +1,9 @@
 # M0 deployed configuration review — 2026-11-14
 
+**Later checkpoint:** after PR #99 merged as `46d16e0b6a64edb6ad8cf2832bf9b17418ca1d03` and explicit user authorization, the reviewed root Rules were published to `goc-nho` at 09:37 Asia/Saigon on 2026-11-14. Reloaded Console showed the new active release and matching reviewed policy. The recursive parent-membership bypass described below is therefore a historical finding, now corrected in deployed Rules. No production documents, billing, IAM, Auth or App Check were changed. Remaining gaps below are not automatically resolved by this Rules publication.
+
+## Historical inspection before publication
+
 Read-only Console inspection; no Rules publication, production document writes, Auth changes, IAM changes, billing changes or export/import performed. Account identifiers and private document contents are intentionally omitted.
 
 ## Production project `goc-nho`
