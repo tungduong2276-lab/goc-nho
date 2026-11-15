@@ -1,0 +1,727 @@
+{
+  "sha": "490b625e4a896e3e2aa134d798f8286c79cc4f6e",
+  "generatedAt": "2026-11-15T16:37:08.908Z",
+  "complete": true,
+  "shots": [
+    {
+      "file": "360x844-khach.png",
+      "note": "Phòng khách khi vừa mở",
+      "room": "khach",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "statusText": "Đang ở Phòng khách",
+      "safe": {
+        "left": 12,
+        "right": 348,
+        "top": 196,
+        "bottom": 560
+      },
+      "roomRect": {
+        "left": 24,
+        "top": 254,
+        "right": 336,
+        "bottom": 502
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 348,
+          "bottom": 184
+        },
+        "status": {
+          "left": 12,
+          "top": 749,
+          "right": 187,
+          "bottom": 832
+        },
+        "doors": {
+          "left": 232,
+          "top": 736,
+          "right": 348,
+          "bottom": 832
+        },
+        "activities": {
+          "left": 175,
+          "top": 572,
+          "right": 348,
+          "bottom": 716
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    },
+    {
+      "file": "360x844-bep.png",
+      "note": "Phòng bếp sau khi đi qua cửa",
+      "room": "bep",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "statusText": "Đang ở Phòng bếp",
+      "safe": {
+        "left": 12,
+        "right": 348,
+        "top": 196,
+        "bottom": 560
+      },
+      "roomRect": {
+        "left": 24,
+        "top": 254,
+        "right": 336,
+        "bottom": 502
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 348,
+          "bottom": 184
+        },
+        "status": {
+          "left": 12,
+          "top": 764,
+          "right": 187,
+          "bottom": 832
+        },
+        "doors": {
+          "left": 218,
+          "top": 788,
+          "right": 348,
+          "bottom": 832
+        },
+        "activities": {
+          "left": 175,
+          "top": 572,
+          "right": 348,
+          "bottom": 716
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    },
+    {
+      "file": "360x844-ngu.png",
+      "note": "Phòng ngủ sau khi đi qua cửa",
+      "room": "ngu",
+      "viewport": {
+        "width": 360,
+        "height": 844
+      },
+      "statusText": "Đang ở Phòng ngủ",
+      "safe": {
+        "left": 12,
+        "right": 348,
+        "top": 196,
+        "bottom": 560
+      },
+      "roomRect": {
+        "left": 24,
+        "top": 254,
+        "right": 336,
+        "bottom": 502
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 348,
+          "bottom": 184
+        },
+        "status": {
+          "left": 12,
+          "top": 764,
+          "right": 187,
+          "bottom": 832
+        },
+        "doors": {
+          "left": 218,
+          "top": 788,
+          "right": 348,
+          "bottom": 832
+        },
+        "activities": {
+          "left": 175,
+          "top": 572,
+          "right": 348,
+          "bottom": 716
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    },
+    {
+      "file": "390x844-khach.png",
+      "note": "Phòng khách khi vừa mở",
+      "room": "khach",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "statusText": "Đang ở Phòng khách",
+      "safe": {
+        "left": 12,
+        "right": 378,
+        "top": 157,
+        "bottom": 560
+      },
+      "roomRect": {
+        "left": 26,
+        "top": 224,
+        "right": 364,
+        "bottom": 493
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 378,
+          "bottom": 145
+        },
+        "status": {
+          "left": 12,
+          "top": 764,
+          "right": 202,
+          "bottom": 832
+        },
+        "doors": {
+          "left": 262,
+          "top": 736,
+          "right": 378,
+          "bottom": 832
+        },
+        "activities": {
+          "left": 191,
+          "top": 572,
+          "right": 378,
+          "bottom": 716
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    },
+    {
+      "file": "390x844-bep.png",
+      "note": "Phòng bếp sau khi đi qua cửa",
+      "room": "bep",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "statusText": "Đang ở Phòng bếp",
+      "safe": {
+        "left": 12,
+        "right": 378,
+        "top": 157,
+        "bottom": 560
+      },
+      "roomRect": {
+        "left": 26,
+        "top": 223,
+        "right": 364,
+        "bottom": 494
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 378,
+          "bottom": 145
+        },
+        "status": {
+          "left": 12,
+          "top": 764,
+          "right": 202,
+          "bottom": 832
+        },
+        "doors": {
+          "left": 248,
+          "top": 788,
+          "right": 378,
+          "bottom": 832
+        },
+        "activities": {
+          "left": 191,
+          "top": 572,
+          "right": 378,
+          "bottom": 716
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    },
+    {
+      "file": "390x844-ngu.png",
+      "note": "Phòng ngủ sau khi đi qua cửa",
+      "room": "ngu",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "statusText": "Đang ở Phòng ngủ",
+      "safe": {
+        "left": 12,
+        "right": 378,
+        "top": 157,
+        "bottom": 560
+      },
+      "roomRect": {
+        "left": 26,
+        "top": 224,
+        "right": 364,
+        "bottom": 493
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 378,
+          "bottom": 145
+        },
+        "status": {
+          "left": 12,
+          "top": 764,
+          "right": 202,
+          "bottom": 832
+        },
+        "doors": {
+          "left": 248,
+          "top": 788,
+          "right": 378,
+          "bottom": 832
+        },
+        "activities": {
+          "left": 191,
+          "top": 572,
+          "right": 378,
+          "bottom": 716
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    },
+    {
+      "file": "430x844-khach.png",
+      "note": "Phòng khách khi vừa mở",
+      "room": "khach",
+      "viewport": {
+        "width": 430,
+        "height": 844
+      },
+      "statusText": "Đang ở Phòng khách",
+      "safe": {
+        "left": 12,
+        "right": 418,
+        "top": 214,
+        "bottom": 560
+      },
+      "roomRect": {
+        "left": 27,
+        "top": 238,
+        "right": 403,
+        "bottom": 536
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 418,
+          "bottom": 202
+        },
+        "status": {
+          "left": 12,
+          "top": 764,
+          "right": 256,
+          "bottom": 832
+        },
+        "doors": {
+          "left": 279,
+          "top": 736,
+          "right": 418,
+          "bottom": 832
+        },
+        "activities": {
+          "left": 212,
+          "top": 572,
+          "right": 418,
+          "bottom": 716
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    },
+    {
+      "file": "430x844-bep.png",
+      "note": "Phòng bếp sau khi đi qua cửa",
+      "room": "bep",
+      "viewport": {
+        "width": 430,
+        "height": 844
+      },
+      "statusText": "Đang ở Phòng bếp",
+      "safe": {
+        "left": 12,
+        "right": 418,
+        "top": 214,
+        "bottom": 560
+      },
+      "roomRect": {
+        "left": 27,
+        "top": 237,
+        "right": 403,
+        "bottom": 537
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 418,
+          "bottom": 202
+        },
+        "status": {
+          "left": 12,
+          "top": 764,
+          "right": 256,
+          "bottom": 832
+        },
+        "doors": {
+          "left": 264,
+          "top": 775,
+          "right": 418,
+          "bottom": 832
+        },
+        "activities": {
+          "left": 212,
+          "top": 572,
+          "right": 418,
+          "bottom": 716
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    },
+    {
+      "file": "430x844-ngu.png",
+      "note": "Phòng ngủ sau khi đi qua cửa",
+      "room": "ngu",
+      "viewport": {
+        "width": 430,
+        "height": 844
+      },
+      "statusText": "Đang ở Phòng ngủ",
+      "safe": {
+        "left": 12,
+        "right": 418,
+        "top": 214,
+        "bottom": 560
+      },
+      "roomRect": {
+        "left": 27,
+        "top": 238,
+        "right": 403,
+        "bottom": 536
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 418,
+          "bottom": 202
+        },
+        "status": {
+          "left": 12,
+          "top": 764,
+          "right": 256,
+          "bottom": 832
+        },
+        "doors": {
+          "left": 264,
+          "top": 775,
+          "right": 418,
+          "bottom": 832
+        },
+        "activities": {
+          "left": 212,
+          "top": 572,
+          "right": 418,
+          "bottom": 716
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    },
+    {
+      "file": "390x844-khach-ban-mo-phong.png",
+      "note": "Sau khi gọi bạn mô phỏng: chữ trạng thái dài hơn, nút đổi tên",
+      "room": "khach",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "statusText": "Bạn mô phỏng đã tới! Đây chưa phải người thứ hai trên thiết bị khác.",
+      "safe": {
+        "left": 12,
+        "right": 378,
+        "top": 157,
+        "bottom": 560
+      },
+      "roomRect": {
+        "left": 26,
+        "top": 224,
+        "right": 364,
+        "bottom": 493
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 378,
+          "bottom": 145
+        },
+        "status": {
+          "left": 12,
+          "top": 719,
+          "right": 202,
+          "bottom": 832
+        },
+        "doors": {
+          "left": 262,
+          "top": 736,
+          "right": 378,
+          "bottom": 832
+        },
+        "activities": {
+          "left": 191,
+          "top": 572,
+          "right": 378,
+          "bottom": 716
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    },
+    {
+      "file": "844x390-khach-xoay-ngang.png",
+      "note": "Xoay ngang điện thoại",
+      "room": "khach",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "statusText": "Bạn mô phỏng đã tới! Đây chưa phải người thứ hai trên thiết bị khác.",
+      "safe": {
+        "left": 12,
+        "right": 415,
+        "top": 116,
+        "bottom": 296
+      },
+      "roomRect": {
+        "left": 109,
+        "top": 123,
+        "right": 318,
+        "bottom": 289
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 832,
+          "bottom": 104
+        },
+        "status": {
+          "left": 12,
+          "top": 308,
+          "right": 504,
+          "bottom": 378
+        },
+        "doors": {
+          "left": 693,
+          "top": 282,
+          "right": 832,
+          "bottom": 378
+        },
+        "activities": {
+          "left": 427,
+          "top": 168,
+          "right": 832,
+          "bottom": 262
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    },
+    {
+      "file": "390x844-khach-xoay-lai-doc.png",
+      "note": "Xoay lại màn hình dọc",
+      "room": "khach",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "statusText": "Bạn mô phỏng đã tới! Đây chưa phải người thứ hai trên thiết bị khác.",
+      "safe": {
+        "left": 12,
+        "right": 378,
+        "top": 157,
+        "bottom": 560
+      },
+      "roomRect": {
+        "left": 26,
+        "top": 224,
+        "right": 364,
+        "bottom": 493
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 378,
+          "bottom": 145
+        },
+        "status": {
+          "left": 12,
+          "top": 719,
+          "right": 202,
+          "bottom": 832
+        },
+        "doors": {
+          "left": 262,
+          "top": 736,
+          "right": 378,
+          "bottom": 832
+        },
+        "activities": {
+          "left": 191,
+          "top": 572,
+          "right": 378,
+          "bottom": 716
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    },
+    {
+      "file": "390x844-khach-lab-hai-tab.png",
+      "note": "Chế độ thí nghiệm hai tab: có thêm bảng trạng thái phía trên",
+      "room": "khach",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "statusText": "Đang ở Phòng khách",
+      "safe": {
+        "left": 12,
+        "right": 378,
+        "top": 314,
+        "bottom": 610
+      },
+      "roomRect": {
+        "left": 26,
+        "top": 327,
+        "right": 364,
+        "bottom": 597
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 378,
+          "bottom": 198
+        },
+        "labHelp": {
+          "left": 12,
+          "top": 118,
+          "right": 378,
+          "bottom": 302
+        },
+        "status": {
+          "left": 12,
+          "top": 764,
+          "right": 202,
+          "bottom": 832
+        },
+        "doors": {
+          "left": 262,
+          "top": 736,
+          "right": 378,
+          "bottom": 832
+        },
+        "activities": {
+          "left": 191,
+          "top": 622,
+          "right": 378,
+          "bottom": 716
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    },
+    {
+      "file": "360x640-khach-man-hinh-thap.png",
+      "note": "Điện thoại màn hình thấp 360×640",
+      "room": "khach",
+      "viewport": {
+        "width": 360,
+        "height": 640
+      },
+      "statusText": "Đang ở Phòng khách",
+      "safe": {
+        "left": 12,
+        "right": 348,
+        "top": 196,
+        "bottom": 356
+      },
+      "roomRect": {
+        "left": 87,
+        "top": 202,
+        "right": 273,
+        "bottom": 350
+      },
+      "panels": {
+        "header": {
+          "left": 12,
+          "top": 12,
+          "right": 348,
+          "bottom": 184
+        },
+        "status": {
+          "left": 12,
+          "top": 545,
+          "right": 187,
+          "bottom": 628
+        },
+        "doors": {
+          "left": 232,
+          "top": 532,
+          "right": 348,
+          "bottom": 628
+        },
+        "activities": {
+          "left": 175,
+          "top": 368,
+          "right": 348,
+          "bottom": 512
+        }
+      },
+      "roomBoxOverlapsPanels": [],
+      "pageErrors": [],
+      "blockedExternalRequests": []
+    }
+  ]
+}
