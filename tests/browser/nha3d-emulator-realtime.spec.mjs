@@ -51,11 +51,19 @@ async function start(browser, label) {
   });
   const page = await context.newPage();
   page.on("pageerror", err => unexpected.push(err.message));
+  // Diagnostics only, printed when the test fails: SDK debug log and emulator traffic.
+  const t0 = Date.now(), trace = [];
+  page.on("console", message => trace.push((Date.now() - t0) + "ms console " + message.text().slice(0, 300)));
+  const emulatorRequest = request => { const u = new URL(request.url()); return u.port === host.split(":")[1] || u.port === authHost.split(":")[1]; };
+  page.on("request", request => { if (emulatorRequest(request)) trace.push((Date.now() - t0) + "ms request " + request.method() + " " + request.url().slice(0, 160)); });
+  page.on("response", response => { if (emulatorRequest(response.request())) trace.push((Date.now() - t0) + "ms response " + response.status() + " " + response.url().slice(0, 110)); });
+  page.on("requestfailed", request => { if (emulatorRequest(request)) trace.push((Date.now() - t0) + "ms FAILED " + request.failure()?.errorText + " " + request.url().slice(0, 110)); });
   await page.goto("/tests/browser/fixtures/nha3d-firestore-emulator.html");
   for (const module of ["app", "auth", "firestore"]) {
     await page.addScriptTag({ path: bundled(module) });
   }
   const uid = await page.evaluate(async ({ label, host, authHost, projectId }) => {
+    window.firebase.setLogLevel("debug");
     const app = window.firebase.initializeApp({
       projectId, apiKey: "emulator-test-only", authDomain: "localhost",
       appId: "1:123456789:web:emulator-only",
@@ -72,7 +80,7 @@ async function start(browser, label) {
     };
     return credential.user.uid;
   }, { label, host, authHost, projectId: PROJECT });
-  return { context, page, uid, unexpected, blockedExternal };
+  return { context, page, uid, unexpected, blockedExternal, trace, label };
 }
 async function subscribe(page, partnerUid) {
   await page.evaluate(({ cid, partnerUid }) => {
@@ -127,6 +135,13 @@ test("two isolated Chromium profiles receive genuine authenticated onSnapshot up
 
     await subscribe(alice.page, bob.uid);
     await subscribe(bob.page, alice.uid);
+    // Both listen streams must have delivered their first server snapshot (the partner
+    // document does not exist yet) before anything is published. A failure here means
+    // "the listener never opened", which is a different defect from "an update was missed".
+    for (const client of [alice, bob]) {
+      await expect.poll(() => client.page.evaluate(() => window.__nha3dLab.seen.length),
+        { timeout: 15_000, message: client.label + " never received its initial snapshot" }).toBeGreaterThan(0);
+    }
     await publish(alice.page, "khach", 8, 11, 1, SESSION_A);
     await expect.poll(() => received(bob.page, alice.uid, 1, "khach"),
       { timeout: 15_000 }).toBe(true);
@@ -207,6 +222,13 @@ test("two isolated Chromium profiles receive genuine authenticated onSnapshot up
       expect(c.blockedExternal.every(hostname => hostname === "www.google.com")).toBe(true);
       if (c !== eve) expect(await c.page.evaluate(() => window.__nha3dLab.errors)).toEqual([]);
     }
+  } catch (error) {
+    for (const c of clients) {
+      const lab = await c.page.evaluate(() => ({ seen: window.__nha3dLab?.seen, errors: window.__nha3dLab?.errors })).catch(e => ({ unavailable: e.message }));
+      console.log("\n=== realtime diagnostics: " + c.label + " " + JSON.stringify(lab) + " blocked=" + JSON.stringify(c.blockedExternal) + " unexpected=" + JSON.stringify(c.unexpected));
+      console.log(c.trace.slice(-90).join("\n"));
+    }
+    throw error;
   } finally {
     // Closing each browser context releases its actual WebChannel transport.
     // Never use force-exit or close arbitrary Node sockets to fake test success.
