@@ -154,15 +154,17 @@ jobs:
           retention-days: 7
 
       # Must stay the LAST step: it replaces the checkout with an orphan commit.
-      # Publishes the screenshots to evidence/nha3d-room-view-<sha> so they can be
-      # opened on a phone (Actions zip artifacts cannot). Never merged, no deployment.
+      # Publishes the screenshots to evidence/nha3d-room-view-pr-<number> so they can be
+      # opened on a phone (Actions zip artifacts cannot). One branch per pull request,
+      # replaced on every run, so branches do not pile up. Never merged, no deployment.
       - name: Publish room-view screenshots to a throwaway evidence branch
         if: ${{ !cancelled() && github.event_name == 'pull_request' && hashFiles('evidence-out/nha3d-room-view/manifest.json') != '' }}
         env:
           EVIDENCE_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-          branch="evidence/nha3d-room-view-${EVIDENCE_SHA:0:12}"
+          branch="evidence/nha3d-room-view-pr-${PR_NUMBER}"
           work="$(mktemp -d)"
           cp -r evidence-out/nha3d-room-view/. "$work/"
           git switch --orphan "$branch"
@@ -171,5 +173,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f README.md manifest.json ./*.png
           git commit -q -m "evidence(nha3d): room-view screenshots for ${EVIDENCE_SHA}"
-          # Force only replaces this commit's own evidence branch when a run is repeated.
+          # Force only replaces this pull request's own evidence branch with the newest run.
           git push --force origin "HEAD:refs/heads/${branch}"
