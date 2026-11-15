@@ -215,6 +215,8 @@ function renderRoom() {
   const H = size.wallH || 2.7, opening = 1.05;
   // Wall segments leave real openings at door positions, including the two visible walls.
   for (const side of ["L", "R", "T", "B"]) {
+    // Camera looks from +X/+Z: cut away the near walls without changing collision/doors.
+    const height = side === "R" || side === "B" ? .45 : H;
     const length = (side === "L" || side === "R") ? D : W;
     const cuts = house.doors.flatMap(door => [door.a, door.b]).filter(ep => ep.room === roomId)
       .filter(ep => side === "L" ? ep.cell.i === 0 : side === "R" ? ep.cell.i === size.w-1 : side === "T" ? ep.cell.j === 0 : ep.cell.j === size.d-1)
@@ -224,8 +226,8 @@ function renderRoom() {
     const segment = (from,to) => {
       if (to-from < .01) return;
       const center = (from+to)/2-length/2;
-      if (side === "L" || side === "R") block(side === "L" ? -W/2 : W/2,H/2,center,.14,H,to-from,wall);
-      else block(center,H/2,side === "T" ? -D/2 : D/2,to-from,H,.14,wall);
+      if (side === "L" || side === "R") block(side === "L" ? -W/2 : W/2,height/2,center,.14,height,to-from,wall);
+      else block(center,height/2,side === "T" ? -D/2 : D/2,to-from,height,.14,wall);
     };
     for (const [a,b] of intervals) { segment(at,a); at=Math.max(at,b); }
     segment(at,length);
@@ -346,6 +348,7 @@ function renderRoom() {
     b.addEventListener("click", () => goDoor(door.id, endpoint, dest)); doorsUI.append(b);
   }
   status.textContent = "Đang ở " + HOUSE_ROOMS[roomId].name;
+  resize();
 }
 function goDoor(id, endpoint, dest) {
   clearPartnerGesture();
@@ -413,12 +416,57 @@ canvas.addEventListener("pointerup", e => {
   if (!path) { status.textContent = "Không tìm thấy đường đi."; return; }
   walking = path.slice(1); status.textContent = "Đang đi trong " + HOUSE_ROOMS[roomId].name;
 });
-function resize() {
+let cameraView = null;
+function fitCamera() {
+  if (!floorGroup.children.length) return;
   const w = innerWidth, h = innerHeight;
-  renderer.setSize(w, h, false);
-  const aspect = w/h, span = 6.6;
-  camera.left = -span * aspect; camera.right = span * aspect; camera.top = span; camera.bottom = -span;
+  // Keep the entire furnished room in the free space around the controls.
+  // Tracking the avatar instead would crop most of a portrait room at a doorway.
+  camera.position.set(10, 12, 12);
+  camera.lookAt(0, .7, 0);
+  camera.updateMatrixWorld(true);
+  const bounds = new THREE.Box3().setFromObject(floorGroup);
+  const corners = [];
+  for (const x of [bounds.min.x, bounds.max.x])
+    for (const y of [bounds.min.y, bounds.max.y])
+      for (const z of [bounds.min.z, bounds.max.z]) corners.push(new THREE.Vector3(x,y,z));
+  const projected = corners.map(p => p.clone().applyMatrix4(camera.matrixWorldInverse));
+  const xs = projected.map(p => p.x), ys = projected.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const topPanels = [document.querySelector('header'), document.querySelector('#lab-help')]
+    .filter(el => el && !el.hidden).map(el => el.getBoundingClientRect().bottom);
+  const top = Math.max(12,...topPanels)+12;
+  const statusTop = status.closest('.status').getBoundingClientRect().top;
+  const sidePanels = [doorsUI, activitiesUI].filter(el => el.children.length).map(el => el.getBoundingClientRect());
+  // Two candidate free areas: the band above every bottom control (portrait), or the area
+  // left of the right-hand buttons and above the status box (landscape). Use whichever
+  // draws the room larger, so a rotated phone does not get a thumbnail-sized room.
+  const candidates = [
+    { left: 12, right: w-12, top, bottom: Math.min(h-12, statusTop, ...sidePanels.map(r => r.top))-12 },
+    { left: 12, right: Math.min(w-12, ...sidePanels.map(r => r.left))-12, top, bottom: Math.min(h-12, statusTop)-12 }
+  ];
+  // Tiny screens still receive a finite projection; portrait is the review baseline.
+  const unitsFor = area => Math.max((maxX-minX)/Math.max(80,area.right-area.left), (maxY-minY)/Math.max(80,area.bottom-area.top));
+  const safe = unitsFor(candidates[1]) < unitsFor(candidates[0]) ? candidates[1] : candidates[0];
+  const units = unitsFor(safe)*1.08;
+  const cx = (minX+maxX)/2 - ((safe.left+safe.right)/2-w/2)*units;
+  const cy = (minY+maxY)/2 + ((safe.top+safe.bottom)/2-h/2)*units;
+  camera.left = cx-w*units/2; camera.right = cx+w*units/2;
+  camera.top = cy+h*units/2; camera.bottom = cy-h*units/2;
   camera.updateProjectionMatrix();
+  cameraView = { safe, bounds: corners.map(p => { const v=p.clone().project(camera); return {x:(v.x+1)*w/2,y:(1-v.y)*h/2}; }), nearWallHeight: .45 };
+}
+function resize() {
+  renderer.setSize(innerWidth, innerHeight, false);
+  fitCamera();
+}
+// Panels change size after load (lab status, longer messages, button labels). Refit the
+// camera only; resizing the canvas here would blank it for a frame. Border box, so a
+// padding or border change counts as well as wrapped text.
+if ("ResizeObserver" in window) {
+  const panelObserver = new ResizeObserver(() => fitCamera());
+  for (const el of [document.querySelector('header'), document.querySelector('#lab-help'), status.closest('.status'), doorsUI, activitiesUI])
+    if (el) panelObserver.observe(el, { box: "border-box" });
 }
 addEventListener("resize", resize); resize();
 function frame(now) {
@@ -482,8 +530,6 @@ function frame(now) {
   }
   // Publish only a coarse, validated tile; no Firebase/network, no per-frame writes.
   if (twoTabLab?.active) twoTabLab.tick();
-  const target = avatar.position.clone().add(new THREE.Vector3(10, 12, 12));
-  camera.position.lerp(target, .1); camera.lookAt(avatar.position.x, .4, avatar.position.z);
   renderer.render(scene, camera); requestAnimationFrame(frame);
 }
 // Read-only diagnostic snapshot for end-to-end checks; never exposes user data.
@@ -496,6 +542,7 @@ window.__NHA3D_PREVIEW_STATE__ = () => ({
   effects: activityVisuals.children.length,
   acting: performance.now() < activityPoseUntil,
   counts: { ...activityCounts },
+  view: cameraView && structuredClone(cameraView),
   partner: { mode: twoTabRequested ? "two-tab-lab" : "local-demo",
     diagnostics: twoTabRequested ? twoTabLab?.snapshot() : null, visible: partner.visible,
     cell: partnerCell && { ...partnerCell }, walking: partnerWalking.length,

@@ -8,3 +8,6 @@ playwright-report/
 
 # Generated isolated staging bundle (never commit build output)
 dist-nha3d-staging/
+
+# Review screenshots produced by scripts/capture-nha3d-room-view.mjs (never commit to source branches)
+evidence-out/
