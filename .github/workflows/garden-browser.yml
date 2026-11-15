@@ -32,7 +32,7 @@ jobs:
   # Runs only for this Draft laboratory branch so a leaked Firestore SDK stream
   # is visible without waiting for the full Playwright suite to complete.
   emulator-presence:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'staging/nha3d-integrated-review-20261108'
+    if: github.event_name == 'pull_request' && (github.event.pull_request.head.ref == 'staging/nha3d-integrated-review-20261108' || github.event.pull_request.base.ref == 'staging/nha3d-integrated-review-20261108')
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
@@ -53,7 +53,7 @@ jobs:
 
   emulator-browser-realtime:
     # Never run this against the live Firebase project or shared staging.
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'staging/nha3d-integrated-review-20261108'
+    if: github.event_name == 'pull_request' && (github.event.pull_request.head.ref == 'staging/nha3d-integrated-review-20261108' || github.event.pull_request.base.ref == 'staging/nha3d-integrated-review-20261108')
     runs-on: ubuntu-24.04
     timeout-minutes: 9
     steps:
@@ -73,7 +73,7 @@ jobs:
       - name: Assert real browser onSnapshot delivery and outsider denial using ONLY local emulators
         env:
           NHA3D_EMULATOR_REALTIME_REQUIRED: "1"
-        run: timeout --signal=TERM --kill-after=3s 180s npx firebase emulators:exec --config firebase.nha3d-emulator.json --project demo-goc-nho-safety --only firestore,auth "npx playwright test tests/browser/nha3d-emulator-realtime.spec.mjs"
+        run: timeout --signal=TERM --kill-after=3s 180s npx firebase emulators:exec --config firebase.nha3d-emulator.json --project demo-goc-nho-safety --only firestore,auth "npx playwright test tests/browser/nha3d-emulator-realtime.spec.mjs --repeat-each=5 --workers=1"
 
   chromium:
     runs-on: ubuntu-24.04
