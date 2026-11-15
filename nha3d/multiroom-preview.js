@@ -461,11 +461,12 @@ function resize() {
   fitCamera();
 }
 // Panels change size after load (lab status, longer messages, button labels). Refit the
-// camera only; resizing the canvas here would blank it for a frame.
+// camera only; resizing the canvas here would blank it for a frame. Border box, so a
+// padding or border change counts as well as wrapped text.
 if ("ResizeObserver" in window) {
   const panelObserver = new ResizeObserver(() => fitCamera());
   for (const el of [document.querySelector('header'), document.querySelector('#lab-help'), status.closest('.status'), doorsUI, activitiesUI])
-    if (el) panelObserver.observe(el);
+    if (el) panelObserver.observe(el, { box: "border-box" });
 }
 addEventListener("resize", resize); resize();
 function frame(now) {
