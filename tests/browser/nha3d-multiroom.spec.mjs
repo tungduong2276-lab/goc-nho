@@ -94,6 +94,36 @@ test("header keeps a top margin and landscape rotation keeps the room readable",
   expect(errors).toEqual([]); expect(firebase).toEqual([]);
 });
 
+for (const width of [360,390,430]) test("room indicator fits one row with full accessible names at "+width+"px", async ({ page }) => {
+  await openPreview(page,width);
+  const buttons = await page.locator("#rooms button").evaluateAll(els => els.map(el => {
+    const r = el.getBoundingClientRect();
+    return { top: Math.round(r.top), left: r.left, right: r.right, height: r.height, label: el.getAttribute("aria-label"), current: el.getAttribute("aria-current") };
+  }));
+  expect(buttons.map(b => b.label)).toEqual(["Phòng khách","Phòng bếp","Phòng ngủ"]);
+  expect(buttons.map(b => b.current)).toEqual(["true","false","false"]);
+  expect(new Set(buttons.map(b => b.top)).size).toBe(1);
+  for (const b of buttons) {
+    expect(b.left).toBeGreaterThanOrEqual(0);
+    expect(b.right).toBeLessThanOrEqual(width+1);
+    expect(b.height).toBeGreaterThanOrEqual(44);
+  }
+});
+
+for (const width of [360,390]) test("two-tab lab panel sits below the header without covering the room indicator at "+width+"px", async ({ page }) => {
+  await openPreview(page,width,"?lab=two-tabs&rev=20261111b");
+  await expect(page.locator("#lab-state")).toContainText("Chưa bật");
+  const rects = () => page.evaluate(() => {
+    const box = selector => { const r = document.querySelector(selector).getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; };
+    return { header: box("header"), lab: box("#lab-help"), view: window.__NHA3D_PREVIEW_STATE__().view };
+  });
+  await expect.poll(async () => { const r = await rects(); return r.lab.top - r.header.bottom; }).toBeGreaterThanOrEqual(8);
+  await expect.poll(async () => { const r = await rects(); return r.view.safe.top - r.lab.bottom; }).toBeGreaterThanOrEqual(12);
+  const { view, lab } = await rects();
+  expect(view.safe.bottom).toBeGreaterThan(view.safe.top+100);
+  for (const p of view.bounds) expect(p.y).toBeGreaterThanOrEqual(lab.bottom);
+});
+
 test("room activities respond locally and change with the room", async ({ page }) => {
  const { errors, firebase } = await openPreview(page);
  await page.getByRole("button", { name: "☕ Uống trà" }).click();

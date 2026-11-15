@@ -121,7 +121,8 @@ function finishPartnerGesture() {
   showActivityVisual(roomId);
   status.textContent = "💞 Hai nhân vật chạm tay! (Mô phỏng cục bộ, không đồng bộ hai máy.)";
 }
-const names = { khach: "🛋️ Phòng khách", bep: "🍳 Phòng bếp", ngu: "🛏️ Phòng ngủ" };
+// Short labels keep the room indicator on one row on a 360 px phone; the full name stays the accessible name.
+const names = { khach: "🛋️ Khách", bep: "🍳 Bếp", ngu: "🛏️ Ngủ" };
 function roomInfo() { return house.rooms[roomId]; }
 // Explicit opt-in. BroadcastChannel connects browser tabs with the SAME origin/profile,
 // never separate phones. The normal staging preview remains unchanged.
@@ -268,7 +269,7 @@ function renderRoom() {
   walking = [];
   roomsUI.replaceChildren();
   for (const [id, def] of Object.entries(HOUSE_ROOMS)) {
-    const b = document.createElement("button"); b.textContent = names[id]; b.setAttribute("aria-current", String(id === roomId));
+    const b = document.createElement("button"); b.textContent = names[id]; b.setAttribute("aria-label", def.name); b.setAttribute("aria-current", String(id === roomId));
     b.addEventListener("click", () => { if (id !== roomId) { status.textContent = "Hãy đi qua cửa để sang " + def.name; } });
     roomsUI.append(b);
   }
@@ -418,6 +419,9 @@ canvas.addEventListener("pointerup", e => {
 });
 let cameraView = null;
 function fitCamera() {
+  // The two-tab lab panel sits under the header, however many rows the header wraps to.
+  const headerEl = document.querySelector('header'), labHelp = document.querySelector('#lab-help');
+  if (headerEl && labHelp && !labHelp.hidden) labHelp.style.top = Math.ceil(headerEl.getBoundingClientRect().bottom + 8) + "px";
   if (!floorGroup.children.length) return;
   const w = innerWidth, h = innerHeight;
   // Keep the entire furnished room in the free space around the controls.
