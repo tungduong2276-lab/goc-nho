@@ -7,7 +7,8 @@
     "test:browser": "playwright test",
     "test": "npm run test:static && npm run test:staging && npm run test:browser && npm run test:firebase",
     "test:firebase": "firebase emulators:exec --project demo-goc-nho-safety --only firestore \"node --test --test-concurrency=1 tests/firebase/*.test.mjs\"",
-    "test:staging": "node --test tests/staging/*.test.mjs"
+    "test:staging": "node --test tests/staging/*.test.mjs",
+    "evidence:nha3d": "node scripts/capture-nha3d-room-view.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.55.0",
