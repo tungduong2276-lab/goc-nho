@@ -417,11 +417,10 @@ canvas.addEventListener("pointerup", e => {
   walking = path.slice(1); status.textContent = "Đang đi trong " + HOUSE_ROOMS[roomId].name;
 });
 let cameraView = null;
-function resize() {
-  const w = innerWidth, h = innerHeight;
-  renderer.setSize(w, h, false);
+function fitCamera() {
   if (!floorGroup.children.length) return;
-  // Keep the entire furnished room in the free space between header and controls.
+  const w = innerWidth, h = innerHeight;
+  // Keep the entire furnished room in the free space around the controls.
   // Tracking the avatar instead would crop most of a portrait room at a doorway.
   camera.position.set(10, 12, 12);
   camera.lookAt(0, .7, 0);
@@ -436,19 +435,37 @@ function resize() {
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
   const topPanels = [document.querySelector('header'), document.querySelector('#lab-help')]
     .filter(el => el && !el.hidden).map(el => el.getBoundingClientRect().bottom);
-  const bottomPanels = [status.closest('.status'), doorsUI, activitiesUI]
-    .filter(el => el.children.length || el === status.closest('.status'))
-    .map(el => el.getBoundingClientRect().top);
-  const safe = { left: 12, right: w-12, top: Math.max(12,...topPanels)+12, bottom: Math.min(h-12,...bottomPanels)-12 };
-  // Tiny/landscape screens still receive a finite projection; portrait is the review baseline.
-  const availableH = Math.max(80, safe.bottom-safe.top);
-  const units = Math.max((maxX-minX)/Math.max(80,w-24), (maxY-minY)/availableH)*1.08;
-  const cx = (minX+maxX)/2;
+  const top = Math.max(12,...topPanels)+12;
+  const statusTop = status.closest('.status').getBoundingClientRect().top;
+  const sidePanels = [doorsUI, activitiesUI].filter(el => el.children.length).map(el => el.getBoundingClientRect());
+  // Two candidate free areas: the band above every bottom control (portrait), or the area
+  // left of the right-hand buttons and above the status box (landscape). Use whichever
+  // draws the room larger, so a rotated phone does not get a thumbnail-sized room.
+  const candidates = [
+    { left: 12, right: w-12, top, bottom: Math.min(h-12, statusTop, ...sidePanels.map(r => r.top))-12 },
+    { left: 12, right: Math.min(w-12, ...sidePanels.map(r => r.left))-12, top, bottom: Math.min(h-12, statusTop)-12 }
+  ];
+  // Tiny screens still receive a finite projection; portrait is the review baseline.
+  const unitsFor = area => Math.max((maxX-minX)/Math.max(80,area.right-area.left), (maxY-minY)/Math.max(80,area.bottom-area.top));
+  const safe = unitsFor(candidates[1]) < unitsFor(candidates[0]) ? candidates[1] : candidates[0];
+  const units = unitsFor(safe)*1.08;
+  const cx = (minX+maxX)/2 - ((safe.left+safe.right)/2-w/2)*units;
   const cy = (minY+maxY)/2 + ((safe.top+safe.bottom)/2-h/2)*units;
   camera.left = cx-w*units/2; camera.right = cx+w*units/2;
   camera.top = cy+h*units/2; camera.bottom = cy-h*units/2;
   camera.updateProjectionMatrix();
   cameraView = { safe, bounds: corners.map(p => { const v=p.clone().project(camera); return {x:(v.x+1)*w/2,y:(1-v.y)*h/2}; }), nearWallHeight: .45 };
+}
+function resize() {
+  renderer.setSize(innerWidth, innerHeight, false);
+  fitCamera();
+}
+// Panels change size after load (lab status, longer messages, button labels). Refit the
+// camera only; resizing the canvas here would blank it for a frame.
+if ("ResizeObserver" in window) {
+  const panelObserver = new ResizeObserver(() => fitCamera());
+  for (const el of [document.querySelector('header'), document.querySelector('#lab-help'), status.closest('.status'), doorsUI, activitiesUI])
+    if (el) panelObserver.observe(el);
 }
 addEventListener("resize", resize); resize();
 function frame(now) {

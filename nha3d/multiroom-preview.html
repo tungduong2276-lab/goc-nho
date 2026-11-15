@@ -4,7 +4,7 @@
 <style>
 :root{font-family:system-ui,sans-serif;color:#243451;background:#fceef3}*{box-sizing:border-box}
 body{margin:0;overflow:hidden}canvas{display:block;width:100vw;height:100dvh;touch-action:none}
-header{position:fixed;top:env(safe-area-inset-top,12px);left:12px;right:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;z-index:2}
+header{position:fixed;top:max(12px,env(safe-area-inset-top,12px));left:12px;right:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;z-index:2}
 .pill,button{border:2px solid #243451;border-radius:16px;background:white;padding:10px 14px;color:#243451;font:700 14px system-ui;box-shadow:0 3px 0 #243451}
 a{color:inherit;text-decoration:none}button{cursor:pointer;min-height:44px}button:focus-visible{outline:3px solid #e45b95}
 #rooms{display:flex;gap:6px;flex-wrap:wrap}#rooms button[aria-current=true]{background:#ffe08c}
