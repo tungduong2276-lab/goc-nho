@@ -56,7 +56,7 @@ async function start(browser, label) {
   page.on("console", message => trace.push((Date.now() - t0) + "ms console " + message.text().slice(0, 300)));
   const emulatorRequest = request => { const u = new URL(request.url()); return u.port === host.split(":")[1] || u.port === authHost.split(":")[1]; };
   page.on("request", request => { if (emulatorRequest(request)) trace.push((Date.now() - t0) + "ms request " + request.method() + " " + request.url().slice(0, 160)); });
-  page.on("requestfinished", async request => { if (emulatorRequest(request)) trace.push((Date.now() - t0) + "ms finished " + ((await request.response())?.status() ?? "?") + " " + request.url().slice(0, 110)); });
+  page.on("response", response => { if (emulatorRequest(response.request())) trace.push((Date.now() - t0) + "ms response " + response.status() + " " + response.url().slice(0, 110)); });
   page.on("requestfailed", request => { if (emulatorRequest(request)) trace.push((Date.now() - t0) + "ms FAILED " + request.failure()?.errorText + " " + request.url().slice(0, 110)); });
   await page.goto("/tests/browser/fixtures/nha3d-firestore-emulator.html");
   for (const module of ["app", "auth", "firestore"]) {

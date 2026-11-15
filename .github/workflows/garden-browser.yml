@@ -73,7 +73,7 @@ jobs:
       - name: Assert real browser onSnapshot delivery and outsider denial using ONLY local emulators
         env:
           NHA3D_EMULATOR_REALTIME_REQUIRED: "1"
-        run: timeout --signal=TERM --kill-after=3s 180s npx firebase emulators:exec --config firebase.nha3d-emulator.json --project demo-goc-nho-safety --only firestore,auth "npx playwright test tests/browser/nha3d-emulator-realtime.spec.mjs --repeat-each=5 --workers=1"
+        run: timeout --signal=TERM --kill-after=3s 180s npx firebase emulators:exec --config firebase.nha3d-emulator.json --project demo-goc-nho-safety --only firestore,auth "npx playwright test tests/browser/nha3d-emulator-realtime.spec.mjs"
 
   chromium:
     runs-on: ubuntu-24.04
