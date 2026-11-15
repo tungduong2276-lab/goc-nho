@@ -1410,6 +1410,7 @@ body:not([data-g="nha"]) .view:not([hidden]) .section-intro{display:flex;align-i
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 <script>window.HHH_STANDALONE=true;</script>
 <script>
 const GENRES=["Ngôn tình Hàn Quốc","Kiếm hiệp","Kinh dị","Sitcom gia đình","Hành động điệp viên","Phim tài liệu","Cổ trang cung đấu","Siêu anh hùng","Phim câm","Trinh thám","Phim Bollywood","Viễn tưởng không gian"];
@@ -3633,12 +3634,28 @@ function drawAcct(){
   $("acctOut").onclick=signOutAll;
 }
 
+/* M0: App Check ở chế độ theo dõi (monitoring). Chỉ chạy khi firebase-config.js có siteKey.
+   Ở đây KHÔNG bật enforcement: việc đó làm trong Firebase Console sau khi đã xem số liệu.
+   Mọi lỗi đều bị nuốt để app vẫn mở bình thường. Xem docs/M0-APP-CHECK-MONITORING-PLAN.md. */
+let appCheckState="off";
+function startAppCheck(){
+  const ac=window.FIREBASE_APP_CHECK,key=ac&&typeof ac.siteKey==="string"?ac.siteKey.trim():"";
+  if(!key)return appCheckState="off";
+  try{
+    if(typeof firebase.appCheck!=="function")return appCheckState="unavailable";
+    const Provider={"recaptcha-enterprise":firebase.appCheck.ReCaptchaEnterpriseProvider,"recaptcha-v3":firebase.appCheck.ReCaptchaV3Provider}[ac.provider];
+    if(typeof Provider!=="function")throw new Error("FIREBASE_APP_CHECK.provider không hợp lệ");
+    firebase.appCheck().activate(new Provider(key),true);
+    return appCheckState="monitoring";
+  }catch(e){console.warn("App Check chưa khởi động được, app vẫn chạy bình thường.",e);return appCheckState="error";}
+}
 function cloudInit(){
   document.body.classList.add("standalone");
   const cfg=window.FIREBASE_CONFIG;
   if(!window.firebase||!cfg||!cfg.apiKey||/DAN-|PASTE/i.test(cfg.apiKey)){showGate("config");return;}
   showGate("loading");
   try{firebase.initializeApp(cfg);}catch(e){showGate("error",e);return;}
+  startAppCheck();
   const fs=firebase.firestore();try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(e){}
   CLOUD.fs=fs;
   firebase.auth().onAuthStateChanged(async u=>{
