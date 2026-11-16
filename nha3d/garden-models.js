@@ -42,7 +42,7 @@ function sprout(g, x, z, plant) {
     piece(leafGeo(stage === 2 ? 0.11 : 0.15, stage === 2 ? 0.06 : 0.08, 0.02), i % 2 ? leaf : leafL, { pos: [x + Math.cos(a) * 0.03, y, z + Math.sin(a) * 0.03], rot: [-1.1 - droop, a, 0], parent: g });
   }
   if (stage < 4) {
-    if (stage === 3 && !thirsty) piece(sphere(0.035, 10, 8), sp === "huongduong" || sp === "tulip" || sp === "oaihuong" ? 0x9BD38A : 0xC9E7A8, { pos: [x, h + 0.03, z], parent: g });
+    if (stage === 3 && !thirsty) piece(sphere(0.035, 10, 8), sp === "cucHoaMi" || sp === "tulip" || sp === "oaihuong" ? 0x9BD38A : 0xC9E7A8, { pos: [x, h + 0.03, z], parent: g });
     return;
   }
   // giai đoạn chín: quả hoặc hoa
@@ -50,11 +50,12 @@ function sprout(g, x, z, plant) {
   if (sp === "dau") for (let i = 0; i < 4; i++) { const a = i * 1.6; const p = [x + Math.cos(a) * 0.09, 0.1 + (i % 2) * 0.08, z + Math.sin(a) * 0.09]; piece(sphere(0.045, 12, 10).scale(1, 1.25, 1), col, { pos: p, parent: g }); piece(leafGeo(0.04, 0.03, 0.01), C.leaf, { pos: [p[0], p[1] + 0.055, p[2]], rot: [-1.4, a, 0], parent: g, noOutline: true }); }
   else if (sp === "cachua") for (let i = 0; i < 6; i++) { const a = i * 1.1; piece(sphere(0.04, 12, 10), i === 5 ? 0xFFB347 : col, { pos: [x + Math.cos(a) * 0.08, 0.14 + (i % 3) * 0.07, z + Math.sin(a) * 0.08], parent: g }); }
   else if (sp === "tulip") { piece(sphere(0.07, 14, 10).scale(0.85, 1.25, 0.85), col, { pos: [x, h + 0.07, z], parent: g }); for (let i = 0; i < 3; i++) piece(sphere(0.045, 10, 8).scale(0.6, 1.3, 0.6), 0xFFB8D2, { pos: [x + Math.cos(i * 2.1) * 0.045, h + 0.09, z + Math.sin(i * 2.1) * 0.045], parent: g, noOutline: true }); }
-  else if (sp === "huongduong") {
-    const fy = h + 0.16, head = G(); head.position.set(x, fy, z + 0.02); head.rotation.x = -0.35; g.add(head);
-    piece(tube([[x, h, z], [x, fy, z]], 0.02, 4, 6), C.leafD, { parent: g, noOutline: true });
-    for (let i = 0; i < 12; i++) piece(sphere(0.05, 8, 6).scale(0.5, 0.18, 1), col, { pos: [Math.sin(i * 0.5236) * 0.1, Math.cos(i * 0.5236) * 0.1, 0], rot: [Math.PI / 2, 0, -i * 0.5236], parent: head });
-    piece(rcyl(0.07, 0.07, 0.04, 0.015, 20), 0x7A4A22, { rot: [Math.PI / 2, 0, 0], parent: head });
+  else if (sp === "cucHoaMi") for (let k = 0; k < 3; k++) { // ba bông cúc trắng nhuỵ vàng
+    const a = k * 2.1, fx = x + Math.cos(a) * 0.05, fz = z + Math.sin(a) * 0.05, fy = h + 0.04 + (k % 2) * 0.05;
+    piece(tube([[x, h * 0.6, z], [fx, fy, fz]], 0.009, 4, 4), C.leafD, { parent: g, noOutline: true });
+    const head = G(); head.position.set(fx, fy, fz); head.rotation.x = -0.5; g.add(head);
+    for (let i = 0; i < 10; i++) piece(sphere(0.03, 8, 6).scale(0.45, 0.16, 1), col, { pos: [Math.sin(i * 0.628) * 0.045, Math.cos(i * 0.628) * 0.045, 0], rot: [Math.PI / 2, 0, -i * 0.628], parent: head });
+    piece(sphere(0.025, 10, 8).scale(1, 1, 0.6), 0xFFC83D, { parent: head });
   } else if (sp === "oaihuong") for (let i = 0; i < 5; i++) { const a = i * 1.26, px = x + Math.cos(a) * 0.06, pz = z + Math.sin(a) * 0.06; piece(tube([[x, 0.05, z], [px, h + 0.05, pz]], 0.008, 4, 4), C.leafD, { parent: g, noOutline: true }); for (let k = 0; k < 4; k++) piece(sphere(0.022, 8, 6), col, { pos: [px, h + 0.06 + k * 0.035, pz], parent: g }); }
 }
 

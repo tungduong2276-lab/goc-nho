@@ -11,7 +11,9 @@ async function openHouse(page, { width = 390, height = 844, scene = "nha" } = {}
   await page.setViewportSize({ width, height });
   const errors = [], firebase = [];
   page.on("pageerror", e => errors.push(e.message));
-  page.on("request", r => { if (/firestore|firebaseio|identitytoolkit|securetoken|gstatic\.com\/firebasejs/.test(r.url())) firebase.push(r.url()); });
+  page.on("request", r => { if (/firestore\.googleapis|firebaseio|identitytoolkit|securetoken/.test(r.url())) firebase.push(r.url()); });
+  // Không nạp SDK Firebase thật trong test: đảo chạy chế độ chỉ-trên-máy, W2 được thử bằng bộ nối giả.
+  await page.route("https://www.gstatic.com/**", route => route.abort());
   if (existsSync(THREE_DIR)) {
     await page.route("https://cdn.jsdelivr.net/npm/three@0.169.0/**", route => {
       const rel = new URL(route.request().url()).pathname.replace("/npm/three@0.169.0/", "");
@@ -31,7 +33,7 @@ test("dựng nhà 3D trực tiếp, không lỗi và không gọi Firebase", asy
   const { errors, firebase, N } = await openHouse(page);
   await expect(page.locator("#world")).toBeVisible();
   await expect(page.locator("#loading")).toHaveClass(/gone/);
-  await expect(page.locator("#toast")).toContainText("chỉ lưu trên máy này");
+  await expect(page.locator("#trial-pill")).toHaveText("Chỉ trên máy này");
   expect((await N("info")).calls).toBeGreaterThan(50);
   expect((await N("layout")).items.length).toBeGreaterThan(10);
   expect(errors).toEqual([]);
@@ -209,6 +211,69 @@ test("thế giới mở: đi ra vào cửa nhà, sân có vườn, quầy cà ph
   await page.goto("/nha3d/index.html");
   await page.waitForFunction(() => window.__NHA3D__?.ready, null, { timeout: 90_000 });
   expect(await N("scene")).toBe("san");
+  expect(errors).toEqual([]);
+  expect(firebase).toEqual([]);
+});
+
+test("W2: đảo chung — gửi thay đổi, nhận người kia và đồ đạc từ máy kia (bộ nối giả, không Firebase)", async ({ page }) => {
+  const { errors, firebase, N } = await openHouse(page, { scene: "san" });
+  await page.evaluate(() => {
+    window.__writes = [];
+    const rec = kind => (...a) => { window.__writes.push([kind, ...a.map(x => JSON.parse(JSON.stringify(x ?? null)))]); return Promise.resolve(); };
+    window.__NHA3D__.useFakeCloud({ ok: true, setItem: rec("item"), delItem: rec("del"), addWater: rec("water"), setMeta: rec("meta"), setPresence: rec("presence") });
+  });
+  const writes = () => page.evaluate(() => window.__writes);
+  // Người kia chưa vào: không hiện, nhãn trạng thái báo vắng
+  await N("tick", 0.2);
+  expect((await N("cloud")).partnerVisible).toBe(false);
+  // Vị trí của mình được gửi đi, có cảnh và trang phục
+  await expect.poll(async () => (await writes()).filter(w => w[0] === "presence").length).toBeGreaterThan(0);
+  const pres = (await writes()).find(w => w[0] === "presence");
+  expect(pres[1]).toBe("anh"); expect(pres[2]).toMatchObject({ scene: "san", mode: "idle" }); expect(pres[2].look).toBeTruthy();
+  // Gieo hạt: gửi cả món kèm lần tưới; tưới lại: chỉ gửi lần tưới (arrayUnion)
+  const bed = (await N("layout")).items.find(i => i.uid === "y-g1");
+  await N("teleport", -11 + (bed.gx + 1.5) * 0.5, -9 + (bed.gz + 3) * 0.5); await page.waitForTimeout(300);
+  let [x, y] = await N("screenOfItem", "y-g1", 0.5);
+  await page.mouse.click(x, y);
+  await page.locator("#actions button", { hasText: "Gieo xà lách" }).click();
+  await expect.poll(async () => { await N("tick", 0.3); return (await writes()).filter(w => w[0] === "item" && w[2].uid === "y-g1").length; }, { timeout: 30_000 }).toBe(1);
+  const seeded = (await writes()).find(w => w[0] === "item" && w[2].uid === "y-g1");
+  expect(seeded[1]).toBe("san"); expect(seeded[2].plant.sp).toBe("xalach"); expect(seeded[3]).toBe(true);
+  [x, y] = await N("screenOfItem", "y-g1", 0.5);
+  await page.mouse.click(x, y);
+  await page.locator("#actions button", { hasText: "Tưới nước" }).click();
+  await expect.poll(async () => { await N("tick", 0.3); return (await writes()).filter(w => w[0] === "water").length; }, { timeout: 30_000 }).toBe(1);
+  expect((await writes()).filter(w => w[0] === "item" && w[2].uid === "y-g1").length).toBe(1);
+  // Máy kia: Em đứng ngoài sân, thả tim, đổi trang phục
+  const me = await N("me");
+  await N("remoteChanges", [{ id: "p_em", data: { k: "presence", who: "em", scene: "san", x: me.x + 1.2, z: me.z, face: 0, mode: "idle", at: Date.now(), ev: { id: "e1", kind: "invite", text: "rủ bạn cùng tưới" }, look: null } }]);
+  await N("tick", 0.2);
+  await expect.poll(async () => (await N("cloud")).partnerVisible).toBe(true);
+  await expect(page.locator("#toast")).toContainText("Em rủ bạn cùng tưới");
+  await expect(page.locator("#partner-status")).toHaveText("Em đang ở đây 💗");
+  // Em đi chỗ khác: nhân vật đi theo
+  await N("remoteChanges", [{ id: "p_em", data: { k: "presence", who: "em", scene: "san", x: me.x + 1.2, z: me.z, tx: me.x + 1.2, tz: me.z + 2, face: 0, mode: "idle", at: Date.now() } }]);
+  await N("tick", 2);
+  expect((await N("partner")).z).toBeGreaterThan(me.z + 1.5);
+  // Em vào nhà: ngoài sân không còn thấy, nhãn báo Em ở trong nhà
+  await N("remoteChanges", [{ id: "p_em", data: { k: "presence", who: "em", scene: "nha", x: 0, z: 2, face: 0, mode: "idle", at: Date.now() } }]);
+  await N("tick", 0.2);
+  expect((await N("cloud")).partnerVisible).toBe(false);
+  await expect(page.locator("#partner-status")).toHaveText("Em đang ở trong nhà");
+  // Em gieo dâu ở luống khác và dời ghế dài: máy này thấy ngay
+  await N("remoteChanges", [
+    { id: "i_san_y-g2", data: { k: "item", scene: "san", uid: "y-g2", it: { type: "luongTrong", gx: 9, gz: 14, r: 0 }, plant: { sp: "dau", at: Date.now() - 1000, by: "em" }, w: [{ t: Date.now() - 1000, by: "em" }] } },
+    { id: "i_san_y-b1", data: { k: "item", scene: "san", uid: "y-b1", it: { type: "gheDa", gx: 30, gz: 21, r: 0 } } },
+    { id: "i_san_y-f1", data: null }
+  ]);
+  expect(await N("plantKey", "y-g2")).toBe("dau:0:am");
+  const yard = (await N("layout")).items;
+  expect(yard.find(i => i.uid === "y-b1").gx).toBe(30);
+  expect(yard.some(i => i.uid === "y-f1")).toBe(false);
+  // Đồ nhận từ máy kia không bị gửi ngược lại
+  const before = (await writes()).filter(w => w[0] === "item" || w[0] === "del").length;
+  await N("tick", 0.5);
+  expect((await writes()).filter(w => w[0] === "item" || w[0] === "del").length).toBe(before);
   expect(errors).toEqual([]);
   expect(firebase).toEqual([]);
 });

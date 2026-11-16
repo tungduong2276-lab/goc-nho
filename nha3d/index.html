@@ -10,6 +10,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./nha3d.css">
+<!-- Firebase: cùng bản và cùng cấu hình với app Góc Nhỏ để dùng lại phiên đăng nhập (W2). -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../firebase-config.js"></script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
 </head>
 <body data-mode="play">
@@ -19,7 +24,8 @@
 
 <header class="top">
   <a class="pill back" href="../" aria-label="Về Góc Nhỏ">‹ Về</a>
-  <span class="pill tag" title="Chưa đồng bộ Firebase; bố cục chỉ lưu trong trình duyệt này">Bản thử</span>
+  <span class="pill tag" id="trial-pill" title="Trạng thái đồng bộ đảo">Đang nối…</span>
+  <span class="pill tag partner" id="partner-status" hidden></span>
   <div class="top-r play-only">
     <button class="round" id="btn-time" aria-label="Đổi buổi trong ngày">☀️</button>
     <button class="round accent" id="btn-edit" aria-label="Trang trí nhà">🛠</button>
