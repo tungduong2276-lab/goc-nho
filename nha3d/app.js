@@ -147,7 +147,7 @@ function editFit() {
 function updateCamera() {
   // Keep the activity and the character visible together on a phone.
   const panel = document.querySelector("#dateplay");
-  const bottom = S.scene === "hen" && panel && !panel.hidden ? panel.getBoundingClientRect().bottom : 0;
+  const bottom = Math.max(hostPanelBottom,S.scene === "hen" && panel && !panel.hidden ? panel.getBoundingClientRect().bottom : 0);
   const focus = bottom ? bottom + Math.max(0, innerHeight - 150 - bottom) * .6 : 0;
   const shift = bottom ? innerHeight / 2 - focus : cam.shift;
   const w = innerWidth / cam.ppm / 2, h = innerHeight / cam.ppm / 2, s = shift / cam.ppm;
@@ -545,11 +545,11 @@ function joyMove(e) {
   joy.knob.style.transform = `translate(${dx}px,${dy}px)`;
   joy.x = dx / R; joy.y = -dy / R;
 }
-let worldObscured=false;
+let worldObscured=false,hostPanelBottom=0,worldNeedsRender=false;
 const keys = new Set();
 function clearWorldInput(){keys.clear();joy.id=null;joy.x=joy.y=0;joy.knob.style.transform="";joy.el.classList.remove("active");me().joy=false;}
 addEventListener("blur",clearWorldInput);
-addEventListener("message",e=>{if(e.source!==window.parent||e.origin!==location.origin)return;if(e.data?.type==="gocnho:surface"){worldObscured=!!e.data.open;if(worldObscured){clearWorldInput();me().stop();}}if(e.data?.type==="gocnho:user"){const {names,avatars}=e.data;if(Array.isArray(names)&&names.length===2&&Array.isArray(avatars)&&new Set(avatars).size===2&&avatars.every(a=>a==="anh"||a==="em")){avatars.forEach((a,i)=>{NAMES[a]=String(names[i]).slice(0,30);});updateMe();}}});
+addEventListener("message",e=>{if(e.source!==window.parent||e.origin!==location.origin)return;if(e.data?.type==="gocnho:surface"){const bottom=e.data.open&&Number.isFinite(e.data.bottom)?Math.max(0,Math.min(innerHeight,e.data.bottom)):0;if(bottom!==hostPanelBottom||worldObscured!==!!e.data.open)worldNeedsRender=true;hostPanelBottom=bottom;worldObscured=!!e.data.open;if(worldObscured){clearWorldInput();me().stop();cam.target.set(me().x,.55,me().z);cam.goal.copy(cam.target);}}if(e.data?.type==="gocnho:user"){const {names,avatars}=e.data;if(Array.isArray(names)&&names.length===2&&Array.isArray(avatars)&&new Set(avatars).size===2&&avatars.every(a=>a==="anh"||a==="em")){avatars.forEach((a,i)=>{NAMES[a]=String(names[i]).slice(0,30);});updateMe();}}});
 addEventListener("keydown", e => { if (e.target.closest?.("button,input")) return; keys.add(e.key.toLowerCase()); });
 addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
 function joyStep(dt) {
@@ -1415,7 +1415,7 @@ function step(dt) {
 }
 function frame(now) {
   const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now;
-  if(worldObscured&&hasRenderedWorld){requestAnimationFrame(frame);return;}
+  if(worldObscured&&hasRenderedWorld&&!worldNeedsRender){requestAnimationFrame(frame);return;}
   step(dt);
   // camera
   if (S.mode === "play" && !(cam.panned && now - cam.panned < 1500)) { const m = me(); cam.goal.set(m.x, 0.55, m.z); }
@@ -1426,7 +1426,7 @@ function frame(now) {
   // lift món đang chọn
   if (S.mode === "edit" && S.selected && !drag) { const it = itemByUid(S.selected), v = views.get(S.selected); if (it && v) placeView(v, it, 0.04 + (reduced() ? 0 : Math.sin(now / 160) * 0.025)); }
   if (!reduced()) itemsG.traverse(o => { if (o.userData.bob) { o.position.y = o.userData.y0 ?? (o.userData.y0 = o.position.y); o.position.y += Math.sin(now / 420) * 0.05; o.rotation.y = Math.sin(now / 900) * 0.4; } });
-  renderer.render(scene, camera);hasRenderedWorld=true;
+  renderer.render(scene, camera);hasRenderedWorld=true;worldNeedsRender=false;
   // nhãn
   for (const a of Object.values(actors)) {
     const el = tags[a.who]; el.hidden = !a.root.visible;

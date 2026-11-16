@@ -26,6 +26,7 @@ for(const width of [360,390,430])test('3D-only home opens tools on the same isla
  expect(hit).toBeTruthy();await world.locator('#world').click({position:{x:hit[0],y:hit[1]}});
  await world.getByRole('button',{name:'Xem giấy nhắn · dán giấy',exact:true}).click();await N('tick',12);
  await expect(page.locator('#world-surface-title')).toHaveText('Giấy nhắn trên tủ lạnh');await expect(page.locator('#v-tu-lanh')).toBeVisible();await expect(page.locator('iframe')).toHaveCount(1);
+ await expect.poll(async()=>{const m=await N('me'),[,y]=await N('screenOfWorld',m.x,1.32,m.z),panel=await page.locator('#world-surface').boundingBox();return y>panel.y+panel.height+4&&y<704;}).toBe(true);
  const text=page.locator('#fr-text');await expect(text).toBeVisible();await text.fill('Giấy nhắn thử trên đảo');
  await page.evaluate(()=>rerender());await expect(page.locator('#fr-text')).toHaveValue('Giấy nhắn thử trên đảo');
  mkdirSync('test-results/world-home',{recursive:true});await page.screenshot({path:'test-results/world-home/fridge-'+width+'.png'});
