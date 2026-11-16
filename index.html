@@ -476,6 +476,10 @@ nav.subtabs a .ct:empty{display:none}
 .chron li::before{content:"";position:absolute;left:-24px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--g4);box-shadow:0 0 0 3px var(--bg)}
 .chron time{display:block;font-size:12px;color:var(--muted);font-weight:800;font-variant-numeric:tabular-nums}
 
+.w3d-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:22px;background:linear-gradient(135deg,#FFE6F0,#E3F2FF);border:2.5px solid var(--pop,#1D2B4F);box-shadow:3px 3px 0 var(--pop,#1D2B4F);color:inherit;text-decoration:none;min-height:64px}
+.w3d-card:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--pop,#1D2B4F)}
+.w3d-ic{font-size:34px;line-height:1}.w3d-tx{display:flex;flex-direction:column;flex:1;min-width:0}.w3d-tx b{font-family:var(--display);font-size:20px;color:var(--pink-deep)}.w3d-tx small{color:var(--muted);font-weight:600;font-size:13px;line-height:1.35}
+.w3d-tag{font-size:12px;font-weight:800;padding:4px 9px;border-radius:999px;background:#fff;border:2px solid var(--pop,#1D2B4F);white-space:nowrap}
 .v3h{font-family:var(--display);font-size:22px;line-height:1.15;margin:0;color:var(--pink-deep)}
 .v3sub{margin:2px 0 0;color:var(--muted);font-size:14px;font-weight:600}
 .blk{display:flex;flex-direction:column;gap:10px}
@@ -2716,6 +2720,9 @@ function feed(){
   Object.keys(M).forEach(c=>list(c).forEach(x=>{if(x.by===o)add(x.date,M[c][0],M[c][1]);}));
   return ev.sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,8);
 }
+// Lối vào thế giới 3D (bản thử, chỉ lưu trên máy, không Firebase). Truyền ai đang cầm máy.
+function world3dCardHTML(){const who=ME===null?"":(CH(ME)==="em"?"em":"anh");
+  return`<a class="w3d-card" href="./nha3d/?me=${who}" aria-label="Vào nhà 3D"><span class="w3d-ic" aria-hidden="true">🏡</span><span class="w3d-tx"><b>Vào nhà 3D</b><small>Tự đi lại, xếp đồ, ngồi cùng nhau, trồng cây lớn theo ngày</small></span><span class="w3d-tag">Bản thử</span></a>`;}
 function renderHome(){
   const root=$("tab-home");if(!root)return;
   if(ME===null){root.innerHTML=`<div class="who"><p>Điện thoại này của ai?</p><div class="row">${[0,1].map(i=>`<button class="btn btn-main btn-small" data-hme="${i}">${N(i)}</button>`).join("")}</div><p class="quiet">Mỗi máy chọn một lần, để app biết ai tưới cây, ai dán giấy, ai đến lượt.</p></div>`;
@@ -2737,7 +2744,7 @@ function renderHome(){
   if(w.drawDone)todos.push(`<li class="hot"><span class="ic">${ICON.pen}</span><span class="tx">${N(o)} đã lật bức tranh của hai đứa</span><a class="btn btn-main btn-small" href="#ve">Xem tranh</a></li>`);
   const fd=feed(),up=upcoming(5),gifts=list("gifts"),treH=treasureHTML();
   const pend=todos.length-(w.water?1:0);
-  root.innerHTML=`${inviteHTML()}${pend>0?`<a class="newsbar" href="#nha" data-jump="todos"><span class="ic">${ICON.note}</span><b>${pend} việc đang chờ bạn</b><span>Xem ›</span></a>`:""}${worldMapHTML()}${houseRoomNavHTML("")}
+  root.innerHTML=`${inviteHTML()}${pend>0?`<a class="newsbar" href="#nha" data-jump="todos"><span class="ic">${ICON.note}</span><b>${pend} việc đang chờ bạn</b><span>Xem ›</span></a>`:""}${world3dCardHTML()}${worldMapHTML()}${houseRoomNavHTML("")}
     <section class="blk" id="todos" aria-label="Việc của bạn"><div><h2 class="v3h">Việc của bạn hôm nay</h2></div>
       ${todos.length?`<ul class="todo">${todos.join("")}</ul>`:`<p class="alldone">Xong hết rồi. Ghé tủ lạnh dán một mẩu giấy cho ${N(o)} không?</p>`}</section>
     ${treH}

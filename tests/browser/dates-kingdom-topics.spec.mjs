@@ -65,3 +65,12 @@ test("the jar has the new replayable cards without clashing with saved custom ca
   await page.locator("details:has(#allList) summary").click();
   await expect(page.locator("#allList li")).toHaveCount(52);
 });
+
+test("home tab links into the 3D house as the person holding the phone", async ({ page }) => {
+  await openAs(page, 1, "nha");
+  const card = page.locator("a.w3d-card");
+  await expect(card).toBeVisible();
+  await expect(card).toHaveAttribute("href", "./nha3d/?me=em");
+  const box = await card.boundingBox();
+  expect(box.height).toBeGreaterThanOrEqual(56);
+});

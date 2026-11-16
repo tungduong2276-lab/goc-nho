@@ -41,7 +41,8 @@ const S = {
   mode: "play",
   layout: E.deserialize(store.get(KEY.layout) || "null").layout,
   looks: loadLooks(),
-  me: store.get(KEY.me) === "em" ? "em" : "anh",
+  // ?me=anh|em do app Góc Nhỏ truyền sang (máy này của ai); không có thì nhớ lần trước.
+  me: (() => { const q = new URLSearchParams(location.search).get("me"); if (q === "anh" || q === "em") { store.set(KEY.me, q); return q; } return store.get(KEY.me) === "em" ? "em" : "anh"; })(),
   time: TIMES[store.get(KEY.time)] ? store.get(KEY.time) : "ngay",
   selected: null,
   history: new E.History(40),
