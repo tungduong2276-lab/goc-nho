@@ -144,7 +144,12 @@ function editFit() {
   cam.goal.set(0, 1.1, 0);
 }
 function updateCamera() {
-  const w = innerWidth / cam.ppm / 2, h = innerHeight / cam.ppm / 2, s = cam.shift / cam.ppm;
+  // Keep the activity and the character visible together on a phone.
+  const panel = document.querySelector("#dateplay");
+  const bottom = S.scene === "hen" && panel && !panel.hidden ? panel.getBoundingClientRect().bottom : 0;
+  const focus = bottom ? bottom + Math.max(0, innerHeight - 150 - bottom) * .6 : 0;
+  const shift = bottom ? innerHeight / 2 - focus : cam.shift;
+  const w = innerWidth / cam.ppm / 2, h = innerHeight / cam.ppm / 2, s = shift / cam.ppm;
   Object.assign(camera, { left: -w, right: w, top: h - s, bottom: -h - s });
   camera.position.copy(cam.target).addScaledVector(CAMDIR, 60);
   camera.up.set(0, 1, 0); camera.lookAt(cam.target);
@@ -937,7 +942,7 @@ function applyRemote(changes) {
   for (const c of changes) {
     if(c.id.startsWith("a_date_")){datePlay.receive(c.id,c.data);continue;}
     if (c.id === SY.presenceId(partner().who)) { CLOUD.remote = c.data; continue; }
-    if (c.id.startsWith("m_")) { const sc = c.id.slice(2); const L = S.layouts[sc]; if (L && c.data) { L.wall = c.data.wall || L.wall; L.floor = c.data.floor || L.floor; CLOUD.meta[sc] = L.wall + "|" + L.floor; store.set(sc === "san" ? KEY.yard : KEY.layout, E.serialize(L)); if (sc === S.scene) buildShell(); } continue; }
+    if (c.id.startsWith("m_")) { const sc = c.id.slice(2); if(!["nha","san"].includes(sc))continue; const L = S.layouts[sc]; if (L && c.data) { L.wall = c.data.wall || L.wall; L.floor = c.data.floor || L.floor; CLOUD.meta[sc] = L.wall + "|" + L.floor; store.set(sc === "san" ? KEY.yard : KEY.layout, E.serialize(L)); if (sc === S.scene) buildShell(); } continue; }
     for (const sc of ["nha", "san"]) if (c.id.startsWith("i_" + sc + "_")) byScene[sc].push(c);
   }
   for (const sc of ["nha", "san"]) {

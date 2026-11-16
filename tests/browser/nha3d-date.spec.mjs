@@ -24,6 +24,7 @@ for(const width of [360,390,430])test("date island: drink turns, timed fishing a
  const old=await page.evaluate(()=>[localStorage.getItem("gocnho.nha3d.layout.v1"),localStorage.getItem("gocnho.nha3d.yard.v1"),localStorage.getItem("hu-hen-ho-v2")]);
  if(width===390){await tapItem(page,N,"y-d1","⛵ Đi thuyền sang đảo hẹn hò");await N("settle");expect(await N("scene")).toBe("hen");}
  expect(await N("scene")).toBe("hen");
+ await N("remoteChanges",[{id:"m_hen",data:{wall:"hong",floor:"da"}}]);
  await tapItem(page,N,"h-cook","Cùng pha đồ uống");
  await expect(page.locator("#dateplay")).toContainText("bạn mô phỏng");
  await page.getByRole("button",{name:"🍓 Sinh tố dâu đôi",exact:true}).click();
@@ -40,6 +41,8 @@ for(const width of [360,390,430])test("date island: drink turns, timed fishing a
  await tapItem(page,N,"h-fish","Thả câu, chờ cá cắn");
  await page.getByRole("button",{name:"🎣 Thả câu",exact:true}).click();
  const fish=(await N("date")).fish;expect(fish.phase).toBe("waiting");
+ await expect.poll(async()=>{const m=await N("me"),[x,y]=await N("screenOfWorld",m.x,1.32,m.z),panel=await page.locator("#dateplay").boundingBox();return y>panel.y+panel.height+8&&y<694&&x>0&&x<width;}).toBe(true);
+ await shot(page,"casting-"+width);
  // Freeze browser wall-clock at the bite's middle so GPU speed cannot decide whether a catch succeeds.
  await page.clock.setFixedTime(new Date(fish.biteAt+850));await N("tick",.1);
  await page.getByRole("button",{name:"Giật cần!",exact:true}).click();

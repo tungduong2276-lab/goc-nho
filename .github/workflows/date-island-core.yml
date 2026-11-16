@@ -35,7 +35,9 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           git fetch origin "refs/heads/evidence/date-island-pr-$PR_NUMBER"
-          for name in island-390 drink-panel-360 fishing-430; do
+          git show "FETCH_HEAD:test-results/date-evidence/TESTED_HEAD.txt"
+          for name in island-390 drink-panel-360 fishing-430 casting-390 picnic-390; do
+            git cat-file -e "FETCH_HEAD:test-results/date-evidence/$name.png" || continue
             printf 'DATE_IMAGE_BEGIN %s\n' "$name"
             git show "FETCH_HEAD:test-results/date-evidence/$name.png" | base64
             printf 'DATE_IMAGE_END %s\n' "$name"
