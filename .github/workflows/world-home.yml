@@ -1,0 +1,46 @@
+name: 3D-only home
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'src/world-*'
+      - 'nha3d/**'
+      - 'tests/browser/world-home.spec.mjs'
+      - 'tests/staging/world-home.test.mjs'
+      - '.github/workflows/world-home.yml'
+permissions:
+  contents: write
+jobs:
+  world-home:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npx playwright install chromium
+      - run: node --test tests/staging/world-home.test.mjs
+      - run: npx playwright test tests/browser/world-home.spec.mjs --workers=2
+      - name: Publish synthetic 3D-only home review images
+        if: always() && github.event.pull_request.head.ref == 'feature/world-only-home' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          TESTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ ! -d test-results/world-home ]; then exit 0; fi
+          current=$(git ls-remote origin refs/heads/feature/world-only-home | cut -f1)
+          if [ "$current" != "$TESTED_HEAD" ]; then exit 0; fi
+          EVIDENCE_BRANCH="evidence/world-home-pr-$PR_NUMBER"
+          old=$(git ls-remote origin "refs/heads/$EVIDENCE_BRANCH" | cut -f1)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan "$EVIDENCE_BRANCH"
+          git rm -r --cached . >/dev/null
+          printf '%s\n' "$TESTED_HEAD" > test-results/world-home/TESTED_HEAD.txt
+          git add -f test-results/world-home
+          git commit -m "Synthetic 3D-only home screenshots for PR $PR_NUMBER"
+          git push --force-with-lease="refs/heads/$EVIDENCE_BRANCH:$old" origin "HEAD:refs/heads/$EVIDENCE_BRANCH"

@@ -1284,7 +1284,8 @@ html.embed #app>header,html.embed nav.tabs,html.embed nav.subtabs,html.embed .up
 html.embed #app{padding-top:8px}
 </style>
 
-<script>if(/(^|[?&])embed=1(&|$)/.test(location.search))document.documentElement.classList.add("embed");</script>
+<link rel="stylesheet" href="./src/world-home.css">
+<script>{const q=new URLSearchParams(location.search);if(q.get("embed")==="1")document.documentElement.classList.add("embed");else if(q.get("classic")!=="1")document.documentElement.classList.add("world-only");}</script>
 <div class="wrap" id="app">
   <header>
     <div class="brand">
@@ -4537,8 +4538,44 @@ const GN_ROOT={"#tu-lanh":["tab-fridge","tu-lanh"],"#thu":["tab-letters","thu"],
  const l=renderLetters;renderLetters=function(){l();gnMount("tab-letters","thu");};}
 window.addEventListener("hashchange",()=>{const r=GN_ROOT[location.hash];if(r)gnMount(r[0],r[1]);});
 
+// The 3D shell reuses these exact data-entry handlers and Firebase schemas.
+// Only bounded feature ids enter this bridge; it never accepts HTML, selectors or write commands.
+let worldActiveFeature=null;
+window.GOCNHO_WORLD={
+ user:()=>({who:ME===null?(lsGet("gocnho.nha3d.me")||"anh"):CH(ME),known:ME!==null,cloud:!!CLOUD.cid&&ME!==null&&!document.body.classList.contains("gated"),names:S.meta.names.slice(),avatars:(S.meta.chars||["anh","em"]).slice(),key:(CLOUD.uid||"local")+"|"+(CLOUD.cid||"")}),
+ select:who=>{if(CLOUD.uid)return;const i=(S.meta.chars||["anh","em"]).indexOf(who);if(i<0)return;ME=i;lsSet("hu-hen-ho-me",String(ME));rerender();},
+ open:f=>{worldActiveFeature=f;$("settings").hidden=true;if(f.id==="settings"){$("openSettings").click();return;}location.hash=f.route||f.id;route();rerender();},
+ close:()=>{worldActiveFeature=null;$("settings").hidden=true;}
+};
+{const render=renderAll;renderAll=function(){
+ if(!document.documentElement.classList.contains("world-only"))render();
+ else{
+  renderHeader();
+  const id=worldActiveFeature&&(worldActiveFeature.route||worldActiveFeature.id);
+  if(id==="nha")renderHome();
+  else if(id==="phong-khach")renderRoom();
+  else if(id==="gac")renderRooms();
+  else if(id==="hom-nay")renderToday();
+  else if(id==="khu-vuon"){renderCare();renderGarden();}
+  else if(id==="nhat-ky")renderHistory();
+  else if(id==="tu-dien")renderTab("dict");
+  else if(id==="bao-tang")renderTab("museum");
+  else if(id==="ban-do")renderTab("places");
+  else if(id==="bo-luat")renderTab("rules");
+  else if(id==="uoc-mo")renderWishes();
+  else if(id==="thu")renderLetters();
+  else if(id==="tu-lanh")renderFridge();
+  else if(id==="truyen")renderStory();
+  else if(id==="ve")renderDraw();
+  else if(id==="vuong-quoc")renderKingdom();
+  decorate();navDots();
+ }
+ window.dispatchEvent(new Event("gocnho:state"));
+};}
 loadLocal();route();renderAll();cloudInit();initDb();startV3();bindBackup();netState();
+if(document.documentElement.classList.contains("embed")&&location.hash==="#settings")$("openSettings").click();
 </script>
 <script src="./assets/3d/living-motion.js"></script>
+<script type="module" src="./src/world-home.js"></script>
 
 </body></html>

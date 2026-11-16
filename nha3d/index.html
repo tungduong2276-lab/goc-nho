@@ -23,7 +23,7 @@
 <div id="labels" aria-hidden="true"></div>
 
 <header class="top">
-  <a class="pill back" href="../" aria-label="Về Góc Nhỏ">‹ Về</a>
+  <button class="pill back" id="btn-world-guide" aria-label="Bản đồ và đồ dùng trên đảo">🧭</button>
   <span class="pill tag" id="trial-pill" title="Trạng thái đồng bộ đảo">Đang nối…</span>
   <span class="pill tag partner" id="partner-status" hidden></span>
   <div class="top-r play-only">
@@ -90,6 +90,8 @@
   <p class="date-card" id="date-text"></p>
   <div class="row"><button class="pill ghost" id="btn-redraw">Bốc lại</button><button class="pill" data-close>Hẹn nhé</button></div>
 </section>
+
+<section id="world-guide" class="sheet" hidden aria-label="Bản đồ và đồ dùng"><h2>Đảo của hai đứa</h2><p>Chọn nơi muốn đến, mình sẽ đi tới đó.</p><div id="world-guide-places"></div><button class="pill" data-close>Về cảnh</button></section>
 
 <section id="appsheet" class="sheet appsheet" hidden aria-label="Màn hình của app">
   <div class="appsheet-head"><h2 id="appsheet-title">Hộp thư</h2><button class="pill" id="appsheet-close" aria-label="Đóng, quay lại đảo">Về đảo</button></div>

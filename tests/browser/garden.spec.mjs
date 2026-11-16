@@ -1,3 +1,4 @@
+// Retained component compatibility checks; the default entry is covered by world-home.spec.mjs.
 import { test, expect } from "@playwright/test";
 
 async function openGarden(page) {
@@ -10,7 +11,7 @@ async function openGarden(page) {
   await page.route("https://fonts.googleapis.com/**", route => route.abort());
   await page.route("https://fonts.gstatic.com/**", route => route.abort());
 
-  await page.goto("/index.html#khu-vuon");
+  await page.goto("/index.html?classic=1#khu-vuon");
   await expect(page.locator("#v-khu-vuon")).toBeVisible();
   await expect(page.locator(".garden3d")).toBeVisible();
   expect(pageErrors, "application must load without uncaught JavaScript errors").toEqual([]);
@@ -82,7 +83,7 @@ test("board hit target wins over the neighboring watering-can expansion across v
   for (const width of [390, 360]) {
     await page.setViewportSize({ width, height: 844 });
     for (const [fx, fy] of [[0.2,0.2],[0.5,0.2],[0.8,0.2],[0.2,0.5],[0.5,0.5],[0.8,0.5],[0.2,0.8],[0.5,0.8],[0.8,0.8]]) {
-      await page.goto("/index.html#khu-vuon");
+      await page.goto("/index.html?classic=1#khu-vuon");
       await expect(page.locator(".garden3d")).toBeVisible();
       const hit = page.locator(".garden3d button[data-gi='bang'] .ghit");
       const point = await hit.evaluate((el, p) => {
