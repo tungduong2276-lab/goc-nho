@@ -70,7 +70,7 @@ test("home tab links into the 3D house as the person holding the phone", async (
   await openAs(page, 1, "nha");
   const card = page.locator("a.w3d-card");
   await expect(card).toBeVisible();
-  await expect(card).toHaveAttribute("href", "./nha3d/?me=em");
+  await expect(card).toHaveAttribute("href", "./nha3d/?me=em&scene=san");
   const box = await card.boundingBox();
   expect(box.height).toBeGreaterThanOrEqual(56);
 });

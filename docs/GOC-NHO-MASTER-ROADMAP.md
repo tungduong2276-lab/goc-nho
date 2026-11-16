@@ -21,7 +21,7 @@ What the user asked for, in their words translated: walk in and out of the house
 - Local rendering in a session without jsDelivr: shallow-clone `mrdoob/three.js` at tag `r169` and route `cdn.jsdelivr.net/npm/three@0.169.0/*` to it (see `tests/browser/nha3d.spec.mjs`).
 
 ### Build order (V3)
-1. **W1 — Outdoor island + door in/out (in progress 2026-11-16):** outdoor scene with the house exterior, a walkable yard, garden plots outside, paths to café corner, mailbox, swing and dock; front door enters the existing interior, interior door leads back out. Garden moves outdoors.
+1. **W1 — Outdoor island + door in/out (built 2026-11-16, PR "W1", awaiting phone check):** `nha3d/world.mjs` (yard layout, door points, `crossesDoor`), `nha3d/world-models.js` (island, house exterior, props); `app.js` `goScene()` swaps scenes with a fade, partner follows, cat stays inside, build mode only indoors; `engine.setRoom()` switches the grid. Original W1 spec: outdoor scene with the house exterior, a walkable yard, garden plots outside, paths to café corner, mailbox, swing and dock; front door enters the existing interior, interior door leads back out. Garden moves outdoors.
 2. **W2 — Shared presence and state:** both phones see each other and share layout + garden through `couples/{cid}/world/*`; offline-safe, last-write-wins per item; tests with the Firestore Emulator.
 3. **W3 — World entry points to app features:** mailbox → letters, fridge → notes, jar → dates, noticeboard → todos, boat → kingdom island.
 4. **W4 — More places:** upstairs rooms, kingdom island scene, café interior, seasonal outdoor decor.

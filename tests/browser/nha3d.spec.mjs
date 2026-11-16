@@ -7,7 +7,7 @@ import { resolve } from "node:path";
 test.describe.configure({ timeout: 120_000 });
 const THREE_DIR = resolve("node_modules/three");
 
-async function openHouse(page, { width = 390, height = 844 } = {}) {
+async function openHouse(page, { width = 390, height = 844, scene = "nha" } = {}) {
   await page.setViewportSize({ width, height });
   const errors = [], firebase = [];
   page.on("pageerror", e => errors.push(e.message));
@@ -20,7 +20,7 @@ async function openHouse(page, { width = 390, height = 844 } = {}) {
   }
   await page.route("https://fonts.googleapis.com/**", route => route.abort());
   await page.route("https://fonts.gstatic.com/**", route => route.abort());
-  await page.goto("/nha3d/index.html");
+  await page.goto("/nha3d/index.html?scene=" + scene);
   await page.waitForFunction(() => window.__NHA3D__?.ready, null, { timeout: 90_000 });
   await page.evaluate(() => window.__NHA3D__.pauseAI(true));
   const N = (f, ...a) => page.evaluate(([f, a]) => window.__NHA3D__[f](...a), [f, a]);
@@ -123,50 +123,92 @@ for (const width of [360, 390, 430]) {
 }
 
 test("vườn: gieo hạt, cùng tưới, cây lớn theo giờ thật, khát khi quên tưới, thu hoạch", async ({ page }) => {
-  const { errors, firebase, N } = await openHouse(page);
-  expect(await N("plant", "g1")).toBeNull();
-  expect(await N("plantKey", "g1")).toBe("trong");
+  const { errors, firebase, N } = await openHouse(page, { scene: "san" });
+  // đứng cạnh vườn ngoài sân
+  const bed = (await N("layout")).items.find(i => i.uid === "y-g1");
+  await N("teleport", -11 + (bed.gx + 1.5) * 0.5, -9 + (bed.gz + 3) * 0.5);
+  await page.waitForTimeout(300);
+  expect(await N("plant", "y-g1")).toBeNull();
+  expect(await N("plantKey", "y-g1")).toBe("trong");
   // Chạm luống → menu gieo hạt
-  const [x, y] = await N("screenOfItem", "g1", 0.5);
+  const [x, y] = await N("screenOfItem", "y-g1", 0.5);
   await page.mouse.click(x, y);
   await expect(page.locator("#actions")).toBeVisible();
   await page.locator("#actions button", { hasText: "Gieo cà chua bi" }).click();
-  await expect.poll(async () => { await N("tick", 0.5); return (await N("plant", "g1"))?.stage; }, { timeout: 30_000 }).toBe(0);
-  expect((await N("plant", "g1")).wateredBy).toEqual(["anh"]);
+  await expect.poll(async () => { await N("tick", 0.5); return (await N("plant", "y-g1"))?.stage; }, { timeout: 30_000 }).toBe(0);
+  expect((await N("plant", "y-g1")).wateredBy).toEqual(["anh"]);
   // Rủ người kia cùng tưới → cả hai cùng tưới
   await N("skipHours", 2);
-  const [x2, y2] = await N("screenOfItem", "g1", 0.5);
+  const [x2, y2] = await N("screenOfItem", "y-g1", 0.5);
   await page.mouse.click(x2, y2);
   await page.locator("#actions button", { hasText: "cùng tưới" }).click();
-  await expect.poll(async () => { await N("tick", 0.5); return (await N("plant", "g1")).wateredBy.length; }, { timeout: 40_000 }).toBe(2);
+  await expect.poll(async () => { await N("tick", 0.5); return (await N("plant", "y-g1")).wateredBy.length; }, { timeout: 40_000 }).toBe(2);
   // Cây lớn và đổi hình theo thời gian
   await N("skipHours", 16);
-  const grown = await N("plant", "g1");
+  const grown = await N("plant", "y-g1");
   expect(grown.stage).toBeGreaterThanOrEqual(2);
-  expect(await N("plantKey", "g1")).toBe(`cachua:${grown.stage}:am`);
+  expect(await N("plantKey", "y-g1")).toBe(`cachua:${grown.stage}:am`);
   // Quên tưới hơn một ngày → khát, hình đổi
   await N("skipHours", 30);
-  expect((await N("plant", "g1")).thirsty).toBe(true);
-  expect(await N("plantKey", "g1")).toMatch(/:khat$/);
+  expect((await N("plant", "y-g1")).thirsty).toBe(true);
+  expect(await N("plantKey", "y-g1")).toMatch(/:khat$/);
   // Tưới tiếp đến khi chín rồi thu hoạch
-  for (let i = 0; i < 3 && !(await N("plant", "g1")).ripe; i++) {
-    const [wx, wy] = await N("screenOfItem", "g1", 0.5);
-    const before = (await N("layout")).items.find(i => i.uid === "g1").plant.w.length;
+  for (let i = 0; i < 3 && !(await N("plant", "y-g1")).ripe; i++) {
+    const [wx, wy] = await N("screenOfItem", "y-g1", 0.5);
+    const before = (await N("layout")).items.find(i => i.uid === "y-g1").plant.w.length;
     await page.mouse.click(wx, wy);
     await page.locator("#actions button", { hasText: "Tưới nước" }).click();
-    await expect.poll(async () => { await N("tick", 0.5); return (await N("layout")).items.find(i => i.uid === "g1").plant.w.length; }, { timeout: 30_000 }).toBe(before + 1);
+    await expect.poll(async () => { await N("tick", 0.5); return (await N("layout")).items.find(i => i.uid === "y-g1").plant.w.length; }, { timeout: 30_000 }).toBe(before + 1);
     await N("skipHours", 20);
   }
-  expect((await N("plant", "g1")).ripe).toBe(true);
-  const [hx, hy] = await N("screenOfItem", "g1", 0.5);
+  expect((await N("plant", "y-g1")).ripe).toBe(true);
+  const [hx, hy] = await N("screenOfItem", "y-g1", 0.5);
   await page.mouse.click(hx, hy);
   await page.locator("#actions button", { hasText: "Thu hoạch" }).click();
   await expect.poll(async () => { await N("tick", 0.5); return (await N("basket")).cachua || 0; }, { timeout: 30_000 }).toBe(3);
-  expect(await N("plant", "g1")).toBeNull();
+  expect(await N("plant", "y-g1")).toBeNull();
   // Lưu qua tải lại trang
   await page.reload();
   await page.waitForFunction(() => window.__NHA3D__?.ready, null, { timeout: 90_000 });
   expect((await N("basket")).cachua).toBe(3);
+  expect(errors).toEqual([]);
+  expect(firebase).toEqual([]);
+});
+
+test("thế giới mở: đi ra vào cửa nhà, sân có vườn, quầy cà phê, xích đu", async ({ page }) => {
+  const { errors, firebase, N } = await openHouse(page, { scene: "san" });
+  expect(await N("scene")).toBe("san");
+  const yard = (await N("layout")).items.map(i => i.type);
+  for (const t of ["nhaNgoai", "luongTrong", "quayCafe", "xichDu", "hopThu", "benThuyen"]) expect(yard).toContain(t);
+  await expect(page.locator(".doortag")).toHaveText("🏠 Vào nhà");
+  await expect(page.locator("#btn-edit")).toBeHidden();
+  // Đi thẳng vào cửa bằng phím (cùng đường xử lý với cần điều khiển)
+  await page.keyboard.down("w"); await page.keyboard.down("d");
+  await expect.poll(async () => { await N("tick", 0.2); return N("scene"); }, { timeout: 40_000 }).toBe("nha");
+  await page.keyboard.up("w"); await page.keyboard.up("d");
+  await page.evaluate(() => window.__NHA3D__.settle());
+  await expect(page.locator(".doortag")).toHaveText("🚪 Ra sân");
+  await expect(page.locator("#btn-edit")).toBeVisible();
+  expect((await N("layout")).items.some(i => i.type === "sofa")).toBe(true);
+  // Đi ra bằng thảm cửa
+  await page.keyboard.down("s"); await page.keyboard.down("a");
+  await expect.poll(async () => { await N("tick", 0.2); return N("scene"); }, { timeout: 40_000 }).toBe("san");
+  await page.keyboard.up("s"); await page.keyboard.up("a");
+  await page.evaluate(() => window.__NHA3D__.settle());
+  // Chạm vào nhà → "Vào nhà"
+  const [hx, hy] = await N("screenOfItem", "y-nha", 0.5);
+  await page.mouse.click(hx, hy);
+  await page.locator("#actions button", { hasText: "Vào nhà" }).click();
+  await expect.poll(async () => { await N("tick", 0.2); return N("scene"); }, { timeout: 40_000 }).toBe("nha");
+  await page.evaluate(() => window.__NHA3D__.settle());
+  // Nhãn cửa cũng đưa ra sân
+  await page.locator(".doortag").click();
+  await expect.poll(async () => { await N("tick", 0.2); return N("scene"); }, { timeout: 40_000 }).toBe("san");
+  // Lưu cảnh đang đứng qua lần mở sau
+  await page.evaluate(() => window.__NHA3D__.settle());
+  await page.goto("/nha3d/index.html");
+  await page.waitForFunction(() => window.__NHA3D__?.ready, null, { timeout: 90_000 });
+  expect(await N("scene")).toBe("san");
   expect(errors).toEqual([]);
   expect(firebase).toEqual([]);
 });

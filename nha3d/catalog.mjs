@@ -13,7 +13,8 @@
 //   wardrobe → mở tủ phối đồ
 
 export const CELL = 0.5;
-export const ROOM = { w: 16, d: 14, wallH: 2.7 }; // 8 m × 7 m
+// reserved: ô lối ra sân (thảm cửa ở mép trước), không đặt đồ đặc lên được.
+export const ROOM = { id: "nha", w: 16, d: 14, wallH: 2.7, reserved: [[7, 13], [8, 13]] }; // 8 m × 7 m
 
 export const CATEGORIES = [
   { id: "ghe", name: "Ghế & bàn" },
@@ -67,6 +68,25 @@ export const CATALOG = {
   thamTron:    { name: "Thảm tròn hồng",  cat: "cay",  kind: "rug",   w: 4, d: 4, model: "rugRound", args: [1, "pinkL", "petal"] },
   thamVuong:   { name: "Thảm sọc xanh",   cat: "cay",  kind: "rug",   w: 4, d: 3, model: "rugRect", args: [2, 1.4, "sky2", "white"] },
   thamLon:     { name: "Thảm hoa lớn",    cat: "cay",  kind: "rug",   w: 6, d: 6, model: "F.rug", scale: 0.98 },
+  // ---- ngoài sân (cat "ngoai": không hiện trong kho đồ trong nhà; xem world.mjs) ----
+  nhaNgoai:    { name: "Ngôi nhà",        cat: "ngoai", kind: "floor", w: 14, d: 10, model: "W.house", use: { type: "enter", label: "Vào nhà" } },
+  cayXanh:     { name: "Cây xanh",        cat: "ngoai", kind: "floor", w: 2, d: 2, model: "W.tree" },
+  cayHoa:      { name: "Cây hoa anh đào", cat: "ngoai", kind: "floor", w: 2, d: 2, model: "W.blossom" },
+  buiHoa:      { name: "Bụi hoa",         cat: "ngoai", kind: "floor", w: 1, d: 1, model: "W.flowers", args: ["pink"] },
+  buiHoaVang:  { name: "Bụi hoa vàng",    cat: "ngoai", kind: "floor", w: 1, d: 1, model: "W.flowers", args: ["butter"] },
+  bui:         { name: "Bụi cây",         cat: "ngoai", kind: "floor", w: 1, d: 1, model: "W.bush" },
+  denDuong:    { name: "Đèn đường",       cat: "ngoai", kind: "floor", w: 1, d: 1, model: "W.lamp", states: [false, true],
+                 use: { type: "toggle", on: true, label: "Bật đèn" } },
+  hopThu:      { name: "Hộp thư",         cat: "ngoai", kind: "floor", w: 1, d: 1, model: "W.mailbox", states: [false, true],
+                 use: { type: "toggle", on: true, label: "Mở hộp thư" } },
+  xichDu:      { name: "Xích đu",         cat: "ngoai", kind: "floor", w: 4, d: 2, model: "W.swing",
+                 use: { type: "sit", seats: [{ x: -0.22, z: 0.02, a: 0, h: 0.58 }, { x: 0.22, z: 0.02, a: 0, h: 0.58 }] } },
+  gheDa:       { name: "Ghế dài",         cat: "ngoai", kind: "floor", w: 3, d: 1, model: "W.bench",
+                 use: { type: "sit", seats: [{ x: -0.35, z: 0.02, a: 0, h: 0.46 }, { x: 0.35, z: 0.02, a: 0, h: 0.46 }] } },
+  quayCafe:    { name: "Quầy cà phê",     cat: "ngoai", kind: "floor", w: 4, d: 2, model: "W.kiosk", use: { type: "cafe", label: "Gọi đồ uống" } },
+  duongDa:     { name: "Đá lát đường",    cat: "ngoai", kind: "rug",   w: 2, d: 2, model: "W.stone" },
+  benThuyen:   { name: "Bến thuyền",      cat: "ngoai", kind: "rug",   w: 3, d: 6, model: "W.dock", use: { type: "boat", label: "Chèo thuyền ra đảo" } },
+  bangTen:     { name: "Bảng tên",        cat: "ngoai", kind: "floor", w: 3, d: 1, model: "W.sign" },
   // garden: gieo hạt, tưới, cây lớn theo giờ thật (xem garden.mjs); trạng thái cây nằm ở item.plant.
   luongTrong:  { name: "Luống trồng",     cat: "vuon", kind: "floor", w: 3, d: 2, model: "gardenBed", use: { type: "garden" } },
   chauTrong:   { name: "Chậu trồng",      cat: "vuon", kind: "floor", w: 1, d: 1, model: "gardenPot", use: { type: "garden" } },
@@ -115,9 +135,7 @@ export const DEFAULT_LAYOUT = {
     { uid: "d2", type: "keSach",      gx: 0,  gz: 9,  r: 1 },
     { uid: "d3", type: "radio",       gx: 9,  gz: 1,  r: 0 },
     { uid: "d4", type: "dem",         gx: 2,  gz: 12, r: 0 },
-    { uid: "g1", type: "luongTrong",  gx: 13, gz: 12, r: 0 },
-    { uid: "g2", type: "chauTrong",   gx: 12, gz: 13, r: 0 },
-    { uid: "g3", type: "chauTrong",   gx: 11, gz: 13, r: 0 },
+    { uid: "g2", type: "chauTrong",   gx: 14, gz: 12, r: 0 },
     { uid: "w1", type: "cuaSo",       wall: "R", at: 5, r: 0 },
     { uid: "w2", type: "khungAnh",    wall: "L", at: 6, r: 0 },
     { uid: "w3", type: "lich",        wall: "R", at: 10, r: 0 },
