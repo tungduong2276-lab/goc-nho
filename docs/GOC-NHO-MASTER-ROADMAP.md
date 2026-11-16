@@ -27,12 +27,19 @@ What the user asked for, in their words translated: walk in and out of the house
 2. **W2 — Shared presence and state (built 2026-11-16, PR "W2"; first live use pending):** `nha3d/sync.mjs` (pure: doc encoding, diff, merge, presence throttle), `nha3d/cloud.js` (compat SDK adapter reusing the app login), wiring in `app.js` (`startCloud`, `pushScene`, `applyRemote`, `remotePartnerStep`, `sendPresence`). Original W2 spec: both phones see each other and share layout + garden through `couples/{cid}/world/*`; offline-safe, last-write-wins per item; tests with the Firestore Emulator.
 3. **W3 — Old app features become 3D world objects** (user asked 2026-11-16: "làm 3D những cái có thể"). Rule: the object READS the app's existing collections to show live state; writing long text still happens on the app's own screen, opened as an overlay over the island (`../index.html?embed=1#<tab>`), so the data format never forks and old tabs keep working.
    - **Đợt 1 (W3a, built):** hộp thư ↔ `letters` (flag + floating envelope when an unlocked unread letter is addressed to me; "N thư còn niêm phong"); tủ lạnh ↔ `fridge` (the 8 newest notes stuck on the door in the app's own colours, heart magnet if hearted); hũ hẹn hò ↔ `meta.pending` + `history` (gold slip floats over the jar when a draw is waiting, pink while a date is open; tapping shakes the jar and opens the real draw screen).
-   - **Đợt 2:** lọ ước mơ (`wishes`), giá vẽ (vẽ tiếp sức), máy đánh chữ (`story`), bảng ghim (`rules`).
+   - **Đợt 2 (W3b, implemented; acceptance pending):** lọ ước mơ (`wishes`), giá vẽ (`drawings`), máy đánh chữ (`story`), bảng ghim (`rules`). Same read-only adapter and original app overlays as W3a.
    - **Đợt 3:** bảo tàng (`museum`), đảo Vương quốc by boat (`kingdom`), hộp quà dưới gốc cây (`gifts`), kệ sách (`dict`), bản đồ (`places`).
 4. **W4 — More places:** upstairs rooms, kingdom island scene, café interior, seasonal outdoor decor.
 5. **W5 — Make the world the home screen** once W1–W3 are accepted on both phones.
 
-## Latest operational handoff — 2026-11-16 (late night) — V3 W3 đợt 1 built
+## Latest operational handoff — 2026-11-16 — V3 W3b creative objects
+- Branch `feature/world-w3-creative-objects`: wishes jar reflects unfinished wishes/new partner additions; easel reflects unfinished/completed drawing and whose turn it is; typewriter shows paper for an active story and signals the user's turn; corkboard reflects whether shared rules exist.
+- All four open original app screens (`#uoc-mo`, `#ve`, `#truyen`, `#bo-luat`) inside the existing overlay. `watchApp()` only reads the four existing collections; it never writes to them. No new collection, Rules, Firebase configuration or production-data change.
+- New houses include the jar/typewriter. Saved house layouts remain unchanged: add them via Trang trí → Sở thích. Existing easels/corkboards gain the new interactions in place.
+- New checks: pure state/identity tests, four-object overlay interactions and refresh at 360/390/430px, Emulator member reads plus outsider/anonymous denial. Local pure tests 6/6 and source-sync check passed; browser and exact-head CI must pass before merge. Real two-phone acceptance remains pending for W1–W3; do not enable W5 based on desktop checks.
+- Next after W3b checks: W3 đợt 3 (museum, boat/kingdom, gifts, bookshelf/dictionary, map/places). Keep historical staging PRs and App Check draft separate.
+
+## Previous operational handoff — 2026-11-16 (late night) — V3 W3 đợt 1 built
 - `nha3d/appdata.mjs`: pure rules (same as index.html) for mailbox / fridge / jar state. `cloud.js` `watchApp()` only READS `letters`, `fridge` (newest 12), `history`, `meta/main`; without Firebase the island reads the app's local copy (`localStorage["hu-hen-ho-v2"]`). Me = `localStorage["hu-hen-ho-me"]` (index 0/1, not anh/em).
 - Overlay `#appsheet` iframes `../index.html?embed=1#thu|tu-lanh|hom-nay`; `html.embed` hides the app chrome (header, tabs, countdown, season row, 2D scene). Seen-markers are shared because it is the same origin.
 - Catalog: `hopThu` and `huHenHo` now `use.type:"app"`; fridge closed state `"trong"` (empty door, `_xuong-3d/rooms2.js`) so real notes go on it. Cache `goc-nho-v20`.

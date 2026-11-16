@@ -50,13 +50,14 @@ export async function connectCloud() {
     setPresence(who, data) { return swallow(col.doc(presenceId(who)).set({ ...data, k: "presence", who, ts: ts() })); },
     // W3: chỉ ĐỌC dữ liệu của app (thư, tủ lạnh, hũ) để đồ vật 3D hiện đúng trạng thái. Không ghi gì vào đây.
     watchApp(cb) {
-      const base = `couples/${cid}/`, data = { letters: {}, fridge: {}, history: {}, meta: null };
+      const base = `couples/${cid}/`, data = { letters: {}, fridge: {}, history: {}, meta: null, wishes: {}, drawings: {}, story: {}, rules: {} };
       const asMap = snap => { const o = {}; snap.docs.forEach(d => { o[d.id] = d.data(); }); return o; };
       const warn = e => console.warn("Đảo 3D: không đọc được dữ liệu app", e);
       const offs = [
         fs.collection(base + "letters").onSnapshot(s => { data.letters = asMap(s); cb(data); }, warn),
         fs.collection(base + "fridge").orderBy("date", "desc").limit(12).onSnapshot(s => { data.fridge = asMap(s); cb(data); }, warn),
         fs.collection(base + "history").onSnapshot(s => { data.history = asMap(s); cb(data); }, warn),
+        ...["wishes", "drawings", "story", "rules"].map(name => fs.collection(base + name).onSnapshot(s => { data[name] = asMap(s); cb(data); }, warn)),
         fs.doc(base + "meta/main").onSnapshot(s => { data.meta = s.exists ? s.data() : null; cb(data); }, warn)
       ];
       return () => offs.forEach(f => f());

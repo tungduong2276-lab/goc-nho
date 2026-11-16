@@ -24,7 +24,7 @@ export function coffeeTable() {
 // hũ hẹn hò: state = 'day' | 'nua' | 'it' | 'mo'
 export function jar(state = 'day') {
   const g = G(), H = 0.52, R = 0.2;
-  const n = { day: 26, nua: 13, it: 4, mo: 13 }[state];
+  const n = { empty: 0, day: 26, nua: 13, it: 4, mo: 13 }[state];
   const cols = [C.pink, C.leaf, C.sky, C.butter, C.pinkL, C.lilac];
   let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
   const fillH = H * 0.86 * n / 26;
@@ -182,3 +182,4 @@ export function onWall(obj, side, along, y, n = 6, d = n) {
   else { obj.position.set(along, y, -d / 2 + 0.05); }
   return obj;
 }
+

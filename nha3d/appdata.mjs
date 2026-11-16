@@ -45,3 +45,35 @@ export function jarState(meta, history) {
   const open = last && !last.closed ? last : null;
   return { pending: !!(meta && meta.pending), openNo: open ? open.no : null, done: hs.filter(h => h.closed).length };
 }
+
+const records = data => Object.values(data || {}).filter(x => x && typeof x === "object");
+const byDate = (a, b) => (a.date || "").localeCompare(b.date || "");
+const identified = me => me === 0 || me === 1;
+
+export function wishesState(wishes, me, seenAt = "") {
+  const all = records(wishes), todo = all.filter(w => !w.done).length;
+  return { todo, done: all.length - todo,
+    fresh: identified(me) ? all.filter(w => w.by === 1 - me && w.date > seenAt).length : 0,
+    fill: todo === 0 ? "empty" : todo < 3 ? "it" : todo < 9 ? "nua" : "day" };
+}
+
+// Match activeDraw(): prefer the earliest unfinished drawing from the partner.
+// Only a status reaches the 3D canvas; the hidden half stays inside the original drawing screen.
+export function drawingState(drawings, me) {
+  const all = records(drawings).sort(byDate), pending = all.filter(d => !d.done);
+  const active = pending.find(d => identified(me) && d.topBy !== me) || pending.at(-1);
+  const mode = !identified(me) ? "noid" : !active ? "start" : active.topBy === me ? "wait" : "bottom";
+  return { mode, pending: pending.length, done: all.filter(d => d.done).length,
+    visual: active ? "ve" : all.some(d => d.done) ? "xong" : "trang" };
+}
+
+export function storyState(stories, me) {
+  const all = records(stories).sort(byDate), active = all.filter(s => !s.done).at(-1);
+  const lines = Array.isArray(active?.lines) ? active.lines : [];
+  return { active: !!active, lines: lines.length, done: all.filter(s => s.done).length,
+    myTurn: identified(me) && !!active && lines.length > 0 && lines.at(-1)?.by !== me };
+}
+
+export function rulesState(rules) {
+  return { count: records(rules).length };
+}
