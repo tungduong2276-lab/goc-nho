@@ -4,6 +4,18 @@ import * as AD from "../../nha3d/appdata.mjs";
 
 const NOW = new Date("2026-11-16T10:00:00");
 
+test("W3c: memory counts and current approved kingdom name follow existing collections", () => {
+  const data = { museum: { a: {}, b: {} }, dict: { a: {} }, places: {}, realm: { a: { built: true }, b: { built: false } },
+    kingdom: { old: { kind: "name", status: "ok", value: "Cũ", decidedAt: "2026-01-01" }, current: { kind: "name", status: "ok", value: "Đảo Mây", decidedAt: "2026-02-01" }, rejected: { kind: "name", status: "no", value: "Không dùng" }, a: { by: 1, status: "pending" }, b: { by: 0, status: "pending" } },
+    gifts: { secret: { note: "must not reach 3D" } } };
+  assert.deepEqual(AD.memoryState(data, 0), { museum: 2, words: 1, places: 0, kingdom: { name: "Đảo Mây", pending: 1, built: 1 } });
+  assert.equal(AD.memoryState(data, 1).kingdom.pending, 1);
+  assert.equal(AD.memoryState(data, null).kingdom.pending, 0);
+  assert.equal(AD.memoryState({}, 0).kingdom.name, "Vương quốc của hai đứa");
+  assert.equal(JSON.stringify(AD.memoryState(data, 0)).includes("must not reach 3D"), false);
+  assert.equal(AD.MEMORY_COLLECTIONS.includes("gifts"), false);
+});
+
 test("W3b: wishes reflect unfinished count and partner additions; no identity means no personal badge", () => {
   const wishes = { a: { by: 1, date: "2026-11-16" }, b: { by: 0, date: "2026-11-16", done: true } };
   assert.deepEqual(AD.wishesState(wishes, 0, "2026-11-15"), { todo: 1, done: 1, fresh: 1, fill: "it" });
@@ -69,3 +81,4 @@ test("hũ: biết lá đang chờ và buổi hẹn đang mở", () => {
   assert.deepEqual(AD.jarState({ pending: null }, h), { pending: false, openNo: 3, done: 2 });
   assert.deepEqual(AD.jarState(null, {}), { pending: false, openNo: null, done: 0 });
 });
+

@@ -77,3 +77,18 @@ export function storyState(stories, me) {
 export function rulesState(rules) {
   return { count: records(rules).length };
 }
+
+// Public shared memories only. Never include gifts (their old documents contain sealed payloads).
+export const MEMORY_COLLECTIONS = ["museum", "dict", "places", "kingdom", "realm"];
+export function memoryState(data, me) {
+  const kingdom = records(data.kingdom);
+  const approved = kingdom.filter(k => k.status === "ok").sort((a, b) => (a.decidedAt || "").localeCompare(b.decidedAt || ""));
+  const name = approved.filter(k => k.kind === "name").at(-1)?.value;
+  return {
+    museum: records(data.museum).length, words: records(data.dict).length, places: records(data.places).length,
+    kingdom: { name: typeof name === "string" ? name : "Vương quốc của hai đứa",
+      pending: identified(me) ? kingdom.filter(k => k.status === "pending" && k.by !== me).length : 0,
+      built: records(data.realm).filter(b => b.built).length }
+  };
+}
+
