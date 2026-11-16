@@ -1,0 +1,25 @@
+name: Date island core
+on:
+  pull_request:
+    paths:
+      - "nha3d/**"
+      - "tests/staging/nha3d-date.test.mjs"
+      - ".github/workflows/date-island-core.yml"
+permissions:
+  contents: read
+jobs:
+  state-and-navigation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: |
+          node --check nha3d/app.js
+          node --check nha3d/date-play.js
+          node --check nha3d/date-models.js
+          node --test tests/staging/nha3d-date.test.mjs tests/staging/nha3d-engine.test.mjs

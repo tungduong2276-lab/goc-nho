@@ -5,6 +5,8 @@
 ## Current direction (user decision 2026-11-16)
 **V3 — Open 3D world like Play Together:** walk in and out of the house, garden outside, walk to other areas instead of switching tabs. See "PRODUCT DIRECTION V3" at the top of the roadmap; it overrides the older milestone order below for the house/world work.
 
+**Experiential priority (2026-11-16, after W3c):** the user wants a love version of Play Together for two people. Prioritise actual cooperative game loops, reactive 3D interactions and replayability over more object-to-page links. See the experiential priority and W4a handoff in the roadmap.
+
 ## Project identity
 - Private two-person Firebase web application; real user data exists.
 - Vietnamese language, mobile-first, cute 3D/isometric world.

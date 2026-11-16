@@ -89,7 +89,7 @@ export function applyItemChanges(layout, scene, changes) {
 
 // Vị trí người kia: chỉ nhận document hợp lệ, còn mới.
 export function readPresence(d, now = Date.now()) {
-  if (!d || d.k !== "presence" || !WHO.has(d.who) || (d.scene !== "san" && d.scene !== "nha")) return null;
+  if (!d || d.k !== "presence" || !WHO.has(d.who) || !["san","nha","hen"].includes(d.scene)) return null;
   if (!Number.isFinite(d.x) || !Number.isFinite(d.z) || !Number.isFinite(d.at)) return null;
   return { ...d, fresh: now - d.at < PRESENCE_STALE_MS };
 }
