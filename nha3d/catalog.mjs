@@ -27,6 +27,11 @@ export const CATEGORIES = [
 ];
 
 export const CATALOG = {
+  henPier:{name:"Bến về nhà",cat:"hen",kind:"rug",w:3,d:6,model:"W.dock",use:{type:"travel",scene:"san",label:"Đi thuyền về sân nhà"}},
+  banPhaChe:{name:"Quầy của hai đứa",cat:"hen",kind:"floor",w:4,d:2,model:"W.kiosk",use:{type:"activity",activity:"cook",label:"Cùng pha đồ uống"}},
+  diemCau:{name:"Bến câu cá",cat:"hen",kind:"rug",w:3,d:6,model:"W.dock",use:{type:"activity",activity:"fish",label:"Thả câu, chờ cá cắn"}},
+  picnic:{name:"Thảm hẹn hò",cat:"hen",kind:"rug",w:4,d:4,model:"D.picnic",use:{type:"sit",seats:[{x:-.55,z:.1,a:Math.PI/2,h:.04},{x:.55,z:.1,a:-Math.PI/2,h:.04}]}},
+  luaTrai:{name:"Lửa trại",cat:"hen",kind:"floor",w:2,d:2,model:"D.campfire",use:{type:"moment",label:"Một câu chuyện bên lửa"}},
   sofa:        { name: "Sofa mây",        cat: "ghe",  kind: "floor", w: 5, d: 2, model: "F.sofa",
                  use: { type: "sit", seats: [{ x: -0.43, z: 0.12, a: 0, h: 0.62 }, { x: 0.43, z: 0.12, a: 0, h: 0.62 }] } },
   banTra:      { name: "Bàn trà tròn",    cat: "ghe",  kind: "floor", w: 2, d: 2, model: "F.coffeeTable", scale: 0.9 },

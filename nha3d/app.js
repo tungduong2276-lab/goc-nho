@@ -1,6 +1,6 @@
 // Góc Nhỏ — bản thử Nhà 3D kiểu Play Together.
 // Dựng trực tiếp bằng three.js với chính bộ hình của _xuong-3d (toon 3 bậc, viền xanh than, camera trực giao 45°).
-// KHÔNG đọc/ghi Firebase: bố cục, quần áo và buổi trong ngày chỉ lưu localStorage của trình duyệt này.
+// Dùng phiên Firebase của app khi đã đăng nhập; chưa kết nối thì chơi riêng trên máy.
 import * as THREE from "three";
 import { C, setOutline, TIMES } from "./xuong/lib.js";
 import * as F from "./xuong/furn.js";
@@ -16,6 +16,8 @@ import * as WM from "./world-models.js";
 import * as SY from "./sync.mjs";
 import { connectCloud } from "./cloud.js";
 import * as AD from "./appdata.mjs";
+import * as DM from "./date-models.js";
+import { createDatePlay } from "./date-play.js";
 
 const $ = s => document.querySelector(s);
 // Cảnh hiện tại: "san" (ngoài sân) hoặc "nha" (trong nhà). W, D đổi theo cảnh.
@@ -53,8 +55,8 @@ function loadLooks() {
 const S = {
   mode: "play",
   layout: null,
-  layouts: { nha: E.deserialize(store.get(KEY.layout) || "null", ROOM).layout, san: E.deserialize(store.get(KEY.yard) || "null", WD.YARD).layout },
-  scene: (() => { const q = new URLSearchParams(location.search).get("scene"); if (q === "nha" || q === "san") return q; return store.get(KEY.scene) === "nha" ? "nha" : "san"; })(),
+  layouts: { nha: E.deserialize(store.get(KEY.layout) || "null", ROOM).layout, san: E.deserialize(store.get(KEY.yard) || "null", WD.YARD).layout, hen: E.clone(WD.DATE_LAYOUT) },
+  scene: (() => { const q = new URLSearchParams(location.search).get("scene"); if (WD.SCENES[q]) return q; const saved=store.get(KEY.scene); return WD.SCENES[saved] ? saved : "san"; })(),
   looks: loadLooks(),
   // ?me=anh|em do app Góc Nhỏ truyền sang (máy này của ai); không có thì nhớ lần trước.
   me: (() => { const q = new URLSearchParams(location.search).get("me"); if (q === "anh" || q === "em") { store.set(KEY.me, q); return q; } return store.get(KEY.me) === "em" ? "em" : "anh"; })(),
@@ -69,12 +71,12 @@ function useScene(id) {
   E.setRoom(RM); S.layout = S.layouts[id]; S.G = E.blockGrid(S.layout);
 }
 useScene(S.scene);
-const saveLayout = () => { store.set(S.scene === "san" ? KEY.yard : KEY.layout, E.serialize(S.layout)); pushScene(S.scene); };
+const saveLayout = () => { if(S.scene==="hen")return; store.set(S.scene === "san" ? KEY.yard : KEY.layout, E.serialize(S.layout)); pushScene(S.scene); };
 // ---------- đồng bộ hai máy (W2) ----------
 // CLOUD.on = đã đăng nhập Góc Nhỏ và vào được nhà chung; khi đó người kia do máy kia điều khiển.
 const CLOUD = { on: false, api: null, last: { nha: new Map(), san: new Map() }, meta: {}, remote: null, sentP: null, ev: null, lastEv: null, lastTarget: null };
 function pushScene(scene) {
-  if (!CLOUD.on) return;
+  if (!CLOUD.on || scene==="hen") return;
   const L = S.layouts[scene], last = CLOUD.last[scene], { upserts, removes } = SY.diffLayout(last, L);
   for (const u of upserts) CLOUD.api.setItem(scene, u.it, u.withWater);
   for (const uid of removes) CLOUD.api.delItem(scene, uid);
@@ -133,7 +135,7 @@ function resize() {
 }
 const EXT = { x: 12, y: 9 };
 // Ngoài sân lùi camera xa hơn để thấy đường đi; trong nhà giữ như cũ.
-const playPpm = () => S.scene === "san" ? Math.max(40, Math.min(56, innerWidth / 9)) : Math.max(58, Math.min(80, innerWidth / 6));
+const playPpm = () => S.scene !== "nha" ? Math.max(40, Math.min(56, innerWidth / 9)) : Math.max(58, Math.min(80, innerWidth / 6));
 // Chế độ Trang trí: thấy trọn phòng trong khoảng giữa thanh trên và kho đồ.
 function editFit() {
   const trayH = $(".tray").offsetHeight || 190, topH = 72;
@@ -142,7 +144,12 @@ function editFit() {
   cam.goal.set(0, 1.1, 0);
 }
 function updateCamera() {
-  const w = innerWidth / cam.ppm / 2, h = innerHeight / cam.ppm / 2, s = cam.shift / cam.ppm;
+  // Keep the activity and the character visible together on a phone.
+  const panel = document.querySelector("#dateplay");
+  const bottom = S.scene === "hen" && panel && !panel.hidden ? panel.getBoundingClientRect().bottom : 0;
+  const focus = bottom ? bottom + Math.max(0, innerHeight - 150 - bottom) * .6 : 0;
+  const shift = bottom ? innerHeight / 2 - focus : cam.shift;
+  const w = innerWidth / cam.ppm / 2, h = innerHeight / cam.ppm / 2, s = shift / cam.ppm;
   Object.assign(camera, { left: -w, right: w, top: h - s, bottom: -h - s });
   camera.position.copy(cam.target).addScaledVector(CAMDIR, 60);
   camera.up.set(0, 1, 0); camera.lookAt(cam.target);
@@ -162,7 +169,7 @@ function applyTime() {
   document.documentElement.style.setProperty("--sky2", hex(T.sky[1]));
   $("#btn-time").textContent = TIME_ICON[S.time];
   for (const it of S.layout.items) if (it.type === "cuaSo" || it.type === "nhaNgoai" || it.type === "denDuong") refreshView(it);
-  if (S.scene === "san" && shell) buildShell();
+  if (S.scene !== "nha" && shell) buildShell();
 }
 
 // ---------- vỏ phòng ----------
@@ -171,7 +178,7 @@ function buildShell() {
   if (shell) scene.remove(shell);
   const wc = (WALL_COLORS.find(c => c.id === S.layout.wall) || WALL_COLORS[0]).wall;
   const fc = FLOOR_COLORS.find(c => c.id === S.layout.floor) || FLOOR_COLORS[0];
-  if (S.scene === "san") { shell = WM.island(W, D, S.time); scene.add(shell); return; }
+  if (S.scene !== "nha") { shell = S.scene==="hen"?DM.dateIsland(W,D,S.time):WM.island(W,D,S.time); scene.add(shell); return; }
   shell = F.roomShell({ n: W, d: D, h: ROOM.wallH, wallL: wc, wallR: wc, floor: fc.floor, plank: fc.plank });
   const m = WM.doorMat(); m.position.set(WD.DOOR_IN.x, 0, WD.DOOR_IN.z); shell.add(m);
   scene.add(shell);
@@ -188,6 +195,7 @@ function buildGrid() {
 // ---------- đồ đạc ----------
 const col = k => (typeof k === "string" ? C[k] : k);
 const BUILDERS = {
+  "D.picnic":()=>DM.picnic(), "D.campfire":()=>DM.campfire(),
   "F.sofa": () => F.sofa(), "F.coffeeTable": () => F.coffeeTable(), "F.cushion": () => F.cushion(C.pink),
   "F.bookshelfLow": s => F.bookshelfLow(s), "F.jar": s => F.jar(s || "day"), "F.radio": s => F.radio(!!s),
   "F.floorLamp": s => F.floorLamp(!!s), "F.pothos": () => F.pothos(), "F.petBed": () => F.petBed(), "F.rug": () => F.rug(),
@@ -392,7 +400,7 @@ const tags = {};
 const doorTag = (() => { const el = document.createElement("button"); el.className = "nametag doortag"; el.type = "button"; document.body.appendChild(el); el.addEventListener("click", () => walkThroughDoor()); return el; })();
 function placeDoorTag() {
   const d = S.scene === "san" ? WD.DOOR_OUT : WD.DOOR_IN, y = S.scene === "san" ? 2.75 : 0.35;
-  doorTag.textContent = S.scene === "san" ? "🏠 Vào nhà" : "🚪 Ra sân"; doorTag.hidden = S.mode !== "play";
+  doorTag.textContent = S.scene === "san" ? "🏠 Vào nhà" : "🚪 Ra sân"; doorTag.hidden = S.mode !== "play" || S.scene==="hen";
   const [x, yy] = toScreen(d.x, y, S.scene === "san" ? d.z - 0.3 : d.z); doorTag.style.left = x + "px"; doorTag.style.top = yy + "px";
 }
 function makeTag(who) { const el = document.createElement("div"); el.className = "nametag"; labels.appendChild(el); tags[who] = el; }
@@ -458,6 +466,19 @@ function goSit(actor, item, seat, say) {
     if (say) bubble(actor.x, 1.5, actor.z, say);
   });
 }
+function picnicTogether(it) {
+  // A direct invitation takes priority over the companion's current seat or idle plan.
+  // Clear its old seat before choosing the two new seats, including when it is already here.
+  if (!CLOUD.on) {
+    partner().standUp(); partner().stop();
+    AI.timer = Math.max(AI.timer, 40);
+  }
+  const seats = freeSeats(it), mine = seats.find(s => s.k === (S.me === "anh" ? 0 : 1)) || seats[0];
+  if (!mine || !goSit(me(), it, mine)) { toast("Chưa tới được thảm hẹn hò"); return; }
+  if (CLOUD.on) { emitEv("invite", { text: "rủ bạn ngồi cùng trên thảm hẹn hò" }); return; }
+  const other = seats.find(s => s.k !== mine.k);
+  if (other && !goSit(partner(), it, other, "Ngồi cạnh bạn nè")) toast("Bạn ấy chưa tới được thảm");
+}
 function partnerThink(dt) {
   const p = partner(), m = me();
   if (p.mode === "sleep") return;
@@ -509,6 +530,7 @@ function catThink(dt) {
 // ---------- điều khiển: cần gạt ----------
 const joy = { el: $("#joy"), knob: $(".joy-knob"), id: null, x: 0, y: 0 };
 joy.el.addEventListener("pointerdown", e => {
+  pendingDateTravel=false;
   joy.id = e.pointerId; joy.el.setPointerCapture(e.pointerId); joy.el.classList.add("active"); joyMove(e); hideActions();
   const m = me(); if (m.mode !== "idle") m.standUp(); m.stop();
 });
@@ -613,6 +635,7 @@ canvas.addEventListener("pointerup", endPtr); canvas.addEventListener("pointerca
 canvas.addEventListener("wheel", e => { e.preventDefault(); cam.goalPpm = THREE.MathUtils.clamp(cam.goalPpm * Math.exp(-e.deltaY * 0.0015), 26, 150); }, { passive: false });
 
 function onTap(cx, cy) {
+  pendingDateTravel=false;
   hideActions();
   if (S.mode === "edit") { const hit = pickAt(cx, cy); if (hit && hit.uid) select(hit.uid); else select(null); return; }
   const m = me();
@@ -664,6 +687,14 @@ function itemMenu(it, cx, cy) {
   if (use.type === "cycle") list.push([use.label, () => useItem(m, it, () => cycleState(it, use.states))]);
   if (use.type === "wardrobe") list.push([use.label, () => useItem(m, it, () => openWardrobe(it))]);
   if (use.type === "app") appMenu(it, use, list);
+  if(use.type==="cafe")list.unshift(["Cùng pha đồ uống trên đảo",()=>travelToDate()]);
+  if(it.type==="benThuyen")list.unshift(["⛵ Đi thuyền sang đảo hẹn hò",()=>useItem(m,it,()=>goScene("hen"))]);
+  if(use.type==="travel")list.push([use.label,()=>useItem(m,it,()=>goScene(use.scene))]);
+  if(use.type==="activity")list.push([use.label,()=>useItem(m,it,()=>datePlay.open(use.activity))]);
+  if(use.type==="moment")list.push([use.label,()=>useItem(m,it,()=>{
+    const questions=["Nếu được trốn đi một ngày, hai đứa sẽ đi đâu?","Kỷ niệm rất nhỏ nào làm bạn thấy được thương?","Đặt tên cho buổi hẹn hôm nay đi.","Lần đầu nào bạn muốn cùng người kia thử?","Tuần này mình có thể chăm nhau bằng điều gì?","Nếu đảo này có một điều ước, bạn chọn gì?"];
+    const q=questions[Math.floor(rand()*questions.length)];bubble(p.x,1.4,p.z,q,7000);emitEv("invite",{text:"rủ bạn ngồi bên lửa: "+q});
+  })]);
   if (it.type === "tuLanh") list.push([APPST.fridge.fresh ? `Đọc giấy nhắn (${APPST.fridge.fresh} mới)` : "Xem giấy nhắn · dán giấy", () => useItem(m, it, () => openApp("tu-lanh"))]);
   if (use.type === "garden") { gardenMenu(it, anchor); return; }
   if (use.type === "enter") list.push([use.label, () => walkThroughDoor()]);
@@ -844,6 +875,7 @@ function focusAppPanel() {
 }
 $("#appsheet-frame").addEventListener("load", focusAppPanel);
 function openApp(tab, delay = 0) {
+  datePlay.close();
   setTimeout(() => {
     const sheet = $("#appsheet"), fr = $("#appsheet-frame");
     $("#appsheet-title").textContent = APP_TITLES[tab] || "Góc Nhỏ";
@@ -864,7 +896,7 @@ addEventListener("storage", e => { if (!e.key || /^(hu-hen-ho|v3-)/.test(e.key))
 readLocalApp();
 
 // ---------- người kia thật (W2) ----------
-const SCENE_NAME = { san: "ngoài sân", nha: "trong nhà" };
+const SCENE_NAME = { san: "ngoài sân", nha: "trong nhà", hen:"đảo hẹn hò" };
 function partnerStatus() {
   const el = $("#partner-status"); if (!el) return;
   if (!CLOUD.on) { el.hidden = true; return; }
@@ -921,8 +953,9 @@ setInterval(partnerStatus, 1000);
 function applyRemote(changes) {
   const byScene = { nha: [], san: [] };
   for (const c of changes) {
+    if(c.id.startsWith("a_date_")){datePlay.receive(c.id,c.data);continue;}
     if (c.id === SY.presenceId(partner().who)) { CLOUD.remote = c.data; continue; }
-    if (c.id.startsWith("m_")) { const sc = c.id.slice(2); const L = S.layouts[sc]; if (L && c.data) { L.wall = c.data.wall || L.wall; L.floor = c.data.floor || L.floor; CLOUD.meta[sc] = L.wall + "|" + L.floor; store.set(sc === "san" ? KEY.yard : KEY.layout, E.serialize(L)); if (sc === S.scene) buildShell(); } continue; }
+    if (c.id.startsWith("m_")) { const sc = c.id.slice(2); if(!["nha","san"].includes(sc))continue; const L = S.layouts[sc]; if (L && c.data) { L.wall = c.data.wall || L.wall; L.floor = c.data.floor || L.floor; CLOUD.meta[sc] = L.wall + "|" + L.floor; store.set(sc === "san" ? KEY.yard : KEY.layout, E.serialize(L)); if (sc === S.scene) buildShell(); } continue; }
     for (const sc of ["nha", "san"]) if (c.id.startsWith("i_" + sc + "_")) byScene[sc].push(c);
   }
   for (const sc of ["nha", "san"]) {
@@ -962,6 +995,7 @@ async function startCloud() {
     }
   }
   CLOUD.on = true;
+  for(const d of all)if(d.id.startsWith("a_date_"))datePlay.receive(d.id,d.data);
   // Cảnh chưa có trên Firebase: máy này góp bố cục của mình làm bản chung đầu tiên.
   for (const sc of ["nha", "san"]) if (!CLOUD.last[sc].size) pushScene(sc);
   CLOUD.remote = all.find(d => d.id === SY.presenceId(partner().who))?.data || null;
@@ -974,6 +1008,14 @@ async function startCloud() {
 }
 
 // ---------- ra vào nhà ----------
+let pendingDateTravel=false;
+function travelToDate(){
+ if(S.scene==="hen"){datePlay.open("guide");return;}
+ if(S.scene==="nha"){pendingDateTravel=true;walkThroughDoor();return;}
+ const pier=S.layout.items.find(i=>i.type==="benThuyen");
+ if(!pier){toast("Chưa tìm thấy bến thuyền trong sân");return;}
+ hideActions();useItem(me(),pier,()=>goScene("hen"));
+}
 const DRINKS = ["Trà sữa trân châu 🧋", "Cà phê sữa đá ☕", "Nước cam 🍊", "Trà đào 🍑", "Sinh tố dâu 🍓", "Matcha latte 🍵"];
 function orderDrink(actor, it, treat) {
   const p = E.itemPose(it), d = DRINKS[Math.floor(rand() * DRINKS.length)];
@@ -982,13 +1024,15 @@ function orderDrink(actor, it, treat) {
 }
 let switching = false;
 function walkThroughDoor() {
+  if(S.scene==="hen")return;
   const m = me(), to = S.scene === "san" ? WD.DOOR_OUT : WD.DOOR_IN;
   hideActions();
   if (Math.hypot(m.x - to.x, m.z - to.z) < 0.6) { goScene(S.scene === "san" ? "nha" : "san"); return; }
   if (!m.goTo(to.x, to.z, () => goScene(S.scene === "san" ? "nha" : "san"))) toast("Chưa đi tới cửa được");
 }
 function goScene(id) {
-  if (switching || id === S.scene) return;
+  if (switching || id === S.scene || !WD.SCENES[id]) return;
+  datePlay.close();
   switching = true; hideActions(); select(null);
   const fade = $("#fade"); fade.classList.add("on");
   setTimeout(() => {
@@ -996,7 +1040,7 @@ function goScene(id) {
     S.seats.clear(); S.transient.clear();
     useScene(id); store.set(KEY.scene, id);
     buildShell(); buildGrid(); rebuildAll();
-    const sp = id === "san" ? WD.SPAWN_OUT : WD.SPAWN_IN, m = me(), p = partner();
+    const sp = id === "hen"?WD.DATE_SPAWN:id === "san" ? WD.SPAWN_OUT : WD.SPAWN_IN, m = me(), p = partner();
     m.place(sp.x, sp.z, sp.face);
     // người kia bước qua cửa ngay sau mình
     const c = E.worldToCell(sp.x + 0.5, sp.z + (id === "san" ? 0.5 : -0.5)), n = E.nearestFreeCell(S.G, c.i, c.j) || E.worldToCell(sp.x, sp.z), q = E.cellCenter(n.i, n.j);
@@ -1006,7 +1050,8 @@ function goScene(id) {
     document.body.dataset.scene = id;
     cam.target.set(m.x, 0.55, m.z); cam.goal.copy(cam.target); cam.goalPpm = cam.ppm = playPpm();
     AI.timer = 2;
-    setTimeout(() => { fade.classList.remove("on"); switching = false; toast(id === "san" ? "Ra sân rồi · vườn ở bên trái, quán cà phê phía trước" : "Về nhà rồi"); }, 120);
+    datePlay.sceneChanged();
+    setTimeout(()=>{fade.classList.remove("on");switching=false;toast(id==="hen"?"Đảo hẹn hò · quầy bên trái, bến câu bên phải":id==="san"?"Ra sân rồi · vườn bên trái, bến thuyền phía trước":"Về nhà rồi");if(id==="san"&&pendingDateTravel){pendingDateTravel=false;travelToDate();}},120);
   }, 260);
 }
 
@@ -1286,6 +1331,8 @@ $("#btn-reset").addEventListener("click", () => {
 });
 
 function setMode(mode) {
+  if(mode==="edit"&&S.scene!=="nha")return;
+  datePlay.close();
   S.mode = mode; document.body.dataset.mode = mode; hideActions(); facesEl.hidden = true;
   document.querySelectorAll(".sheet").forEach(s => { s.hidden = true; });
   grid.visible = mode === "edit";
@@ -1304,6 +1351,18 @@ $("#btn-edit").addEventListener("click", () => setMode("edit"));
 $("#btn-done").addEventListener("click", () => setMode("play"));
 
 // ---------- vòng lặp ----------
+let dateSkew=0;
+const datePlay=createDatePlay({
+ store,cloud:()=>CLOUD,who:()=>S.me,scene:()=>S.scene,actors,models:DM,sceneRoot:scene,reduced,
+ now:()=>Date.now()+dateSkew,toast,travel:travelToDate,
+ near:kind=>{const it=itemByUid(kind==="cook"?"h-cook":"h-fish"),ap=it&&E.approachPoint(S.G,it);return !!ap&&Math.hypot(me().x-ap.x,me().z-ap.z)<1.5;},
+ practiceMove:()=>{const ap=E.approachPoint(S.G,itemByUid("h-cook"));if(ap)partner().goTo(ap.x+.45,ap.z,()=>partner().emote("wave",1));},
+ position:uid=>{const it=itemByUid(uid);return it?E.itemPose(it):{x:0,z:0};},
+ route:(uid,kind)=>{const it=itemByUid(uid);if(!it)return;useItem(me(),it,()=>{if(kind==="sit")picnicTogether(it);else datePlay.open(kind);});},
+ invite:()=>emitEv("invite",{text:"vừa pha đồ uống, đến lượt bạn trên đảo hẹn hò 🧋"}),
+ celebrate:(message,type)=>{toast(message);if(type){for(const a of Object.values(actors))a.emote("wave",1.8);floatAt(me().x,1.4,me().z,"💗",5);}else floatAt(me().x,1.4,me().z,"✨",2);}
+});
+addEventListener("keydown",e=>{if(e.key==="Escape")datePlay.close();});
 let last = performance.now();
 cam.goalPpm = cam.ppm = playPpm();
 let simClock = 0;
@@ -1313,6 +1372,8 @@ function step(dt) {
   if (CLOUD.on) sendPresence();
   if (S.scene === "nha") catThink(dt);
   for (const a of Object.values(actors)) a.update(dt);
+  datePlay.step(dt,simClock);
+  if(S.scene==="hen"){DM.animate(shell,simClock,reduced());itemsG.traverse(o=>{if(o.userData.flame!==undefined&&!reduced())o.scale.y=1+Math.sin(simClock*6+o.userData.flame)*.13;});}
   if (S.mode === "play" && !switching) {
     const m = me(), moving = m.joy || m.path.length > 0;
     if (moving && WD.crossesDoor(S.scene, m.x, m.z, Math.sin(m.face), Math.cos(m.face))) goScene(S.scene === "san" ? "nha" : "san");
@@ -1320,7 +1381,7 @@ function step(dt) {
   cat.root.position.set(cat.x, cat.path.length && !reduced() ? Math.abs(Math.sin(simClock * 11)) * 0.05 : 0, cat.z); cat.root.rotation.y = cat.face;
 }
 function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now;
   step(dt);
   // camera
   if (S.mode === "play" && !(cam.panned && now - cam.panned < 1500)) { const m = me(); cam.goal.set(m.x, 0.55, m.z); }
@@ -1351,6 +1412,10 @@ startCloud().catch(e => console.warn("Đảo 3D: không nối được Firebase"
 // Móc cho test tự động (chỉ đọc + vài thao tác như người dùng); không chứa dữ liệu thật.
 window.__NHA3D__ = {
   ready: true,
+  date:()=>datePlay.snapshot(),
+  openDate:kind=>datePlay.open(kind),
+  dateAction:(kind,action,value,asPartner=false)=>datePlay.act(kind,action,value,asPartner),
+  skipDate:ms=>{dateSkew+=ms;},
   layout: () => E.clone(S.layout),
   mode: () => S.mode,
   me: () => ({ who: S.me, x: me().x, z: me().z, mode: me().mode }),
@@ -1371,7 +1436,7 @@ window.__NHA3D__ = {
   basket: () => ({ ...basket }),
   scene: () => S.scene,
   nearItem(uid) { const p = E.itemPose(itemByUid(uid)); this.teleport(p.x + 0.8, p.z + 1.2); },
-  teleport(x, z) { const m = me(); m.stop(); m.place(x, z, 0); cam.goal.set(x, 0.55, z); cam.target.copy(cam.goal); },
+  teleport(x, z) { const m = me(); m.stop(); m.place(x, z, 0); cam.goal.set(x, 0.55, z); cam.target.copy(cam.goal); updateCamera(); },
   goScene(id) { goScene(id); },
   settle() { return new Promise(r => { const t = setInterval(() => { if (!switching) { clearInterval(t); r(S.scene); } }, 20); }); },
   doors: () => ({ out: WD.DOOR_OUT, in: WD.DOOR_IN }),

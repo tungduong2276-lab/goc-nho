@@ -3,6 +3,7 @@
 // và đảo chạy như bản thử chỉ lưu trên máy.
 import { COLLECTION, itemId, metaId, presenceId, encodeItem, encodeWater } from "./sync.mjs";
 import { MEMORY_COLLECTIONS } from "./appdata.mjs";
+import { advanceActivity, dateDocId } from "./date-activities.mjs";
 
 function waitForUser(auth, ms = 8000) {
   return new Promise(resolve => {
@@ -30,6 +31,16 @@ export async function connectCloud() {
   const swallow = p => p.catch(e => { console.warn("Đảo 3D: chưa ghi được lên Firebase", e); });
   return {
     ok: true, uid: user.uid, cid,
+    async actDate(kind,command){
+      if(!navigator.onLine)throw new Error("Đang mất mạng; lượt này chưa gửi, kết nối lại rồi thử nhé");
+      const ref=col.doc(dateDocId(kind,user.uid)), actionTime=Date.now();
+      return fs.runTransaction(async tx=>{
+        const snap=await tx.get(ref);
+        const next=advanceActivity(snap.exists?snap.data():null,{...command,kind,uid:user.uid,now:actionTime});
+        if(next.rev!==(snap.exists?snap.data().rev:0))tx.set(ref,next);
+        return {id:ref.id,data:next};
+      });
+    },
     async getAll() { const snap = await col.get(); return snap.docs.map(d => ({ id: d.id, data: d.data() })); },
     // Chỉ báo thay đổi đã lưu trên máy chủ (bỏ qua bản ghi đang chờ của chính máy này).
     listen(cb) {

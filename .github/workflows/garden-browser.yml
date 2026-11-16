@@ -137,3 +137,23 @@ jobs:
           path: dist-nha3d-staging/
           if-no-files-found: error
           retention-days: 7
+
+      - name: Publish synthetic date island screenshots
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feature/date-island-living-activities'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          TESTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ ! -d test-results/date-evidence ]; then exit 0; fi
+          current=$(git ls-remote origin refs/heads/feature/date-island-living-activities | cut -f1)
+          if [ "$current" != "$TESTED_HEAD" ]; then exit 0; fi
+          EVIDENCE_BRANCH="evidence/date-island-pr-$PR_NUMBER"
+          old=$(git ls-remote origin "refs/heads/$EVIDENCE_BRANCH" | cut -f1)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan "$EVIDENCE_BRANCH"
+          git rm -r --cached . >/dev/null
+          printf '%s\n' "$TESTED_HEAD" > test-results/date-evidence/TESTED_HEAD.txt
+          git add -f test-results/date-evidence
+          git commit -m "Synthetic date island screenshots for PR $PR_NUMBER"
+          git push --force-with-lease="refs/heads/$EVIDENCE_BRANCH:$old" origin "HEAD:refs/heads/$EVIDENCE_BRANCH"
