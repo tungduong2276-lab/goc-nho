@@ -2722,7 +2722,7 @@ function feed(){
 }
 // Lối vào thế giới 3D (bản thử, chỉ lưu trên máy, không Firebase). Truyền ai đang cầm máy.
 function world3dCardHTML(){const who=ME===null?"":(CH(ME)==="em"?"em":"anh");
-  return`<a class="w3d-card" href="./nha3d/?me=${who}" aria-label="Vào nhà 3D"><span class="w3d-ic" aria-hidden="true">🏡</span><span class="w3d-tx"><b>Vào nhà 3D</b><small>Tự đi lại, xếp đồ, ngồi cùng nhau, trồng cây lớn theo ngày</small></span><span class="w3d-tag">Bản thử</span></a>`;}
+  return`<a class="w3d-card" href="./nha3d/?me=${who}&scene=san" aria-label="Ra đảo 3D"><span class="w3d-ic" aria-hidden="true">🏡</span><span class="w3d-tx"><b>Ra đảo 3D</b><small>Đi bộ ra vào nhà, trồng vườn ngoài sân, ghé quán cà phê, ngồi xích đu</small></span><span class="w3d-tag">Bản thử</span></a>`;}
 function renderHome(){
   const root=$("tab-home");if(!root)return;
   if(ME===null){root.innerHTML=`<div class="who"><p>Điện thoại này của ai?</p><div class="row">${[0,1].map(i=>`<button class="btn btn-main btn-small" data-hme="${i}">${N(i)}</button>`).join("")}</div><p class="quiet">Mỗi máy chọn một lần, để app biết ai tưới cây, ai dán giấy, ai đến lượt.</p></div>`;

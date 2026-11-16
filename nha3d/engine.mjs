@@ -5,14 +5,18 @@ import { CELL, ROOM, CATALOG, WALL_COLORS, FLOOR_COLORS, DEFAULT_LAYOUT } from "
 
 export const LAYOUT_VERSION = 1;
 export const AVATAR_R = 0.2;
+// Cảnh đang dùng (trong nhà hoặc ngoài sân). Hàm nào không truyền room thì dùng cảnh này.
+let CUR = ROOM;
+export const setRoom = r => { CUR = r || ROOM; };
+export const curRoom = () => CUR;
 
 // ---------- toạ độ ----------
-export const roomSize = (room = ROOM) => ({ W: room.w * CELL, D: room.d * CELL });
-export function cellCenter(i, j, room = ROOM) {
+export const roomSize = (room = CUR) => ({ W: room.w * CELL, D: room.d * CELL });
+export function cellCenter(i, j, room = CUR) {
   const { W, D } = roomSize(room);
   return { x: -W / 2 + (i + 0.5) * CELL, z: -D / 2 + (j + 0.5) * CELL };
 }
-export function worldToCell(x, z, room = ROOM) {
+export function worldToCell(x, z, room = CUR) {
   const { W, D } = roomSize(room);
   return { i: Math.floor((x + W / 2) / CELL), j: Math.floor((z + D / 2) / CELL) };
 }
@@ -24,7 +28,7 @@ export function rotLocal(x, z, r) {
 export function dims(def, r) { return (r & 1) ? { w: def.d, d: def.w } : { w: def.w, d: def.d }; }
 
 // Tâm và vị trí thế giới của một món đồ (m).
-export function itemPose(item, room = ROOM) {
+export function itemPose(item, room = CUR) {
   const def = CATALOG[item.type];
   const { W, D } = roomSize(room);
   if (def.kind === "wall") {
@@ -45,7 +49,7 @@ export function footprint(item) {
 }
 
 // ---------- kiểm tra đặt ----------
-export function validatePlacement(layout, item, room = ROOM) {
+export function validatePlacement(layout, item, room = CUR, opts = {}) {
   const def = CATALOG[item.type];
   if (!def) return { ok: false, reason: "Món đồ không có trong danh mục" };
   if (def.kind === "wall") {
@@ -64,6 +68,9 @@ export function validatePlacement(layout, item, room = ROOM) {
   const { w, d } = dims(def, item.r);
   if (!Number.isInteger(item.gx) || !Number.isInteger(item.gz) || item.gx < 0 || item.gz < 0 || item.gx + w > room.w || item.gz + d > room.d)
     return { ok: false, reason: "Ra ngoài phòng" };
+  // Ô dành riêng (lối ra vào) không đặt đồ đặc lên được; bố cục cũ vẫn nạp được.
+  if (def.kind !== "rug" && room.reserved && !opts.legacy)
+    for (const [ri, rj] of room.reserved) if (ri >= item.gx && ri < item.gx + w && rj >= item.gz && rj < item.gz + d) return { ok: false, reason: "Chừa lối ra vào" };
   for (const o of layout.items) {
     if (o.uid === item.uid) continue;
     const od = CATALOG[o.type];
@@ -78,7 +85,7 @@ export function validatePlacement(layout, item, room = ROOM) {
 }
 
 // ---------- ô đi được ----------
-export function blockGrid(layout, room = ROOM) {
+export function blockGrid(layout, room = CUR) {
   const g = new Uint8Array(room.w * room.d);
   for (const it of layout.items) {
     const def = CATALOG[it.type];
@@ -90,7 +97,7 @@ export function blockGrid(layout, room = ROOM) {
 export const cellFree = (G, i, j) => i >= 0 && j >= 0 && i < G.w && j < G.d && !G.g[j * G.w + i];
 
 // Hình tròn bán kính r tại (x, z) có chạm ô bị chặn hoặc tường không?
-export function circleBlocked(G, x, z, r = AVATAR_R, room = ROOM) {
+export function circleBlocked(G, x, z, r = AVATAR_R, room = CUR) {
   const { W, D } = roomSize(room);
   if (x - r < -W / 2 || x + r > W / 2 || z - r < -D / 2 || z + r > D / 2) return true;
   const a = worldToCell(x - r, z - r, room), b = worldToCell(x + r, z + r, room);
@@ -104,7 +111,7 @@ export function circleBlocked(G, x, z, r = AVATAR_R, room = ROOM) {
 }
 
 // Bước đi liên tục có trượt dọc vật cản (cho cần điều khiển).
-export function slideMove(G, x, z, dx, dz, r = AVATAR_R, room = ROOM) {
+export function slideMove(G, x, z, dx, dz, r = AVATAR_R, room = CUR) {
   if (!circleBlocked(G, x + dx, z + dz, r, room)) return { x: x + dx, z: z + dz };
   if (!circleBlocked(G, x + dx, z, r, room)) return { x: x + dx, z };
   if (!circleBlocked(G, x, z + dz, r, room)) return { x, z: z + dz };
@@ -156,7 +163,7 @@ export function findPath(G, from, to) {
 }
 
 // Đường đi trong thế giới từ (x,z) tới (tx,tz): A* trên ô rồi rút gọn bằng đường thẳng không vướng.
-export function worldPath(G, x, z, tx, tz, room = ROOM) {
+export function worldPath(G, x, z, tx, tz, room = CUR) {
   const s = worldToCell(x, z, room), t0 = worldToCell(tx, tz, room);
   const s2 = nearestFreeCell(G, s.i, s.j), t = nearestFreeCell(G, t0.i, t0.j);
   if (!s2 || !t) return null;
@@ -176,7 +183,7 @@ export function worldPath(G, x, z, tx, tz, room = ROOM) {
   if (out.length === 1) out.push(pts[pts.length - 1]);
   return out;
 }
-export function clearLine(G, a, b, room = ROOM) {
+export function clearLine(G, a, b, room = CUR) {
   const n = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / (CELL / 4));
   for (let s = 1; s <= n; s++) {
     const t = s / n;
@@ -187,7 +194,7 @@ export function clearLine(G, a, b, room = ROOM) {
 
 // ---------- tương tác ----------
 // Ghế ngồi (toạ độ thế giới) của một món đồ.
-export function seatsOf(item, room = ROOM) {
+export function seatsOf(item, room = CUR) {
   const def = CATALOG[item.type];
   if (!def.use || def.use.type !== "sit") return [];
   const p = itemPose(item, room), sc = def.scale ?? 1;
@@ -197,7 +204,7 @@ export function seatsOf(item, room = ROOM) {
   });
 }
 // Điểm đứng để dùng một món: trước ghế (theo hướng mặt) hoặc trước mặt món đồ; luôn là ô đi được gần nhất.
-export function approachPoint(G, item, seat = null, room = ROOM) {
+export function approachPoint(G, item, seat = null, room = CUR) {
   const def = CATALOG[item.type], p = itemPose(item, room);
   let ax, az;
   if (seat) { ax = seat.x + Math.sin(seat.a) * 0.45; az = seat.z + Math.cos(seat.a) * 0.45; }
@@ -220,10 +227,11 @@ export function approachPoint(G, item, seat = null, room = ROOM) {
 let uidN = 0;
 export const newUid = () => "u" + Date.now().toString(36) + (uidN++).toString(36);
 
-export function sanitizeLayout(raw, room = ROOM) {
+export function sanitizeLayout(raw, room = CUR) {
   const dropped = [];
-  const base = { v: LAYOUT_VERSION, wall: DEFAULT_LAYOUT.wall, floor: DEFAULT_LAYOUT.floor, items: [] };
-  if (!raw || typeof raw !== "object" || raw.v !== LAYOUT_VERSION || !Array.isArray(raw.items)) return { layout: clone(DEFAULT_LAYOUT), dropped: ["(bố cục hỏng — dùng mặc định)"] };
+  const DEF = room.defaultLayout || DEFAULT_LAYOUT;
+  const base = { v: LAYOUT_VERSION, wall: DEF.wall, floor: DEF.floor, items: [] };
+  if (!raw || typeof raw !== "object" || raw.v !== LAYOUT_VERSION || !Array.isArray(raw.items)) return { layout: clone(DEF), dropped: ["(bố cục hỏng — dùng mặc định)"] };
   if (WALL_COLORS.some(c => c.id === raw.wall)) base.wall = raw.wall;
   if (FLOOR_COLORS.some(c => c.id === raw.floor)) base.floor = raw.floor;
   const seen = new Set();
@@ -235,19 +243,19 @@ export function sanitizeLayout(raw, room = ROOM) {
       : { uid: it.uid, type: it.type, gx: it.gx, gz: it.gz, r: it.r };
     if (it.state !== undefined && def.states && def.states.includes(it.state)) clean.state = it.state;
     if (def.use && def.use.type === "garden") { const pl = sanitizePlant(it.plant); if (pl) clean.plant = pl; }
-    if (!validatePlacement(base, clean, room).ok) { dropped.push(it.type); continue; }
+    if (!validatePlacement(base, clean, room, { legacy: true }).ok) { dropped.push(it.type); continue; }
     seen.add(it.uid); base.items.push(clean);
   }
   return { layout: base, dropped };
 }
 export const clone = o => JSON.parse(JSON.stringify(o));
 export const serialize = layout => JSON.stringify(layout);
-export function deserialize(text, room = ROOM) {
+export function deserialize(text, room = CUR) {
   try { return sanitizeLayout(JSON.parse(text), room); } catch { return sanitizeLayout(null, room); }
 }
 
 // Tìm chỗ trống gần (gx,gz) cho món mới (xoay r); trả về item hoặc null.
-export function findSpot(layout, type, prefer = { gx: 6, gz: 6 }, room = ROOM) {
+export function findSpot(layout, type, prefer = { gx: 6, gz: 6 }, room = CUR) {
   const def = CATALOG[type];
   if (def.kind === "wall") {
     for (const wall of ["R", "L"]) {

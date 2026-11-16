@@ -97,3 +97,10 @@ body[data-mode="play"] .edit-only, body[data-mode="edit"] .play-only { display: 
 .spin { width: 44px; height: 44px; border-radius: 50%; border: 5px solid var(--petal); border-top-color: var(--pink); animation: sp .9s linear infinite; }
 @keyframes sp { to { transform: rotate(360deg); } }
 .noscript { position: fixed; inset: 40% 20px auto; text-align: center; font-weight: 800; }
+
+/* Chuyển cảnh khi bước qua cửa */
+#fade{position:fixed;inset:0;background:#FFF4F8;opacity:0;pointer-events:none;transition:opacity .24s ease;z-index:40}
+#fade.on{opacity:1}
+@media (prefers-reduced-motion: reduce){#fade{transition:none}}
+.doortag{position:fixed;z-index:6;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;min-height:36px;padding:6px 12px;font:inherit;font-weight:800;font-size:14px;background:#fff;color:#1D2B4F;border:2.5px solid #1D2B4F;border-radius:999px;box-shadow:2px 2px 0 #1D2B4F;white-space:nowrap}
+.doortag[hidden]{display:none}

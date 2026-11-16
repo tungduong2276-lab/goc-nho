@@ -15,7 +15,10 @@ const MEASURED = {
   hopMau: [0.80, 0.50], radio: [0.50, 0.24], tuKinh: [1.20, 0.46], denCay: [0.50, 0.50], trauBa: [0.90, 0.60],
   chauLuoiHo: [1.02, 0.44], keCay: [1.30, 0.36], oMeo: [0.94, 0.94], thamTron: [2.0, 2.0], thamVuong: [2.0, 1.4],
   thamLon: [2.90, 2.90], cuaSo: [1.54, 0.25], khungAnh: [0.86, 0.09], bangGhim: [1.10, 0.14], lich: [0.72, 0.09], banDo: [1.30, 0.08],
-  luongTrong: [1.42, 0.92], chauTrong: [0.37, 0.37]
+  luongTrong: [1.42, 0.92], chauTrong: [0.37, 0.37],
+  nhaNgoai: [6.9, 4.9], cayXanh: [1.0, 1.0], cayHoa: [1.0, 1.0], buiHoa: [0.48, 0.48], buiHoaVang: [0.48, 0.48], bui: [0.48, 0.48],
+  denDuong: [0.36, 0.36], hopThu: [0.38, 0.42], xichDu: [1.8, 0.36], gheDa: [1.3, 0.38], quayCafe: [1.9, 0.9], duongDa: [0.98, 0.9],
+  benThuyen: [1.3, 3.0], bangTen: [1.3, 0.1]
 };
 
 test("mọi món trong danh mục có số đo, và mô hình (sau scale) vừa dấu chân ô lưới (sai ≤ 5 cm)", () => {

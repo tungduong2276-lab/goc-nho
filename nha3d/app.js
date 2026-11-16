@@ -11,14 +11,17 @@ import { CELL, ROOM, CATALOG, CATEGORIES, WALL_COLORS, FLOOR_COLORS, DEFAULT_LAY
 import * as E from "./engine.mjs";
 import * as GD from "./garden.mjs";
 import { gardenBed, gardenPot, wateringCan } from "./garden-models.js";
+import * as WD from "./world.mjs";
+import * as WM from "./world-models.js";
 
 const $ = s => document.querySelector(s);
-const W = ROOM.w * CELL, D = ROOM.d * CELL;
+// Cảnh hiện tại: "san" (ngoài sân) hoặc "nha" (trong nhà). W, D đổi theo cảnh.
+let RM = ROOM, W = ROOM.w * CELL, D = ROOM.d * CELL;
 const NAMES = { anh: "Anh", em: "Em" };
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ---------- lưu trên máy ----------
-const KEY = { basket: "gocnho.nha3d.basket.v1", layout: "gocnho.nha3d.layout.v1", looks: "gocnho.nha3d.looks.v1", me: "gocnho.nha3d.me", time: "gocnho.nha3d.time" };
+const KEY = { yard: "gocnho.nha3d.yard.v1", scene: "gocnho.nha3d.scene", basket: "gocnho.nha3d.basket.v1", layout: "gocnho.nha3d.layout.v1", looks: "gocnho.nha3d.looks.v1", me: "gocnho.nha3d.me", time: "gocnho.nha3d.time" };
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch { /* chế độ riêng tư: bỏ qua */ } }
@@ -39,7 +42,9 @@ function loadLooks() {
 
 const S = {
   mode: "play",
-  layout: E.deserialize(store.get(KEY.layout) || "null").layout,
+  layout: null,
+  layouts: { nha: E.deserialize(store.get(KEY.layout) || "null", ROOM).layout, san: E.deserialize(store.get(KEY.yard) || "null", WD.YARD).layout },
+  scene: (() => { const q = new URLSearchParams(location.search).get("scene"); if (q === "nha" || q === "san") return q; return store.get(KEY.scene) === "nha" ? "nha" : "san"; })(),
   looks: loadLooks(),
   // ?me=anh|em do app Góc Nhỏ truyền sang (máy này của ai); không có thì nhớ lần trước.
   me: (() => { const q = new URLSearchParams(location.search).get("me"); if (q === "anh" || q === "em") { store.set(KEY.me, q); return q; } return store.get(KEY.me) === "em" ? "em" : "anh"; })(),
@@ -49,8 +54,12 @@ const S = {
   seats: new Map(),      // "uid:k" -> actor
   transient: new Map()   // uid -> trạng thái tạm (giường đang ngủ), không lưu
 };
-S.G = E.blockGrid(S.layout);
-const saveLayout = () => store.set(KEY.layout, E.serialize(S.layout));
+function useScene(id) {
+  S.scene = id; RM = WD.SCENES[id]; W = RM.w * CELL; D = RM.d * CELL;
+  E.setRoom(RM); S.layout = S.layouts[id]; S.G = E.blockGrid(S.layout);
+}
+useScene(S.scene);
+const saveLayout = () => store.set(S.scene === "san" ? KEY.yard : KEY.layout, E.serialize(S.layout));
 // Nút "Về" chỉ có nghĩa khi bản thử nằm cạnh app Góc Nhỏ (…/goc-nho/nha3d/ hoặc máy test).
 if (!/\/goc-nho\/nha3d\/|^\/nha3d\//.test(location.pathname)) $(".back").hidden = true;
 
@@ -91,7 +100,7 @@ function resize() {
   setOutline(2.2 * DPR, w * DPR, h * DPR);
   // ppm để thấy trọn phòng (dùng cho chế độ Trang trí)
   const pts = [];
-  for (const x of [-W / 2, W / 2]) for (const z of [-D / 2, D / 2]) for (const y of [0, ROOM.wallH]) pts.push(new THREE.Vector3(x, y, z));
+  for (const x of [-W / 2, W / 2]) for (const z of [-D / 2, D / 2]) for (const y of [0, RM.wallH || 2]) pts.push(new THREE.Vector3(x, y, z));
   const m = new THREE.Matrix4().lookAt(CAMDIR, new THREE.Vector3(), new THREE.Vector3(0, 1, 0)).invert();
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
   for (const p of pts) { p.applyMatrix4(m); x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
@@ -99,6 +108,8 @@ function resize() {
   if (S.mode === "edit") editFit();
 }
 const EXT = { x: 12, y: 9 };
+// Ngoài sân lùi camera xa hơn để thấy đường đi; trong nhà giữ như cũ.
+const playPpm = () => S.scene === "san" ? Math.max(40, Math.min(56, innerWidth / 9)) : Math.max(58, Math.min(80, innerWidth / 6));
 // Chế độ Trang trí: thấy trọn phòng trong khoảng giữa thanh trên và kho đồ.
 function editFit() {
   const trayH = $(".tray").offsetHeight || 190, topH = 72;
@@ -126,7 +137,8 @@ function applyTime() {
   document.documentElement.style.setProperty("--sky1", hex(T.sky[0]));
   document.documentElement.style.setProperty("--sky2", hex(T.sky[1]));
   $("#btn-time").textContent = TIME_ICON[S.time];
-  for (const it of S.layout.items) if (it.type === "cuaSo") refreshView(it);
+  for (const it of S.layout.items) if (it.type === "cuaSo" || it.type === "nhaNgoai" || it.type === "denDuong") refreshView(it);
+  if (S.scene === "san" && shell) buildShell();
 }
 
 // ---------- vỏ phòng ----------
@@ -135,13 +147,15 @@ function buildShell() {
   if (shell) scene.remove(shell);
   const wc = (WALL_COLORS.find(c => c.id === S.layout.wall) || WALL_COLORS[0]).wall;
   const fc = FLOOR_COLORS.find(c => c.id === S.layout.floor) || FLOOR_COLORS[0];
+  if (S.scene === "san") { shell = WM.island(W, D, S.time); scene.add(shell); return; }
   shell = F.roomShell({ n: W, d: D, h: ROOM.wallH, wallL: wc, wallR: wc, floor: fc.floor, plank: fc.plank });
+  const m = WM.doorMat(); m.position.set(WD.DOOR_IN.x, 0, WD.DOOR_IN.z); shell.add(m);
   scene.add(shell);
 }
 function buildGrid() {
   const pts = [];
-  for (let i = 0; i <= ROOM.w; i++) pts.push(-W / 2 + i * CELL, 0.045, -D / 2, -W / 2 + i * CELL, 0.045, D / 2);
-  for (let j = 0; j <= ROOM.d; j++) pts.push(-W / 2, 0.045, -D / 2 + j * CELL, W / 2, 0.045, -D / 2 + j * CELL);
+  for (let i = 0; i <= RM.w; i++) pts.push(-W / 2 + i * CELL, 0.045, -D / 2, -W / 2 + i * CELL, 0.045, D / 2);
+  for (let j = 0; j <= RM.d; j++) pts.push(-W / 2, 0.045, -D / 2 + j * CELL, W / 2, 0.045, -D / 2 + j * CELL);
   const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
   grid = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: C.navy, transparent: true, opacity: 0.16 }));
   grid.visible = false; scene.add(grid);
@@ -156,6 +170,9 @@ const BUILDERS = {
   "F.windowW": () => F.windowW({ sky: SKY[S.time], stars: S.time === "dem", moon: S.time === "dem", cloud: S.time === "ngay" || S.time === "sang" }),
   "F.photoFrame": () => F.photoFrame(), "F.corkboard": (s, a) => F.corkboard(...(a || [])), "F.calendar": () => F.calendar(),
   gardenBed: s => gardenBed(s), gardenPot: s => gardenPot(s),
+  "W.house": () => WM.houseOutside(S.time), "W.tree": () => WM.tree(false), "W.blossom": () => WM.tree(true), "W.flowers": (s, a) => WM.flowers(a && a[0]),
+  "W.bush": () => WM.bush(), "W.lamp": s => WM.lamp(!!s), "W.mailbox": s => WM.mailbox(!!s), "W.swing": () => WM.swing(), "W.bench": () => WM.bench(),
+  "W.kiosk": () => WM.kiosk(), "W.stone": () => WM.stone(), "W.dock": () => WM.dock(), "W.sign": () => WM.sign(),
   plantPot: () => plantPot(), rugRound: (s, a) => rugRound(a[0], col(a[1]), col(a[2])), rugRect: (s, a) => rugRect(a[0], a[1], col(a[2]), col(a[3]))
 };
 for (const k of Object.keys(OBJ)) BUILDERS["OBJ." + k] = s => OBJ[k](s ?? "");
@@ -334,6 +351,13 @@ scene.add(cat.root);
 // ---------- nhãn tên, bong bóng, tim ----------
 const labels = $("#labels");
 const tags = {};
+// Nhãn cửa nổi: "Vào nhà" ngoài sân, "Ra sân" trong nhà.
+const doorTag = (() => { const el = document.createElement("button"); el.className = "nametag doortag"; el.type = "button"; document.body.appendChild(el); el.addEventListener("click", () => walkThroughDoor()); return el; })();
+function placeDoorTag() {
+  const d = S.scene === "san" ? WD.DOOR_OUT : WD.DOOR_IN, y = S.scene === "san" ? 2.75 : 0.35;
+  doorTag.textContent = S.scene === "san" ? "🏠 Vào nhà" : "🚪 Ra sân"; doorTag.hidden = S.mode !== "play";
+  const [x, yy] = toScreen(d.x, y, S.scene === "san" ? d.z - 0.3 : d.z); doorTag.style.left = x + "px"; doorTag.style.top = yy + "px";
+}
 function makeTag(who) { const el = document.createElement("div"); el.className = "nametag"; labels.appendChild(el); tags[who] = el; }
 function bubble(x, y, z, text, ms = 2200) {
   const el = document.createElement("div"); el.className = "bubble"; el.textContent = text; labels.appendChild(el);
@@ -360,13 +384,14 @@ buildShell(); buildGrid(); rebuildAll(); buildCatModel("ngoi");
 const actors = { anh: new Actor("anh"), em: new Actor("em") };
 makeTag("anh"); makeTag("em");
 function spawn() {
-  const spots = [[1.25, 2.6], [2.0, 2.6]];
+  const spots = S.scene === "san" ? [[WD.SPAWN_OUT.x - 0.4, WD.SPAWN_OUT.z + 0.4], [WD.SPAWN_OUT.x + 0.4, WD.SPAWN_OUT.z + 0.4]] : [[1.25, 2.6], [2.0, 2.6]];
   ["anh", "em"].forEach((w, k) => {
     const c = E.worldToCell(...spots[k]), n = E.nearestFreeCell(S.G, c.i, c.j) || { i: 8, j: 12 };
     const p = E.cellCenter(n.i, n.j); actors[w].place(p.x + (k ? 0.12 : -0.12), p.z, k ? -0.6 : 0.6);
   });
 }
 spawn();
+cat.root.visible = S.scene === "nha"; $("#btn-edit").hidden = S.scene !== "nha"; document.body.dataset.scene = S.scene;
 const me = () => actors[S.me];
 const partner = () => actors[S.me === "anh" ? "em" : "anh"];
 function updateMe() {
@@ -381,7 +406,7 @@ const rand = E.rng(Date.now() & 0xffff);
 const AI = { timer: 2.5 };
 const freeCell = () => {
   for (let k = 0; k < 40; k++) {
-    const i = Math.floor(rand() * ROOM.w), j = Math.floor(rand() * ROOM.d);
+    const i = Math.floor(rand() * RM.w), j = Math.floor(rand() * RM.d);
     if (E.cellFree(S.G, i, j)) return E.cellCenter(i, j);
   }
   return null;
@@ -561,6 +586,7 @@ function onTap(cx, cy) {
   if (hit && hit.uid) return itemMenu(itemByUid(hit.uid), cx, cy);
   const p = floorPoint(cx, cy);
   if (!p || Math.abs(p.x) > W / 2 || Math.abs(p.z) > D / 2) return;
+  if (S.scene === "nha" && Math.abs(p.x - WD.DOOR_IN.x) < 0.6 && Math.abs(p.z - WD.DOOR_IN.z) < 0.35) return walkThroughDoor();
   if (m.goTo(p.x, p.z)) ring(p.x, p.z); else toast("Chỗ đó chưa tới được");
 }
 
@@ -602,6 +628,9 @@ function itemMenu(it, cx, cy) {
   if (use.type === "wardrobe") list.push([use.label, () => useItem(m, it, () => openWardrobe(it))]);
   if (use.type === "date") list.push([use.label, () => useItem(m, it, () => openDate())]);
   if (use.type === "garden") { gardenMenu(it, anchor); return; }
+  if (use.type === "enter") list.push([use.label, () => walkThroughDoor()]);
+  if (use.type === "cafe") list.push([use.label, () => useItem(m, it, () => orderDrink(m, it))], ["Mời " + NAMES[partner().who] + " một ly", () => useItem(m, it, () => { orderDrink(m, it, true); setTimeout(() => useItem(partner(), it, () => partner().emote("wave")), 300); })]);
+  if (use.type === "boat") list.push([use.label, () => useItem(m, it, () => bubble(m.x, 1.5, m.z, "Đảo Vương quốc đang được xây, sắp chèo ra được rồi ⛵", 2800))]);
   showActions(def.name, list, ...anchor);
 }
 // ---------- vườn ----------
@@ -659,6 +688,43 @@ function harvest(actor, it) {
 function refreshGarden() { for (const it of S.layout.items) if (isGarden(it) && views.get(it.uid)?.key !== stateOf(it)) refreshView(it); }
 setInterval(refreshGarden, 30e3);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshGarden(); });
+
+// ---------- ra vào nhà ----------
+const DRINKS = ["Trà sữa trân châu 🧋", "Cà phê sữa đá ☕", "Nước cam 🍊", "Trà đào 🍑", "Sinh tố dâu 🍓", "Matcha latte 🍵"];
+function orderDrink(actor, it, treat) {
+  const p = E.itemPose(it), d = DRINKS[Math.floor(rand() * DRINKS.length)];
+  bubble(p.x, 2.3, p.z, (treat ? "Hai ly " : "Một ly ") + d.toLowerCase(), 2600);
+  floatAt(actor.x, 1.4, actor.z, d.slice(-2), 2); actor.emote("wave", 1);
+}
+let switching = false;
+function walkThroughDoor() {
+  const m = me(), to = S.scene === "san" ? WD.DOOR_OUT : WD.DOOR_IN;
+  hideActions();
+  if (Math.hypot(m.x - to.x, m.z - to.z) < 0.6) { goScene(S.scene === "san" ? "nha" : "san"); return; }
+  if (!m.goTo(to.x, to.z, () => goScene(S.scene === "san" ? "nha" : "san"))) toast("Chưa đi tới cửa được");
+}
+function goScene(id) {
+  if (switching || id === S.scene) return;
+  switching = true; hideActions(); select(null);
+  const fade = $("#fade"); fade.classList.add("on");
+  setTimeout(() => {
+    for (const a of Object.values(actors)) { a.standUp(); a.stop(); }
+    S.seats.clear(); S.transient.clear();
+    useScene(id); store.set(KEY.scene, id);
+    buildShell(); buildGrid(); rebuildAll();
+    const sp = id === "san" ? WD.SPAWN_OUT : WD.SPAWN_IN, m = me(), p = partner();
+    m.place(sp.x, sp.z, sp.face);
+    // người kia bước qua cửa ngay sau mình
+    const c = E.worldToCell(sp.x + 0.5, sp.z + (id === "san" ? 0.5 : -0.5)), n = E.nearestFreeCell(S.G, c.i, c.j) || E.worldToCell(sp.x, sp.z), q = E.cellCenter(n.i, n.j);
+    p.place(q.x, q.z, sp.face);
+    cat.root.visible = id === "nha";
+    $("#btn-edit").hidden = id !== "nha";
+    document.body.dataset.scene = id;
+    cam.target.set(m.x, 0.55, m.z); cam.goal.copy(cam.target); cam.goalPpm = cam.ppm = playPpm();
+    AI.timer = 2;
+    setTimeout(() => { fade.classList.remove("on"); switching = false; toast(id === "san" ? "Ra sân rồi · vườn ở bên trái, quán cà phê phía trước" : "Về nhà rồi"); }, 120);
+  }, 260);
+}
 
 function actorMenu(a, cx, cy) {
   const m = me(), anchor = [a.x, 1.45, a.z];
@@ -942,7 +1008,7 @@ function setMode(mode) {
     for (const a of Object.values(actors)) { a.standUp(); a.stop(); }
     renderTray(); requestAnimationFrame(editFit);
   } else {
-    select(null); cam.shift = 0; cam.goalPpm = Math.max(58, Math.min(80, innerWidth / 6));
+    select(null); cam.shift = 0; cam.goalPpm = playPpm();
     // ai đứng trong đồ vừa đặt thì bước ra ô trống gần nhất
     for (const a of Object.values(actors)) if (E.circleBlocked(S.G, a.x, a.z, E.AVATAR_R * 0.7)) { const c = E.worldToCell(a.x, a.z), n = E.nearestFreeCell(S.G, c.i, c.j, 16); if (n) { const p = E.cellCenter(n.i, n.j); a.place(p.x, p.z); } }
     if (E.circleBlocked(S.G, cat.x, cat.z, 0.1)) { const c = E.worldToCell(cat.x, cat.z), n = E.nearestFreeCell(S.G, c.i, c.j, 16); if (n) { const p = E.cellCenter(n.i, n.j); cat.x = p.x; cat.z = p.z; } cat.path = []; }
@@ -954,13 +1020,17 @@ $("#btn-done").addEventListener("click", () => setMode("play"));
 
 // ---------- vòng lặp ----------
 let last = performance.now();
-cam.goalPpm = cam.ppm = Math.max(58, Math.min(80, innerWidth / 6));
+cam.goalPpm = cam.ppm = playPpm();
 let simClock = 0;
 function step(dt) {
   simClock += dt;
   if (S.mode === "play") { joyStep(dt); partnerThink(dt); }
-  catThink(dt);
+  if (S.scene === "nha") catThink(dt);
   for (const a of Object.values(actors)) a.update(dt);
+  if (S.mode === "play" && !switching) {
+    const m = me(), moving = m.joy || m.path.length > 0;
+    if (moving && WD.crossesDoor(S.scene, m.x, m.z, Math.sin(m.face), Math.cos(m.face))) goScene(S.scene === "san" ? "nha" : "san");
+  }
   cat.root.position.set(cat.x, cat.path.length && !reduced() ? Math.abs(Math.sin(simClock * 11)) * 0.05 : 0, cat.z); cat.root.rotation.y = cat.face;
 }
 function frame(now) {
@@ -970,6 +1040,7 @@ function frame(now) {
   if (S.mode === "play" && !(cam.panned && now - cam.panned < 1500)) { const m = me(); cam.goal.set(m.x, 0.55, m.z); }
   const k = reduced() ? 1 : Math.min(1, dt * 5);
   cam.target.lerp(cam.goal, k); cam.ppm += (cam.goalPpm - cam.ppm) * k;
+  key.target.position.set(cam.target.x, 0, cam.target.z); key.position.set(cam.target.x - 5, 12, cam.target.z + 1.2);
   updateCamera();
   // lift món đang chọn
   if (S.mode === "edit" && S.selected && !drag) { const it = itemByUid(S.selected), v = views.get(S.selected); if (it && v) placeView(v, it, 0.04 + (reduced() ? 0 : Math.sin(now / 160) * 0.025)); }
@@ -983,7 +1054,7 @@ function frame(now) {
     const b = bubbles[i]; if (now > b.until) { b.el.remove(); bubbles.splice(i, 1); continue; }
     const [sx, sy] = toScreen(b.x, b.y, b.z); b.el.style.left = sx + "px"; b.el.style.top = sy + "px";
   }
-  positionFloating(actionsEl); positionFloating(toolsEl);
+  positionFloating(actionsEl); positionFloating(toolsEl); placeDoorTag();
   requestAnimationFrame(frame);
 }
 addEventListener("resize", resize);
@@ -1006,5 +1077,10 @@ window.__NHA3D__ = {
   skipHours(h) { clockSkew += h * GD.HOUR; refreshGarden(); return GD.HOUR * 0 + clockSkew; },
   plant: uid => { const it = itemByUid(uid); return it && it.plant ? GD.status(it.plant, now()) : null; },
   plantKey: uid => views.get(uid)?.key,
-  basket: () => ({ ...basket })
+  basket: () => ({ ...basket }),
+  scene: () => S.scene,
+  teleport(x, z) { const m = me(); m.stop(); m.place(x, z, 0); cam.goal.set(x, 0.55, z); cam.target.copy(cam.goal); },
+  goScene(id) { goScene(id); },
+  settle() { return new Promise(r => { const t = setInterval(() => { if (!switching) { clearInterval(t); r(S.scene); } }, 20); }); },
+  doors: () => ({ out: WD.DOOR_OUT, in: WD.DOOR_IN })
 };
