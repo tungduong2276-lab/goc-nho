@@ -16,7 +16,7 @@ async function open(page,width=390,hash=''){
 }
 for(const width of [360,390,430])test('3D-only home opens tools on the same island and preserves the old data at '+width+'px',async({page})=>{
  const{world,frame,N,errors,apiRequests}=await open(page,width);
- await expect(page.locator('nav.tabs')).toBeHidden();await expect(page.locator('nav.subtabs:visible')).toHaveCount(0);await expect(page.locator('#world-surface')).toBeHidden();
+ await expect(page.locator('nav.tabs')).toBeHidden();await expect(page.locator('nav.subtabs:visible')).toHaveCount(0);await expect(page.locator('#world-surface')).toBeHidden();await expect(page.locator('#syncBox')).toBeVisible();
  expect(new URL(frame.url()).searchParams.get('me')).toBe('em');expect(new URL(frame.url()).searchParams.get('cloud')).toBe('0');
  const initial=await page.evaluate(()=>({meta:JSON.stringify(S.meta),letters:JSON.stringify(S.letters),garden:JSON.stringify(S.care)}));
  // Walk to the actual fridge; its action opens the parent paper, without a second app iframe.
@@ -25,7 +25,7 @@ for(const width of [360,390,430])test('3D-only home opens tools on the same isla
  let hit;for(const f of [.5,.25,.75]){const p=await N('screenOfItem',fridge.uid,f);if(await N('pickAt',...p)===fridge.uid){hit=p;break;}}
  expect(hit).toBeTruthy();await world.locator('#world').click({position:{x:hit[0],y:hit[1]}});
  await world.getByRole('button',{name:'Xem giấy nhắn · dán giấy',exact:true}).click();await N('tick',12);
- await expect(page.locator('#world-surface-title')).toHaveText('Giấy nhắn trên tủ lạnh');await expect(page.locator('#v-tu-lanh')).toBeVisible();await expect(page.locator('iframe')).toHaveCount(1);
+ await expect(page.locator('#world-surface-title')).toHaveText('Giấy nhắn trên tủ lạnh');await expect(page.locator('#v-tu-lanh')).toBeVisible();await expect(page.locator('#world-surface #syncBox')).toBeVisible();await expect(page.locator('iframe')).toHaveCount(1);
  await expect.poll(async()=>{const m=await N('me'),[,y]=await N('screenOfWorld',m.x,1.32,m.z),panel=await page.locator('#world-surface').boundingBox();return y>panel.y+panel.height+4&&y<704;}).toBe(true);
  const text=page.locator('#fr-text');await expect(text).toBeVisible();await text.fill('Giấy nhắn thử trên đảo');
  await page.evaluate(()=>rerender());await expect(page.locator('#fr-text')).toHaveValue('Giấy nhắn thử trên đảo');
@@ -36,6 +36,8 @@ for(const width of [360,390,430])test('3D-only home opens tools on the same isla
  // The account surface is available from the world guide, no return to a tabbed home.
  await world.getByRole('button',{name:'Bản đồ và đồ dùng trên đảo'}).click();await world.getByRole('button',{name:'Tài khoản và ngôi nhà · Sổ tay',exact:true}).click();
  await expect(page.locator('#settings')).toBeVisible();await expect(page.locator('nav.tabs')).toBeHidden();await page.getByRole('button',{name:'Đóng đồ dùng, về đảo'}).click();
+ const sync=await page.locator('#syncBox').boundingBox();expect(sync.height).toBeGreaterThanOrEqual(44);
+ for(const selector of ['#btn-world-guide','#btn-time','#btn-edit']){const control=world.locator(selector);if(await control.isVisible()){const box=await control.boundingBox();expect(sync.x+sync.width<=box.x||box.x+box.width<=sync.x||sync.y+sync.height<=box.y||box.y+box.height<=sync.y).toBe(true);}}
  mkdirSync('test-results/world-home',{recursive:true});await page.screenshot({path:'test-results/world-home/island-'+width+'.png'});
  expect(errors).toEqual([]);expect(apiRequests).toEqual([]);
 });

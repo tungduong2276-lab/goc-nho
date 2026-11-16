@@ -29,3 +29,8 @@ html.world-only .v3modal,html.world-only #wrappedRoot{z-index:60}
 html.world-only #world-surface[data-panel] #app .view:not([hidden])>section>:not(.world-selected-panel){display:none!important}
 html.world-only #world-surface[data-panel] #app .view:not([hidden])>:not(section){display:none!important}
 html.world-only #app .room3d{display:none!important}
+
+.world-sync{min-height:44px;flex:none;cursor:pointer;padding:6px 12px;margin:0;background:var(--petal);border:0;border-bottom:1px solid var(--line);border-radius:0;font-size:12px}
+.world-sync-floating{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:78px;max-width:calc(100vw - 216px);z-index:12;border:2px solid #1D2B4F;border-radius:18px;background:var(--surface);box-shadow:1px 2px 0 #1D2B4F}
+.world-sync-floating>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html.world-only #stage>.jar{display:none}

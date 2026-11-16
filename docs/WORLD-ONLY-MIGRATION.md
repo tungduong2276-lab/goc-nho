@@ -33,6 +33,8 @@ Các phiếu viết/đọc/chọn ảnh dùng lại thành phần và hàm ghi d
 | Ngày kỷ niệm, huy hiệu, việc chung, kho báu | Lịch/tủ kính/sổ tay | Các thành phần cũ còn truy cập được; săn kho báu trong cảnh là đợt sau |
 | Trang phục và tâm trạng | Tủ đồ / biểu cảm | Mô hình mới đã có; chưa tự chuyển trang phục cũ sang lựa chọn mới |
 | Pha nước, câu cá, picnic | Đảo hẹn hò | Đang chơi trực tiếp trong 3D (PR #118) |
+| Trạng thái lưu và gửi lại khi lỗi | HUD và phiếu đồ dùng | Giữ nguyên nút đồng bộ/gửi lại thủ công hiện có, không tự gửi lại |
+| Thời tiết và bài hát đã chọn | Cài đặt ngôi nhà | Giữ lựa chọn; ngày/đêm đã 3D, adapter thời tiết/âm nhạc cần chuyển tiếp |
 | Tài khoản, ghép đôi, bản sao lưu | Sổ tay → Tài khoản và ngôi nhà | Luồng cũ giữ nguyên, không tự chạy thao tác quản trị |
 
 ## Thứ tự sau đợt A

@@ -903,7 +903,7 @@ function openApp(tab, delay = 0) {
   datePlay.close();
   if(new URLSearchParams(location.search).get("host")==="1"&&window.parent!==window&&featureOf(tab)){
     clearWorldInput();me().stop();hideActions();
-    window.parent.postMessage({type:"gocnho:open",id:tab},location.origin);return;
+    setTimeout(()=>window.parent.postMessage({type:"gocnho:open",id:tab},location.origin),delay);return;
   }
   setTimeout(() => {
     const sheet = $("#appsheet"), fr = $("#appsheet-frame");
@@ -1484,3 +1484,5 @@ window.__NHA3D__ = {
 
 
 if(window.parent!==window&&new URLSearchParams(location.search).get("host")==="1")window.parent.postMessage({type:"gocnho:ready",who:S.me},location.origin);
+
+if(new URLSearchParams(location.search).get("host")==="1"){document.body.dataset.host="true";$("#trial-pill").hidden=true;}
