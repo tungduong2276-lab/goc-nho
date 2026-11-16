@@ -4,6 +4,8 @@ on:
     paths:
       - "nha3d/**"
       - "tests/staging/nha3d-date.test.mjs"
+      - "tests/staging/nha3d-date-cloud.test.mjs"
+      - "tests/browser/nha3d-date.spec.mjs"
       - ".github/workflows/date-island-core.yml"
 permissions:
   contents: read
@@ -37,7 +39,7 @@ jobs:
       - run: npm install
       - run: npx playwright install chromium
       - name: Picnic invitation, fishing, drinks and return through the boat
-        run: npx playwright test tests/browser/nha3d-date.spec.mjs --grep 390px
+        run: npx playwright test tests/browser/nha3d-date.spec.mjs --grep '390px|changed animation clock'
 
   visual-evidence:
     if: github.event.pull_request.head.ref == 'feature/date-island-living-activities'

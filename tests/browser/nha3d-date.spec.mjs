@@ -41,6 +41,7 @@ for(const width of [360,390,430])test("date island: drink turns, timed fishing a
  await tapItem(page,N,"h-fish","Thả câu, chờ cá cắn");
  await page.getByRole("button",{name:"🎣 Thả câu",exact:true}).click();
  const fish=(await N("date")).fish;expect(fish.phase).toBe("waiting");
+ await page.clock.setFixedTime(new Date(fish.startedAt+1000));
  await expect.poll(async()=>{const m=await N("me"),[x,y]=await N("screenOfWorld",m.x,1.32,m.z),panel=await page.locator("#dateplay").boundingBox();return y>panel.y+panel.height+8&&y<694&&x>0&&x<width;}).toBe(true);
  await shot(page,"casting-"+width);
  // Freeze browser wall-clock at the bite's middle so GPU speed cannot decide whether a catch succeeds.
@@ -92,4 +93,21 @@ test("date activities: two isolated clients share turns; offline never dispatche
  expect((await a.N("cloud")).partnerVisible).toBe(true);
  expect(a.errors.concat(b.errors)).toEqual([]);expect(a.requests.concat(b.requests)).toEqual([]);
  }finally{await ca.close();await cb.close();}
+});
+test("date picnic: a changed animation clock cannot send a walking character outside the island",async({page})=>{
+ const {N,errors}=await open(page);
+ await page.getByRole("button",{name:"Hoạt động hẹn hò",exact:true}).click();
+ await page.getByRole("button",{name:"🔥 Đến thảm, ngồi cạnh nhau",exact:true}).click();
+ // Clock instrumentation or a changed timestamp origin must never produce reverse movement.
+ await page.evaluate(async()=>{
+  const raf=window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame=cb=>raf(t=>{window.requestAnimationFrame=raf;cb(t-100000);});
+  await new Promise(resolve=>raf(()=>raf(()=>raf(resolve))));
+ });
+ for(const actor of [await N("me"),await N("partner")]){
+  expect(Math.abs(actor.x),JSON.stringify(actor)).toBeLessThanOrEqual(7);
+  expect(Math.abs(actor.z),JSON.stringify(actor)).toBeLessThanOrEqual(6);
+ }
+ await N("tick",30);expect((await N("me")).mode).toBe("sit");expect((await N("partner")).mode).toBe("sit");
+ expect(errors).toEqual([]);
 });
