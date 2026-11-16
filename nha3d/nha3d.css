@@ -138,3 +138,5 @@ body[data-mode="play"] .edit-only, body[data-mode="edit"] .play-only { display: 
 #world-guide{max-height:calc(100dvh - 130px);overflow:auto}#world-guide-places{display:flex;flex-direction:column;gap:8px;margin:12px 0}#world-guide-places button{min-height:44px;white-space:normal;text-align:left}
 
 body[data-host="true"] #partner-status{position:fixed;left:12px;top:calc(74px + var(--safe-t,0px));max-width:calc(100vw - 160px)}
+
+body[data-host="true"]{--safe-t:0px;--safe-b:0px}

@@ -1,13 +1,14 @@
+:root{--world-safe-t:env(safe-area-inset-top,0px);--world-safe-b:env(safe-area-inset-bottom,0px);--world-safe-l:env(safe-area-inset-left,0px);--world-safe-r:env(safe-area-inset-right,0px)}
 /* The island owns navigation; existing data-entry components remain object-bound tools. */
 html.world-only body{margin:0;padding:0;overflow:hidden;background:#BFE3FA}
 html.world-only body::before{display:none}
 html.world-only #app{display:none}
-#world-home{position:fixed;inset:0;z-index:10;background:#BFE3FA}
+#world-home{position:fixed;inset:0;z-index:10;background:#BFE3FA;padding:var(--world-safe-t) var(--world-safe-r) var(--world-safe-b) var(--world-safe-l)}
 #world-frame{width:100%;height:100%;border:0;display:block}
 #world-home-loading{position:fixed;inset:0;display:grid;place-content:center;justify-items:center;gap:12px;padding:24px;background:#FFF3F6;color:#1D2B4F;text-align:center;z-index:11}
 #world-home-loading[hidden],#world-veil[hidden],#world-surface[hidden]{display:none}
 #world-veil{position:fixed;inset:0;z-index:25;background:rgba(29,43,79,.12)}
-#world-surface{position:fixed;z-index:30;inset:max(12px,env(safe-area-inset-top)) 12px auto;height:min(58dvh,520px);max-width:540px;margin:auto;display:flex;flex-direction:column;background:var(--surface);border:3px solid #1D2B4F;border-radius:22px;box-shadow:4px 5px 0 #1D2B4F;overflow:hidden}
+#world-surface{position:fixed;z-index:30;inset:max(12px,var(--world-safe-t)) max(12px,var(--world-safe-r)) auto max(12px,var(--world-safe-l));height:min(58dvh,520px);max-width:540px;margin:auto;display:flex;flex-direction:column;background:var(--surface);border:3px solid #1D2B4F;border-radius:22px;box-shadow:4px 5px 0 #1D2B4F;overflow:hidden}
 #world-surface-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:var(--petal);border-bottom:2px solid var(--line);flex:none}
 #world-surface-head h2{margin:0;font:800 21px var(--display);line-height:1.2}
 #world-surface-close{min-height:44px;flex:none}
@@ -31,6 +32,6 @@ html.world-only #world-surface[data-panel] #app .view:not([hidden])>:not(section
 html.world-only #app .room3d{display:none!important}
 
 .world-sync{min-height:44px;flex:none;cursor:pointer;padding:6px 12px;margin:0;background:var(--petal);border:0;border-bottom:1px solid var(--line);border-radius:0;font-size:12px}
-.world-sync-floating{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:78px;max-width:calc(100vw - 216px);z-index:12;border:2px solid #1D2B4F;border-radius:18px;background:var(--surface);box-shadow:1px 2px 0 #1D2B4F}
+.world-sync-floating{position:fixed;top:calc(12px + var(--world-safe-t));left:calc(78px + var(--world-safe-l));max-width:calc(100vw - 216px - var(--world-safe-l) - var(--world-safe-r));z-index:12;border:2px solid #1D2B4F;border-radius:18px;background:var(--surface);box-shadow:1px 2px 0 #1D2B4F}
 .world-sync-floating>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 html.world-only #stage>.jar{display:none}

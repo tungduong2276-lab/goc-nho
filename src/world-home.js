@@ -12,7 +12,7 @@ export function mountWorldHome(api){
  const placeSync=()=>{syncBox.classList.toggle('world-sync-floating',surface.hidden);if(surface.hidden)home.append(syncBox);else surface.insertBefore(syncBox,app);};placeSync();
  let identityKey=null,active=null,loaded=false,timer;
  const send=data=>frame.contentWindow?.postMessage(data,location.origin);
- const sendSurface=()=>send({type:'gocnho:surface',open:!surface.hidden||document.body.classList.contains('gated'),bottom:surface.hidden?0:surface.getBoundingClientRect().bottom});
+ const sendSurface=()=>send({type:'gocnho:surface',open:!surface.hidden||document.body.classList.contains('gated'),bottom:surface.hidden?0:Math.max(0,surface.getBoundingClientRect().bottom-frame.getBoundingClientRect().top)});
  function sync(){const user=api.user(),key=user.key+'|'+user.who+'|'+user.cloud;if(key!==identityKey){identityKey=key;loaded=false;loading.hidden=false;frame.src=worldUrl(location.href,user).href;clearTimeout(timer);timer=setTimeout(()=>{if(!loaded)loadText.textContent='Đảo chưa tải xong. Kiểm tra kết nối rồi tải lại nhé.';},25000);}send({type:'gocnho:user',who:user.who,names:user.names,avatars:user.avatars});sendSurface();if(active?.panel)selectPanel(active.panel);}
  function selectPanel(id){app.querySelectorAll('.world-selected-panel').forEach(e=>e.classList.remove('world-selected-panel'));document.getElementById(id)?.classList.add('world-selected-panel');}
  function open(id){const f=featureOf(id);if(!f)return;

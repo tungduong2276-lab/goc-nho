@@ -26,7 +26,7 @@ for(const width of [360,390,430])test('3D-only home opens tools on the same isla
  expect(hit).toBeTruthy();await world.locator('#world').click({position:{x:hit[0],y:hit[1]}});
  await world.getByRole('button',{name:'Xem giấy nhắn · dán giấy',exact:true}).click();await N('tick',12);
  await expect(page.locator('#world-surface-title')).toHaveText('Giấy nhắn trên tủ lạnh');await expect(page.locator('#v-tu-lanh')).toBeVisible();await expect(page.locator('#world-surface #syncBox')).toBeVisible();await expect(page.locator('iframe')).toHaveCount(1);
- await expect.poll(async()=>{const m=await N('me'),[,y]=await N('screenOfWorld',m.x,1.32,m.z),panel=await page.locator('#world-surface').boundingBox();return y>panel.y+panel.height+4&&y<704;}).toBe(true);
+ await expect.poll(async()=>{const m=await N('me'),[,y]=await N('screenOfWorld',m.x,1.32,m.z),panel=await page.locator('#world-surface').boundingBox(),frameBox=await page.locator('#world-frame').boundingBox();return y+frameBox.y>panel.y+panel.height+4&&y+frameBox.y<704;}).toBe(true);
  const text=page.locator('#fr-text');await expect(text).toBeVisible();await text.fill('Giấy nhắn thử trên đảo');
  await page.evaluate(()=>rerender());await expect(page.locator('#fr-text')).toHaveValue('Giấy nhắn thử trên đảo');
  mkdirSync('test-results/world-home',{recursive:true});await page.screenshot({path:'test-results/world-home/fridge-'+width+'.png'});
@@ -60,4 +60,13 @@ test('world guide walks through the house door before opening its object tool',a
  await N('tick',15);await N('settle');await N('tick',15);
  await expect(page.locator('#world-surface-title')).toHaveText('Giấy nhắn trên tủ lạnh');expect(await N('scene')).toBe('nha');
  await page.getByRole('button',{name:'Đóng đồ dùng, về đảo'}).click();expect(await N('scene')).toBe('nha');expect(errors).toEqual([]);
+});
+
+test('3D home keeps phone notch and home-indicator insets out of its controls and tool view',async({page})=>{
+ const{world,frame,N,errors}=await open(page);await page.addStyleTag({content:'html.world-only{--world-safe-t:44px!important;--world-safe-b:34px!important}'});
+ await expect.poll(async()=>(await page.locator('#world-frame').boundingBox()).y).toBe(44);await expect.poll(async()=>(await page.locator('#world-frame').boundingBox()).height).toBe(766);
+ const sync=await page.locator('#syncBox').boundingBox(),compass=await world.locator('#btn-world-guide').boundingBox();expect(sync.y).toBeGreaterThanOrEqual(44);expect(compass.y).toBeGreaterThanOrEqual(44);
+ await frame.evaluate(()=>parent.postMessage({type:'gocnho:open',id:'tu-lanh'},location.origin));await expect(page.locator('#fr-text')).toBeVisible();
+ await expect.poll(async()=>{const m=await N('me'),[,y]=await N('screenOfWorld',m.x,1.32,m.z),panel=await page.locator('#world-surface').boundingBox(),box=await page.locator('#world-frame').boundingBox();return y+box.y>panel.y+panel.height+4&&y+box.y<700;}).toBe(true);
+ await page.getByRole('button',{name:'Đóng đồ dùng, về đảo'}).click();expect(errors).toEqual([]);
 });
