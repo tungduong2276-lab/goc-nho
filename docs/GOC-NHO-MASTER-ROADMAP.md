@@ -1,5 +1,16 @@
 # GÓC NHỎ — MASTER ROADMAP & AI HANDOFF
 
+## ★ LATEST DECISION — 3D-ONLY WORLD (2026-11-16, supersedes older W3/W5 interface gates)
+
+The user now explicitly wants no old tab interface: enter the 3D island directly and integrate every existing feature there. This authorizes the default-home transition now; physical-phone acceptance remains unverified, not waived as evidence. Preserve the existing Firebase records and all feature access. The previous requirement to wait before making 3D the home screen is superseded by this explicit decision.
+
+See [3D-only migration inventory](WORLD-ONLY-MIGRATION.md) for every old feature, its world destination and the native-3D work still outstanding. Current branch `feature/world-only-home` implements **W5a**: one 3D home, object-bound data-entry tools on the same host, accounts/settings reachable on the island, old deep links retained, no visible legacy navigation or user-facing classic-mode toggle. Internal `?classic=1` supports compatibility tests/rollback, and `?embed=1` supports older internal tools without nesting another world.
+
+This entry change **does not complete native conversion of kingdom/museum/garden/pet mechanics**. Existing forms and handlers remain for data compatibility while each mechanic is rebuilt. Prioritise native fridge/mail/jar interactions, legacy garden progress, then the kingdom island and museum rooms; keep real cooperative loops and lasting results central. New world Firebase dispatch waits for the parent to resolve the correct authenticated couple and avatar. No schema, Rules or migration change is part of W5a.
+
+W5a validation is pending exact-head CI: root-home/identity/deep-link/feature-coverage/security-message tests, all retained component tests, Emulator regressions, and actual rendered screenshots. Do not claim shipped or all-3D conversion until the corresponding checks and implementation are verified.
+
+
 ## ★ PRODUCT DIRECTION V3 — OPEN 3D WORLD (user decision 2026-11-16, overrides older layouts)
 
 **Read this first in every new conversation.** The user wants Góc Nhỏ to play like *Play Together*: one continuous 3D world the two of them walk around in, not pages or tabs.

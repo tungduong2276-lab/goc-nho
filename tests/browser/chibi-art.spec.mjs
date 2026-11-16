@@ -1,3 +1,4 @@
+// Retained component compatibility checks; the default entry is covered by world-home.spec.mjs.
 import { test, expect } from "@playwright/test";
 import { readdirSync } from "node:fs";
 
@@ -7,7 +8,7 @@ test("characters render from the chibi set, full frame, with no broken layer", a
   for (const host of ["www.gstatic.com", "fonts.googleapis.com", "fonts.gstatic.com"]) await page.route(`https://${host}/**`, route => route.abort());
   const failed = [];
   page.on("response", response => { if (response.url().includes("/assets/chibi/") && !response.ok()) failed.push(response.url()); });
-  await page.goto("/index.html#khu-vuon");
+  await page.goto("/index.html?classic=1#khu-vuon");
   const layers = page.locator(".garden3d .chr[data-gchar] .cstack img");
   await expect(layers.first()).toBeVisible();
   await expect.poll(() => layers.evaluateAll(els => els.every(el => el.complete && el.naturalWidth > 0))).toBe(true);

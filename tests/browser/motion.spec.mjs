@@ -1,3 +1,4 @@
+// Retained component compatibility checks; the default entry is covered by world-home.spec.mjs.
 import { test, expect } from "@playwright/test";
 
 async function openGarden(page) {
@@ -5,7 +6,7 @@ async function openGarden(page) {
   await page.route("https://www.gstatic.com/**", route => route.abort());
   await page.route("https://fonts.googleapis.com/**", route => route.abort());
   await page.route("https://fonts.gstatic.com/**", route => route.abort());
-  await page.goto("/index.html#khu-vuon");
+  await page.goto("/index.html?classic=1#khu-vuon");
   await expect(page.locator(".garden3d")).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("data-gn-motion", "ready");
 }
@@ -73,7 +74,7 @@ async function openHouse(page) {
   await page.route("https://www.gstatic.com/**", route => route.abort());
   await page.route("https://fonts.googleapis.com/**", route => route.abort());
   await page.route("https://fonts.gstatic.com/**", route => route.abort());
-  await page.goto("/index.html#nha");
+  await page.goto("/index.html?classic=1#nha");
   await expect(page.locator(".world")).toBeVisible();
   await expect(page.locator(".house-room-strip")).toBeVisible();
 }

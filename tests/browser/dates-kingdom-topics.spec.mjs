@@ -1,9 +1,10 @@
+// Retained component compatibility checks; the default entry is covered by world-home.spec.mjs.
 import { test, expect } from "@playwright/test";
 
 async function openAs(page, me, hash) {
   await page.addInitScript(who => localStorage.setItem("hu-hen-ho-me", who), String(me));
   for (const host of ["www.gstatic.com", "fonts.googleapis.com", "fonts.gstatic.com"]) await page.route(`https://${host}/**`, route => route.abort());
-  await page.goto("/index.html#" + hash);
+  await page.goto("/index.html?classic=1#" + hash);
 }
 const court = async page => { await page.locator('[data-kv="court"]').click(); await expect(page.locator("#kgForm")).toBeVisible(); };
 

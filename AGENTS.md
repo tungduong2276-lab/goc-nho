@@ -3,6 +3,8 @@
 **Read [docs/GOC-NHO-MASTER-ROADMAP.md](docs/GOC-NHO-MASTER-ROADMAP.md) in full before planning or implementing a new feature.** It is the durable product specification and handoff for future conversations.
 
 ## Current direction (user decision 2026-11-16)
+**Latest decision — 3D-only:** the user explicitly wants the island as the only normal interface, with all old features integrated into the world. This advances W5 ahead of the former phone-acceptance ordering; it does not assert phone tests passed. Preserve all data and feature access. See `docs/WORLD-ONLY-MIGRATION.md`. Object-bound text/photo/drawing tools may reuse existing handlers; do not claim a portal/form is a fully rebuilt 3D game. No user-visible switch back to old tabs.
+
 **V3 — Open 3D world like Play Together:** walk in and out of the house, garden outside, walk to other areas instead of switching tabs. See "PRODUCT DIRECTION V3" at the top of the roadmap; it overrides the older milestone order below for the house/world work.
 
 **Experiential priority (2026-11-16, after W3c):** the user wants a love version of Play Together for two people. Prioritise actual cooperative game loops, reactive 3D interactions and replayability over more object-to-page links. See the experiential priority and W4a handoff in the roadmap.

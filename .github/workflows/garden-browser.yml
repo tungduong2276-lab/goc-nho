@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "index.html"
+      - "src/**"
+      - "manifest.webmanifest"
       - "nha3d/**"
       - "_xuong-3d/**"
       - "sw.js"

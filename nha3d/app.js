@@ -17,6 +17,7 @@ import * as SY from "./sync.mjs";
 import { connectCloud } from "./cloud.js";
 import * as AD from "./appdata.mjs";
 import * as DM from "./date-models.js";
+import {WORLD_FEATURES,featureOf} from "../src/world-features.mjs";
 import { createDatePlay } from "./date-play.js";
 
 const $ = s => document.querySelector(s);
@@ -530,7 +531,7 @@ function catThink(dt) {
 // ---------- điều khiển: cần gạt ----------
 const joy = { el: $("#joy"), knob: $(".joy-knob"), id: null, x: 0, y: 0 };
 joy.el.addEventListener("pointerdown", e => {
-  pendingDateTravel=false;
+  pendingDateTravel=false;guideIntent=null;
   joy.id = e.pointerId; joy.el.setPointerCapture(e.pointerId); joy.el.classList.add("active"); joyMove(e); hideActions();
   const m = me(); if (m.mode !== "idle") m.standUp(); m.stop();
 });
@@ -544,7 +545,11 @@ function joyMove(e) {
   joy.knob.style.transform = `translate(${dx}px,${dy}px)`;
   joy.x = dx / R; joy.y = -dy / R;
 }
+let worldObscured=false;
 const keys = new Set();
+function clearWorldInput(){keys.clear();joy.id=null;joy.x=joy.y=0;joy.knob.style.transform="";joy.el.classList.remove("active");me().joy=false;}
+addEventListener("blur",clearWorldInput);
+addEventListener("message",e=>{if(e.source!==window.parent||e.origin!==location.origin)return;if(e.data?.type==="gocnho:surface"){worldObscured=!!e.data.open;if(worldObscured){clearWorldInput();me().stop();}}if(e.data?.type==="gocnho:user"){const {names,avatars}=e.data;if(Array.isArray(names)&&names.length===2&&Array.isArray(avatars)&&new Set(avatars).size===2&&avatars.every(a=>a==="anh"||a==="em")){avatars.forEach((a,i)=>{NAMES[a]=String(names[i]).slice(0,30);});updateMe();}}});
 addEventListener("keydown", e => { if (e.target.closest?.("button,input")) return; keys.add(e.key.toLowerCase()); });
 addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
 function joyStep(dt) {
@@ -554,6 +559,7 @@ function joyStep(dt) {
   const m = me(), mag = Math.min(1, Math.hypot(jx, jy));
   m.joy = mag > 0.12 && S.mode === "play";
   if (!m.joy) return;
+  guideIntent=null;pendingDateTravel=false;
   if (m.mode === "sit" || m.mode === "sleep") m.standUp();
   m.stop();
   const dx = (RIGHT.x * jx + UPG.x * jy), dz = (RIGHT.z * jx + UPG.z * jy), l = Math.hypot(dx, dz) || 1, sp = m.speed * mag * dt;
@@ -635,6 +641,7 @@ canvas.addEventListener("pointerup", endPtr); canvas.addEventListener("pointerca
 canvas.addEventListener("wheel", e => { e.preventDefault(); cam.goalPpm = THREE.MathUtils.clamp(cam.goalPpm * Math.exp(-e.deltaY * 0.0015), 26, 150); }, { passive: false });
 
 function onTap(cx, cy) {
+  guideIntent=null;
   pendingDateTravel=false;
   hideActions();
   if (S.mode === "edit") { const hit = pickAt(cx, cy); if (hit && hit.uid) select(hit.uid); else select(null); return; }
@@ -701,6 +708,25 @@ function itemMenu(it, cx, cy) {
   if (use.type === "cafe") list.push([use.label, () => useItem(m, it, () => orderDrink(m, it))], ["Mời " + NAMES[partner().who] + " một ly", () => useItem(m, it, () => { orderDrink(m, it, true); if (CLOUD.on) { emitEv("invite", { text: "mời bạn một ly ở quầy cà phê ☕" }); return; } setTimeout(() => useItem(partner(), it, () => partner().emote("wave")), 300); })]);
   showActions(def.name, list, ...anchor);
 }
+// The guide is also an entry point when a saved custom layout does not contain a newer object.
+let guideIntent=null;
+function guideArrive(){
+ if(!guideIntent||switching)return;
+ const f=guideIntent;
+ if(f.scene!==S.scene){if(S.scene==="hen"){const dock=itemByUid("h-return");if(dock)useItem(me(),dock,()=>goScene("san"));return;}walkThroughDoor();return;}
+ guideIntent=null;
+ const it=S.layout.items.find(it=>it.type===f.object);
+ if(it){useItem(me(),it,()=>openApp(f.id));return;}
+ const n=E.nearestFreeCell(S.G,Math.floor(RM.w/2),Math.floor(RM.d/2));
+ if(n){const p=E.cellCenter(n.i,n.j);if(me().goTo(p.x,p.z,()=>openApp(f.id)))return;}
+ toast("Chưa tới được nơi này");
+}
+$("#btn-world-guide").onclick=()=>{
+ guideIntent=null;pendingDateTravel=false;me().stop();clearWorldInput();datePlay.close();const root=$("#world-guide-places");root.replaceChildren();
+ const date=document.createElement("button");date.className="pill";date.textContent="⛵ Đảo hẹn hò · pha nước, câu cá";date.onclick=()=>{$("#world-guide").hidden=true;travelToDate();};root.append(date);
+ for(const f of WORLD_FEATURES){const b=document.createElement("button");b.className="pill";b.textContent=f.title+" · "+f.place;b.onclick=()=>{$("#world-guide").hidden=true;if(!f.scene){openApp(f.id);return;}guideIntent=f;guideArrive();};root.append(b);}
+ openSheet("#world-guide");
+};
 // ---------- vườn ----------
 const basket = (() => { try { return GD.sanitizeBasket(JSON.parse(store.get(KEY.basket) || "null")); } catch { return {}; } })();
 const saveBasket = () => store.set(KEY.basket, JSON.stringify(basket));
@@ -862,25 +888,28 @@ function shakeJar(it) {
 let appOpen = null;
 // Gifts reuse the existing #gifts section of the home screen. No gift subscription or payload enters APPDATA.
 function focusAppPanel() {
-  const fr = $("#appsheet-frame");
-  if (!fr.dataset.src || new URL(fr.dataset.src).searchParams.get("panel") !== "gifts") return;
-  try {
-    const doc = fr.contentDocument;
-    if (!doc || doc.getElementById("world-gifts-focus")) return;
-    const style = doc.createElement("style"); style.id = "world-gifts-focus";
-    style.textContent = "#tab-home:has(#gifts)>:not(#gifts){display:none!important} #v-nha>.hs-bed{display:none!important}";
-    doc.head.append(style);
-    doc.getElementById("gifts")?.scrollIntoView();
-  } catch { /* same-origin screen may still be navigating */ }
+  const fr=$("#appsheet-frame"),f=featureOf(appOpen),panel=f?.panel;
+  if(!panel)return;
+  try{
+    const doc=fr.contentDocument,id=panel==="gifts"?"world-gifts-focus":"world-object-focus";
+    if(!doc||doc.getElementById(id))return;
+    const style=doc.createElement("style");style.id=id;
+    style.textContent=`#app>.view:not([hidden])>section>:not(#${panel}){display:none!important} #app>.view:not([hidden])>:not(section){display:none!important} .hs-bed,.guinhau{display:none!important}`;
+    doc.head.append(style);doc.getElementById(panel)?.scrollIntoView();
+  }catch{}
 }
 $("#appsheet-frame").addEventListener("load", focusAppPanel);
 function openApp(tab, delay = 0) {
   datePlay.close();
+  if(new URLSearchParams(location.search).get("host")==="1"&&window.parent!==window&&featureOf(tab)){
+    clearWorldInput();me().stop();hideActions();
+    window.parent.postMessage({type:"gocnho:open",id:tab},location.origin);return;
+  }
   setTimeout(() => {
     const sheet = $("#appsheet"), fr = $("#appsheet-frame");
     $("#appsheet-title").textContent = APP_TITLES[tab] || "Góc Nhỏ";
-    const url = new URL("../index.html", location.href); url.searchParams.set("embed", "1"); url.hash = tab === "gifts" ? "nha" : tab;
-    if (tab === "gifts") url.searchParams.set("panel", "gifts");
+    const f=featureOf(tab),url = new URL("../index.html", location.href); url.searchParams.set("embed", "1"); url.hash = f?.route || tab;
+    if(f?.panel)url.searchParams.set("panel",f.panel);
     if (fr.dataset.src !== url.href) { fr.src = url.href; fr.dataset.src = url.href; } else { try { fr.contentWindow.location.hash = url.hash; } catch { /* khác nguồn */ } }
     document.querySelectorAll(".sheet:not(.mini)").forEach(s => { if (s !== sheet) s.hidden = true; });
     sheet.hidden = false; appOpen = tab; focusAppPanel(); $("#appsheet-close").focus({ preventScroll: true });
@@ -1010,6 +1039,7 @@ async function startCloud() {
 // ---------- ra vào nhà ----------
 let pendingDateTravel=false;
 function travelToDate(){
+ guideIntent=null;
  if(S.scene==="hen"){datePlay.open("guide");return;}
  if(S.scene==="nha"){pendingDateTravel=true;walkThroughDoor();return;}
  const pier=S.layout.items.find(i=>i.type==="benThuyen");
@@ -1051,7 +1081,7 @@ function goScene(id) {
     cam.target.set(m.x, 0.55, m.z); cam.goal.copy(cam.target); cam.goalPpm = cam.ppm = playPpm();
     AI.timer = 2;
     datePlay.sceneChanged();
-    setTimeout(()=>{fade.classList.remove("on");switching=false;toast(id==="hen"?"Đảo hẹn hò · quầy bên trái, bến câu bên phải":id==="san"?"Ra sân rồi · vườn bên trái, bến thuyền phía trước":"Về nhà rồi");if(id==="san"&&pendingDateTravel){pendingDateTravel=false;travelToDate();}},120);
+    setTimeout(()=>{fade.classList.remove("on");switching=false;if(guideIntent)guideArrive();toast(id==="hen"?"Đảo hẹn hò · quầy bên trái, bến câu bên phải":id==="san"?"Ra sân rồi · vườn bên trái, bến thuyền phía trước":"Về nhà rồi");if(id==="san"&&pendingDateTravel){pendingDateTravel=false;travelToDate();}},120);
   }, 260);
 }
 
@@ -1124,6 +1154,7 @@ for (const [k, name] of Object.entries(EXPRS)) {
 $("#btn-face").addEventListener("click", () => { facesEl.hidden = !facesEl.hidden; });
 $("#btn-me").addEventListener("click", () => {
   S.me = S.me === "anh" ? "em" : "anh"; store.set(KEY.me, S.me); updateMe();
+  if(window.parent!==window)window.parent.postMessage({type:"gocnho:who",who:S.me},location.origin);
   me().stop(); toast("Giờ mình là " + NAMES[S.me]);
 });
 $("#btn-time").addEventListener("click", () => {
@@ -1363,6 +1394,8 @@ const datePlay=createDatePlay({
  celebrate:(message,type)=>{toast(message);if(type){for(const a of Object.values(actors))a.emote("wave",1.8);floatAt(me().x,1.4,me().z,"💗",5);}else floatAt(me().x,1.4,me().z,"✨",2);}
 });
 addEventListener("keydown",e=>{if(e.key==="Escape")datePlay.close();});
+setInterval(()=>{if(worldObscured&&CLOUD.on)sendPresence();},15000);
+let hasRenderedWorld=false;
 let last = performance.now();
 cam.goalPpm = cam.ppm = playPpm();
 let simClock = 0;
@@ -1382,6 +1415,7 @@ function step(dt) {
 }
 function frame(now) {
   const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now;
+  if(worldObscured&&hasRenderedWorld){requestAnimationFrame(frame);return;}
   step(dt);
   // camera
   if (S.mode === "play" && !(cam.panned && now - cam.panned < 1500)) { const m = me(); cam.goal.set(m.x, 0.55, m.z); }
@@ -1392,7 +1426,7 @@ function frame(now) {
   // lift món đang chọn
   if (S.mode === "edit" && S.selected && !drag) { const it = itemByUid(S.selected), v = views.get(S.selected); if (it && v) placeView(v, it, 0.04 + (reduced() ? 0 : Math.sin(now / 160) * 0.025)); }
   if (!reduced()) itemsG.traverse(o => { if (o.userData.bob) { o.position.y = o.userData.y0 ?? (o.userData.y0 = o.position.y); o.position.y += Math.sin(now / 420) * 0.05; o.rotation.y = Math.sin(now / 900) * 0.4; } });
-  renderer.render(scene, camera);
+  renderer.render(scene, camera);hasRenderedWorld=true;
   // nhãn
   for (const a of Object.values(actors)) {
     const el = tags[a.who]; el.hidden = !a.root.visible;
@@ -1407,7 +1441,8 @@ function frame(now) {
 }
 addEventListener("resize", resize);
 requestAnimationFrame(t => { last = t; frame(t); $("#loading").classList.add("gone"); });
-startCloud().catch(e => console.warn("Đảo 3D: không nối được Firebase", e));
+if(new URLSearchParams(location.search).get("host")!=="1"||new URLSearchParams(location.search).get("cloud")==="1")startCloud().catch(e => console.warn("Đảo 3D: không nối được Firebase", e));
+else $("#trial-pill").textContent="Chỉ trên máy này";
 
 // Móc cho test tự động (chỉ đọc + vài thao tác như người dùng); không chứa dữ liệu thật.
 window.__NHA3D__ = {
@@ -1447,3 +1482,5 @@ window.__NHA3D__ = {
   sentPresence: () => CLOUD.sentP
 };
 
+
+if(window.parent!==window&&new URLSearchParams(location.search).get("host")==="1")window.parent.postMessage({type:"gocnho:ready",who:S.me},location.origin);
