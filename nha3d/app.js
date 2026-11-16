@@ -1394,7 +1394,7 @@ const datePlay=createDatePlay({
  celebrate:(message,type)=>{toast(message);if(type){for(const a of Object.values(actors))a.emote("wave",1.8);floatAt(me().x,1.4,me().z,"💗",5);}else floatAt(me().x,1.4,me().z,"✨",2);}
 });
 addEventListener("keydown",e=>{if(e.key==="Escape")datePlay.close();});
-setInterval(()=>{if(worldObscured&&CLOUD.on)sendPresence();},15000);
+setInterval(()=>{if(worldObscured&&CLOUD.on&&!document.hidden)sendPresence();},15000);
 let hasRenderedWorld=false;
 let last = performance.now();
 cam.goalPpm = cam.ppm = playPpm();

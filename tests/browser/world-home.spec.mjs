@@ -70,3 +70,17 @@ test('3D home keeps phone notch and home-indicator insets out of its controls an
  await expect.poll(async()=>{const m=await N('me'),[,y]=await N('screenOfWorld',m.x,1.32,m.z),panel=await page.locator('#world-surface').boundingBox(),box=await page.locator('#world-frame').boundingBox();return y+box.y>panel.y+panel.height+4&&y+box.y<700;}).toBe(true);
  await page.getByRole('button',{name:'Đóng đồ dùng, về đảo'}).click();expect(errors).toEqual([]);
 });
+test('typing keeps presence alive in the foreground and stops heartbeats when the app is hidden',async({page})=>{
+ await page.clock.install();const{frame,errors,apiRequests}=await open(page);
+ await frame.evaluate(()=>{
+  window.presenceCalls=0;window.fakeHidden=false;
+  Object.defineProperty(document,'hidden',{configurable:true,get:()=>window.fakeHidden});
+  window.__NHA3D__.useFakeCloud({uid:'synthetic-member',setPresence(){window.presenceCalls++;}});
+  parent.postMessage({type:'gocnho:open',id:'tu-lanh'},location.origin);
+ });
+ await expect(page.locator('#fr-text')).toBeVisible();await page.clock.runFor(100);
+ await frame.evaluate(()=>{window.fakeHidden=true;});const before=await frame.evaluate(()=>window.presenceCalls);
+ await page.clock.runFor(16000);expect(await frame.evaluate(()=>window.presenceCalls)).toBe(before);
+ await frame.evaluate(()=>{window.fakeHidden=false;});await page.clock.runFor(16000);
+ expect(await frame.evaluate(()=>window.presenceCalls)).toBeGreaterThan(before);expect(errors).toEqual([]);expect(apiRequests).toEqual([]);
+});
