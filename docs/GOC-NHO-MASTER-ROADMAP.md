@@ -1,5 +1,32 @@
 # GÓC NHỎ — MASTER ROADMAP & AI HANDOFF
 
+## ★ PRODUCT DIRECTION V3 — OPEN 3D WORLD (user decision 2026-11-16, overrides older layouts)
+
+**Read this first in every new conversation.** The user wants Góc Nhỏ to play like *Play Together*: one continuous 3D world the two of them walk around in, not pages or tabs.
+
+What the user asked for, in their words translated: walk in and out of the house through its door; plant and tend crops in a garden **outside** the house; walk to the other areas (café, mailbox, dock, kingdom island, etc.) instead of tapping a tab; customise the house; interact with each other and with objects; plants grow in real time. Changing only the art (2D chibi, PR #106) or opening the 3D house from a card (PR #109) was explicitly "not what I want".
+
+### Target experience
+- **One world, scenes joined by doors/paths.** Outdoor island (yard, garden, paths, café corner, mailbox, swing, dock) ↔ house interior through the front door ↔ later: upstairs rooms, kingdom island by boat. Entering/leaving uses a short fade at a door/edge, as in Play Together, never a tab switch.
+- **Controls:** joystick or tap-to-walk, camera follows the player; tap a person or object for a small action menu. Must work at 360–430 px phone widths.
+- **Interact:** sit/sleep/cook/wardrobe etc. inside; plant/water/harvest outside; emotes, hug, high five with the other person.
+- **Customise:** build mode inside the house (exists) and, later, outdoor decorations and garden plots in the yard.
+- **Real two-person presence:** both phones see each other move, the same house layout and the same garden. Current Firestore Rules already allow members to read/write any subcollection under `/couples/{cid}/`, so this needs app code (a new subcollection such as `couples/{cid}/world/...`), not a Rules change. Until it ships, the other character is simulated and data is per-device (localStorage).
+- **Existing app features are reached from world objects** (fridge → notes, mailbox → letters, jar → dates, kingdom island → kingdom) and keep their existing data. Do not delete existing tabs until each one has a world entry point.
+
+### Code map (as of 2026-11-16)
+- `nha3d/` — the 3D world (three.js r169 from jsDelivr, toon style from `_xuong-3d`, synced into `nha3d/xuong/` by `scripts/sync-nha3d.mjs`). `app.js` main loop, actors, menus, build mode; `engine.mjs` grid, placement, path-finding (pure, tested in Node); `catalog.mjs` furniture; `garden.mjs` + `garden-models.js` real-time plants.
+- `nha3d/multiroom*.mjs` — older multi-room door/transition engine on the staging branch; reusable ideas for door transitions.
+- Tests: `tests/staging/nha3d-*.test.mjs` (Node), `tests/browser/nha3d*.spec.mjs` (Playwright, use `window.__NHA3D__` hooks and `tick()` instead of waiting for frames).
+- Local rendering in a session without jsDelivr: shallow-clone `mrdoob/three.js` at tag `r169` and route `cdn.jsdelivr.net/npm/three@0.169.0/*` to it (see `tests/browser/nha3d.spec.mjs`).
+
+### Build order (V3)
+1. **W1 — Outdoor island + door in/out (in progress 2026-11-16):** outdoor scene with the house exterior, a walkable yard, garden plots outside, paths to café corner, mailbox, swing and dock; front door enters the existing interior, interior door leads back out. Garden moves outdoors.
+2. **W2 — Shared presence and state:** both phones see each other and share layout + garden through `couples/{cid}/world/*`; offline-safe, last-write-wins per item; tests with the Firestore Emulator.
+3. **W3 — World entry points to app features:** mailbox → letters, fridge → notes, jar → dates, noticeboard → todos, boat → kingdom island.
+4. **W4 — More places:** upstairs rooms, kingdom island scene, café interior, seasonal outdoor decor.
+5. **W5 — Make the world the home screen** once W1–W3 are accepted on both phones.
+
 ## Latest operational handoff — 2026-11-16 (evening)
 
 - **User direction (2026-11-16):** the goal is a real Play Together-style 3D world — walk around, customise the house, interact with each other and with objects, grow real plants. The 2D chibi swap alone (PR #106) is not what was wanted.
@@ -54,6 +81,7 @@
 
 ## 0. START HERE — instructions for a new AI conversation
 
+0. **The current product direction is V3 — OPEN 3D WORLD (section at the top of this file).** Continue its build order unless the user says otherwise.
 1. Read `AGENTS.md` and this entire file. Inspect actual `main`, open PRs, CI status and Firebase configuration before making assumptions.
 2. Ask which milestone to implement **only if the user has not already specified it**. If asked to continue, start with the first incomplete milestone and current blockers.
 3. Read existing code before editing; do not rewrite the app from scratch or replace the Firebase backend.
