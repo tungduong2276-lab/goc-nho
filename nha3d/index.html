@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#FFF3F6">
+<meta name="robots" content="noindex">
+<title>Nhà 3D · Góc Nhỏ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./nha3d.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head>
+<body data-mode="play">
+<div id="sky" aria-hidden="true"></div>
+<canvas id="world" aria-label="Ngôi nhà 3D của Anh và Em"></canvas>
+<div id="labels" aria-hidden="true"></div>
+
+<header class="top">
+  <a class="pill back" href="../" aria-label="Về Góc Nhỏ">‹ Về</a>
+  <span class="pill tag" title="Chưa đồng bộ Firebase; bố cục chỉ lưu trong trình duyệt này">Bản thử</span>
+  <div class="top-r play-only">
+    <button class="round" id="btn-time" aria-label="Đổi buổi trong ngày">☀️</button>
+    <button class="round accent" id="btn-edit" aria-label="Trang trí nhà">🛠</button>
+  </div>
+  <div class="top-r edit-only">
+    <button class="round" id="btn-undo" aria-label="Hoàn tác" disabled>↶</button>
+    <button class="round" id="btn-paint" aria-label="Màu tường và sàn">🎨</button>
+    <button class="pill done" id="btn-done">Xong</button>
+  </div>
+</header>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- Chế độ Chơi -->
+<div id="joy" class="play-only" aria-label="Cần điều khiển: kéo để đi">
+  <div class="joy-base"><div class="joy-knob"></div></div>
+</div>
+<nav class="emotes play-only" aria-label="Hành động">
+  <button class="round" id="btn-me" aria-label="Đổi người đang điều khiển"><span id="me-name">Anh</span></button>
+  <button class="round" data-emote="wave" aria-label="Vẫy tay">👋</button>
+  <button class="round" data-emote="heart" aria-label="Thả tim">💗</button>
+  <button class="round" id="btn-face" aria-label="Đổi biểu cảm">😊</button>
+</nav>
+<div id="faces" class="sheet mini" hidden></div>
+
+<!-- Hành động khi chạm vào đồ / người -->
+<div id="actions" class="actions" hidden></div>
+
+<!-- Chế độ Trang trí -->
+<div id="item-tools" class="item-tools" hidden>
+  <button class="round" id="btn-rot" aria-label="Xoay">↻</button>
+  <button class="round" id="btn-store" aria-label="Cất vào kho">📦</button>
+  <button class="round ok" id="btn-ok" aria-label="Đặt xong">✓</button>
+</div>
+<section class="tray edit-only" aria-label="Kho đồ">
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="cards" id="cards"></div>
+</section>
+
+<section id="paint" class="sheet" hidden aria-label="Màu phòng">
+  <h2>Màu phòng</h2>
+  <p class="lbl">Tường</p><div class="swatches" id="sw-wall"></div>
+  <p class="lbl">Sàn</p><div class="swatches" id="sw-floor"></div>
+  <div class="row"><button class="pill ghost" id="btn-reset">Bày lại như mới</button><button class="pill" data-close>Đóng</button></div>
+</section>
+
+<section id="wardrobe" class="sheet" hidden aria-label="Tủ quần áo">
+  <h2>Tủ đồ của <span id="wd-who">Anh</span></h2>
+  <div class="tabs" id="wd-tabs"></div>
+  <div class="chips" id="wd-chips"></div>
+  <div class="row"><button class="pill" data-close>Xong</button></div>
+</section>
+
+<section id="date" class="sheet" hidden aria-label="Hũ hẹn hò">
+  <h2>Hũ hẹn hò</h2>
+  <p class="date-card" id="date-text"></p>
+  <div class="row"><button class="pill ghost" id="btn-redraw">Bốc lại</button><button class="pill" data-close>Hẹn nhé</button></div>
+</section>
+
+<div id="loading"><div class="spin"></div><p>Đang dựng nhà…</p></div>
+<noscript><p class="noscript">Cần bật JavaScript để xem nhà 3D.</p></noscript>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

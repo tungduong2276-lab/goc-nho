@@ -241,3 +241,6 @@ export function roomJobs(room) {
   };
 }
 export const jobs = Object.fromEntries(ROOM_IDS.map(r => [r, roomJobs(r)]));
+
+// Dùng lại trong bản thử nhà 3D trực tiếp (nha3d/). Chỉ thêm export, không đổi hình đã dựng.
+export { OBJ, plantPot, rugRound, rugRect, bookStack };
