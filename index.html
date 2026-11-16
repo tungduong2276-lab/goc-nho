@@ -3684,7 +3684,10 @@ window.addEventListener("online",netState);window.addEventListener("offline",net
 /* ================= v8 · thế giới 3D (bản đồ ngôi nhà, phòng khách, thú cưng, vườn 3D) ================= */
 let SC3=null;
 fetch("assets/3d/scene.json").then(r=>r.json()).then(j=>{SC3=j;schedule();}).catch(()=>{});
-const A3=n=>"assets/3d/"+n+".webp";
+// Nhân vật và thú cưng dùng bộ vẽ phẳng "chibi" (assets/chibi, sinh bởi scripts/gen-chibi-art.mjs).
+// Đặt ART_CHIBI=false để quay lại bộ nhân vật 3D cũ; ảnh 3D vẫn còn nguyên trong assets/3d.
+const ART_CHIBI=true,CHIBI_FULL=[0,0,512,512];
+const A3=n=>ART_CHIBI&&/^(nv|thu)_/.test(n)?"assets/chibi/"+n+".svg":"assets/3d/"+n+".webp";
 function buoi(d=new Date()){const h=d.getHours();return h>=5&&h<8?"sang":h>=8&&h<17?"ngay":h>=17&&h<19?"chieu":"dem";}
 const BUOI_TXT={sang:"Bình minh",ngay:"Ban ngày",chieu:"Hoàng hôn",dem:"Ban đêm"};
 const PRES=i=>i===null?null:(S.presence["p"+i]||null);
@@ -3928,7 +3931,7 @@ function stackParts(look,pose,ex){const P=pose==="ngu"?"dung":pose;
 // một nhân vật trong khung 512 (đơn vị pixel của cảnh), neo chân tại pt
 function charStack(i,pose,pt,scale,z,cls="",o={}){
   const R=SC3.rig,s=scale,look=o.look||lookOf(i),ex=o.expr||(pose==="ngu"?"ngu":exprOf(i));
-  const imgs=stackParts(look,pose,ex).filter(n=>R.boxes[n]).map(n=>{const b=R.boxes[n];return`<img src="${A3(n)}" alt="" draggable="false" style="left:${(b[0]/5.12).toFixed(2)}%;top:${(b[1]/5.12).toFixed(2)}%;width:${((b[2]-b[0])/5.12).toFixed(2)}%;height:${((b[3]-b[1])/5.12).toFixed(2)}%">`;}).join("");
+  const imgs=stackParts(look,pose,ex).filter(n=>R.boxes[n]).map(n=>{const b=ART_CHIBI?CHIBI_FULL:R.boxes[n];return`<img src="${A3(n)}" alt="" draggable="false" style="left:${(b[0]/5.12).toFixed(2)}%;top:${(b[1]/5.12).toFixed(2)}%;width:${((b[2]-b[0])/5.12).toFixed(2)}%;height:${((b[3]-b[1])/5.12).toFixed(2)}%">`;}).join("");
   const a=R.anchor;
   return`<span class="cstack spr ${cls}" style="${PX(pt[0]-a[0]*s,pt[1]-a[1]*s,512*s,512*s,z)}">${imgs}</span>`;
 }
