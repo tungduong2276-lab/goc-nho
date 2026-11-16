@@ -33,10 +33,10 @@ export async function connectCloud() {
     ok: true, uid: user.uid, cid,
     async actDate(kind,command){
       if(!navigator.onLine)throw new Error("Đang mất mạng; lượt này chưa gửi, kết nối lại rồi thử nhé");
-      const ref=col.doc(dateDocId(kind,user.uid));
+      const ref=col.doc(dateDocId(kind,user.uid)), actionTime=Date.now();
       return fs.runTransaction(async tx=>{
         const snap=await tx.get(ref);
-        const next=advanceActivity(snap.exists?snap.data():null,{...command,kind,uid:user.uid,now:Date.now()});
+        const next=advanceActivity(snap.exists?snap.data():null,{...command,kind,uid:user.uid,now:actionTime});
         if(next.rev!==(snap.exists?snap.data().rev:0))tx.set(ref,next);
         return {id:ref.id,data:next};
       });

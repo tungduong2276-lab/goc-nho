@@ -20,7 +20,7 @@ export function dateIsland(w,d,time){
 }
 export function tool(kind,color=0xA8DCF0){
  const g=G();g.position.set(.3,.75,.16);
- if(kind==="fish"){piece(rcyl(.022,.03,1.2,.008,8),C.woodD,{pos:[0,.42,.3],rot:[.65,0,.15],parent:g});piece(rcyl(.004,.004,.85,0,4),C.white,{pos:[0,.44,.76],parent:g,noOutline:true});piece(sphere(.055,10,8),C.pink,{pos:[0,.01,.76],parent:g});}
+ if(kind==="fish"){piece(rcyl(.022,.03,1.2,.008,8),C.woodD,{pos:[0,.42,.3],rot:[.65,0,.15],parent:g});const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,.9,.66),new THREE.Vector3(0,-1.1,1.8)]),new THREE.LineBasicMaterial({color:0xffffff}));g.add(line);piece(sphere(.055,10,8),C.pink,{pos:[0,-1.1,1.8],parent:g});}
  else{piece(rcyl(.08,.06,.23,.02,12),color,{pos:[0,.05,0],parent:g});piece(rcyl(.085,.085,.04,.01,12),C.white,{pos:[0,.18,0],parent:g});}return g;
 }
 export function caughtFish(color){

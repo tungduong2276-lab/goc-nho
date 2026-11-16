@@ -23,3 +23,20 @@ jobs:
           node --check nha3d/date-play.js
           node --check nha3d/date-models.js
           node --test tests/staging/nha3d-date.test.mjs tests/staging/nha3d-engine.test.mjs
+
+  visual-evidence:
+    if: github.event.pull_request.head.ref == 'feature/date-island-living-activities'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Encode existing synthetic screenshots for remote visual review
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git fetch origin "refs/heads/evidence/date-island-pr-$PR_NUMBER"
+          for name in island-390 drink-panel-360 fishing-430; do
+            printf 'DATE_IMAGE_BEGIN %s\n' "$name"
+            git show "FETCH_HEAD:test-results/date-evidence/$name.png" | base64
+            printf 'DATE_IMAGE_END %s\n' "$name"
+          done

@@ -512,6 +512,7 @@ function catThink(dt) {
 // ---------- điều khiển: cần gạt ----------
 const joy = { el: $("#joy"), knob: $(".joy-knob"), id: null, x: 0, y: 0 };
 joy.el.addEventListener("pointerdown", e => {
+  pendingDateTravel=false;
   joy.id = e.pointerId; joy.el.setPointerCapture(e.pointerId); joy.el.classList.add("active"); joyMove(e); hideActions();
   const m = me(); if (m.mode !== "idle") m.standUp(); m.stop();
 });
@@ -616,6 +617,7 @@ canvas.addEventListener("pointerup", endPtr); canvas.addEventListener("pointerca
 canvas.addEventListener("wheel", e => { e.preventDefault(); cam.goalPpm = THREE.MathUtils.clamp(cam.goalPpm * Math.exp(-e.deltaY * 0.0015), 26, 150); }, { passive: false });
 
 function onTap(cx, cy) {
+  pendingDateTravel=false;
   hideActions();
   if (S.mode === "edit") { const hit = pickAt(cx, cy); if (hit && hit.uid) select(hit.uid); else select(null); return; }
   const m = me();
@@ -855,6 +857,7 @@ function focusAppPanel() {
 }
 $("#appsheet-frame").addEventListener("load", focusAppPanel);
 function openApp(tab, delay = 0) {
+  datePlay.close();
   setTimeout(() => {
     const sheet = $("#appsheet"), fr = $("#appsheet-frame");
     $("#appsheet-title").textContent = APP_TITLES[tab] || "Góc Nhỏ";
@@ -1337,7 +1340,7 @@ const datePlay=createDatePlay({
  near:kind=>{const it=itemByUid(kind==="cook"?"h-cook":"h-fish"),ap=it&&E.approachPoint(S.G,it);return !!ap&&Math.hypot(me().x-ap.x,me().z-ap.z)<1.5;},
  practiceMove:()=>{const ap=E.approachPoint(S.G,itemByUid("h-cook"));if(ap)partner().goTo(ap.x+.45,ap.z,()=>partner().emote("wave",1));},
  position:uid=>{const it=itemByUid(uid);return it?E.itemPose(it):{x:0,z:0};},
- route:(uid,kind)=>{const it=itemByUid(uid);if(!it)return;useItem(me(),it,()=>{if(kind==="sit"){doSit(me(),it);if(!CLOUD.on){const fs=freeSeats(it);if(fs.length)goSit(partner(),it,fs[0],"Ngồi cạnh bạn nè");}else emitEv("invite",{text:"rủ bạn ngồi cùng trên thảm hẹn hò"});}else datePlay.open(kind);});},
+ route:(uid,kind)=>{const it=itemByUid(uid);if(!it)return;useItem(me(),it,()=>{if(kind==="sit"){const seats=freeSeats(it),mine=seats.find(s=>s.k===(S.me==="anh"?0:1))||seats[0];if(mine){goSit(me(),it,mine);if(!CLOUD.on){const other=seats.find(s=>s.k!==mine.k);if(other)goSit(partner(),it,other,"Ngồi cạnh bạn nè");}else emitEv("invite",{text:"rủ bạn ngồi cùng trên thảm hẹn hò"});}}else datePlay.open(kind);});},
  invite:()=>emitEv("invite",{text:"vừa pha đồ uống, đến lượt bạn trên đảo hẹn hò 🧋"}),
  celebrate:(message,type)=>{toast(message);if(type){for(const a of Object.values(actors))a.emote("wave",1.8);floatAt(me().x,1.4,me().z,"💗",5);}else floatAt(me().x,1.4,me().z,"✨",2);}
 });
@@ -1415,7 +1418,7 @@ window.__NHA3D__ = {
   basket: () => ({ ...basket }),
   scene: () => S.scene,
   nearItem(uid) { const p = E.itemPose(itemByUid(uid)); this.teleport(p.x + 0.8, p.z + 1.2); },
-  teleport(x, z) { const m = me(); m.stop(); m.place(x, z, 0); cam.goal.set(x, 0.55, z); cam.target.copy(cam.goal); },
+  teleport(x, z) { const m = me(); m.stop(); m.place(x, z, 0); cam.goal.set(x, 0.55, z); cam.target.copy(cam.goal); updateCamera(); },
   goScene(id) { goScene(id); },
   settle() { return new Promise(r => { const t = setInterval(() => { if (!switching) { clearInterval(t); r(S.scene); } }, 20); }); },
   doors: () => ({ out: WD.DOOR_OUT, in: WD.DOOR_IN }),

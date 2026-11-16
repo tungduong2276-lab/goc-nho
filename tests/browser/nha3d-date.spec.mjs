@@ -15,8 +15,8 @@ async function open(page,width=390,scene="hen",who="anh"){
 }
 async function tapItem(page,N,uid,label){
  await N("nearItem",uid);await N("tick",2);let pt=null;
- for(const f of [.4,.6,.2,.8]){const[x,y]=await N("screenOfItem",uid,f);for(const dx of [0,-6,6])if(!pt&&await N("pickAt",x+dx,y)===uid)pt=[x+dx,y];}
- expect(pt,uid).not.toBeNull();await page.mouse.click(...pt);await page.getByRole("button",{name:label,exact:true}).click();await N("tick",15);
+ for(const f of [.4,.6,.2,.8]){const[x,y]=await N("screenOfItem",uid,f);for(const dx of [0,-6,6])if(!pt&&x+dx>0&&x+dx<page.viewportSize().width&&y>0&&y<page.viewportSize().height&&await N("pickAt",x+dx,y)===uid&&await page.evaluate(([x,y])=>document.elementFromPoint(x,y)?.id==="world",[x+dx,y]))pt=[x+dx,y];}
+ expect(pt,uid).not.toBeNull();await page.mouse.click(...pt);await expect(page.getByRole("button",{name:label,exact:true})).toBeVisible({timeout:5000});await page.getByRole("button",{name:label,exact:true}).click();await N("tick",15);
 }
 async function shot(page,name){mkdirSync("test-results/date-evidence",{recursive:true});await page.screenshot({path:"test-results/date-evidence/"+name+".png"});}
 for(const width of [360,390,430])test("date island: drink turns, timed fishing and return at "+width+"px",async({page})=>{
@@ -45,7 +45,8 @@ for(const width of [360,390,430])test("date island: drink turns, timed fishing a
  await page.getByRole("button",{name:"Giật cần!",exact:true}).click();
  expect((await N("date")).fish.phase).toBe("caught");expect((await N("date")).fish.total).toBe(1);
  await N("tick",.2);await shot(page,"fishing-"+width);await close.click();
- // Read-only hooks do not stand in for a UI action: return via the actual dock menu.
+ if(width===390){await page.getByRole("button",{name:"Hoạt động hẹn hò",exact:true}).click();await page.getByRole("button",{name:"🔥 Đến thảm, ngồi cạnh nhau",exact:true}).click();await N("tick",30);expect((await N("me")).mode).toBe("sit");expect((await N("partner")).mode).toBe("sit");await shot(page,"picnic-390");}
+ // Return via the actual dock menu.
  await tapItem(page,N,"h-return","Đi thuyền về sân nhà");await N("settle");
  expect(await N("scene")).toBe("san");expect(await page.locator("#dateplay").isVisible()).toBe(false);
  const after=await page.evaluate(()=>[localStorage.getItem("gocnho.nha3d.layout.v1"),localStorage.getItem("gocnho.nha3d.yard.v1"),localStorage.getItem("hu-hen-ho-v2")]);expect(after).toEqual(old);
@@ -82,6 +83,8 @@ test("date activities: two isolated clients share turns; offline never dispatche
  await pb.getByRole("button",{name:"Lắc ngay!",exact:true}).click();
  expect((await a.N("date")).cook.phase).toBe("done");expect((await b.N("date")).cook).toEqual((await a.N("date")).cook);
  expect(new Set(shared.steps.map(s=>s.uid)).size).toBe(2);
+ const older={...shared,rev:shared.rev-1,phase:"making",steps:shared.steps.slice(0,3)};
+ await a.N("remoteChanges",[{id:"a_date_cook",data:older}]);expect((await a.N("date")).cook.phase).toBe("done");
  await a.N("remoteChanges",[{id:"p_em",data:{k:"presence",who:"em",scene:"hen",x:0,z:2,face:0,mode:"idle",at:Date.now()}}]);await a.N("tick",.1);
  expect((await a.N("cloud")).partnerVisible).toBe(true);
  expect(a.errors.concat(b.errors)).toEqual([]);expect(a.requests.concat(b.requests)).toEqual([]);

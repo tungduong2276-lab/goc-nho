@@ -9,7 +9,7 @@ export function createDatePlay(o){
  const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
  const text=(s,cls)=>body.appendChild(el("p",s,cls));
  const button=(s,fn,disabled=false)=>{const b=el("button",s,"date-action");b.disabled=disabled||busy;b.onclick=fn;body.append(b);return b;};
- function receive(id,data){if(!id.startsWith("a_date_"))return;if(!data)remote.delete(id);else{const d=A.readActivity(data);if(d)remote.set(id,d);}render();}
+ function receive(id,data){if(!id.startsWith("a_date_"))return;if(!data)remote.delete(id);else{const d=A.readActivity(data);if(d&&(!remote.has(id)||d.rev>=remote.get(id).rev))remote.set(id,d);}render();}
  async function act(kind,action,value,asPartner=false){
   if(busy)return;busy=true;key="";render();
   const actor=asPartner?(o.who()==="anh"?"em":"anh"):o.who();
@@ -80,10 +80,11 @@ export function createDatePlay(o){
    const kind=on&&f&&["waiting","bite"].includes(A.fishPhase(f,o.now()))?"fish":on&&cook?.phase==="making"&&cook.steps.at(-1)?.who===who?"mix":null,prev=props.get(who);
    if(prev&&(prev.kind!==kind||prev.parent!==actor.R.root)){prev.model.removeFromParent();props.delete(who);}
    if(kind&&!props.has(who)){const model=o.models.tool(kind);actor.R.root.add(model);props.set(who,{kind,model,parent:actor.R.root});}
+   if(kind==="fish"&&!actor.path.length&&!actor.joy)actor.face=Math.PI/2;
    const p=props.get(who);if(p)p.model.rotation.z=o.reduced()?0:Math.sin(t*(kind==="fish"?1.4:7))*.07;
   }
-  const dk=on&&cook?.phase==="done"?cook.recipe+done:"";
-  if(dk!==displayKey){display?.removeFromParent();display=null;displayKey=dk;if(dk){display=o.models.drinks();const p=o.position("h-cook");display.position.set(p.x,1.12,p.z+.15);o.sceneRoot.add(display);}}
+  const dk=on&&cook?cook.phase+":"+cook.recipe+":"+cook.rev:"";
+  if(dk!==displayKey){display?.removeFromParent();display=null;displayKey=dk;if(dk){display=cook.phase==="done"?o.models.drinks():o.models.tool("mix",[0xCCE9F5,0xEDABC9,0xF7EFDD,0xE2C3D6][cook.steps.length]||0xEDABC9);const p=o.position("h-cook");display.position.set(p.x,1.12,p.z+.15);o.sceneRoot.add(display);}}
   if(on&&fish?.phase==="caught"&&jump?.rev!==fish.rev){jump?.model?.removeFromParent();const f=A.FISH.find(f=>f.id===fish.catch.id),model=o.models.caughtFish(f.color),p=o.position("h-fish");model.position.set(p.x,1.1,p.z);o.sceneRoot.add(model);jump={model,rev:fish.rev,at:t,p};o.celebrate(f.icon+" "+f.name,0);}
   if(jump?.model){const elapsed=t-jump.at;if(!on||elapsed>2){jump.model.removeFromParent();jump.model=null;}else{jump.model.position.y=1.1+Math.sin(elapsed*Math.PI/2)*.9;jump.model.rotation.z=elapsed*2;}}
  }
