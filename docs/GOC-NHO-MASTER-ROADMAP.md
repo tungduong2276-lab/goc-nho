@@ -12,6 +12,8 @@ What the user asked for, in their words translated: walk in and out of the house
 - **Interact:** sit/sleep/cook/wardrobe etc. inside; plant/water/harvest outside; emotes, hug, high five with the other person.
 - **Customise:** build mode inside the house (exists) and, later, outdoor decorations and garden plots in the yard.
 - **Real two-person presence:** both phones see each other move, the same house layout and the same garden. Current Firestore Rules already allow members to read/write any subcollection under `/couples/{cid}/`, so this needs app code (a new subcollection such as `couples/{cid}/world/...`), not a Rules change. Until it ships, the other character is simulated and data is per-device (localStorage).
+- **Partner preferences that affect content:** never add roses or sunflowers anywhere (user's partner dislikes them; the 3D garden's sunflower was replaced by a daisy on 2026-11-16). `_xuong-3d/flora.js` states the same rule.
+- **W2 data layout (live since PR "W2"):** `couples/{cid}/world/` — `i_<scene>_<uid>` one item `{k:"item", scene, uid, it, plant:{sp,at,by}|null, w:[{t,by}], ts}`; `m_<scene>` wall/floor colours; `p_anh` / `p_em` presence `{scene,x,z,tx,tz,face,mode,seat,ev,look,at,ts}`. Waterings are only appended with `arrayUnion`; moves use `set(..., {merge:true})` so they never wipe waterings. The first phone that connects seeds a scene that has no items in Firestore; afterwards Firestore is the source of truth. Presence writes are throttled (≈1 per 1.2 s while walking, heartbeat 15 s) to stay inside the Spark free quota; a presence older than 45 s is treated as offline and hidden. The main app ignores this subcollection (not in `COLS`).
 - **Existing app features are reached from world objects** (fridge → notes, mailbox → letters, jar → dates, kingdom island → kingdom) and keep their existing data. Do not delete existing tabs until each one has a world entry point.
 
 ### Code map (as of 2026-11-16)
@@ -22,12 +24,19 @@ What the user asked for, in their words translated: walk in and out of the house
 
 ### Build order (V3)
 1. **W1 — Outdoor island + door in/out (built 2026-11-16, PR "W1", awaiting phone check):** `nha3d/world.mjs` (yard layout, door points, `crossesDoor`), `nha3d/world-models.js` (island, house exterior, props); `app.js` `goScene()` swaps scenes with a fade, partner follows, cat stays inside, build mode only indoors; `engine.setRoom()` switches the grid. Original W1 spec: outdoor scene with the house exterior, a walkable yard, garden plots outside, paths to café corner, mailbox, swing and dock; front door enters the existing interior, interior door leads back out. Garden moves outdoors.
-2. **W2 — Shared presence and state:** both phones see each other and share layout + garden through `couples/{cid}/world/*`; offline-safe, last-write-wins per item; tests with the Firestore Emulator.
+2. **W2 — Shared presence and state (built 2026-11-16, PR "W2"; first live use pending):** `nha3d/sync.mjs` (pure: doc encoding, diff, merge, presence throttle), `nha3d/cloud.js` (compat SDK adapter reusing the app login), wiring in `app.js` (`startCloud`, `pushScene`, `applyRemote`, `remotePartnerStep`, `sendPresence`). Original W2 spec: both phones see each other and share layout + garden through `couples/{cid}/world/*`; offline-safe, last-write-wins per item; tests with the Firestore Emulator.
 3. **W3 — World entry points to app features:** mailbox → letters, fridge → notes, jar → dates, noticeboard → todos, boat → kingdom island.
 4. **W4 — More places:** upstairs rooms, kingdom island scene, café interior, seasonal outdoor decor.
 5. **W5 — Make the world the home screen** once W1–W3 are accepted on both phones.
 
-## Latest operational handoff — 2026-11-16 (night) — V3 W1 shipped
+## Latest operational handoff — 2026-11-16 (late) — V3 W2 built
+
+- **W2 PR (shared island):** the 3D page now loads the same Firebase compat SDK 10.12.2 and `../firebase-config.js` as the app, reuses the app's signed-in session, finds `users/{uid}.couple`, and syncs under `couples/{cid}/world/` (see "W2 data layout" above). The other character is driven by the other phone; when the other person is absent or in the other scene they are hidden and a header pill says where they are. Hug/high five/heart/wave/face and the "rủ/mời/gọi" actions are sent as events. Not signed in → device-local mode, pill "Chỉ trên máy này".
+- **Sunflower removed** from the 3D garden (replaced by "Cúc họa mi"); no other rose/sunflower content exists in the repo (checked with git grep).
+- **Tests:** Node `tests/staging/nha3d-sync.test.mjs`; Emulator `tests/firebase/world-sync.test.mjs` (production `firestore.rules`: members read/write, outsider and signed-out denied, simultaneous waterings both kept, second phone loads the seeded island); browser W2 test drives a fake transport (no Firebase). **Not yet observed with the real project on two phones** — the first real use is the acceptance test; watch the Firebase console usage page on the first day.
+- **Next:** user tries it on both phones; then W3 (world objects open existing app features).
+
+## Previous operational handoff — 2026-11-16 (night) — V3 W1 shipped
 
 - **Main `e362fa7` (PR #112), Pages rebuilt successfully.** The 3D page (`./nha3d/?me=anh|em&scene=san`, linked from the home tab card "Ra đảo 3D") now opens on an outdoor island and the house is entered by walking through its front door; the interior door mat leads back out. Garden beds are outside. Café kiosk, swing, bench, mailbox, lamps, paths, dock + boat exist. CI [run 43828827402](https://github.com/tungduong2276-lab/goc-nho/actions/runs/43828827402): static, 73 staging, 49 browser passed.
 - **Verified only in local Chromium (SwiftShader) at 390×844 and 1100×760**, not on the two phones; the live Pages URL could not be opened from the session.

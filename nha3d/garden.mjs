@@ -9,12 +9,13 @@ export const TOGETHER = 1.5;
 export const MAX_WATER = 40; // giữ đủ lịch sử cho vài vụ, tránh phình bố cục
 
 // grow: số giờ ẩm cần để chín/nở. yield: thứ nhận được khi thu hoạch.
+// Không trồng hoa hồng và hướng dương (bạn ấy không thích) — giống quy ước trong _xuong-3d/flora.js.
 export const SPECIES = {
   xalach:     { name: "Xà lách",     grow: 18, yield: "🥬", noun: "cây xà lách", color: 0x8FD6A5 },
   dau:        { name: "Dâu tây",     grow: 36, yield: "🍓", noun: "quả dâu",     color: 0xFF5A7A },
   cachua:     { name: "Cà chua bi",  grow: 48, yield: "🍅", noun: "quả cà chua", color: 0xFF6B4A },
   tulip:      { name: "Tulip hồng",  grow: 30, yield: "🌷", noun: "bông tulip",  color: 0xFF8FB8 },
-  huongduong: { name: "Hướng dương", grow: 60, yield: "🌻", noun: "bông hướng dương", color: 0xFFD23F },
+  cucHoaMi:   { name: "Cúc họa mi",  grow: 40, yield: "🌼", noun: "bông cúc họa mi", color: 0xFFFFFF },
   oaihuong:   { name: "Oải hương",   grow: 42, yield: "💜", noun: "nhánh oải hương", color: 0xB79CE8 }
 };
 export const STAGES = ["Hạt giống", "Nảy mầm", "Cây non", "Đang lớn", "Chín rồi"];
