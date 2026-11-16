@@ -1,6 +1,6 @@
 // Góc Nhỏ — bản thử Nhà 3D kiểu Play Together.
 // Dựng trực tiếp bằng three.js với chính bộ hình của _xuong-3d (toon 3 bậc, viền xanh than, camera trực giao 45°).
-// KHÔNG đọc/ghi Firebase: bố cục, quần áo và buổi trong ngày chỉ lưu localStorage của trình duyệt này.
+// Dùng phiên Firebase của app khi đã đăng nhập; chưa kết nối thì chơi riêng trên máy.
 import * as THREE from "three";
 import { C, setOutline, TIMES } from "./xuong/lib.js";
 import * as F from "./xuong/furn.js";
@@ -465,6 +465,19 @@ function goSit(actor, item, seat, say) {
     actor.sitOn(item, seat);
     if (say) bubble(actor.x, 1.5, actor.z, say);
   });
+}
+function picnicTogether(it) {
+  // A direct invitation takes priority over the companion's current seat or idle plan.
+  // Clear its old seat before choosing the two new seats, including when it is already here.
+  if (!CLOUD.on) {
+    partner().standUp(); partner().stop();
+    AI.timer = Math.max(AI.timer, 40);
+  }
+  const seats = freeSeats(it), mine = seats.find(s => s.k === (S.me === "anh" ? 0 : 1)) || seats[0];
+  if (!mine || !goSit(me(), it, mine)) { toast("Chưa tới được thảm hẹn hò"); return; }
+  if (CLOUD.on) { emitEv("invite", { text: "rủ bạn ngồi cùng trên thảm hẹn hò" }); return; }
+  const other = seats.find(s => s.k !== mine.k);
+  if (other && !goSit(partner(), it, other, "Ngồi cạnh bạn nè")) toast("Bạn ấy chưa tới được thảm");
 }
 function partnerThink(dt) {
   const p = partner(), m = me();
@@ -1345,7 +1358,7 @@ const datePlay=createDatePlay({
  near:kind=>{const it=itemByUid(kind==="cook"?"h-cook":"h-fish"),ap=it&&E.approachPoint(S.G,it);return !!ap&&Math.hypot(me().x-ap.x,me().z-ap.z)<1.5;},
  practiceMove:()=>{const ap=E.approachPoint(S.G,itemByUid("h-cook"));if(ap)partner().goTo(ap.x+.45,ap.z,()=>partner().emote("wave",1));},
  position:uid=>{const it=itemByUid(uid);return it?E.itemPose(it):{x:0,z:0};},
- route:(uid,kind)=>{const it=itemByUid(uid);if(!it)return;useItem(me(),it,()=>{if(kind==="sit"){const seats=freeSeats(it),mine=seats.find(s=>s.k===(S.me==="anh"?0:1))||seats[0];if(mine){goSit(me(),it,mine);if(!CLOUD.on){const other=seats.find(s=>s.k!==mine.k);if(other)goSit(partner(),it,other,"Ngồi cạnh bạn nè");}else emitEv("invite",{text:"rủ bạn ngồi cùng trên thảm hẹn hò"});}}else datePlay.open(kind);});},
+ route:(uid,kind)=>{const it=itemByUid(uid);if(!it)return;useItem(me(),it,()=>{if(kind==="sit")picnicTogether(it);else datePlay.open(kind);});},
  invite:()=>emitEv("invite",{text:"vừa pha đồ uống, đến lượt bạn trên đảo hẹn hò 🧋"}),
  celebrate:(message,type)=>{toast(message);if(type){for(const a of Object.values(actors))a.emote("wave",1.8);floatAt(me().x,1.4,me().z,"💗",5);}else floatAt(me().x,1.4,me().z,"✨",2);}
 });

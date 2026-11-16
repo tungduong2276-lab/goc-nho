@@ -48,7 +48,7 @@ for(const width of [360,390,430])test("date island: drink turns, timed fishing a
  await page.getByRole("button",{name:"Giật cần!",exact:true}).click();
  expect((await N("date")).fish.phase).toBe("caught");expect((await N("date")).fish.total).toBe(1);
  await N("tick",.2);await shot(page,"fishing-"+width);await close.click();
- if(width===390){await page.getByRole("button",{name:"Hoạt động hẹn hò",exact:true}).click();await page.getByRole("button",{name:"🔥 Đến thảm, ngồi cạnh nhau",exact:true}).click();await N("tick",30);expect((await N("me")).mode).toBe("sit");expect((await N("partner")).mode).toBe("sit");await shot(page,"picnic-390");}
+ if(width===390){await page.getByRole("button",{name:"Hoạt động hẹn hò",exact:true}).click();await page.getByRole("button",{name:"🔥 Đến thảm, ngồi cạnh nhau",exact:true}).click();await N("tick",30);await shot(page,"picnic-390");expect((await N("me")).mode,JSON.stringify(await N("me"))).toBe("sit");expect((await N("partner")).mode,JSON.stringify(await N("partner"))).toBe("sit");await N("tick",20);expect((await N("partner")).mode).toBe("sit");}
  // Return via the actual dock menu.
  await tapItem(page,N,"h-return","Đi thuyền về sân nhà");await N("settle");
  expect(await N("scene")).toBe("san");expect(await page.locator("#dateplay").isVisible()).toBe(false);

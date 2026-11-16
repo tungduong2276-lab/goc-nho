@@ -22,7 +22,22 @@ jobs:
           node --check nha3d/app.js
           node --check nha3d/date-play.js
           node --check nha3d/date-models.js
-          node --test tests/staging/nha3d-date.test.mjs tests/staging/nha3d-engine.test.mjs
+          node --test tests/staging/nha3d-date.test.mjs tests/staging/nha3d-date-cloud.test.mjs tests/staging/nha3d-engine.test.mjs
+
+  date-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npx playwright install chromium
+      - name: Picnic invitation, fishing, drinks and return through the boat
+        run: npx playwright test tests/browser/nha3d-date.spec.mjs --grep 390px
 
   visual-evidence:
     if: github.event.pull_request.head.ref == 'feature/date-island-living-activities'
