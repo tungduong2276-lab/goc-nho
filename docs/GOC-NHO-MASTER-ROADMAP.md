@@ -1,6 +1,13 @@
 # GÓC NHỎ — MASTER ROADMAP & AI HANDOFF
 
-## Latest operational handoff — 2026-11-16 (afternoon)
+## Latest operational handoff — 2026-11-16 (evening)
+
+- **User direction (2026-11-16):** the goal is a real Play Together-style 3D world — walk around, customise the house, interact with each other and with objects, grow real plants. The 2D chibi swap alone (PR #106) is not what was wanted.
+- **PR #109 merged to main (`d67663d`), Pages rebuilt successfully.** The staging 3D house now ships at `./nha3d/` with a "Vào nhà 3D" card at the top of the home tab (`?me=anh|em`). New in it: garden beds and pots (catalog category "Vườn"), six species, growth only while soil is moist (24 h per watering), 1.5× when both water in one moist spell, thirsty look, harvest basket. Fixed: an actor already standing at an item never ran the arrival action. Service worker caches jsDelivr (three.js); cache `goc-nho-v17`. CI [run 43825794443](https://github.com/tungduong2276-lab/goc-nho/actions/runs/43825794443): static, 69 staging, 48 browser passed.
+- **Still device-local:** the 3D house reads and writes only localStorage. The other person in the house is a simulated character. No Firebase read/write, no Rules or schema change. The assistant could not open the live Pages URL from this session; the deployed page was not checked in a browser.
+- **Next (in order):** (1) real two-phone sync of avatars and the house layout/garden — needs a reviewed Firestore Rules change (draft: `tests/firebase/fixtures/m1-nha3d-presence.rules`) deployed by the owner, plus App Check (PR #102, must be rebased past cache v17); (2) bring the other rooms and the yard into the walkable world (multiroom engine exists in `nha3d/multiroom*.mjs`); (3) link world objects to existing app features (fridge → notes, mailbox → letters, jar → dates).
+
+## Previous operational handoff — 2026-11-16 (afternoon)
 
 - **Main is `6606471f0cb07834abb31fb7d03cd726bd0783c1`; GitHub Pages rebuilt successfully.** Two user-authorised product PRs were merged to main and are live. No Rules, Console, Auth or schema change; no production data was read or written by the assistant.
 - **PR #107 (`acbc921`):** 22 new built-in jar cards numbered 101–122 (numbers start at 101 so they cannot clash with saved custom cards, which start at 31), each with a draw list; cards 8, 26, 27 gained draw lists. Kingdom: when exactly one player's character is `em`, her proposals are stored as `status:"ok"` with `decidedBy` = herself and her buildings/upgrades as `built:true` in one step; Anh's still wait for her. Story openings 8→28, twists 12→32, drawing themes 14→44. CI [run 43821775419](https://github.com/tungduong2276-lab/goc-nho/actions/runs/43821775419): static, 24 staging, 18 browser, 57 Emulator.
