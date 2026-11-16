@@ -4,6 +4,39 @@ import { THREE, C, piece, rbox, sphere, rcyl, lathe, torus, mat } from "./xuong/
 
 const G = () => new THREE.Group();
 
+// Small closed gift under the blossom tree: a portal to the existing gifts screen, never a payload preview.
+export function giftBox() {
+  const g = G();
+  piece(rbox(0.34, 0.27, 0.32, 0.035), C.pinkL, { pos: [0, 0.135, 0], parent: g });
+  piece(rbox(0.36, 0.055, 0.34, 0.02), C.pink, { pos: [0, 0.29, 0], parent: g });
+  piece(rbox(0.055, 0.325, 0.35, 0.01), C.butter, { pos: [0, 0.163, 0], parent: g, noOutline: true });
+  for (const s of [-1, 1]) piece(sphere(0.055, 10, 8).scale(1.25, 0.65, 0.7), C.butter, { pos: [s * 0.045, 0.34, 0], parent: g });
+  return g;
+}
+export function exhibits(count) {
+  const g = G();
+  for (let i = 0; i < Math.min(count, 9); i++) {
+    const x = -0.38 + (i % 3) * 0.38, y = 0.35 + Math.floor(i / 3) * 0.52;
+    piece(sphere(0.075, 10, 8), [C.pink, C.leaf, C.butter][i % 3], { pos: [x, y, 0.25], parent: g });
+    piece(rbox(0.17, 0.025, 0.035, 0.006), C.white, { pos: [x, y - 0.105, 0.25], parent: g, noOutline: true });
+  }
+  return g;
+}
+export function mapPins(count) {
+  const g = G();
+  for (let i = 0; i < Math.min(count, 8); i++) {
+    const x = -0.43 + (i % 4) * 0.28, y = 0.18 - Math.floor(i / 4) * 0.3;
+    piece(sphere(0.035, 10, 8), C.pink, { pos: [x, y, 0.065], parent: g, noOutline: true });
+  }
+  return g;
+}
+export function kingdomFlag() {
+  const g = G();
+  piece(rcyl(0.025, 0.025, 1.1, 0.01, 8), C.woodD, { pos: [-0.5, 0.6, -1.15], parent: g });
+  piece(rbox(0.3, 0.18, 0.025, 0.015), C.pink, { pos: [-0.33, 1.02, -1.15], parent: g });
+  return g;
+}
+
 // ---------- nền đảo + biển ----------
 export function island(W, D, time) {
   const g = G(), night = time === "dem";
@@ -191,3 +224,4 @@ export function jarSlip(open) {
   piece(sphere(0.018, 8, 6), C.white, { noOutline: true, pos: [-0.12, 0.11, 0.03], parent: g });
   return g;
 }
+

@@ -44,7 +44,8 @@ export const CATALOG = {
                  use: { type: "sit", seats: [{ x: 0, z: 0.3, a: Math.PI, h: 0.44 }] } },
   ruong:       { name: "Rương kỷ niệm",   cat: "ngu",  kind: "floor", w: 2, d: 2, model: "OBJ.ruong", scale: 0.97, states: ["", "mo"],
                  use: { type: "toggle", on: "mo", label: "Mở rương" } },
-  keSach:      { name: "Kệ sách thấp",    cat: "ngu",  kind: "floor", w: 3, d: 1, model: "F.bookshelfLow" },
+  keSach:      { name: "Kệ sách thấp",    cat: "ngu",  kind: "floor", w: 3, d: 1, model: "F.bookshelfLow",
+                 use: { type: "app", tab: "tu-dien", label: "Từ điển riêng" } },
   tuLanh:      { name: "Tủ lạnh",         cat: "bep",  kind: "floor", w: 2, d: 2, model: "OBJ.tulanh", states: ["", "mo"],
                  use: { type: "toggle", on: "mo", label: "Mở tủ lạnh" } },
   bepNau:      { name: "Bếp nấu",         cat: "bep",  kind: "floor", w: 2, d: 2, model: "OBJ.bepnau", scale: 0.97, states: ["", "nau"],
@@ -60,7 +61,8 @@ export const CATALOG = {
   hopMau:      { name: "Bàn màu vẽ",      cat: "choi", kind: "floor", w: 2, d: 1, model: "OBJ.hopmau" },
   radio:       { name: "Đài nhỏ",         cat: "choi", kind: "floor", w: 1, d: 1, model: "F.radio", states: [false, true],
                  use: { type: "toggle", on: true, label: "Bật nhạc" } },
-  tuKinh:      { name: "Tủ kính",         cat: "choi", kind: "floor", w: 3, d: 1, model: "OBJ.tukinh" },
+  tuKinh:      { name: "Tủ kính",         cat: "choi", kind: "floor", w: 3, d: 1, model: "OBJ.tukinh",
+                 use: { type: "app", tab: "bao-tang", label: "Bảo tàng kỷ niệm" } },
   denCay:      { name: "Đèn cây",         cat: "cay",  kind: "floor", w: 1, d: 1, model: "F.floorLamp", states: [false, true],
                  use: { type: "toggle", on: true, label: "Bật đèn" } },
   trauBa:      { name: "Chậu trầu bà",    cat: "cay",  kind: "floor", w: 2, d: 2, model: "F.pothos" },
@@ -73,7 +75,8 @@ export const CATALOG = {
   // ---- ngoài sân (cat "ngoai": không hiện trong kho đồ trong nhà; xem world.mjs) ----
   nhaNgoai:    { name: "Ngôi nhà",        cat: "ngoai", kind: "floor", w: 14, d: 10, model: "W.house", use: { type: "enter", label: "Vào nhà" } },
   cayXanh:     { name: "Cây xanh",        cat: "ngoai", kind: "floor", w: 2, d: 2, model: "W.tree" },
-  cayHoa:      { name: "Cây hoa anh đào", cat: "ngoai", kind: "floor", w: 2, d: 2, model: "W.blossom" },
+  cayHoa:      { name: "Cây hoa anh đào", cat: "ngoai", kind: "floor", w: 2, d: 2, model: "W.blossom",
+                 use: { type: "app", tab: "gifts", label: "Hộp quà dưới gốc cây" } },
   buiHoa:      { name: "Bụi hoa",         cat: "ngoai", kind: "floor", w: 1, d: 1, model: "W.flowers", args: ["pink"] },
   buiHoaVang:  { name: "Bụi hoa vàng",    cat: "ngoai", kind: "floor", w: 1, d: 1, model: "W.flowers", args: ["butter"] },
   bui:         { name: "Bụi cây",         cat: "ngoai", kind: "floor", w: 1, d: 1, model: "W.bush" },
@@ -87,7 +90,7 @@ export const CATALOG = {
                  use: { type: "sit", seats: [{ x: -0.35, z: 0.02, a: 0, h: 0.46 }, { x: 0.35, z: 0.02, a: 0, h: 0.46 }] } },
   quayCafe:    { name: "Quầy cà phê",     cat: "ngoai", kind: "floor", w: 4, d: 2, model: "W.kiosk", use: { type: "cafe", label: "Gọi đồ uống" } },
   duongDa:     { name: "Đá lát đường",    cat: "ngoai", kind: "rug",   w: 2, d: 2, model: "W.stone" },
-  benThuyen:   { name: "Bến thuyền",      cat: "ngoai", kind: "rug",   w: 3, d: 6, model: "W.dock", use: { type: "boat", label: "Chèo thuyền ra đảo" } },
+  benThuyen:   { name: "Bến thuyền",      cat: "ngoai", kind: "rug",   w: 3, d: 6, model: "W.dock", use: { type: "app", tab: "vuong-quoc", label: "Ghé Vương quốc" } },
   bangTen:     { name: "Bảng tên",        cat: "ngoai", kind: "floor", w: 3, d: 1, model: "W.sign" },
   // garden: gieo hạt, tưới, cây lớn theo giờ thật (xem garden.mjs); trạng thái cây nằm ở item.plant.
   luongTrong:  { name: "Luống trồng",     cat: "vuon", kind: "floor", w: 3, d: 2, model: "gardenBed", use: { type: "garden" } },
@@ -97,7 +100,8 @@ export const CATALOG = {
   bangGhim:    { name: "Bảng ghim",       cat: "tuong",kind: "wall",  w: 2, y: 1.45, model: "F.corkboard", scale: 0.9,
                  use: { type: "app", tab: "bo-luat", label: "Bộ luật của hai đứa" } },
   lich:        { name: "Lịch hẹn",        cat: "tuong",kind: "wall",  w: 2, y: 1.45, model: "F.calendar" },
-  banDo:       { name: "Bản đồ thế giới", cat: "tuong",kind: "wall",  w: 3, y: 1.5,  model: "OBJ.bandogioi" }
+  banDo:       { name: "Bản đồ thế giới", cat: "tuong",kind: "wall",  w: 3, y: 1.5,  model: "OBJ.bandogioi",
+                 use: { type: "app", tab: "ban-do", label: "Bản đồ kỷ niệm" } }
 };
 
 // Màu tường / sàn (giá trị số để Node và three.js dùng chung).
@@ -140,10 +144,13 @@ export const DEFAULT_LAYOUT = {
     { uid: "d4", type: "dem",         gx: 2,  gz: 12, r: 0 },
     { uid: "d5", type: "mayDanhChu",  gx: 5,  gz: 0,  r: 0 },
     { uid: "d6", type: "loUocMo",     gx: 9,  gz: 0,  r: 0 },
+    { uid: "e1", type: "tuKinh",      gx: 0,  gz: 7,  r: 0 },
     { uid: "g2", type: "chauTrong",   gx: 14, gz: 12, r: 0 },
     { uid: "w1", type: "cuaSo",       wall: "R", at: 5, r: 0 },
     { uid: "w2", type: "khungAnh",    wall: "L", at: 6, r: 0 },
     { uid: "w3", type: "lich",        wall: "R", at: 10, r: 0 },
-    { uid: "w4", type: "bangGhim",    wall: "L", at: 11, r: 0 }
+    { uid: "w4", type: "bangGhim",    wall: "L", at: 11, r: 0 },
+    { uid: "w5", type: "banDo",       wall: "L", at: 0, r: 0 }
   ]
 };
+

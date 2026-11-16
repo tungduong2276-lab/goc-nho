@@ -280,6 +280,12 @@ test("W2: đảo chung — gửi thay đổi, nhận người kia và đồ đ�
 
 // ---------- W3 đợt 1: hộp thư, tủ lạnh, hũ hẹn hò dùng dữ liệu thật của app ----------
 const APP_SEED = {
+  museum: { m1: { id: "m1", name: "Vé xem phim đầu tiên", note: "Một tối nhiều kỷ niệm", date: "2026-11-01" } },
+  dict: { word1: { id: "word1", w: "Mây nhỏ", m: "Tên gọi riêng của hai đứa", date: "2026-11-01" } },
+  places: { p1: { id: "p1", nick: "Góc trú mưa", real: "Quán nhỏ", date: "2026-11-01" } },
+  kingdom: { k1: { id: "k1", by: 1, kind: "name", value: "Đảo Mây", status: "ok", date: "2026-11-01", decidedAt: "2026-11-01" }, k2: { id: "k2", by: 1, kind: "law", value: "Cùng chăm vườn", status: "pending", date: "2026-11-02" } },
+  realm: {},
+  gifts: { gift1: { id: "gift1", from: 1, to: 0, key: "2099-01-01", label: "Quà thử nghiệm", note: "SEALED_PAYLOAD_DO_NOT_PREVIEW", photos: [], date: "2026-11-01", opened: false } },
   wishes: { w1: { id: "w1", title: "Cùng đi ngắm biển", kind: "go", by: 1, done: false, date: "2026-11-15T08:00:00.000Z" } },
   drawings: { dr1: { id: "dr1", theme: "Chú mèo", topBy: 1, top: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j5WQAAAAASUVORK5CYII=", done: false, date: "2026-11-15T08:00:00.000Z" } },
   story: { s1: { id: "s1", title: "Đảo nhỏ của hai đứa", by: 1, done: false, lines: [{ by: 1, text: "Có một ngôi nhà nhỏ.", date: "2026-11-15T08:00:00.000Z" }], date: "2026-11-15T08:00:00.000Z" } },
@@ -296,6 +302,54 @@ const seedApp = page => page.addInitScript(seed => {
   if (sessionStorage.getItem("seeded")) return; sessionStorage.setItem("seeded", "1");
   localStorage.setItem("hu-hen-ho-me", "0"); localStorage.setItem("hu-hen-ho-v2", JSON.stringify(seed));
 }, APP_SEED);
+
+for (const width of [360, 390, 430]) test(`W3c: memory portals and the gift tree use original screens at ${width}px`, async ({ page }) => {
+  test.setTimeout(180_000);
+  await seedApp(page);
+  const { errors, firebase, N } = await openHouse(page, { width });
+  const original = await page.evaluate(() => localStorage.getItem("hu-hen-ho-v2"));
+  expect((await N("appState")).memory).toMatchObject({ museum: 1, words: 1, places: 1, kingdom: { name: "Đảo Mây", pending: 1 } });
+  const open = async (uid, label) => {
+    await N("nearItem", uid); await N("tick", 2);
+    let pt = null;
+    for (const f of [0.1, 0.5, 0.35, 0.65, 0.2, 0.8]) {
+      const [px, py] = await N("screenOfItem", uid, f);
+      for (const dx of [0, -6, 6]) if (!pt && await N("pickAt", px + dx, py) === uid) pt = [px + dx, py];
+    }
+    expect(pt, uid).not.toBeNull(); await page.mouse.click(...pt);
+    await page.getByRole("button", { name: label, exact: true }).click(); await N("tick", 15);
+    await expect(page.locator("#appsheet")).toBeVisible();
+    const box = await page.locator("#appsheet-close").boundingBox(); expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(width);
+  };
+  for (const [uid, label, selector, text] of [
+    ["e1", "Bảo tàng (1 hiện vật)", "#tab-museum", "Vé xem phim đầu tiên"],
+    ["d2", "Từ điển riêng (1 từ)", "#tab-dict", "Mây nhỏ"],
+    ["w5", "Bản đồ (1 địa điểm)", "#tab-places", "Góc trú mưa"]
+  ]) { await open(uid, label); await expect(page.frameLocator("#appsheet-frame").locator(selector)).toContainText(text); await page.locator("#appsheet-close").click(); }
+  await N("goScene", "san"); await N("settle");
+  await open("y-d1", "Ghé Vương quốc (1 đề xuất chờ bạn)");
+  await expect(page.frameLocator("#appsheet-frame").locator("#tab-kingdom")).toContainText("Đảo Mây");
+  await page.locator("#appsheet-close").click();
+  for (let i = 0; i < (width === 390 ? 2 : 1); i++) {
+    await open("y-t4", "Xem và gói quà cho nhau");
+    const frame = page.frameLocator("#appsheet-frame");
+    await expect(frame.locator("#gifts")).toBeVisible();
+    await expect(frame.locator("#world-gifts-focus")).toHaveCount(1);
+    await expect(frame.locator("a.w3d-card")).toBeHidden();
+    await expect(frame.locator("#gifts")).toContainText("Quà thử nghiệm");
+    await expect(frame.locator("body")).not.toContainText("SEALED_PAYLOAD_DO_NOT_PREVIEW");
+    await expect(frame.locator('[data-gopen="gift1"]')).toHaveCount(0);
+    await page.locator("#appsheet-close").click();
+  }
+  expect(await page.evaluate(() => localStorage.getItem("hu-hen-ho-v2"))).toBe(original);
+  expect(JSON.stringify(await N("appState"))).not.toContain("SEALED_PAYLOAD_DO_NOT_PREVIEW");
+  await N("goScene", "nha"); await N("settle");
+  await page.evaluate(() => { const s = JSON.parse(localStorage.getItem("hu-hen-ho-v2")); s.museum = {}; s.dict = {}; s.places = {}; s.kingdom = {}; localStorage.setItem("hu-hen-ho-v2", JSON.stringify(s)); window.dispatchEvent(new StorageEvent("storage", { key: "hu-hen-ho-v2" })); });
+  expect(await N("viewKey", "e1")).toBe("undefined|museum0");
+  expect(await N("viewKey", "d2")).toBe("0|words0");
+  expect(await N("viewKey", "w5")).toBe("undefined|places0");
+  expect(firebase).toEqual([]); expect(errors).toEqual([]);
+});
 
 for (const width of [360, 390, 430]) test(`W3b: four creative objects open existing app screens at ${width}px`, async ({ page }) => {
   await seedApp(page);
@@ -398,3 +452,4 @@ test("W3: tủ lạnh dán đúng giấy nhắn thật, hũ có lá đang chờ 
   await expect(frame.locator("#playBtn")).toBeVisible();
   expect(errors).toEqual([]);
 });
+

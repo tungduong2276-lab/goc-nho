@@ -31,6 +31,19 @@ beforeEach(async () => {
 
 const bed = { uid: "y-g1", type: "luongTrong", gx: 4, gz: 14, r: 0 };
 
+test("W3c: a second member reads memory collections; outsider, anonymous and another couple cannot", async () => {
+  const data = {};
+  for (const name of AD.MEMORY_COLLECTIONS) {
+    const c = uid => collection(fsOf(uid), `couples/${CID}/${name}`);
+    await assertSucceeds(setDoc(doc(c(BOB), "fixture"), { id: "fixture", status: "pending", by: 1, date: "2026-11-16" }));
+    const snap = await assertSucceeds(getDocs(c(ALICE)));
+    data[name] = Object.fromEntries(snap.docs.map(d => [d.id, d.data()]));
+    await assertFails(getDocs(c(EVE))); await assertFails(getDocs(c(null)));
+    await assertFails(getDocs(collection(fsOf(ALICE), `couples/another-couple/${name}`)));
+  }
+  assert.deepEqual(AD.memoryState(data, 0), { museum: 1, words: 1, places: 1, kingdom: { name: "Vương quốc của hai đứa", pending: 1, built: 0 } });
+});
+
 test("W3b: both members read creative collections; outsiders and signed-out clients are denied", async () => {
   const fixtures = {
     wishes: { by: 1, done: false, date: "2026-11-16" },
@@ -106,4 +119,5 @@ test("W3: the island reads the app's own letters, fridge notes, history and meta
   await assertFails(getDocs(collection(fsOf(EVE), base + "letters")));
   await assertFails(getDocs(query(collection(fsOf(null), base + "fridge"), orderBy("date", "desc"), limit(12))));
 });
+
 

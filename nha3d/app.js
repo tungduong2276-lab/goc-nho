@@ -22,10 +22,11 @@ const $ = s => document.querySelector(s);
 let RM = ROOM, W = ROOM.w * CELL, D = ROOM.d * CELL;
 // W3: trạng thái đọc từ dữ liệu app (thư, tủ lạnh, hũ) — khai báo sớm vì stateOf() dùng khi dựng cảnh.
 const APPSRC = { cloud: false };
-const APPDATA = { letters: {}, fridge: {}, history: {}, meta: null, wishes: {}, drawings: {}, story: {}, rules: {} };
+const APPDATA = { letters: {}, fridge: {}, history: {}, meta: null, wishes: {}, drawings: {}, story: {}, rules: {}, ...Object.fromEntries(AD.MEMORY_COLLECTIONS.map(k => [k, {}])) };
 const APPST = { known: false, mail: { unread: 0, sealed: 0, total: 0 }, fridge: { count: 0, fresh: 0, shown: [] }, jar: { pending: false, openNo: null, done: 0 } };
 Object.assign(APPST, { wishes: AD.wishesState({}, null), drawing: AD.drawingState({}, null), story: AD.storyState({}, null), rules: AD.rulesState({}) });
-const APP_TYPES = new Set(["hopThu", "tuLanh", "huHenHo", "loUocMo", "giaVe", "mayDanhChu", "bangGhim"]);
+APPST.memory = AD.memoryState({}, null);
+const APP_TYPES = new Set(["hopThu", "tuLanh", "huHenHo", "loUocMo", "giaVe", "mayDanhChu", "bangGhim", "tuKinh", "keSach", "banDo", "benThuyen", "cayHoa"]);
 const NAMES = { anh: "Anh", em: "Em" };
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -188,12 +189,12 @@ function buildGrid() {
 const col = k => (typeof k === "string" ? C[k] : k);
 const BUILDERS = {
   "F.sofa": () => F.sofa(), "F.coffeeTable": () => F.coffeeTable(), "F.cushion": () => F.cushion(C.pink),
-  "F.bookshelfLow": () => F.bookshelfLow(), "F.jar": s => F.jar(s || "day"), "F.radio": s => F.radio(!!s),
+  "F.bookshelfLow": s => F.bookshelfLow(s), "F.jar": s => F.jar(s || "day"), "F.radio": s => F.radio(!!s),
   "F.floorLamp": s => F.floorLamp(!!s), "F.pothos": () => F.pothos(), "F.petBed": () => F.petBed(), "F.rug": () => F.rug(),
   "F.windowW": () => F.windowW({ sky: SKY[S.time], stars: S.time === "dem", moon: S.time === "dem", cloud: S.time === "ngay" || S.time === "sang" }),
   "F.photoFrame": () => F.photoFrame(), "F.corkboard": s => F.corkboard(!!s), "F.calendar": () => F.calendar(),
   gardenBed: s => gardenBed(s), gardenPot: s => gardenPot(s),
-  "W.house": () => WM.houseOutside(S.time), "W.tree": () => WM.tree(false), "W.blossom": () => WM.tree(true), "W.flowers": (s, a) => WM.flowers(a && a[0]),
+  "W.house": () => WM.houseOutside(S.time), "W.tree": () => WM.tree(false), "W.blossom": () => { const tree = WM.tree(true), gift = WM.giftBox(); gift.position.set(0.23, 0, 0.23); tree.add(gift); return tree; }, "W.flowers": (s, a) => WM.flowers(a && a[0]),
   "W.bush": () => WM.bush(), "W.lamp": s => WM.lamp(!!s), "W.mailbox": s => WM.mailbox(!!s), "W.swing": () => WM.swing(), "W.bench": () => WM.bench(),
   "W.kiosk": () => WM.kiosk(), "W.stone": () => WM.stone(), "W.dock": () => WM.dock(), "W.sign": () => WM.sign(),
   plantPot: () => plantPot(), rugRound: (s, a) => rugRound(a[0], col(a[1]), col(a[2])), rugRect: (s, a) => rugRect(a[0], a[1], col(a[2]), col(a[3]))
@@ -226,6 +227,7 @@ function stateOf(it) {
   if (it.type === "giaVe") return APPST.drawing.visual;
   if (it.type === "mayDanhChu") return APPST.story.active ? "giay" : "";
   if (it.type === "bangGhim") return APPST.rules.count > 0;
+  if (it.type === "keSach") return Math.min(APPST.memory.words, 11);
   return st;
 }
 function placeView(view, it, lift = 0) {
@@ -666,7 +668,6 @@ function itemMenu(it, cx, cy) {
   if (use.type === "garden") { gardenMenu(it, anchor); return; }
   if (use.type === "enter") list.push([use.label, () => walkThroughDoor()]);
   if (use.type === "cafe") list.push([use.label, () => useItem(m, it, () => orderDrink(m, it))], ["Mời " + NAMES[partner().who] + " một ly", () => useItem(m, it, () => { orderDrink(m, it, true); if (CLOUD.on) { emitEv("invite", { text: "mời bạn một ly ở quầy cà phê ☕" }); return; } setTimeout(() => useItem(partner(), it, () => partner().emote("wave")), 300); })]);
-  if (use.type === "boat") list.push([use.label, () => useItem(m, it, () => bubble(m.x, 1.5, m.z, "Đảo Vương quốc đang được xây, sắp chèo ra được rồi ⛵", 2800))]);
   showActions(def.name, list, ...anchor);
 }
 // ---------- vườn ----------
@@ -729,7 +730,7 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) refr
 // ---------- W3 đợt 1: hộp thư, tủ lạnh, hũ hẹn hò dùng dữ liệu thật của app ----------
 // Đảo chỉ ĐỌC thư, giấy nhắn, lịch sử hẹn để đồ vật hiện đúng trạng thái. Viết thư, dán giấy, bốc thăm
 // đều làm trên màn hình gốc của app, mở nổi trên đảo (?embed=1), nên dữ liệu ghi đúng định dạng cũ.
-const APP_TITLES = { thu: "Hộp thư", "tu-lanh": "Tủ lạnh nhắn nhủ", "hom-nay": "Hũ hẹn hò", "uoc-mo": "Lọ ước mơ", ve: "Vẽ tiếp sức", truyen: "Truyện nối", "bo-luat": "Bộ luật của hai đứa" };
+const APP_TITLES = { thu: "Hộp thư", "tu-lanh": "Tủ lạnh nhắn nhủ", "hom-nay": "Hũ hẹn hò", "uoc-mo": "Lọ ước mơ", ve: "Vẽ tiếp sức", truyen: "Truyện nối", "bo-luat": "Bộ luật của hai đứa", "bao-tang": "Bảo tàng kỷ niệm", "tu-dien": "Từ điển riêng", "ban-do": "Bản đồ kỷ niệm", "vuong-quoc": "Vương quốc của hai đứa", gifts: "Hộp quà của hai đứa" };
 function appMe() { const v = store.get("hu-hen-ho-me"); return v === null || v === "" ? null : Number(v); }
 function seenLetters() { try { return JSON.parse(store.get("v3-letter-seen") || "[]"); } catch { return []; } }
 function setAppData(d) {
@@ -743,6 +744,7 @@ function setAppData(d) {
   APPST.drawing = AD.drawingState(APPDATA.drawings, meI);
   APPST.story = AD.storyState(APPDATA.story, meI);
   APPST.rules = AD.rulesState(APPDATA.rules);
+  APPST.memory = AD.memoryState(APPDATA, meI);
   for (const it of S.layout.items) if (APP_TYPES.has(it.type) && views.get(it.uid)?.key !== viewKeyOf(it)) refreshView(it);
 }
 // Khi chưa nối Firebase, app gốc lưu trên máy này (localStorage cùng trang) — đọc thẳng từ đó.
@@ -759,6 +761,11 @@ function appKey(it) {
   if (it.type === "giaVe") return "d" + APPST.drawing.mode;
   if (it.type === "mayDanhChu") return "s" + APPST.story.myTurn;
   if (it.type === "bangGhim") return "r" + APPST.rules.count;
+  if (it.type === "tuKinh") return "museum" + APPST.memory.museum;
+  if (it.type === "keSach") return "words" + APPST.memory.words;
+  if (it.type === "banDo") return "places" + APPST.memory.places;
+  if (it.type === "benThuyen") return "kingdom" + APPST.memory.kingdom.pending;
+  if (it.type === "cayHoa") return "gifts-entry";
   return "j" + APPST.jar.pending + APPST.jar.openNo;
 }
 function addAppDeco(it, root) {
@@ -768,6 +775,9 @@ function addAppDeco(it, root) {
   if (it.type === "loUocMo" && APPST.wishes.fresh) root.add(WM.jarSlip(false));
   if (it.type === "giaVe" && APPST.drawing.mode === "bottom") { const badge = WM.jarSlip(true); badge.position.y = 1.75; root.add(badge); }
   if (it.type === "mayDanhChu" && APPST.story.myTurn) { const badge = WM.jarSlip(true); badge.position.y = 1.55; root.add(badge); }
+  if (it.type === "tuKinh") root.add(WM.exhibits(APPST.memory.museum));
+  if (it.type === "banDo") root.add(WM.mapPins(APPST.memory.places));
+  if (it.type === "benThuyen" && APPST.memory.kingdom.pending) root.add(WM.kingdomFlag());
 }
 function appMenu(it, use, list) {
   const m = me(), other = NAMES[partner().who];
@@ -802,6 +812,12 @@ function appMenu(it, use, list) {
     list.push([`Bộ luật của hai đứa (${APPST.rules.count})`, () => useItem(m, it, () => openApp(use.tab))]);
     return;
   }
+  const memory = APPST.memory;
+  const labels = { tuKinh: `Bảo tàng (${memory.museum} hiện vật)`, keSach: `Từ điển riêng (${memory.words} từ)`, banDo: `Bản đồ (${memory.places} địa điểm)`, benThuyen: memory.kingdom.pending ? `Ghé Vương quốc (${memory.kingdom.pending} đề xuất chờ bạn)` : `Ghé ${memory.kingdom.name}`, cayHoa: "Xem và gói quà cho nhau" };
+  if (labels[it.type]) {
+    list.push([labels[it.type], () => useItem(m, it, () => openApp(use.tab))]);
+    return;
+  }
   list.push([use.label, () => useItem(m, it, () => openApp(use.tab))]);
 }
 function anchorOf(it) { const p = E.itemPose(it); return [p.x, (views.get(it.uid)?.height || 1) + 0.15, p.z]; }
@@ -813,14 +829,29 @@ function shakeJar(it) {
   const p = E.itemPose(it); floatAt(p.x, 0.8, p.z, "📜", 1);
 }
 let appOpen = null;
+// Gifts reuse the existing #gifts section of the home screen. No gift subscription or payload enters APPDATA.
+function focusAppPanel() {
+  const fr = $("#appsheet-frame");
+  if (!fr.dataset.src || new URL(fr.dataset.src).searchParams.get("panel") !== "gifts") return;
+  try {
+    const doc = fr.contentDocument;
+    if (!doc || doc.getElementById("world-gifts-focus")) return;
+    const style = doc.createElement("style"); style.id = "world-gifts-focus";
+    style.textContent = "#tab-home:has(#gifts)>:not(#gifts){display:none!important} #v-nha>.hs-bed{display:none!important}";
+    doc.head.append(style);
+    doc.getElementById("gifts")?.scrollIntoView();
+  } catch { /* same-origin screen may still be navigating */ }
+}
+$("#appsheet-frame").addEventListener("load", focusAppPanel);
 function openApp(tab, delay = 0) {
   setTimeout(() => {
     const sheet = $("#appsheet"), fr = $("#appsheet-frame");
     $("#appsheet-title").textContent = APP_TITLES[tab] || "Góc Nhỏ";
-    const url = new URL("../index.html", location.href); url.searchParams.set("embed", "1"); url.hash = tab;
-    if (fr.dataset.src !== url.href) { fr.src = url.href; fr.dataset.src = url.href; } else { try { fr.contentWindow.location.hash = tab; } catch { /* khác nguồn */ } }
+    const url = new URL("../index.html", location.href); url.searchParams.set("embed", "1"); url.hash = tab === "gifts" ? "nha" : tab;
+    if (tab === "gifts") url.searchParams.set("panel", "gifts");
+    if (fr.dataset.src !== url.href) { fr.src = url.href; fr.dataset.src = url.href; } else { try { fr.contentWindow.location.hash = url.hash; } catch { /* khác nguồn */ } }
     document.querySelectorAll(".sheet:not(.mini)").forEach(s => { if (s !== sheet) s.hidden = true; });
-    sheet.hidden = false; appOpen = tab; $("#appsheet-close").focus({ preventScroll: true });
+    sheet.hidden = false; appOpen = tab; focusAppPanel(); $("#appsheet-close").focus({ preventScroll: true });
   }, delay);
 }
 function closeApp() {
@@ -1350,3 +1381,4 @@ window.__NHA3D__ = {
   remoteChanges(changes) { applyRemote(changes); },
   sentPresence: () => CLOUD.sentP
 };
+

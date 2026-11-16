@@ -117,14 +117,14 @@ export function floorLamp(on = false) {
   piece(lathe([[0.12, 0.25], [0.25, 0], [0.24, -0.02], [0.11, 0.23]]), C.butter, { pos: [0, 1.25, 0], parent: g, emissive: on ? C.butter : 0, ei: on ? 0.9 : 0 });
   return g;
 }
-export function bookshelfLow() {
+export function bookshelfLow(count = 11) {
   const g = G();
   piece(rbox(1.3, 0.75, 0.42, 0.05), C.white, { pos: [0, 0.375, 0], parent: g });
   piece(rbox(1.18, 0.04, 0.36, 0.01), 0xE5EEF8, { noOutline: true, pos: [0, 0.38, 0.03], parent: g });
   const cols = [C.sky, C.pink, C.leaf, C.butter, C.lilac, C.sky2, C.pinkL];
   let x = -0.5;
-  for (let i = 0; i < 7; i++) { const w = 0.08 + (i % 3) * 0.02, h = 0.24 + (i % 2) * 0.05; piece(rbox(w, h, 0.28, 0.015, 1), cols[i], { pos: [x, 0.42 + h / 2, 0.02], rot: [0, 0, i === 5 ? 0.25 : 0], parent: g }); x += w + 0.02; }
-  for (let i = 0; i < 4; i++) piece(rbox(0.09, 0.22, 0.28, 0.015, 1), cols[(i + 3) % 7], { pos: [-0.45 + i * 0.11, 0.14, 0.02], parent: g });
+  for (let i = 0; i < Math.min(7, count); i++) { const w = 0.08 + (i % 3) * 0.02, h = 0.24 + (i % 2) * 0.05; piece(rbox(w, h, 0.28, 0.015, 1), cols[i], { pos: [x, 0.42 + h / 2, 0.02], rot: [0, 0, i === 5 ? 0.25 : 0], parent: g }); x += w + 0.02; }
+  for (let i = 0; i < Math.min(4, count - 7); i++) piece(rbox(0.09, 0.22, 0.28, 0.015, 1), cols[(i + 3) % 7], { pos: [-0.45 + i * 0.11, 0.14, 0.02], parent: g });
   return g;
 }
 export function pot(color = C.white, r = 0.22, h = 0.3, face = false) {
