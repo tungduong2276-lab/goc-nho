@@ -33,10 +33,10 @@ What the user asked for, in their words translated: walk in and out of the house
 5. **W5 — Make the world the home screen** once W1–W3 are accepted on both phones.
 
 ## Latest operational handoff — 2026-11-16 — V3 W3b creative objects
-- Branch `feature/world-w3-creative-objects`: wishes jar reflects unfinished wishes/new partner additions; easel reflects unfinished/completed drawing and whose turn it is; typewriter shows paper for an active story and signals the user's turn; corkboard reflects whether shared rules exist.
+- [PR #116](https://github.com/tungduong2276-lab/goc-nho/pull/116), branch `feature/world-w3-creative-objects`: wishes jar reflects unfinished wishes/new partner additions; easel reflects unfinished/completed drawing and whose turn it is; typewriter shows paper for an active story and signals the user's turn; corkboard reflects whether shared rules exist.
 - All four open original app screens (`#uoc-mo`, `#ve`, `#truyen`, `#bo-luat`) inside the existing overlay. `watchApp()` only reads the four existing collections; it never writes to them. No new collection, Rules, Firebase configuration or production-data change.
 - New houses include the jar/typewriter. Saved house layouts remain unchanged: add them via Trang trí → Sở thích. Existing easels/corkboards gain the new interactions in place.
-- New checks: pure state/identity tests, four-object overlay interactions and refresh at 360/390/430px, Emulator member reads plus outsider/anonymous denial. Local pure tests 6/6 and source-sync check passed; browser and exact-head CI must pass before merge. Real two-phone acceptance remains pending for W1–W3; do not enable W5 based on desktop checks.
+- New checks: pure state/identity tests, four-object overlay interactions and refresh at 360/390/430px, Emulator member reads plus outsider/anonymous denial. Local state + geometry tests 17/17 and source-sync check passed. Assistant exercised all four objects at 360/390/430px in local Chromium with synthetic data: all 12 opens/closes passed, no page errors; house and 360px drawing-overlay screenshots visually inspected. Full automated browser/Emulator results are recorded in PR #116 checks; final-head CI success is required before merge. Real two-phone acceptance remains pending for W1–W3; do not enable W5 based on desktop checks.
 - Next after W3b checks: W3 đợt 3 (museum, boat/kingdom, gifts, bookshelf/dictionary, map/places). Keep historical staging PRs and App Check draft separate.
 
 ## Previous operational handoff — 2026-11-16 (late night) — V3 W3 đợt 1 built
