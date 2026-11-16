@@ -25,11 +25,21 @@ What the user asked for, in their words translated: walk in and out of the house
 ### Build order (V3)
 1. **W1 — Outdoor island + door in/out (built 2026-11-16, PR "W1", awaiting phone check):** `nha3d/world.mjs` (yard layout, door points, `crossesDoor`), `nha3d/world-models.js` (island, house exterior, props); `app.js` `goScene()` swaps scenes with a fade, partner follows, cat stays inside, build mode only indoors; `engine.setRoom()` switches the grid. Original W1 spec: outdoor scene with the house exterior, a walkable yard, garden plots outside, paths to café corner, mailbox, swing and dock; front door enters the existing interior, interior door leads back out. Garden moves outdoors.
 2. **W2 — Shared presence and state (built 2026-11-16, PR "W2"; first live use pending):** `nha3d/sync.mjs` (pure: doc encoding, diff, merge, presence throttle), `nha3d/cloud.js` (compat SDK adapter reusing the app login), wiring in `app.js` (`startCloud`, `pushScene`, `applyRemote`, `remotePartnerStep`, `sendPresence`). Original W2 spec: both phones see each other and share layout + garden through `couples/{cid}/world/*`; offline-safe, last-write-wins per item; tests with the Firestore Emulator.
-3. **W3 — World entry points to app features:** mailbox → letters, fridge → notes, jar → dates, noticeboard → todos, boat → kingdom island.
+3. **W3 — Old app features become 3D world objects** (user asked 2026-11-16: "làm 3D những cái có thể"). Rule: the object READS the app's existing collections to show live state; writing long text still happens on the app's own screen, opened as an overlay over the island (`../index.html?embed=1#<tab>`), so the data format never forks and old tabs keep working.
+   - **Đợt 1 (W3a, built):** hộp thư ↔ `letters` (flag + floating envelope when an unlocked unread letter is addressed to me; "N thư còn niêm phong"); tủ lạnh ↔ `fridge` (the 8 newest notes stuck on the door in the app's own colours, heart magnet if hearted); hũ hẹn hò ↔ `meta.pending` + `history` (gold slip floats over the jar when a draw is waiting, pink while a date is open; tapping shakes the jar and opens the real draw screen).
+   - **Đợt 2:** lọ ước mơ (`wishes`), giá vẽ (vẽ tiếp sức), máy đánh chữ (`story`), bảng ghim (`rules`).
+   - **Đợt 3:** bảo tàng (`museum`), đảo Vương quốc by boat (`kingdom`), hộp quà dưới gốc cây (`gifts`), kệ sách (`dict`), bản đồ (`places`).
 4. **W4 — More places:** upstairs rooms, kingdom island scene, café interior, seasonal outdoor decor.
 5. **W5 — Make the world the home screen** once W1–W3 are accepted on both phones.
 
-## Latest operational handoff — 2026-11-16 (late) — V3 W2 built
+## Latest operational handoff — 2026-11-16 (late night) — V3 W3 đợt 1 built
+- `nha3d/appdata.mjs`: pure rules (same as index.html) for mailbox / fridge / jar state. `cloud.js` `watchApp()` only READS `letters`, `fridge` (newest 12), `history`, `meta/main`; without Firebase the island reads the app's local copy (`localStorage["hu-hen-ho-v2"]`). Me = `localStorage["hu-hen-ho-me"]` (index 0/1, not anh/em).
+- Overlay `#appsheet` iframes `../index.html?embed=1#thu|tu-lanh|hom-nay`; `html.embed` hides the app chrome (header, tabs, countdown, season row, 2D scene). Seen-markers are shared because it is the same origin.
+- Catalog: `hopThu` and `huHenHo` now `use.type:"app"`; fridge closed state `"trong"` (empty door, `_xuong-3d/rooms2.js`) so real notes go on it. Cache `goc-nho-v20`.
+- Tests: `tests/staging/nha3d-appdata.test.mjs`, 2 W3 browser tests in `nha3d.spec.mjs`, Emulator read test in `tests/firebase/world-sync.test.mjs`.
+- **Next:** đợt 2 (wishes jar, easel, typewriter, corkboard).
+
+## Previous operational handoff — 2026-11-16 (late) — V3 W2 built
 
 - **W2 PR (shared island):** the 3D page now loads the same Firebase compat SDK 10.12.2 and `../firebase-config.js` as the app, reuses the app's signed-in session, finds `users/{uid}.couple`, and syncs under `couples/{cid}/world/` (see "W2 data layout" above). The other character is driven by the other phone; when the other person is absent or in the other scene they are hidden and a header pill says where they are. Hug/high five/heart/wave/face and the "rủ/mời/gọi" actions are sent as events. Not signed in → device-local mode, pill "Chỉ trên máy này".
 - **Sunflower removed** from the 3D garden (replaced by "Cúc họa mi"); no other rose/sunflower content exists in the repo (checked with git grep).

@@ -15,10 +15,16 @@ import * as WD from "./world.mjs";
 import * as WM from "./world-models.js";
 import * as SY from "./sync.mjs";
 import { connectCloud } from "./cloud.js";
+import * as AD from "./appdata.mjs";
 
 const $ = s => document.querySelector(s);
 // Cảnh hiện tại: "san" (ngoài sân) hoặc "nha" (trong nhà). W, D đổi theo cảnh.
 let RM = ROOM, W = ROOM.w * CELL, D = ROOM.d * CELL;
+// W3: trạng thái đọc từ dữ liệu app (thư, tủ lạnh, hũ) — khai báo sớm vì stateOf() dùng khi dựng cảnh.
+const APPSRC = { cloud: false };
+const APPDATA = { letters: {}, fridge: {}, history: {}, meta: null };
+const APPST = { known: false, mail: { unread: 0, sealed: 0, total: 0 }, fridge: { count: 0, fresh: 0, shown: [] }, jar: { pending: false, openNo: null, done: 0 } };
+const APP_TYPES = new Set(["hopThu", "tuLanh", "huHenHo"]);
 const NAMES = { anh: "Anh", em: "Em" };
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -209,7 +215,14 @@ const views = new Map(); // uid -> { root, height }
 let clockSkew = 0;
 const now = () => Date.now() + clockSkew;
 const isGarden = it => CATALOG[it.type].use?.type === "garden";
-function stateOf(it) { if (isGarden(it)) return GD.visualKey(it.plant, now()); return S.transient.has(it.uid) ? S.transient.get(it.uid) : it.state; }
+function stateOf(it) {
+  if (isGarden(it)) return GD.visualKey(it.plant, now());
+  const st = S.transient.has(it.uid) ? S.transient.get(it.uid) : it.state;
+  // W3: hộp thư dựng cờ khi có thư mới; tủ lạnh đóng thì cửa để trống cho giấy nhắn thật.
+  if (it.type === "hopThu") return APPST.mail.unread > 0;
+  if (it.type === "tuLanh" && st !== "mo" && APPST.known) return "trong";
+  return st;
+}
 function placeView(view, it, lift = 0) {
   const p = E.itemPose(it), def = CATALOG[it.type];
   const inset = def.kind === "wall" ? 0.05 : 0;
@@ -222,7 +235,8 @@ function refreshView(it) {
   const root = makeModel(it.type, stateOf(it));
   root.userData.uid = it.uid;
   root.traverse(o => { o.userData.uid = it.uid; });
-  const view = { root, key: stateOf(it) };
+  const view = { root, key: viewKeyOf(it) };
+  addAppDeco(it, root);
   placeView(view, it);
   root.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(root);
@@ -642,7 +656,8 @@ function itemMenu(it, cx, cy) {
   }
   if (use.type === "cycle") list.push([use.label, () => useItem(m, it, () => cycleState(it, use.states))]);
   if (use.type === "wardrobe") list.push([use.label, () => useItem(m, it, () => openWardrobe(it))]);
-  if (use.type === "date") list.push([use.label, () => useItem(m, it, () => openDate())]);
+  if (use.type === "app") appMenu(it, use, list);
+  if (it.type === "tuLanh") list.push([APPST.fridge.fresh ? `Đọc giấy nhắn (${APPST.fridge.fresh} mới)` : "Xem giấy nhắn · dán giấy", () => useItem(m, it, () => openApp("tu-lanh"))]);
   if (use.type === "garden") { gardenMenu(it, anchor); return; }
   if (use.type === "enter") list.push([use.label, () => walkThroughDoor()]);
   if (use.type === "cafe") list.push([use.label, () => useItem(m, it, () => orderDrink(m, it))], ["Mời " + NAMES[partner().who] + " một ly", () => useItem(m, it, () => { orderDrink(m, it, true); if (CLOUD.on) { emitEv("invite", { text: "mời bạn một ly ở quầy cà phê ☕" }); return; } setTimeout(() => useItem(partner(), it, () => partner().emote("wave")), 300); })]);
@@ -705,6 +720,82 @@ function harvest(actor, it) {
 function refreshGarden() { for (const it of S.layout.items) if (isGarden(it) && views.get(it.uid)?.key !== stateOf(it)) refreshView(it); }
 setInterval(refreshGarden, 30e3);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshGarden(); });
+
+// ---------- W3 đợt 1: hộp thư, tủ lạnh, hũ hẹn hò dùng dữ liệu thật của app ----------
+// Đảo chỉ ĐỌC thư, giấy nhắn, lịch sử hẹn để đồ vật hiện đúng trạng thái. Viết thư, dán giấy, bốc thăm
+// đều làm trên màn hình gốc của app, mở nổi trên đảo (?embed=1), nên dữ liệu ghi đúng định dạng cũ.
+const APP_TITLES = { thu: "Hộp thư", "tu-lanh": "Tủ lạnh nhắn nhủ", "hom-nay": "Hũ hẹn hò" };
+function appMe() { const v = store.get("hu-hen-ho-me"); return v === null || v === "" ? null : Number(v); }
+function seenLetters() { try { return JSON.parse(store.get("v3-letter-seen") || "[]"); } catch { return []; } }
+function setAppData(d) {
+  Object.assign(APPDATA, d || {});
+  const meI = appMe();
+  APPST.known = true;
+  APPST.mail = AD.mailboxState(APPDATA.letters, APPDATA.history, meI, seenLetters());
+  APPST.fridge = AD.fridgeState(APPDATA.fridge, meI, store.get("v3-fridge-seen") || "");
+  APPST.jar = AD.jarState(APPDATA.meta, APPDATA.history);
+  for (const it of S.layout.items) if (APP_TYPES.has(it.type) && views.get(it.uid)?.key !== viewKeyOf(it)) refreshView(it);
+}
+// Khi chưa nối Firebase, app gốc lưu trên máy này (localStorage cùng trang) — đọc thẳng từ đó.
+function readLocalApp() {
+  if (APPSRC.cloud) return;
+  try { const o = JSON.parse(store.get("hu-hen-ho-v2") || "null"); if (o) setAppData({ letters: o.letters || {}, fridge: o.fridge || {}, history: o.history || {}, meta: o.meta || null }); } catch { /* bỏ qua bản hỏng */ }
+}
+function viewKeyOf(it) { return APP_TYPES.has(it.type) ? stateOf(it) + "|" + appKey(it) : stateOf(it); }
+function appKey(it) {
+  if (!APP_TYPES.has(it.type)) return "";
+  if (it.type === "hopThu") return "m" + APPST.mail.unread;
+  if (it.type === "tuLanh") return "f" + APPST.fridge.shown.map(n => n.id + (n.heart ? "h" : "")).join(",");
+  return "j" + APPST.jar.pending + APPST.jar.openNo;
+}
+function addAppDeco(it, root) {
+  if (it.type === "hopThu" && APPST.mail.unread > 0) root.add(WM.letterBadge());
+  if (it.type === "tuLanh" && APPST.known && stateOf(it) === "trong") root.add(WM.fridgeNotes(APPST.fridge.shown));
+  if (it.type === "huHenHo" && (APPST.jar.pending || APPST.jar.openNo)) root.add(WM.jarSlip(!!APPST.jar.openNo));
+}
+function appMenu(it, use, list) {
+  const m = me(), other = NAMES[partner().who];
+  if (it.type === "hopThu") {
+    const { unread, sealed } = APPST.mail;
+    list.push([unread ? `Đọc thư (${unread} thư mới)` : "Mở hộp thư", () => useItem(m, it, () => openApp("thu"))]);
+    list.push(["Viết thư cho " + other, () => useItem(m, it, () => openApp("thu"))]);
+    if (sealed) list.push([`${sealed} thư còn niêm phong`, () => bubble(...anchorOf(it), "Thư niêm phong chỉ mở được khi hết mùa hoặc đúng ngày hẹn 💌", 2800)]);
+    return;
+  }
+  if (it.type === "huHenHo") {
+    const j = APPST.jar;
+    list.push([j.openNo ? `Buổi hẹn #${j.openNo} đang diễn ra` : j.pending ? "Xem lá đang chờ" : use.label, () => useItem(m, it, () => { if (!j.pending && !j.openNo) shakeJar(it); openApp("hom-nay", j.pending || j.openNo ? 0 : 700); })]);
+    return;
+  }
+  list.push([use.label, () => useItem(m, it, () => openApp(use.tab))]);
+}
+function anchorOf(it) { const p = E.itemPose(it); return [p.x, (views.get(it.uid)?.height || 1) + 0.15, p.z]; }
+function shakeJar(it) {
+  const v = views.get(it.uid); if (!v || reduced()) return;
+  const t0 = performance.now(), base = v.root.rotation.z;
+  const tick = t => { const k = (t - t0) / 650; if (k >= 1) { v.root.rotation.z = base; return; } v.root.rotation.z = base + Math.sin(k * Math.PI * 6) * 0.12 * (1 - k); requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  const p = E.itemPose(it); floatAt(p.x, 0.8, p.z, "📜", 1);
+}
+let appOpen = null;
+function openApp(tab, delay = 0) {
+  setTimeout(() => {
+    const sheet = $("#appsheet"), fr = $("#appsheet-frame");
+    $("#appsheet-title").textContent = APP_TITLES[tab] || "Góc Nhỏ";
+    const url = new URL("../index.html", location.href); url.searchParams.set("embed", "1"); url.hash = tab;
+    if (fr.dataset.src !== url.href) { fr.src = url.href; fr.dataset.src = url.href; } else { try { fr.contentWindow.location.hash = tab; } catch { /* khác nguồn */ } }
+    document.querySelectorAll(".sheet:not(.mini)").forEach(s => { if (s !== sheet) s.hidden = true; });
+    sheet.hidden = false; appOpen = tab; $("#appsheet-close").focus({ preventScroll: true });
+  }, delay);
+}
+function closeApp() {
+  const sheet = $("#appsheet"); if (sheet.hidden) return;
+  sheet.hidden = true;
+  appOpen = null; readLocalApp(); setAppData();
+}
+$("#appsheet-close").addEventListener("click", closeApp);
+addEventListener("storage", e => { if (!e.key || /^(hu-hen-ho|v3-)/.test(e.key)) { readLocalApp(); setAppData(); } });
+readLocalApp();
 
 // ---------- người kia thật (W2) ----------
 const SCENE_NAME = { san: "ngoài sân", nha: "trong nhà" };
@@ -812,6 +903,7 @@ async function startCloud() {
   const p = partner(); p.stop(); if (p.mode === "sit") p.standUp(); p.root.visible = false;
   $("#btn-me").hidden = true; $("#trial-pill").textContent = "Đảo chung";
   api.listen(applyRemote);
+  if (api.watchApp) { APPSRC.cloud = true; api.watchApp(d => setAppData(d)); }
   toast("Đã nối đảo chung · " + NAMES[partner().who] + " vào là thấy nhau");
 }
 
@@ -969,7 +1061,7 @@ document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click
 }));
 addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
-  hideActions(); facesEl.hidden = true;
+  hideActions(); facesEl.hidden = true; closeApp();
   document.querySelectorAll(".sheet").forEach(s => { if (!s.hidden) { s.hidden = true; if (s.id === "wardrobe") closeWardrobe(); } });
   if (S.mode === "edit") select(null);
 });
@@ -1172,6 +1264,7 @@ function frame(now) {
   updateCamera();
   // lift món đang chọn
   if (S.mode === "edit" && S.selected && !drag) { const it = itemByUid(S.selected), v = views.get(S.selected); if (it && v) placeView(v, it, 0.04 + (reduced() ? 0 : Math.sin(now / 160) * 0.025)); }
+  if (!reduced()) itemsG.traverse(o => { if (o.userData.bob) { o.position.y = o.userData.y0 ?? (o.userData.y0 = o.position.y); o.position.y += Math.sin(now / 420) * 0.05; o.rotation.y = Math.sin(now / 900) * 0.4; } });
   renderer.render(scene, camera);
   // nhãn
   for (const a of Object.values(actors)) {
@@ -1199,6 +1292,9 @@ window.__NHA3D__ = {
   screenOfItem(uid, yFrac = 0.6) { const it = itemByUid(uid), p = E.itemPose(it), v = views.get(uid); return toScreen(p.x, (v.height || 1) * yFrac, p.z); },
   screenOfWorld: (x, y, z) => toScreen(x, y, z),
   pickAt: (x, y) => { const h = pickAt(x, y); return h && (h.uid || (h.actor && h.actor.who) || (h.cat && "cat")); },
+  appState: () => JSON.parse(JSON.stringify(APPST)),
+  viewKey: uid => views.get(uid)?.key,
+  appDeco: uid => { let n = 0; views.get(uid)?.root.traverse(o => { if (o.userData.bob) n++; }); return n; },
   info: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, ppm: cam.ppm }),
   pauseAI(on) { AI.timer = on ? 1e9 : 1; cat.wait = on ? 1e9 : 1; },
   // Tua nhanh logic (không vẽ) để test không phụ thuộc tốc độ GPU của máy chạy CI.
@@ -1208,6 +1304,7 @@ window.__NHA3D__ = {
   plantKey: uid => views.get(uid)?.key,
   basket: () => ({ ...basket }),
   scene: () => S.scene,
+  nearItem(uid) { const p = E.itemPose(itemByUid(uid)); this.teleport(p.x + 0.8, p.z + 1.2); },
   teleport(x, z) { const m = me(); m.stop(); m.place(x, z, 0); cam.goal.set(x, 0.55, z); cam.target.copy(cam.goal); },
   goScene(id) { goScene(id); },
   settle() { return new Promise(r => { const t = setInterval(() => { if (!switching) { clearInterval(t); r(S.scene); } }, 20); }); },

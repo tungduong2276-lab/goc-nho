@@ -162,3 +162,32 @@ export function doorMat() {
   for (const s of [-1, 1]) piece(rbox(0.12, 0.05, 0.05, 0.01), C.sky, { pos: [s * 0.12, 0.03, 0.06], rot: [0, s * 0.7, 0], parent: g, noOutline: true });
   return g;
 }
+
+// ---------- W3 đợt 1: dấu hiệu từ dữ liệu thật của app ----------
+// Phong bì nổi trên hộp thư khi có thư mới đã tới ngày mở.
+export function letterBadge() {
+  const g = G(); g.userData.bob = true; g.position.y = 1.65; g.scale.setScalar(1.7);
+  piece(rbox(0.3, 0.2, 0.03, 0.02), C.white, { parent: g });
+  const flap = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.1, 3), mat(C.pinkL)); flap.rotation.set(Math.PI / 2, 0, Math.PI); flap.scale.z = 0.25; flap.position.set(0, 0.04, 0.02); g.add(flap);
+  piece(sphere(0.035, 10, 8), C.pink, { pos: [0, 0.0, 0.03], parent: g });
+  return g;
+}
+// Các mẩu giấy nhắn thật dán lên cửa tủ lạnh: màu đúng như trong app, thả tim thì có nam châm tim hồng.
+export function fridgeNotes(notes) {
+  const g = G();
+  notes.slice(0, 8).forEach((n, i) => {
+    const x = i % 2 ? 0.17 : -0.17, y = 1.68 - Math.floor(i / 2) * 0.27, r = ((i * 37) % 7 - 3) * 0.035;
+    piece(rbox(0.25, 0.23, 0.012, 0.006, 1), n.color, { pos: [x, y, 0.385], rot: [0, 0, r], parent: g });
+    for (let k = 0; k < 3; k++) piece(rbox(0.16 - k * 0.03, 0.012, 0.004, 0.002, 1), 0xB98AA0, { noOutline: true, pos: [x, y + 0.03 - k * 0.04, 0.393], rot: [0, 0, r], parent: g });
+    piece(sphere(0.028, 10, 8).scale(1, 1, 0.6), n.heart ? C.pink : n.voice ? C.sky : C.leaf, { pos: [x, y + 0.1, 0.4], parent: g });
+  });
+  return g;
+}
+// Lá thăm vàng lơ lửng trên hũ khi đã bốc mà chưa chơi, hoặc đang trong buổi hẹn.
+export function jarSlip(open) {
+  const g = G(); g.userData.bob = true; g.position.y = 0.85; g.scale.setScalar(1.6);
+  piece(rbox(0.2, 0.05, 0.11, 0.015, 2), open ? C.pink : C.butter, { rot: [0.3, 0.4, 0.1], parent: g });
+  piece(sphere(0.025, 8, 6), C.white, { noOutline: true, pos: [0.13, 0.08, 0], parent: g });
+  piece(sphere(0.018, 8, 6), C.white, { noOutline: true, pos: [-0.12, 0.11, 0.03], parent: g });
+  return g;
+}

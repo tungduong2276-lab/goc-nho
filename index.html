@@ -1279,8 +1279,12 @@ body:not([data-g="nha"]) .view:not([hidden]) .section-intro{display:flex;align-i
 @media(min-width:800px){body:not([data-g="nha"]) .view:not([hidden]) .formcard{padding:26px}body:not([data-g="nha"]) .view:not([hidden]) .tab-head{margin-top:22px}}
 @media(max-width:480px){body:not([data-g="nha"]) .view:not([hidden]) .section-intro{padding:12px;gap:12px}.section-intro-icon{width:46px;height:46px;font-size:25px}body:not([data-g="nha"]) .view:not([hidden]) .tab-head{padding:16px}}
 
+/* W3: mở trong đảo 3D (khung nổi) chỉ hiện nội dung của một mục, ẩn khung app */
+html.embed #app>header,html.embed nav.tabs,html.embed nav.subtabs,html.embed .updbar,html.embed .newsbar,html.embed .section-intro,html.embed #daysBox,html.embed #seasonRow,html.embed .guinhau,html.embed #tab-letters>.tab-head,html.embed #tab-fridge>.tab-head{display:none!important}
+html.embed #app{padding-top:8px}
 </style>
 
+<script>if(/(^|[?&])embed=1(&|$)/.test(location.search))document.documentElement.classList.add("embed");</script>
 <div class="wrap" id="app">
   <header>
     <div class="brand">

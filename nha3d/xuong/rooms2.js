@@ -39,8 +39,8 @@ const OBJ = {
       [[-0.2, 0.6, C.pink], [0.15, 0.62, C.butter], [-0.1, 1.05, C.leafL], [0.2, 1.08, C.white], [0, 1.5, C.orange]].forEach(([x, y, c]) => piece(rbox(0.2, 0.18, 0.2, 0.05), c, { pos: [x, y, 0.15], parent: g }));
       const door = G(); door.position.set(-0.45, 0, 0.38); door.rotation.y = -1.9; g.add(door); piece(rbox(0.9, 1.85, 0.08, 0.05), C.white, { pos: [0.45, 0.95, 0], parent: door }); }
     else { piece(rbox(0.04, 0.5, 0.05, 0.02), C.stoneD, { pos: [0.34, 1.25, 0.39], parent: g }); piece(rbox(0.86, 0.02, 0.02, 0.01), C.stone, { noOutline: true, pos: [0, 1.32, 0.38], parent: g });
-      // nam châm + giấy nhớ
-      [[-0.18, 1.62, C.butter, 0.1, C.pink], [0.12, 1.5, C.petal, -0.12, C.leaf], [-0.15, 0.95, C.sky2, -0.06, C.butter], [0.15, 0.78, 0xD8F3E2, 0.14, C.sky]].forEach(([x, y, c, r, mc]) => { piece(rbox(0.24, 0.24, 0.012, 0.006, 1), c, { pos: [x, y, 0.385], rot: [0, 0, r], parent: g }); piece(sphere(0.03, 10, 8).scale(1, 1, 0.6), mc, { pos: [x, y + 0.1, 0.4], parent: g }); }); }
+      // nam châm + giấy nhớ (trạng thái 'trong': cửa trống để dán giấy nhắn thật của hai đứa lên)
+      if (st !== 'trong') [[-0.18, 1.62, C.butter, 0.1, C.pink], [0.12, 1.5, C.petal, -0.12, C.leaf], [-0.15, 0.95, C.sky2, -0.06, C.butter], [0.15, 0.78, 0xD8F3E2, 0.14, C.sky]].forEach(([x, y, c, r, mc]) => { piece(rbox(0.24, 0.24, 0.012, 0.006, 1), c, { pos: [x, y, 0.385], rot: [0, 0, r], parent: g }); piece(sphere(0.03, 10, 8).scale(1, 1, 0.6), mc, { pos: [x, y + 0.1, 0.4], parent: g }); }); }
     return g; },
   bepnau(st) { const g = G(); piece(rbox(1.0, 0.88, 0.7, 0.05), C.white, { pos: [0, 0.44, 0], parent: g }); piece(rbox(1.02, 0.06, 0.72, 0.02), C.stoneD, { pos: [0, 0.9, 0], parent: g });
     for (const x of [-0.25, 0.25]) piece(rcyl(0.14, 0.14, 0.02, 0.008, 20), C.navy, { pos: [x, 0.94, 0.05], parent: g, noOutline: true });
