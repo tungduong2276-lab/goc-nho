@@ -27,7 +27,15 @@ What the user asked for, in their words translated: walk in and out of the house
 4. **W4 — More places:** upstairs rooms, kingdom island scene, café interior, seasonal outdoor decor.
 5. **W5 — Make the world the home screen** once W1–W3 are accepted on both phones.
 
-## Latest operational handoff — 2026-11-16 (evening)
+## Latest operational handoff — 2026-11-16 (night) — V3 W1 shipped
+
+- **Main `e362fa7` (PR #112), Pages rebuilt successfully.** The 3D page (`./nha3d/?me=anh|em&scene=san`, linked from the home tab card "Ra đảo 3D") now opens on an outdoor island and the house is entered by walking through its front door; the interior door mat leads back out. Garden beds are outside. Café kiosk, swing, bench, mailbox, lamps, paths, dock + boat exist. CI [run 43828827402](https://github.com/tungduong2276-lab/goc-nho/actions/runs/43828827402): static, 73 staging, 49 browser passed.
+- **Verified only in local Chromium (SwiftShader) at 390×844 and 1100×760**, not on the two phones; the live Pages URL could not be opened from the session.
+- **Still device-local:** each phone has its own island/house/garden in localStorage and the other character is simulated. No Firebase code in `nha3d/`.
+- **Next action: W2 — shared presence and state** (see V3 build order above). Current Firestore Rules already allow members to read/write `/couples/{cid}/<any subcollection>`; the user does not need to change Rules for W2. Plan: `couples/{cid}/world/state` (layouts + garden, per-item last-write-wins) and `couples/{cid}/world/presence_<uid>` (position, scene, emote, throttled ~4/s, ignored when stale); reuse the app's existing Firebase init/auth from `index.html` (the 3D page currently loads no Firebase SDK); Emulator two-client tests before merge. Write to live data only after the user approves.
+- Known rough edges: door label overlaps the porch awning; café chairs face sideways; outdoor build mode not yet (W4).
+
+## Previous operational handoff — 2026-11-16 (evening)
 
 - **User direction (2026-11-16):** the goal is a real Play Together-style 3D world — walk around, customise the house, interact with each other and with objects, grow real plants. The 2D chibi swap alone (PR #106) is not what was wanted.
 - **PR #109 merged to main (`d67663d`), Pages rebuilt successfully.** The staging 3D house now ships at `./nha3d/` with a "Vào nhà 3D" card at the top of the home tab (`?me=anh|em`). New in it: garden beds and pots (catalog category "Vườn"), six species, growth only while soil is moist (24 h per watering), 1.5× when both water in one moist spell, thirsty look, harvest basket. Fixed: an actor already standing at an item never ran the arrival action. Service worker caches jsDelivr (three.js); cache `goc-nho-v17`. CI [run 43825794443](https://github.com/tungduong2276-lab/goc-nho/actions/runs/43825794443): static, 69 staging, 48 browser passed.
