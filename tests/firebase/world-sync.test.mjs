@@ -31,6 +31,29 @@ beforeEach(async () => {
 
 const bed = { uid: "y-g1", type: "luongTrong", gx: 4, gz: 14, r: 0 };
 
+test("W3b: both members read creative collections; outsiders and signed-out clients are denied", async () => {
+  const fixtures = {
+    wishes: { by: 1, done: false, date: "2026-11-16" },
+    drawings: { topBy: 1, done: false, date: "2026-11-16" },
+    story: { lines: [{ by: 1 }], done: false, date: "2026-11-16" },
+    rules: { rule: "fixture", date: "2026-11-16" }
+  };
+  const data = {};
+  for (const [name, value] of Object.entries(fixtures)) {
+    const ref = uid => collection(fsOf(uid), `couples/${CID}/${name}`);
+    await assertSucceeds(setDoc(doc(ref(BOB), "fixture"), { id: "fixture", ...value }));
+    const snap = await assertSucceeds(getDocs(ref(ALICE)));
+    data[name] = Object.fromEntries(snap.docs.map(d => [d.id, d.data()]));
+    await assertFails(getDocs(ref(EVE)));
+    await assertFails(getDocs(ref(null)));
+    assert.deepEqual((await getDoc(doc(ref(BOB), "fixture"))).data(), { id: "fixture", ...value });
+  }
+  assert.equal(AD.wishesState(data.wishes, 0).todo, 1);
+  assert.equal(AD.drawingState(data.drawings, 0).mode, "bottom");
+  assert.equal(AD.storyState(data.story, 0).myTurn, true);
+  assert.equal(AD.rulesState(data.rules).count, 1);
+});
+
 test("both members read and write the shared island; outsiders and signed-out users cannot", async () => {
   await assertSucceeds(setDoc(wdoc(ALICE, SY.itemId("san", bed.uid)), { ...SY.encodeItem("san", bed), ts: serverTimestamp() }));
   await assertSucceeds(getDoc(wdoc(BOB, SY.itemId("san", bed.uid))));
@@ -83,3 +106,4 @@ test("W3: the island reads the app's own letters, fridge notes, history and meta
   await assertFails(getDocs(collection(fsOf(EVE), base + "letters")));
   await assertFails(getDocs(query(collection(fsOf(null), base + "fridge"), orderBy("date", "desc"), limit(12))));
 });
+

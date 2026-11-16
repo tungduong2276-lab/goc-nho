@@ -22,9 +22,10 @@ const $ = s => document.querySelector(s);
 let RM = ROOM, W = ROOM.w * CELL, D = ROOM.d * CELL;
 // W3: trạng thái đọc từ dữ liệu app (thư, tủ lạnh, hũ) — khai báo sớm vì stateOf() dùng khi dựng cảnh.
 const APPSRC = { cloud: false };
-const APPDATA = { letters: {}, fridge: {}, history: {}, meta: null };
+const APPDATA = { letters: {}, fridge: {}, history: {}, meta: null, wishes: {}, drawings: {}, story: {}, rules: {} };
 const APPST = { known: false, mail: { unread: 0, sealed: 0, total: 0 }, fridge: { count: 0, fresh: 0, shown: [] }, jar: { pending: false, openNo: null, done: 0 } };
-const APP_TYPES = new Set(["hopThu", "tuLanh", "huHenHo"]);
+Object.assign(APPST, { wishes: AD.wishesState({}, null), drawing: AD.drawingState({}, null), story: AD.storyState({}, null), rules: AD.rulesState({}) });
+const APP_TYPES = new Set(["hopThu", "tuLanh", "huHenHo", "loUocMo", "giaVe", "mayDanhChu", "bangGhim"]);
 const NAMES = { anh: "Anh", em: "Em" };
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -187,10 +188,10 @@ function buildGrid() {
 const col = k => (typeof k === "string" ? C[k] : k);
 const BUILDERS = {
   "F.sofa": () => F.sofa(), "F.coffeeTable": () => F.coffeeTable(), "F.cushion": () => F.cushion(C.pink),
-  "F.bookshelfLow": () => F.bookshelfLow(), "F.jar": () => F.jar("day"), "F.radio": s => F.radio(!!s),
+  "F.bookshelfLow": () => F.bookshelfLow(), "F.jar": s => F.jar(s || "day"), "F.radio": s => F.radio(!!s),
   "F.floorLamp": s => F.floorLamp(!!s), "F.pothos": () => F.pothos(), "F.petBed": () => F.petBed(), "F.rug": () => F.rug(),
   "F.windowW": () => F.windowW({ sky: SKY[S.time], stars: S.time === "dem", moon: S.time === "dem", cloud: S.time === "ngay" || S.time === "sang" }),
-  "F.photoFrame": () => F.photoFrame(), "F.corkboard": (s, a) => F.corkboard(...(a || [])), "F.calendar": () => F.calendar(),
+  "F.photoFrame": () => F.photoFrame(), "F.corkboard": s => F.corkboard(!!s), "F.calendar": () => F.calendar(),
   gardenBed: s => gardenBed(s), gardenPot: s => gardenPot(s),
   "W.house": () => WM.houseOutside(S.time), "W.tree": () => WM.tree(false), "W.blossom": () => WM.tree(true), "W.flowers": (s, a) => WM.flowers(a && a[0]),
   "W.bush": () => WM.bush(), "W.lamp": s => WM.lamp(!!s), "W.mailbox": s => WM.mailbox(!!s), "W.swing": () => WM.swing(), "W.bench": () => WM.bench(),
@@ -221,6 +222,10 @@ function stateOf(it) {
   // W3: hộp thư dựng cờ khi có thư mới; tủ lạnh đóng thì cửa để trống cho giấy nhắn thật.
   if (it.type === "hopThu") return APPST.mail.unread > 0;
   if (it.type === "tuLanh" && st !== "mo" && APPST.known) return "trong";
+  if (it.type === "loUocMo") return APPST.wishes.fill;
+  if (it.type === "giaVe") return APPST.drawing.visual;
+  if (it.type === "mayDanhChu") return APPST.story.active ? "giay" : "";
+  if (it.type === "bangGhim") return APPST.rules.count > 0;
   return st;
 }
 function placeView(view, it, lift = 0) {
@@ -724,7 +729,7 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) refr
 // ---------- W3 đợt 1: hộp thư, tủ lạnh, hũ hẹn hò dùng dữ liệu thật của app ----------
 // Đảo chỉ ĐỌC thư, giấy nhắn, lịch sử hẹn để đồ vật hiện đúng trạng thái. Viết thư, dán giấy, bốc thăm
 // đều làm trên màn hình gốc của app, mở nổi trên đảo (?embed=1), nên dữ liệu ghi đúng định dạng cũ.
-const APP_TITLES = { thu: "Hộp thư", "tu-lanh": "Tủ lạnh nhắn nhủ", "hom-nay": "Hũ hẹn hò" };
+const APP_TITLES = { thu: "Hộp thư", "tu-lanh": "Tủ lạnh nhắn nhủ", "hom-nay": "Hũ hẹn hò", "uoc-mo": "Lọ ước mơ", ve: "Vẽ tiếp sức", truyen: "Truyện nối", "bo-luat": "Bộ luật của hai đứa" };
 function appMe() { const v = store.get("hu-hen-ho-me"); return v === null || v === "" ? null : Number(v); }
 function seenLetters() { try { return JSON.parse(store.get("v3-letter-seen") || "[]"); } catch { return []; } }
 function setAppData(d) {
@@ -734,24 +739,35 @@ function setAppData(d) {
   APPST.mail = AD.mailboxState(APPDATA.letters, APPDATA.history, meI, seenLetters());
   APPST.fridge = AD.fridgeState(APPDATA.fridge, meI, store.get("v3-fridge-seen") || "");
   APPST.jar = AD.jarState(APPDATA.meta, APPDATA.history);
+  APPST.wishes = AD.wishesState(APPDATA.wishes, meI, store.get("v3-wish-seen") || "");
+  APPST.drawing = AD.drawingState(APPDATA.drawings, meI);
+  APPST.story = AD.storyState(APPDATA.story, meI);
+  APPST.rules = AD.rulesState(APPDATA.rules);
   for (const it of S.layout.items) if (APP_TYPES.has(it.type) && views.get(it.uid)?.key !== viewKeyOf(it)) refreshView(it);
 }
 // Khi chưa nối Firebase, app gốc lưu trên máy này (localStorage cùng trang) — đọc thẳng từ đó.
 function readLocalApp() {
   if (APPSRC.cloud) return;
-  try { const o = JSON.parse(store.get("hu-hen-ho-v2") || "null"); if (o) setAppData({ letters: o.letters || {}, fridge: o.fridge || {}, history: o.history || {}, meta: o.meta || null }); } catch { /* bỏ qua bản hỏng */ }
+  try { const o = JSON.parse(store.get("hu-hen-ho-v2") || "null"); if (o) setAppData(Object.fromEntries(Object.keys(APPDATA).map(k => [k, o[k] || (k === "meta" ? null : {})]))); } catch { /* bỏ qua bản hỏng */ }
 }
 function viewKeyOf(it) { return APP_TYPES.has(it.type) ? stateOf(it) + "|" + appKey(it) : stateOf(it); }
 function appKey(it) {
   if (!APP_TYPES.has(it.type)) return "";
   if (it.type === "hopThu") return "m" + APPST.mail.unread;
   if (it.type === "tuLanh") return "f" + APPST.fridge.shown.map(n => n.id + (n.heart ? "h" : "")).join(",");
+  if (it.type === "loUocMo") return "w" + APPST.wishes.fresh;
+  if (it.type === "giaVe") return "d" + APPST.drawing.mode;
+  if (it.type === "mayDanhChu") return "s" + APPST.story.myTurn;
+  if (it.type === "bangGhim") return "r" + APPST.rules.count;
   return "j" + APPST.jar.pending + APPST.jar.openNo;
 }
 function addAppDeco(it, root) {
   if (it.type === "hopThu" && APPST.mail.unread > 0) root.add(WM.letterBadge());
   if (it.type === "tuLanh" && APPST.known && stateOf(it) === "trong") root.add(WM.fridgeNotes(APPST.fridge.shown));
   if (it.type === "huHenHo" && (APPST.jar.pending || APPST.jar.openNo)) root.add(WM.jarSlip(!!APPST.jar.openNo));
+  if (it.type === "loUocMo" && APPST.wishes.fresh) root.add(WM.jarSlip(false));
+  if (it.type === "giaVe" && APPST.drawing.mode === "bottom") { const badge = WM.jarSlip(true); badge.position.y = 1.75; root.add(badge); }
+  if (it.type === "mayDanhChu" && APPST.story.myTurn) { const badge = WM.jarSlip(true); badge.position.y = 1.55; root.add(badge); }
 }
 function appMenu(it, use, list) {
   const m = me(), other = NAMES[partner().who];
@@ -765,6 +781,25 @@ function appMenu(it, use, list) {
   if (it.type === "huHenHo") {
     const j = APPST.jar;
     list.push([j.openNo ? `Buổi hẹn #${j.openNo} đang diễn ra` : j.pending ? "Xem lá đang chờ" : use.label, () => useItem(m, it, () => { if (!j.pending && !j.openNo) shakeJar(it); openApp("hom-nay", j.pending || j.openNo ? 0 : 700); })]);
+    return;
+  }
+  if (it.type === "loUocMo") {
+    const w = APPST.wishes;
+    list.push([w.fresh ? `Xem ước mơ (${w.fresh} mới)` : `Ước mơ cùng nhau (${w.todo} chưa làm)`, () => useItem(m, it, () => openApp(use.tab))]);
+    return;
+  }
+  if (it.type === "giaVe") {
+    const labels = { noid: "Chọn người vẽ", start: "Bắt đầu bức tranh", wait: `Chờ ${other} vẽ tiếp`, bottom: "Đến lượt bạn vẽ nửa dưới" };
+    list.push([labels[APPST.drawing.mode], () => useItem(m, it, () => openApp(use.tab))]);
+    return;
+  }
+  if (it.type === "mayDanhChu") {
+    const s = APPST.story;
+    list.push([s.myTurn ? "Đến lượt bạn viết tiếp" : s.active ? "Đọc truyện đang viết" : "Bắt đầu câu chuyện", () => useItem(m, it, () => openApp(use.tab))]);
+    return;
+  }
+  if (it.type === "bangGhim") {
+    list.push([`Bộ luật của hai đứa (${APPST.rules.count})`, () => useItem(m, it, () => openApp(use.tab))]);
     return;
   }
   list.push([use.label, () => useItem(m, it, () => openApp(use.tab))]);

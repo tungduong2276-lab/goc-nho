@@ -11,7 +11,7 @@ import {
 const MEASURED = {
   sofa: [2.30, 1.00], banTra: [1.10, 1.10], banAn: [2.16, 0.80], dem: [0.64, 0.64], banLamViec: [1.35, 1.13],
   giuong: [1.24, 2.07], tuDo: [1.10, 0.66], banTrangDiem: [1.00, 1.00], ruong: [1.02, 0.65], keSach: [1.30, 0.42],
-  tuLanh: [0.90, 0.80], bepNau: [1.02, 0.75], huHenHo: [0.42, 0.42], giaVe: [0.98, 0.74], mayDanhChu: [1.00, 0.60],
+  tuLanh: [0.90, 0.80], bepNau: [1.02, 0.75], huHenHo: [0.42, 0.42], loUocMo: [0.42, 0.42], giaVe: [0.98, 0.74], mayDanhChu: [1.00, 0.60],
   hopMau: [0.80, 0.50], radio: [0.50, 0.24], tuKinh: [1.20, 0.46], denCay: [0.50, 0.50], trauBa: [0.90, 0.60],
   chauLuoiHo: [1.02, 0.44], keCay: [1.30, 0.36], oMeo: [0.94, 0.94], thamTron: [2.0, 2.0], thamVuong: [2.0, 1.4],
   thamLon: [2.90, 2.90], cuaSo: [1.54, 0.25], khungAnh: [0.86, 0.09], bangGhim: [1.10, 0.14], lich: [0.72, 0.09], banDo: [1.30, 0.08],

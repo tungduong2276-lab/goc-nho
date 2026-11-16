@@ -280,6 +280,10 @@ test("W2: đảo chung — gửi thay đổi, nhận người kia và đồ đ�
 
 // ---------- W3 đợt 1: hộp thư, tủ lạnh, hũ hẹn hò dùng dữ liệu thật của app ----------
 const APP_SEED = {
+  wishes: { w1: { id: "w1", title: "Cùng đi ngắm biển", kind: "go", by: 1, done: false, date: "2026-11-15T08:00:00.000Z" } },
+  drawings: { dr1: { id: "dr1", theme: "Chú mèo", topBy: 1, top: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j5WQAAAAASUVORK5CYII=", done: false, date: "2026-11-15T08:00:00.000Z" } },
+  story: { s1: { id: "s1", title: "Đảo nhỏ của hai đứa", by: 1, done: false, lines: [{ by: 1, text: "Có một ngôi nhà nhỏ.", date: "2026-11-15T08:00:00.000Z" }], date: "2026-11-15T08:00:00.000Z" } },
+  rules: { r1: { id: "r1", rule: "Nhớ ăn sáng", penalty: "Pha trà", date: "2026-11-15T08:00:00.000Z" } },
   meta: { names: ["Anh", "Em"], swaps: {}, extraSwaps: {}, pending: { id: "p1", n: 3 }, custom: [], startDate: "", bday: ["", ""] },
   letters: {
     l1: { id: "l1", from: 1, to: 0, body: "Thư thử nghiệm từ Em", unlockSeason: null, unlockDate: "2020-01-01", date: "2026-01-01T00:00:00.000Z" },
@@ -292,6 +296,50 @@ const seedApp = page => page.addInitScript(seed => {
   if (sessionStorage.getItem("seeded")) return; sessionStorage.setItem("seeded", "1");
   localStorage.setItem("hu-hen-ho-me", "0"); localStorage.setItem("hu-hen-ho-v2", JSON.stringify(seed));
 }, APP_SEED);
+
+for (const width of [360, 390, 430]) test(`W3b: four creative objects open existing app screens at ${width}px`, async ({ page }) => {
+  await seedApp(page);
+  const { errors, firebase, N } = await openHouse(page, { width });
+  expect((await N("appState")).drawing.mode).toBe("bottom");
+  expect((await N("appState")).story.myTurn).toBe(true);
+  expect(await N("viewKey", "d1")).toBe("ve|dbottom");
+  expect(await N("viewKey", "d5")).toBe("giay|strue");
+  expect(await N("viewKey", "w4")).toBe("true|r1");
+  const original = await page.evaluate(() => localStorage.getItem("hu-hen-ho-v2"));
+  for (const [uid, label, tab, selector, text] of [
+    ["d6", "Xem ước mơ (1 mới)", "uoc-mo", "#tab-wishes", "Cùng đi ngắm biển"],
+    ["d1", "Đến lượt bạn vẽ nửa dưới", "ve", "#draw-state", "Chú mèo"],
+    ["d5", "Đến lượt bạn viết tiếp", "truyen", "#tab-story", "Đảo nhỏ của hai đứa"],
+    ["w4", "Bộ luật của hai đứa (1)", "bo-luat", "#tab-rules", "Nhớ ăn sáng"]
+  ]) {
+    await N("nearItem", uid); await N("tick", 2);
+    let pt = null;
+    for (const f of [0.5, 0.35, 0.65, 0.2, 0.8]) {
+      const [px, py] = await N("screenOfItem", uid, f);
+      for (const dx of [0, -6, 6]) if (!pt && await N("pickAt", px + dx, py) === uid) pt = [px + dx, py];
+    }
+    expect(pt, uid).not.toBeNull();
+    await page.mouse.click(...pt);
+    await page.getByRole("button", { name: label, exact: true }).click();
+    await N("tick", 12);
+    await expect(page.locator("#appsheet")).toBeVisible();
+    await expect(page.locator("#appsheet-frame")).toHaveAttribute("src", new RegExp(`#${tab}$`));
+    await expect(page.frameLocator("#appsheet-frame").locator(selector)).toContainText(text);
+    const box = await page.locator("#appsheet-close").boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(width);
+    await page.locator("#appsheet-close").click();
+    await expect(page.locator("#appsheet")).toBeHidden();
+  }
+  // Reading screens must not fork or overwrite the original app collections.
+  expect(await page.evaluate(() => localStorage.getItem("hu-hen-ho-v2"))).toBe(original);
+  // A change made by the original app is reflected on returning to the world.
+  await page.evaluate(() => { const s = JSON.parse(localStorage.getItem("hu-hen-ho-v2")); s.wishes.w1.done = true; s.drawings.dr1.done = true; s.story.s1.done = true; s.rules = {}; localStorage.setItem("hu-hen-ho-v2", JSON.stringify(s)); window.dispatchEvent(new StorageEvent("storage", { key: "hu-hen-ho-v2" })); });
+  expect(await N("viewKey", "d6")).toBe("empty|w0");
+  expect(await N("viewKey", "d1")).toBe("xong|dstart");
+  expect(await N("viewKey", "d5")).toBe("|sfalse");
+  expect(await N("viewKey", "w4")).toBe("false|r0");
+  expect(firebase).toEqual([]); expect(errors).toEqual([]);
+});
 
 test("W3: hộp thư báo thư mới, mở thư bằng màn hình gốc của app ngay trên đảo", async ({ page }) => {
   await seedApp(page);

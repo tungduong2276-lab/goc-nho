@@ -71,6 +71,7 @@ test("home tab links into the 3D house as the person holding the phone", async (
   const card = page.locator("a.w3d-card");
   await expect(card).toBeVisible();
   await expect(card).toHaveAttribute("href", "./nha3d/?me=em&scene=san");
-  const box = await card.boundingBox();
-  expect(box.height).toBeGreaterThanOrEqual(56);
+  // The home view may rerender between the visibility check and geometry read.
+  // Retry the same minimum touch-height assertion against the current card.
+  await expect.poll(async () => (await card.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(56);
 });

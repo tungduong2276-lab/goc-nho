@@ -3,6 +3,35 @@ import assert from "node:assert/strict";
 import * as AD from "../../nha3d/appdata.mjs";
 
 const NOW = new Date("2026-11-16T10:00:00");
+
+test("W3b: wishes reflect unfinished count and partner additions; no identity means no personal badge", () => {
+  const wishes = { a: { by: 1, date: "2026-11-16" }, b: { by: 0, date: "2026-11-16", done: true } };
+  assert.deepEqual(AD.wishesState(wishes, 0, "2026-11-15"), { todo: 1, done: 1, fresh: 1, fill: "it" });
+  assert.equal(AD.wishesState(wishes, null).fresh, 0);
+  assert.equal(AD.wishesState({}, 0).fill, "empty");
+  assert.equal(AD.wishesState(Array.from({ length: 3 }, () => ({})), 0).fill, "nua");
+  assert.equal(AD.wishesState(Array.from({ length: 9 }, () => ({})), 0).fill, "day");
+});
+
+test("W3b: relay drawing picks the partner's earliest unfinished half without exposing image data", () => {
+  const drawings = { mine: { topBy: 0, date: "2026-11-16" }, older: { topBy: 1, date: "2026-11-14", top: "secret" }, newer: { topBy: 1, date: "2026-11-15" } };
+  assert.deepEqual(AD.drawingState(drawings, 0), { mode: "bottom", pending: 3, done: 0, visual: "ve" });
+  assert.equal(AD.drawingState(drawings, 1).mode, "bottom");
+  assert.equal(AD.drawingState({ mine: drawings.mine }, 0).mode, "wait");
+  assert.equal(AD.drawingState(drawings, null).mode, "noid");
+  assert.deepEqual(AD.drawingState({ old: { done: true } }, 0), { mode: "start", pending: 0, done: 1, visual: "xong" });
+  assert.equal(AD.drawingState({}, 0).visual, "trang");
+});
+
+test("W3b: latest active story controls the paper and turn; rules follow additions and removals", () => {
+  const stories = { a: { date: "2026-11-14", lines: [{ by: 0 }] }, b: { date: "2026-11-15", lines: [{ by: 1 }] }, c: { date: "2026-11-16", done: true } };
+  assert.deepEqual(AD.storyState(stories, 0), { active: true, lines: 1, done: 1, myTurn: true });
+  assert.equal(AD.storyState(stories, 1).myTurn, false);
+  assert.equal(AD.storyState(stories, null).myTurn, false);
+  assert.equal(AD.storyState({}, 0).active, false);
+  assert.deepEqual(AD.rulesState({ a: {}, b: {}, c: null }), { count: 2 });
+  assert.deepEqual(AD.rulesState({}), { count: 0 });
+});
 const hist = n => Object.fromEntries(Array.from({ length: n }, (_, i) => ["h" + i, { id: "h" + i, no: i + 1, closed: true }]));
 
 test("hộp thư: chỉ đếm thư gửi mình, đã tới hạn mở và chưa xem", () => {
