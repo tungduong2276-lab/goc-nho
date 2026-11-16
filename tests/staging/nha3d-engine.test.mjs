@@ -14,7 +14,8 @@ const MEASURED = {
   tuLanh: [0.90, 0.80], bepNau: [1.02, 0.75], huHenHo: [0.42, 0.42], giaVe: [0.98, 0.74], mayDanhChu: [1.00, 0.60],
   hopMau: [0.80, 0.50], radio: [0.50, 0.24], tuKinh: [1.20, 0.46], denCay: [0.50, 0.50], trauBa: [0.90, 0.60],
   chauLuoiHo: [1.02, 0.44], keCay: [1.30, 0.36], oMeo: [0.94, 0.94], thamTron: [2.0, 2.0], thamVuong: [2.0, 1.4],
-  thamLon: [2.90, 2.90], cuaSo: [1.54, 0.25], khungAnh: [0.86, 0.09], bangGhim: [1.10, 0.14], lich: [0.72, 0.09], banDo: [1.30, 0.08]
+  thamLon: [2.90, 2.90], cuaSo: [1.54, 0.25], khungAnh: [0.86, 0.09], bangGhim: [1.10, 0.14], lich: [0.72, 0.09], banDo: [1.30, 0.08],
+  luongTrong: [1.42, 0.92], chauTrong: [0.37, 0.37]
 };
 
 test("mọi món trong danh mục có số đo, và mô hình (sau scale) vừa dấu chân ô lưới (sai ≤ 5 cm)", () => {

@@ -121,3 +121,52 @@ for (const width of [360, 390, 430]) {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 }
+
+test("vườn: gieo hạt, cùng tưới, cây lớn theo giờ thật, khát khi quên tưới, thu hoạch", async ({ page }) => {
+  const { errors, firebase, N } = await openHouse(page);
+  expect(await N("plant", "g1")).toBeNull();
+  expect(await N("plantKey", "g1")).toBe("trong");
+  // Chạm luống → menu gieo hạt
+  const [x, y] = await N("screenOfItem", "g1", 0.5);
+  await page.mouse.click(x, y);
+  await expect(page.locator("#actions")).toBeVisible();
+  await page.locator("#actions button", { hasText: "Gieo cà chua bi" }).click();
+  await expect.poll(async () => { await N("tick", 0.5); return (await N("plant", "g1"))?.stage; }, { timeout: 30_000 }).toBe(0);
+  expect((await N("plant", "g1")).wateredBy).toEqual(["anh"]);
+  // Rủ người kia cùng tưới → cả hai cùng tưới
+  await N("skipHours", 2);
+  const [x2, y2] = await N("screenOfItem", "g1", 0.5);
+  await page.mouse.click(x2, y2);
+  await page.locator("#actions button", { hasText: "cùng tưới" }).click();
+  await expect.poll(async () => { await N("tick", 0.5); return (await N("plant", "g1")).wateredBy.length; }, { timeout: 40_000 }).toBe(2);
+  // Cây lớn và đổi hình theo thời gian
+  await N("skipHours", 16);
+  const grown = await N("plant", "g1");
+  expect(grown.stage).toBeGreaterThanOrEqual(2);
+  expect(await N("plantKey", "g1")).toBe(`cachua:${grown.stage}:am`);
+  // Quên tưới hơn một ngày → khát, hình đổi
+  await N("skipHours", 30);
+  expect((await N("plant", "g1")).thirsty).toBe(true);
+  expect(await N("plantKey", "g1")).toMatch(/:khat$/);
+  // Tưới tiếp đến khi chín rồi thu hoạch
+  for (let i = 0; i < 3 && !(await N("plant", "g1")).ripe; i++) {
+    const [wx, wy] = await N("screenOfItem", "g1", 0.5);
+    const before = (await N("layout")).items.find(i => i.uid === "g1").plant.w.length;
+    await page.mouse.click(wx, wy);
+    await page.locator("#actions button", { hasText: "Tưới nước" }).click();
+    await expect.poll(async () => { await N("tick", 0.5); return (await N("layout")).items.find(i => i.uid === "g1").plant.w.length; }, { timeout: 30_000 }).toBe(before + 1);
+    await N("skipHours", 20);
+  }
+  expect((await N("plant", "g1")).ripe).toBe(true);
+  const [hx, hy] = await N("screenOfItem", "g1", 0.5);
+  await page.mouse.click(hx, hy);
+  await page.locator("#actions button", { hasText: "Thu hoạch" }).click();
+  await expect.poll(async () => { await N("tick", 0.5); return (await N("basket")).cachua || 0; }, { timeout: 30_000 }).toBe(3);
+  expect(await N("plant", "g1")).toBeNull();
+  // Lưu qua tải lại trang
+  await page.reload();
+  await page.waitForFunction(() => window.__NHA3D__?.ready, null, { timeout: 90_000 });
+  expect((await N("basket")).cachua).toBe(3);
+  expect(errors).toEqual([]);
+  expect(firebase).toEqual([]);
+});

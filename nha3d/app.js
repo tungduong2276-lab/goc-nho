@@ -9,6 +9,8 @@ import { buildAvatar, DEFAULT_LOOK, HAIRS, HAIR_COLORS, TOPS, BOTS, HATS, ACCS, 
 import { buildCat } from "./xuong/pet.js";
 import { CELL, ROOM, CATALOG, CATEGORIES, WALL_COLORS, FLOOR_COLORS, DEFAULT_LAYOUT } from "./catalog.mjs";
 import * as E from "./engine.mjs";
+import * as GD from "./garden.mjs";
+import { gardenBed, gardenPot, wateringCan } from "./garden-models.js";
 
 const $ = s => document.querySelector(s);
 const W = ROOM.w * CELL, D = ROOM.d * CELL;
@@ -16,7 +18,7 @@ const NAMES = { anh: "Anh", em: "Em" };
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ---------- lưu trên máy ----------
-const KEY = { layout: "gocnho.nha3d.layout.v1", looks: "gocnho.nha3d.looks.v1", me: "gocnho.nha3d.me", time: "gocnho.nha3d.time" };
+const KEY = { basket: "gocnho.nha3d.basket.v1", layout: "gocnho.nha3d.layout.v1", looks: "gocnho.nha3d.looks.v1", me: "gocnho.nha3d.me", time: "gocnho.nha3d.time" };
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch { /* chế độ riêng tư: bỏ qua */ } }
@@ -152,6 +154,7 @@ const BUILDERS = {
   "F.floorLamp": s => F.floorLamp(!!s), "F.pothos": () => F.pothos(), "F.petBed": () => F.petBed(), "F.rug": () => F.rug(),
   "F.windowW": () => F.windowW({ sky: SKY[S.time], stars: S.time === "dem", moon: S.time === "dem", cloud: S.time === "ngay" || S.time === "sang" }),
   "F.photoFrame": () => F.photoFrame(), "F.corkboard": (s, a) => F.corkboard(...(a || [])), "F.calendar": () => F.calendar(),
+  gardenBed: s => gardenBed(s), gardenPot: s => gardenPot(s),
   plantPot: () => plantPot(), rugRound: (s, a) => rugRound(a[0], col(a[1]), col(a[2])), rugRect: (s, a) => rugRect(a[0], a[1], col(a[2]), col(a[3]))
 };
 for (const k of Object.keys(OBJ)) BUILDERS["OBJ." + k] = s => OBJ[k](s ?? "");
@@ -168,7 +171,11 @@ export function makeModel(type, state) {
 }
 const itemsG = new THREE.Group(); scene.add(itemsG);
 const views = new Map(); // uid -> { root, height }
-function stateOf(it) { return S.transient.has(it.uid) ? S.transient.get(it.uid) : it.state; }
+// Đồng hồ cho vườn: thời gian thật, test có thể tua thêm bằng __NHA3D__.skipHours().
+let clockSkew = 0;
+const now = () => Date.now() + clockSkew;
+const isGarden = it => CATALOG[it.type].use?.type === "garden";
+function stateOf(it) { if (isGarden(it)) return GD.visualKey(it.plant, now()); return S.transient.has(it.uid) ? S.transient.get(it.uid) : it.state; }
 function placeView(view, it, lift = 0) {
   const p = E.itemPose(it), def = CATALOG[it.type];
   const inset = def.kind === "wall" ? 0.05 : 0;
@@ -181,7 +188,7 @@ function refreshView(it) {
   const root = makeModel(it.type, stateOf(it));
   root.userData.uid = it.uid;
   root.traverse(o => { o.userData.uid = it.uid; });
-  const view = { root };
+  const view = { root, key: stateOf(it) };
   placeView(view, it);
   root.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(root);
@@ -250,6 +257,8 @@ class Actor {
   update(dt) {
     this.t += dt;
     let moving = false;
+    // Đã đứng sẵn ở đích (đường đi rỗng): vẫn làm việc đã hẹn, ví dụ tưới cây lần hai.
+    if (!this.path.length && this.onArrive && this.mode !== "sit" && this.mode !== "sleep") { const cb = this.onArrive; this.onArrive = null; cb(); }
     if (this.mode !== "sit" && this.mode !== "sleep" && this.path.length) {
       const goal = this.path[0], dx = goal.x - this.x, dz = goal.z - this.z, dist = Math.hypot(dx, dz), step = this.speed * dt;
       if (dist <= step) {
@@ -400,6 +409,7 @@ function partnerThink(dt) {
     if (fs && fs.length) { goSit(p, it, fs[0], "Cho " + NAMES[p.who].toLowerCase() + " ngồi cùng!"); return; }
   }
   if (p.mode === "sit" && rand() < 0.55) return; // ngồi thêm chút
+  { const thirsty = S.layout.items.filter(it => isGarden(it) && it.plant && GD.status(it.plant, now()).thirsty); if (thirsty.length && rand() < 0.35) { const it = thirsty[Math.floor(rand() * thirsty.length)]; useItem(p, it, () => waterPlant(p, it)); return; } }
   const r = rand();
   if (r < 0.45) { const c = freeCell(); if (c) p.goTo(c.x, c.z); }
   else if (r < 0.7) {
@@ -590,8 +600,65 @@ function itemMenu(it, cx, cy) {
   if (use.type === "cycle") list.push([use.label, () => useItem(m, it, () => cycleState(it, use.states))]);
   if (use.type === "wardrobe") list.push([use.label, () => useItem(m, it, () => openWardrobe(it))]);
   if (use.type === "date") list.push([use.label, () => useItem(m, it, () => openDate())]);
+  if (use.type === "garden") { gardenMenu(it, anchor); return; }
   showActions(def.name, list, ...anchor);
 }
+// ---------- vườn ----------
+const basket = (() => { try { return GD.sanitizeBasket(JSON.parse(store.get(KEY.basket) || "null")); } catch { return {}; } })();
+const saveBasket = () => store.set(KEY.basket, JSON.stringify(basket));
+function gardenMenu(it, anchor) {
+  const m = me(), p = partner(), st = GD.status(it.plant, now()), name = CATALOG[it.type].name;
+  if (st.empty) {
+    showActions(name + " · đất trống", Object.entries(GD.SPECIES).map(([sp, d]) => ["Gieo " + d.name.toLowerCase() + " " + d.yield, () => useItem(m, it, () => plantSeed(m, it, sp))]), ...anchor);
+    return;
+  }
+  const head = `${st.name} · ${st.stageName}` + (st.ripe ? "" : st.thirsty ? " · đang khát" : ` · ${Math.round(st.progress * 100)}%`);
+  const list = [];
+  if (st.ripe) list.push(["Thu hoạch " + GD.SPECIES[st.sp].yield, () => useItem(m, it, () => harvest(m, it))]);
+  else {
+    list.push(["Tưới nước 💧", () => useItem(m, it, () => waterPlant(m, it))]);
+    if (!st.wateredBy.includes(p.who)) list.push(["Rủ " + NAMES[p.who] + " cùng tưới", () => { useItem(m, it, () => waterPlant(m, it)); setTimeout(() => useItem(p, it, () => waterPlant(p, it)), 500); }]);
+    list.push(["Xem cây", () => bubble(...anchor, plantHint(st), 3200)]);
+  }
+  list.push(["Nhổ đi, trồng lại", () => { it.plant = undefined; saveLayout(); refreshView(it); toast("Đã dọn " + name.toLowerCase()); }]);
+  showActions(head, list, ...anchor);
+}
+function plantHint(st) {
+  if (st.ripe) return "Chín rồi, thu hoạch thôi!";
+  if (st.thirsty) return "Đất khô rồi, tưới đi để cây lớn tiếp";
+  const together = st.wateredBy.length > 1 ? " (cả hai cùng tưới nên lớn nhanh hơn)" : "";
+  return `Còn khoảng ${GD.fmtHours(st.hoursLeft)} nữa${together}. Đất còn ẩm ${GD.fmtHours(st.moistLeft / GD.HOUR)}.`;
+}
+function plantSeed(actor, it, sp) {
+  it.plant = GD.water(GD.newPlant(sp, actor.who, now()), actor.who, now());
+  saveLayout(); refreshView(it); actor.emote("wave", 1);
+  const p = E.itemPose(it); bubble(p.x, 0.9, p.z, "Gieo " + GD.SPECIES[sp].name.toLowerCase() + " rồi tưới luôn nè 🌱", 2600);
+}
+function waterPlant(actor, it) {
+  if (!it.plant) return;
+  const before = GD.status(it.plant, now());
+  it.plant = GD.water(it.plant, actor.who, now()); saveLayout();
+  const after = GD.status(it.plant, now());
+  const can = wateringCan(); can.position.set(0.28, 0.55, 0.15); actor.root.add(can); setTimeout(() => actor.root.remove(can), 1400);
+  actor.emote("wave", 1.2);
+  const p = E.itemPose(it), h = views.get(it.uid)?.height || 0.5;
+  floatAt(p.x, h + 0.15, p.z, "💧", 4);
+  setTimeout(() => refreshView(it), 300);
+  if (after.wateredBy.length > 1 && before.wateredBy.length < 2) { setTimeout(() => { floatAt(p.x, h + 0.35, p.z, "💚", 3); bubble(p.x, h + 0.4, p.z, "Hai đứa cùng tưới, cây lớn nhanh hơn!", 2600); }, 700); }
+}
+function harvest(actor, it) {
+  const st = GD.status(it.plant, now()); if (!st.ripe) return;
+  const def = GD.SPECIES[st.sp], p = E.itemPose(it), n = it.type === "luongTrong" ? 3 : 1;
+  basket[st.sp] = (basket[st.sp] || 0) + n; saveBasket();
+  floatAt(p.x, 0.8, p.z, def.yield, 5); actor.emote("wave", 1.4); actor.setFace?.("cuoi");
+  it.plant = undefined; saveLayout(); refreshView(it);
+  toast(`Thu được ${n} ${def.noun} · trong giỏ có ${basket[st.sp]} ${def.yield}`);
+}
+// Cây lớn theo thời gian thật: vẽ lại khi giai đoạn hoặc độ ẩm đổi.
+function refreshGarden() { for (const it of S.layout.items) if (isGarden(it) && views.get(it.uid)?.key !== stateOf(it)) refreshView(it); }
+setInterval(refreshGarden, 30e3);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshGarden(); });
+
 function actorMenu(a, cx, cy) {
   const m = me(), anchor = [a.x, 1.45, a.z];
   if (a === m) { showActions(NAMES[a.who], [["Vẫy tay", () => a.emote("wave")], ["Thả tim", () => heart(a)]], ...anchor); return; }
@@ -934,5 +1001,9 @@ window.__NHA3D__ = {
   info: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, ppm: cam.ppm }),
   pauseAI(on) { AI.timer = on ? 1e9 : 1; cat.wait = on ? 1e9 : 1; },
   // Tua nhanh logic (không vẽ) để test không phụ thuộc tốc độ GPU của máy chạy CI.
-  tick(sec) { for (let t = 0; t < sec; t += 1 / 30) step(1 / 30); }
+  tick(sec) { for (let t = 0; t < sec; t += 1 / 30) step(1 / 30); },
+  skipHours(h) { clockSkew += h * GD.HOUR; refreshGarden(); return GD.HOUR * 0 + clockSkew; },
+  plant: uid => { const it = itemByUid(uid); return it && it.plant ? GD.status(it.plant, now()) : null; },
+  plantKey: uid => views.get(uid)?.key,
+  basket: () => ({ ...basket })
 };

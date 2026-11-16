@@ -1,5 +1,6 @@
 // Lõi logic của bản thử nhà 3D: lưới, dấu chân đồ, kiểm tra đặt hợp lệ, ô đi được, tìm đường,
 // điểm ngồi/điểm tiếp cận, lưu/nạp bố cục, hoàn tác. Không phụ thuộc three.js, không ghi Firebase.
+import { sanitizePlant } from "./garden.mjs";
 import { CELL, ROOM, CATALOG, WALL_COLORS, FLOOR_COLORS, DEFAULT_LAYOUT } from "./catalog.mjs";
 
 export const LAYOUT_VERSION = 1;
@@ -233,6 +234,7 @@ export function sanitizeLayout(raw, room = ROOM) {
       ? { uid: it.uid, type: it.type, wall: it.wall, at: it.at, r: 0 }
       : { uid: it.uid, type: it.type, gx: it.gx, gz: it.gz, r: it.r };
     if (it.state !== undefined && def.states && def.states.includes(it.state)) clean.state = it.state;
+    if (def.use && def.use.type === "garden") { const pl = sanitizePlant(it.plant); if (pl) clean.plant = pl; }
     if (!validatePlacement(base, clean, room).ok) { dropped.push(it.type); continue; }
     seen.add(it.uid); base.items.push(clean);
   }

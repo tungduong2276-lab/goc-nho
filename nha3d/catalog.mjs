@@ -21,6 +21,7 @@ export const CATEGORIES = [
   { id: "bep", name: "Bếp" },
   { id: "choi", name: "Sở thích" },
   { id: "cay", name: "Cây & thảm" },
+  { id: "vuon", name: "Vườn" },
   { id: "tuong", name: "Treo tường" }
 ];
 
@@ -66,6 +67,9 @@ export const CATALOG = {
   thamTron:    { name: "Thảm tròn hồng",  cat: "cay",  kind: "rug",   w: 4, d: 4, model: "rugRound", args: [1, "pinkL", "petal"] },
   thamVuong:   { name: "Thảm sọc xanh",   cat: "cay",  kind: "rug",   w: 4, d: 3, model: "rugRect", args: [2, 1.4, "sky2", "white"] },
   thamLon:     { name: "Thảm hoa lớn",    cat: "cay",  kind: "rug",   w: 6, d: 6, model: "F.rug", scale: 0.98 },
+  // garden: gieo hạt, tưới, cây lớn theo giờ thật (xem garden.mjs); trạng thái cây nằm ở item.plant.
+  luongTrong:  { name: "Luống trồng",     cat: "vuon", kind: "floor", w: 3, d: 2, model: "gardenBed", use: { type: "garden" } },
+  chauTrong:   { name: "Chậu trồng",      cat: "vuon", kind: "floor", w: 1, d: 1, model: "gardenPot", use: { type: "garden" } },
   cuaSo:       { name: "Cửa sổ mây",      cat: "tuong",kind: "wall",  w: 3, y: 1.55, model: "F.windowW", scale: 0.97 },
   khungAnh:    { name: "Khung ảnh",       cat: "tuong",kind: "wall",  w: 2, y: 1.5,  model: "F.photoFrame" },
   bangGhim:    { name: "Bảng ghim",       cat: "tuong",kind: "wall",  w: 2, y: 1.45, model: "F.corkboard", args: [true], scale: 0.9 },
@@ -111,6 +115,9 @@ export const DEFAULT_LAYOUT = {
     { uid: "d2", type: "keSach",      gx: 0,  gz: 9,  r: 1 },
     { uid: "d3", type: "radio",       gx: 9,  gz: 1,  r: 0 },
     { uid: "d4", type: "dem",         gx: 2,  gz: 12, r: 0 },
+    { uid: "g1", type: "luongTrong",  gx: 13, gz: 12, r: 0 },
+    { uid: "g2", type: "chauTrong",   gx: 12, gz: 13, r: 0 },
+    { uid: "g3", type: "chauTrong",   gx: 11, gz: 13, r: 0 },
     { uid: "w1", type: "cuaSo",       wall: "R", at: 5, r: 0 },
     { uid: "w2", type: "khungAnh",    wall: "L", at: 6, r: 0 },
     { uid: "w3", type: "lich",        wall: "R", at: 10, r: 0 },
