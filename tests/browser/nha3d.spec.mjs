@@ -277,3 +277,76 @@ test("W2: đảo chung — gửi thay đổi, nhận người kia và đồ đ�
   expect(errors).toEqual([]);
   expect(firebase).toEqual([]);
 });
+
+// ---------- W3 đợt 1: hộp thư, tủ lạnh, hũ hẹn hò dùng dữ liệu thật của app ----------
+const APP_SEED = {
+  meta: { names: ["Anh", "Em"], swaps: {}, extraSwaps: {}, pending: { id: "p1", n: 3 }, custom: [], startDate: "", bday: ["", ""] },
+  letters: {
+    l1: { id: "l1", from: 1, to: 0, body: "Thư thử nghiệm từ Em", unlockSeason: null, unlockDate: "2020-01-01", date: "2026-01-01T00:00:00.000Z" },
+    l2: { id: "l2", from: 1, to: 0, body: "Chưa được đọc", unlockSeason: null, unlockDate: "2099-01-01", date: "2026-01-02T00:00:00.000Z" }
+  },
+  fridge: { f1: { id: "f1", by: 1, text: "Nhớ ăn sáng nha", color: 1, sticker: null, voice: null, dur: 0, date: "2026-11-15T08:00:00.000Z", hearts: [true, false], replies: [] } },
+  history: {}
+};
+const seedApp = page => page.addInitScript(seed => {
+  if (sessionStorage.getItem("seeded")) return; sessionStorage.setItem("seeded", "1");
+  localStorage.setItem("hu-hen-ho-me", "0"); localStorage.setItem("hu-hen-ho-v2", JSON.stringify(seed));
+}, APP_SEED);
+
+test("W3: hộp thư báo thư mới, mở thư bằng màn hình gốc của app ngay trên đảo", async ({ page }) => {
+  await seedApp(page);
+  const { errors, firebase, N } = await openHouse(page, { scene: "san" });
+  const st = await N("appState");
+  expect(st.mail).toEqual({ unread: 1, sealed: 1, total: 2 });
+  expect(st.jar.pending).toBe(true);
+  expect(await N("appDeco", "y-m1")).toBe(1);
+  await N("nearItem", "y-m1"); await N("tick", 2);
+  // Hộp thư đứng sát nhà: tìm điểm trên màn hình mà phép chạm thật trúng hộp thư.
+  let pt = null;
+  for (const f of [0.5, 0.35, 0.65, 0.2, 0.8]) { const [px, py] = await N("screenOfItem", "y-m1", f); for (const dx of [0, -6, 6]) if (!pt && await N("pickAt", px + dx, py) === "y-m1") pt = [px + dx, py]; }
+  expect(pt).not.toBeNull();
+  await page.mouse.click(...pt);
+  await page.locator("#actions button", { hasText: "Đọc thư (1 thư mới)" }).click();
+  await N("tick", 12);
+  await expect(page.locator("#appsheet")).toBeVisible();
+  const frame = page.frameLocator("#appsheet-frame");
+  await expect(frame.locator("html.embed")).toHaveCount(1);
+  await expect(frame.locator("#tab-letters")).toContainText("Thư thử nghiệm từ Em");
+  await expect(frame.locator("#app > header")).toBeHidden();
+  await page.locator("#appsheet-close").click();
+  await expect(page.locator("#appsheet")).toBeHidden();
+  // App gốc đã đánh dấu thư đã đọc → cờ hạ, phong bì biến mất.
+  await expect.poll(() => N("appState").then(s => s.mail.unread)).toBe(0);
+  expect(await N("appDeco", "y-m1")).toBe(0);
+  expect(firebase).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+test("W3: tủ lạnh dán đúng giấy nhắn thật, hũ có lá đang chờ mở màn bốc thăm của app", async ({ page }) => {
+  await seedApp(page);
+  const { errors, N } = await openHouse(page, { scene: "nha" });
+  const st = await N("appState");
+  expect(st.fridge.count).toBe(1);
+  expect(st.fridge.fresh).toBe(1);
+  expect(st.fridge.shown[0]).toMatchObject({ id: "f1", color: 0xD8F1DF, heart: true });
+  expect(await N("viewKey", "c1")).toBe("trong|ff1h");
+  expect(await N("appDeco", "c4")).toBe(1);
+  await N("nearItem", "c1"); await N("tick", 2);
+  const [x, y] = await N("screenOfItem", "c1", 0.6);
+  expect(await N("pickAt", x, y)).toBe("c1");
+  await page.mouse.click(x, y);
+  await page.locator("#actions button", { hasText: "Đọc giấy nhắn (1 mới)" }).click();
+  await N("tick", 12);
+  const frame = page.frameLocator("#appsheet-frame");
+  await expect(frame.locator("#tab-fridge")).toContainText("Nhớ ăn sáng nha");
+  await page.locator("#appsheet-close").click();
+  await N("nearItem", "c4"); await N("tick", 2);
+  const [jx, jy] = await N("screenOfItem", "c4", 0.6);
+  expect(await N("pickAt", jx, jy)).toBe("c4");
+  await page.mouse.click(jx, jy);
+  await page.locator("#actions button", { hasText: "Xem lá đang chờ" }).click();
+  await N("tick", 12);
+  await expect(page.locator("#appsheet-title")).toHaveText("Hũ hẹn hò");
+  await expect(frame.locator("#playBtn")).toBeVisible();
+  expect(errors).toEqual([]);
+});

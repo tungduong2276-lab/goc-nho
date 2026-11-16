@@ -2,7 +2,8 @@ import { before, after, beforeEach, test } from "node:test";
 import { readFileSync } from "node:fs";
 import { strict as assert } from "node:assert";
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
-import { doc, getDoc, getDocs, setDoc, updateDoc, collection, arrayUnion, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, getDocs, setDoc, updateDoc, collection, arrayUnion, serverTimestamp, query, orderBy, limit } from "firebase/firestore";
+import * as AD from "../../nha3d/appdata.mjs";
 import * as SY from "../../nha3d/sync.mjs";
 
 // W2 shared island: document shapes under couples/{cid}/world against the PRODUCTION firestore.rules.
@@ -62,4 +63,23 @@ test("a second phone loads the island the first phone seeded", async () => {
   SY.applyItemChanges(layout, "san", snap.docs.map(d => ({ id: d.id, data: d.data() })));
   assert.deepEqual(layout.items.map(i => i.uid).sort(), ["y-g1", "y-m1"]);
   assert.equal(layout.items.find(i => i.uid === "y-m1").state, true);
+});
+
+test("W3: the island reads the app's own letters, fridge notes, history and meta with the same queries as cloud.js", async () => {
+  const base = `couples/${CID}/`;
+  // Bob writes exactly as the main app's put()/putMeta() do.
+  await setDoc(doc(fsOf(BOB), base + "letters/l1"), { id: "l1", from: 1, to: 0, body: "fixture", unlockSeason: null, unlockDate: "2020-01-01", date: "2026-11-01T00:00:00.000Z" });
+  await setDoc(doc(fsOf(BOB), base + "fridge/f1"), { id: "f1", by: 1, text: "fixture", color: 3, sticker: null, voice: null, dur: 0, date: "2026-11-15T00:00:00.000Z", hearts: [false, true], replies: [] });
+  await setDoc(doc(fsOf(BOB), base + "meta/main"), { names: ["Anh", "Em"], pending: { id: "p", n: 2 } });
+  const asMap = snap => Object.fromEntries(snap.docs.map(d => [d.id, d.data()]));
+  const letters = asMap(await assertSucceeds(getDocs(collection(fsOf(ALICE), base + "letters"))));
+  const fridge = asMap(await assertSucceeds(getDocs(query(collection(fsOf(ALICE), base + "fridge"), orderBy("date", "desc"), limit(12)))));
+  const history = asMap(await assertSucceeds(getDocs(collection(fsOf(ALICE), base + "history"))));
+  const meta = (await assertSucceeds(getDoc(doc(fsOf(ALICE), base + "meta/main")))).data();
+  assert.deepEqual(AD.mailboxState(letters, history, 0, []), { unread: 1, sealed: 0, total: 1 });
+  const fr = AD.fridgeState(fridge, 0, "");
+  assert.equal(fr.fresh, 1); assert.equal(fr.shown[0].color, AD.NOTE_COLORS[3]); assert.equal(fr.shown[0].heart, true);
+  assert.equal(AD.jarState(meta, history).pending, true);
+  await assertFails(getDocs(collection(fsOf(EVE), base + "letters")));
+  await assertFails(getDocs(query(collection(fsOf(null), base + "fridge"), orderBy("date", "desc"), limit(12))));
 });

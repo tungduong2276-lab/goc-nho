@@ -107,3 +107,9 @@ body[data-mode="play"] .edit-only, body[data-mode="edit"] .play-only { display: 
 #partner-status{background:#fff;max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #partner-status[data-here="true"]{background:#FFE6F0}
 #partner-status[hidden]{display:none}
+
+/* W3: màn hình gốc của app mở nổi trên đảo (thư, tủ lạnh, hũ hẹn hò) */
+.appsheet { top: calc(10px + var(--safe-t, 0px)); bottom: calc(10px + var(--safe-b)); max-height: none; display: flex; flex-direction: column; padding: 10px 10px 0; z-index: 12; }
+.appsheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 4px 8px; }
+.appsheet-head h2 { margin: 0; }
+.appsheet iframe { flex: 1; width: 100%; border: 0; border-radius: 16px 16px 0 0; background: #fff; }
