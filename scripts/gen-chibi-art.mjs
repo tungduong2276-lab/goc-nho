@@ -182,7 +182,7 @@ function hat(kind, p) {
   switch (kind) {
     case "mulen": return ci(hx - 72, hy - 108, 26, "#B98A62") + ci(hx + 72, hy - 108, 26, "#B98A62") + ci(hx - 72, hy - 108, 13, "#F3D9C0") + ci(hx + 72, hy - 108, 13, "#F3D9C0")
       + cap("#C99B72") + rc(hx - 112, hy - 62, 224, 30, 15, "#F3E3CF") + [0, 1, 2, 3, 4, 5].map(i => ln(`M${hx - 88 + i * 35} ${hy - 56} v18`, "#E2CDB2", 3)).join("");
-    case "murom": return el(hx, hy - 58, 156, 34, "#E9C46A") + pa(`M${hx - 92} ${hy - 60} C${hx - 96} ${hy - 184} ${hx + 96} ${hy - 184} ${hx + 92} ${hy - 60} Z`, "#F1D58A") + rc(hx - 92, hy - 92, 184, 22, 11, "#E76F51")
+    case "murom": return el(hx, hy - 58, 156, 34, "#E9C46A") + pa(`M${hx - 92} ${hy - 60} C${hx - 78} ${hy - 196} ${hx + 78} ${hy - 196} ${hx + 92} ${hy - 60} Z`, "#F1D58A") + rc(hx - 92, hy - 92, 184, 22, 11, "#E76F51")
       + ln(`M${hx - 120} ${hy - 52} q120 26 240 0`, "#D3AB4E", 3);
     case "mubep": return ci(hx - 46, hy - 138, 44, WHITE) + ci(hx + 46, hy - 138, 44, WHITE) + ci(hx, hy - 156, 48, WHITE) + rc(hx - 72, hy - 122, 144, 54, 14, WHITE, ' stroke="#E6DED6" stroke-width="3"')
       + ln(`M${hx - 28} ${hy - 112} v30`, "#E6DED6", 3) + ln(`M${hx + 28} ${hy - 112} v30`, "#E6DED6", 3);
