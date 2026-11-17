@@ -1,0 +1,20 @@
+/* Bếp / kho / hồ / thú cưng nổi ngay trên cảnh Three.js, không mở tab 2D. */
+.life-sheet{z-index:19!important;max-width:620px;margin:0 auto;border-color:#397C84;background:linear-gradient(145deg,#F4FFFA,#FFF5F9 60%,#EEF8FF);touch-action:pan-y}
+.life-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.life-header h2{margin:0;font-family:var(--display);font-size:21px}
+.life-close{min-width:44px;min-height:44px;border:2px solid var(--ink);border-radius:50%;background:#FFE0EC;font-size:21px}
+.life-tabs{display:flex;gap:7px;overflow-x:auto;scrollbar-width:thin;touch-action:pan-x;padding:8px 0}
+.life-tabs button{flex:none;min-height:42px;padding:6px 12px;border-radius:18px;border:2px solid #346E7B;background:#E5F8F5;font:800 13px var(--body);color:var(--ink)}
+.life-tabs button.life-selected{background:#F8B6D0}
+.life-panel{display:grid;gap:8px;overflow-y:auto;touch-action:pan-y}
+.life-panel h3{font-size:17px;margin:12px 0 2px}
+.life-stock{display:flex;flex-wrap:wrap;gap:7px}
+.life-stock span{border:2px solid #8CCBC3;border-radius:999px;padding:5px 11px;background:#fff;font-weight:800;font-size:13px}
+.life-button{min-height:45px;border:2px solid #346E7B;border-radius:17px;background:#FFFFFF;box-shadow:0 2px 0 #346E7B;padding:10px 12px;text-align:left;font:800 14px var(--body);color:var(--ink);white-space:normal;line-height:1.35}
+.life-button:disabled{opacity:.44;cursor:default}
+.life-button:not(:disabled):active{transform:translateY(2px);box-shadow:none}
+.life-hint{margin:2px 0 8px;color:#385F71;font-size:13px;line-height:1.4}
+.life-sync{margin:3px 0 10px;font-weight:800;font-size:12px;color:#52728C}
+.life-note{padding:10px 12px;margin:0 0 9px;border:2px solid #91D7C2;border-radius:14px;background:#E7FAF1;font-weight:800;line-height:1.5}
+.life-saving{color:#4E6D75}
+@media(min-width:650px){.life-sheet{left:50%;right:auto;transform:translateX(-50%);width:min(620px,94vw)}}
