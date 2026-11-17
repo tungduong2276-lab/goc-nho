@@ -45,8 +45,10 @@ test("two phones cannot harvest the same ripe bed twice: crop + stock are one tr
   assert.equal(cropStatus(plant,T).ripe,true);
   const bed={uid:"bed1",type:"luongTrong",gx:3,gz:5,r:0,plant};
   await setDoc(ref(alice,"i_san_bed1"),encodeItem("san",bed));
-  const run=(uid,who)=>runTransaction(db(uid),async tx=>{
-    const crop=ref(uid,"i_san_bed1"),life=ref(uid,"l_home");
+  const run=(uid,who)=>{
+    const client=db(uid), at=id=>doc(client,`couples/${cid}/world/${id}`);
+    return runTransaction(client,async tx=>{
+    const crop=at("i_san_bed1"),life=at("l_home");
     const [a,b]=await Promise.all([tx.get(crop),tx.get(life)]);
     if(!a.exists())return false;
     const item=decodeItem(a.data()),cropState=item?.plant&&cropStatus(item.plant,T);
@@ -56,7 +58,8 @@ test("two phones cannot harvest the same ripe bed twice: crop + stock are one tr
     tx.set(crop,encodeItem("san",{...item,plant:undefined},true));
     tx.set(life,{k:"life",state:res.next,ts:serverTimestamp()});
     return true;
-  });
+    });
+  };
   const results=await Promise.all([run(alice,"anh"),run(bob,"em")]);
   assert.deepEqual(results.sort(),[false,true]);
   assert.equal((await getDoc(ref(alice,"l_home"))).data().state.stock.cachua,5);
@@ -65,11 +68,14 @@ test("two phones cannot harvest the same ripe bed twice: crop + stock are one tr
 
 test("two authors append to the same story without losing either paragraph",async()=>{
   await setDoc(ref(alice,"cc_story_meta"),{id:"story1",k:"creative-meta",title:"Miu",kind:"story",lines:[]});
-  const write=(uid,who,text)=>runTransaction(db(uid),async tx=>{
-    const d=ref(uid,"cc_story_meta"),snap=await tx.get(d);
+  const write=(uid,who,text)=>{
+    const client=db(uid),d=doc(client,`couples/${cid}/world/cc_story_meta`);
+    return runTransaction(client,async tx=>{
+    const snap=await tx.get(d);
     const lines=snap.data().lines;
     tx.update(d,{lines:[...lines,{by:who,text,at:Date.now()}]});
-  });
+    });
+  };
   await Promise.all([write(alice,"anh","Một hôm..."),write(bob,"em","Trời mưa.")]);
   const lines=(await getDoc(ref(alice,"cc_story_meta"))).data().lines;
   assert.equal(lines.length,2);
@@ -77,7 +83,7 @@ test("two authors append to the same story without losing either paragraph",asyn
 });
 
 test("painting contributions use separate docs, publish both strokes without altering old drawings",async()=>{
-  const stroke=who=>({id:"s"+who,by:who,at:Date.now(),color:"#1D2B4F",width:5,points:[[.1,.2],[.5,.5]]});
+  const stroke=who=>({id:"s"+who,by:who,at:Date.now(),color:"#1D2B4F",width:5,points:[{x:.1,y:.2},{x:.5,y:.5}]});
   await Promise.all([
     setDoc(ref(alice,"cc_paint_anh"),{session:"demo",strokes:[stroke("anh")]}),
     setDoc(ref(bob,"cc_paint_em"),{session:"demo",strokes:[stroke("em")]})
