@@ -1,3 +1,4 @@
+import { ROOM_PRESETS } from "./rooms.mjs";
 // W2 — đồng bộ đảo 3D giữa hai điện thoại (xem "PRODUCT DIRECTION V3" trong roadmap).
 // Lõi thuần, không phụ thuộc Firebase: mã hoá/giải mã document, so khác bố cục, gộp thay đổi từ máy kia.
 // Mọi document nằm trong couples/{cid}/world/ (Rules hiện tại cho thành viên đọc/ghi mọi subcollection của nhà):
@@ -89,7 +90,7 @@ export function applyItemChanges(layout, scene, changes) {
 
 // Vị trí người kia: chỉ nhận document hợp lệ, còn mới.
 export function readPresence(d, now = Date.now()) {
-  if (!d || d.k !== "presence" || !WHO.has(d.who) || !["san","nha"].includes(d.scene)) return null;
+  if (!d || d.k !== "presence" || !WHO.has(d.who) || !(d.scene === "san" || d.scene === "nha" || Object.hasOwn(ROOM_PRESETS,d.scene))) return null;
   if (!Number.isFinite(d.x) || !Number.isFinite(d.z) || !Number.isFinite(d.at)) return null;
   return { ...d, fresh: now - d.at < PRESENCE_STALE_MS };
 }

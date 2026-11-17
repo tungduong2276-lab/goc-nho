@@ -19,7 +19,7 @@ import * as AD from "./appdata.mjs";
 import {WORLD_FEATURES,featureOf} from "../src/world-features.mjs";
 
 const $ = s => document.querySelector(s);
-// Cảnh hiện tại: "san" (ngoài sân) hoặc "nha" (trong nhà). W, D đổi theo cảnh.
+// Mỗi phòng là một scene độc lập; lịch sử phòng "nha" và sân "san" giữ nguyên.
 let RM = ROOM, W = ROOM.w * CELL, D = ROOM.d * CELL;
 // W3: trạng thái đọc từ dữ liệu app (thư, tủ lạnh, hũ) — khai báo sớm vì stateOf() dùng khi dựng cảnh.
 const APPSRC = { cloud: false };
@@ -35,6 +35,9 @@ const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ---------- lưu trên máy ----------
 const KEY = { yard: "gocnho.nha3d.yard.v1", scene: "gocnho.nha3d.scene", basket: "gocnho.nha3d.basket.v1", layout: "gocnho.nha3d.layout.v1", looks: "gocnho.nha3d.looks.v1", me: "gocnho.nha3d.me", time: "gocnho.nha3d.time" };
+const sceneKey = sc => sc === "san" ? KEY.yard : sc === "nha" ? KEY.layout : "gocnho.nha3d.room." + sc + ".v1";
+const loadLayouts = () => Object.fromEntries(Object.entries(WD.SCENES)
+  .map(([sc, room]) => [sc, E.deserialize(store.get(sceneKey(sc)) || "null", room).layout]));
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch { /* chế độ riêng tư: bỏ qua */ } }
@@ -56,7 +59,7 @@ function loadLooks() {
 const S = {
   mode: "play",
   layout: null,
-  layouts: { nha: E.deserialize(store.get(KEY.layout) || "null", ROOM).layout, san: E.deserialize(store.get(KEY.yard) || "null", WD.YARD).layout },
+  layouts: loadLayouts(),
   scene: (() => { const q = new URLSearchParams(location.search).get("scene"); if (WD.SCENES[q]) return q; const saved=store.get(KEY.scene); return WD.SCENES[saved] ? saved : "san"; })(),
   looks: loadLooks(),
   // ?me=anh|em do app Góc Nhỏ truyền sang (máy này của ai); không có thì nhớ lần trước.
@@ -72,10 +75,10 @@ function useScene(id) {
   E.setRoom(RM); S.layout = S.layouts[id]; S.G = E.blockGrid(S.layout);
 }
 useScene(S.scene);
-const saveLayout = () => { store.set(S.scene === "san" ? KEY.yard : KEY.layout, E.serialize(S.layout)); pushScene(S.scene); };
+const saveLayout = () => { store.set(sceneKey(S.scene), E.serialize(S.layout)); pushScene(S.scene); };
 // ---------- đồng bộ hai máy (W2) ----------
 // CLOUD.on = đã đăng nhập Góc Nhỏ và vào được nhà chung; khi đó người kia do máy kia điều khiển.
-const CLOUD = { on: false, api: null, last: { nha: new Map(), san: new Map() }, meta: {}, remote: null, sentP: null, ev: null, lastEv: null, lastTarget: null };
+const CLOUD = { on: false, api: null, last: Object.fromEntries(Object.keys(WD.SCENES).map(sc => [sc, new Map()])), known: new Set(), meta: {}, remote: null, sentP: null, ev: null, lastEv: null, lastTarget: null };
 function pushScene(scene) {
   if (!CLOUD.on) return;
   const L = S.layouts[scene], last = CLOUD.last[scene], { upserts, removes } = SY.diffLayout(last, L);
@@ -136,7 +139,7 @@ function resize() {
 }
 const EXT = { x: 12, y: 9 };
 // Ngoài sân lùi camera xa hơn để thấy đường đi; trong nhà giữ như cũ.
-const playPpm = () => S.scene !== "nha" ? Math.max(40, Math.min(56, innerWidth / 9)) : Math.max(58, Math.min(80, innerWidth / 6));
+const playPpm = () => S.scene === "san" || S.scene === "hanh-lang" ? Math.max(40, Math.min(56, innerWidth / 9)) : Math.max(58, Math.min(80, innerWidth / 6));
 // Chế độ Trang trí: thấy trọn phòng trong khoảng giữa thanh trên và kho đồ.
 function editFit() {
   const trayH = $(".tray").offsetHeight || 190, topH = 72;
@@ -169,21 +172,49 @@ function applyTime() {
   document.documentElement.style.setProperty("--sky2", hex(T.sky[1]));
   $("#btn-time").textContent = TIME_ICON[S.time];
   for (const it of S.layout.items) if (it.type === "cuaSo" || it.type === "nhaNgoai" || it.type === "denDuong") refreshView(it);
-  if (S.scene !== "nha" && shell) buildShell();
+  if (S.scene === "san" && shell) buildShell();
 }
 
 // ---------- vỏ phòng ----------
 let shell = null, grid = null;
+// Cửa dựng bằng hình học thật, có vùng chạm; chuyển phòng khi nhân vật đi tới ngưỡng cửa.
+const portalsG = new THREE.Group(); scene.add(portalsG);
+function buildPortalModels() {
+  for (const obj of [...portalsG.children]) {
+    obj.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    portalsG.remove(obj);
+  }
+  if (S.scene === "san") return; // cửa ngoài đã nằm trên mô hình căn nhà
+  for (const d of WD.sceneDoors(S.scene)) {
+    if (d.to.scene === "san") continue; // thảm cửa chính đã có sẵn
+    const g = new THREE.Group();
+    const museum = d.to.scene === "bao-tang", accent = museum ? 0xC7A0E8 : 0xF5B5CA;
+    const frame = new THREE.MeshToonMaterial({color: 0xFAF0DE});
+    const tint = new THREE.MeshToonMaterial({color:accent,transparent:true,opacity:.56});
+    const add = (w,h,dep,x,y,z,mat=frame) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,dep),mat);
+      mesh.position.set(x,y,z); mesh.castShadow=true; g.add(mesh);
+    };
+    add(.12,1.52,.15,-.55,.76,0); add(.12,1.52,.15,.55,.76,0);
+    add(1.22,.14,.15,0,1.52,0);
+    add(1.05,1.40,.065,0,.76,0,tint);
+    add(.18,.045,.82,0,.027,.14,new THREE.MeshToonMaterial({color:accent}));
+    g.position.set(d.from.x,0,d.from.z);
+    g.traverse(o => { o.userData.portalId=d.id; });
+    portalsG.add(g);
+  }
+}
 function buildShell() {
   if (shell) scene.remove(shell);
   const wc = (WALL_COLORS.find(c => c.id === S.layout.wall) || WALL_COLORS[0]).wall;
   const fc = FLOOR_COLORS.find(c => c.id === S.layout.floor) || FLOOR_COLORS[0];
-  if (S.scene !== "nha") { shell = WM.island(W,D,S.time); scene.add(shell); return; }
-  shell = F.roomShell({ n: W, d: D, h: ROOM.wallH, wallL: wc, wallR: wc, floor: fc.floor, plank: fc.plank });
-  const m = WM.doorMat(); m.position.set(WD.DOOR_IN.x, 0, WD.DOOR_IN.z); shell.add(m);
-  scene.add(shell);
+  if (S.scene === "san") { shell = WM.island(W,D,S.time); scene.add(shell); buildPortalModels(); return; }
+  shell = F.roomShell({ n: W, d: D, h: RM.wallH, wallL: wc, wallR: wc, floor: fc.floor, plank: fc.plank });
+  if (S.scene === "nha") { const m = WM.doorMat(); m.position.set(WD.DOOR_IN.x, 0, WD.DOOR_IN.z); shell.add(m); }
+  scene.add(shell); buildPortalModels();
 }
 function buildGrid() {
+  if (grid) { scene.remove(grid); grid.geometry.dispose(); grid.material.dispose(); }
   const pts = [];
   for (let i = 0; i <= RM.w; i++) pts.push(-W / 2 + i * CELL, 0.045, -D / 2, -W / 2 + i * CELL, 0.045, D / 2);
   for (let j = 0; j <= RM.d; j++) pts.push(-W / 2, 0.045, -D / 2 + j * CELL, W / 2, 0.045, -D / 2 + j * CELL);
@@ -395,12 +426,23 @@ scene.add(cat.root);
 // ---------- nhãn tên, bong bóng, tim ----------
 const labels = $("#labels");
 const tags = {};
-// Nhãn cửa nổi: "Vào nhà" ngoài sân, "Ra sân" trong nhà.
-const doorTag = (() => { const el = document.createElement("button"); el.className = "nametag doortag"; el.type = "button"; document.body.appendChild(el); el.addEventListener("click", () => walkThroughDoor()); return el; })();
+// Nhãn chỉ hiện tại cửa gần nhất, tránh sáu nhãn đè lên nhau trên màn hình điện thoại.
+const doorTag = (() => {
+  const el = document.createElement("button"); el.className = "nametag doortag"; el.type = "button";
+  document.body.appendChild(el); el.addEventListener("click", () => { if (el._door) walkThroughPortal(el._door); });
+  return el;
+})();
 function placeDoorTag() {
-  const d = S.scene === "san" ? WD.DOOR_OUT : WD.DOOR_IN, y = S.scene === "san" ? 2.75 : 0.35;
-  doorTag.textContent = S.scene === "san" ? "🏠 Vào nhà" : "🚪 Ra sân"; doorTag.hidden = S.mode !== "play";
-  const [x, yy] = toScreen(d.x, y, S.scene === "san" ? d.z - 0.3 : d.z); doorTag.style.left = x + "px"; doorTag.style.top = yy + "px";
+  const m=me(), opts=WD.sceneDoors(S.scene).slice()
+    .sort((a,b)=>Math.hypot(m.x-a.from.x,m.z-a.from.z)-Math.hypot(m.x-b.from.x,m.z-b.from.z));
+  const d=opts[0], dist=d?Math.hypot(m.x-d.from.x,m.z-d.from.z):Infinity;
+  doorTag._door=d;
+  // Interior portal tag appears only nearby: avoids intercepting taps on furniture/easel.
+  doorTag.hidden=S.mode!=="play"||!d||(S.scene!=="san"&&dist>0.9);
+  if(doorTag.hidden)return;
+  doorTag.textContent=d.to.scene==="san"?"🚪 Ra sân":d.to.scene==="nha"&&S.scene==="san"?"🏠 Vào nhà":"🚪 "+d.label;
+  const [x,y]=toScreen(d.from.x,S.scene==="san"?2.75:1.95,d.from.z);
+  doorTag.style.left=x+"px";doorTag.style.top=y+"px";
 }
 function makeTag(who) { const el = document.createElement("div"); el.className = "nametag"; labels.appendChild(el); tags[who] = el; }
 function bubble(x, y, z, text, ms = 2200) {
@@ -435,7 +477,7 @@ function spawn() {
   });
 }
 spawn();
-cat.root.visible = S.scene === "nha"; $("#btn-edit").hidden = S.scene !== "nha"; document.body.dataset.scene = S.scene;
+cat.root.visible = S.scene === "nha"; $("#btn-edit").hidden = !WD.canDecorate(S.scene); document.body.dataset.scene = S.scene;
 const me = () => actors[S.me];
 const partner = () => actors[S.me === "anh" ? "em" : "anh"];
 function updateMe() {
@@ -560,24 +602,31 @@ function floorPoint(cx, cy) { setRay(cx, cy); const p = new THREE.Vector3(); ret
 function pickAt(cx, cy) {
   setRay(cx, cy);
   const objs = [itemsG];
-  if (S.mode === "play") objs.push(actors.anh.root, actors.em.root, cat.root);
+  if (S.mode === "play") objs.push(portalsG, actors.anh.root, actors.em.root, cat.root);
   const hits = ray.intersectObjects(objs, true);
+  let portalHit = null;
   for (const h of hits) {
     if (!h.object.visible) continue;
     const ud = h.object.userData;
+    // Cửa là lớp hình học trang trí: không được nuốt vùng chạm tủ lạnh, hũ và người.
+    // Nếu có một món thật cùng tọa độ màn hình, ưu tiên dùng món; cửa vẫn có nhãn riêng.
+    if (ud.portalId) {
+      if (!portalHit) portalHit = { portal: WD.sceneDoors(S.scene).find(d => d.id === ud.portalId) };
+      continue;
+    }
     if (ud.actor && ud.actor.root.visible) return { actor: ud.actor };
     if (ud.cat) return { cat: true };
     if (ud.uid) { let o = h.object, part = null; while (o && !part) { part = o.userData.part || null; o = o.parent; } return { uid: ud.uid, point: h.point, part }; }
   }
-  return null;
+  return portalHit;
 }
 function wallPoint(cx, cy) {
   setRay(cx, cy);
   const out = [];
   const pl = new THREE.Plane(new THREE.Vector3(1, 0, 0), W / 2), pr = new THREE.Plane(new THREE.Vector3(0, 0, 1), D / 2);
   const a = new THREE.Vector3(), b = new THREE.Vector3();
-  if (ray.ray.intersectPlane(pl, a) && a.y > 0 && a.y < ROOM.wallH + 0.6 && Math.abs(a.z) <= D / 2 + 0.2) out.push({ wall: "L", along: a.z + D / 2, d: a.distanceTo(ray.ray.origin) });
-  if (ray.ray.intersectPlane(pr, b) && b.y > 0 && b.y < ROOM.wallH + 0.6 && Math.abs(b.x) <= W / 2 + 0.2) out.push({ wall: "R", along: b.x + W / 2, d: b.distanceTo(ray.ray.origin) });
+  if (ray.ray.intersectPlane(pl, a) && a.y > 0 && a.y < RM.wallH + 0.6 && Math.abs(a.z) <= D / 2 + 0.2) out.push({ wall: "L", along: a.z + D / 2, d: a.distanceTo(ray.ray.origin) });
+  if (ray.ray.intersectPlane(pr, b) && b.y > 0 && b.y < RM.wallH + 0.6 && Math.abs(b.x) <= W / 2 + 0.2) out.push({ wall: "R", along: b.x + W / 2, d: b.distanceTo(ray.ray.origin) });
   out.sort((p, q) => p.d - q.d);
   return out[0] || null;
 }
@@ -633,13 +682,15 @@ function onTap(cx, cy) {
   const m = me();
   if (m.mode === "sleep") { m.standUp(); return; }
   const hit = pickAt(cx, cy);
+  if (hit && hit.portal) return walkThroughPortal(hit.portal);
   if (hit && hit.actor) return actorMenu(hit.actor, cx, cy);
   if (hit && hit.cat) { floatAt(cat.x, 0.9, cat.z, "💗", 2); bubble(cat.x, 1.0, cat.z, "Meo~", 1400); return; }
   if (hit && hit.part) return partMenu(itemByUid(hit.uid), hit.part, hit.point);
   if (hit && hit.uid) return itemMenu(itemByUid(hit.uid), cx, cy);
   const p = floorPoint(cx, cy);
   if (!p || Math.abs(p.x) > W / 2 || Math.abs(p.z) > D / 2) return;
-  if (S.scene === "nha" && Math.abs(p.x - WD.DOOR_IN.x) < 0.6 && Math.abs(p.z - WD.DOOR_IN.z) < 0.35) return walkThroughDoor();
+  const near=WD.sceneDoors(S.scene).find(d=>Math.hypot(p.x-d.from.x,p.z-d.from.z)<0.65);
+  if(near)return walkThroughPortal(near);
   if (m.goTo(p.x, p.z)) ring(p.x, p.z); else toast("Chỗ đó chưa tới được");
 }
 
@@ -697,8 +748,9 @@ let guideIntent=null;
 function guideArrive(){
  if(!guideIntent||switching)return;
  const f=guideIntent;
- if(f.scene!==S.scene){walkThroughDoor();return;}
+ if(f.scene!==S.scene){const door=WD.nextPortal(S.scene,f.scene);if(door)walkThroughPortal(door);else{guideIntent=null;toast("Chưa có đường tới nơi này");}return;}
  guideIntent=null;
+ if(f.roomOnly){toast("Đã tới "+(WD.SCENE_LABELS[f.scene]||"phòng mới"));return;}
  const it=S.layout.items.find(it=>it.type===f.object);
  if(it){useItem(me(),it,()=>openApp(f.id));return;}
  const n=E.nearestFreeCell(S.G,Math.floor(RM.w/2),Math.floor(RM.d/2));
@@ -707,6 +759,9 @@ function guideArrive(){
 }
 $("#btn-world-guide").onclick=()=>{
  guideIntent=null;me().stop();clearWorldInput();const root=$("#world-guide-places");root.replaceChildren();
+ const heading=document.createElement("h3");heading.textContent="🚪 Các phòng trong nhà";root.append(heading);
+ for(const id of ["nha","ngu","bep","bao-tang","xuong","phong-choi","hanh-lang"]){const b=document.createElement("button");b.className="pill";b.textContent="Đi tới "+WD.SCENE_LABELS[id];b.onclick=()=>{$("#world-guide").hidden=true;guideIntent={scene:id,roomOnly:true};guideArrive();};root.append(b);}
+ const toolsHeading=document.createElement("h3");toolsHeading.textContent="💌 Đồ dùng và hoạt động";root.append(toolsHeading);
  for(const f of WORLD_FEATURES){const b=document.createElement("button");b.className="pill";b.textContent=f.title+" · "+f.place;b.onclick=()=>{$("#world-guide").hidden=true;if(!f.scene){openApp(f.id);return;}guideIntent=f;guideArrive();};root.append(b);}
  openSheet("#world-guide");
 };
@@ -988,7 +1043,7 @@ addEventListener("storage", e => { if (!e.key || /^(hu-hen-ho|v3-)/.test(e.key))
 readLocalApp();
 
 // ---------- người kia thật (W2) ----------
-const SCENE_NAME = { san: "ngoài sân", nha: "trong nhà" };
+const SCENE_NAME = WD.SCENE_LABELS;
 function partnerStatus() {
   const el = $("#partner-status"); if (!el) return;
   if (!CLOUD.on) { el.hidden = true; return; }
@@ -1043,19 +1098,19 @@ function sendPresence() {
 // Nhãn "Em đang ở…" cập nhật mỗi giây (người kia có thể vắng đi mà không có thay đổi nào gửi tới).
 setInterval(partnerStatus, 1000);
 function applyRemote(changes) {
-  const byScene = { nha: [], san: [] };
+  const byScene = Object.fromEntries(Object.keys(WD.SCENES).map(sc => [sc, []]));
   for (const c of changes) {
     if (c.id.startsWith("a_")) continue; // bản ghi hoạt động cũ (đảo hẹn hò đã gỡ) — để yên, không đọc
     if (c.id === SY.presenceId(partner().who)) { CLOUD.remote = c.data; continue; }
-    if (c.id.startsWith("m_")) { const sc = c.id.slice(2); if(!["nha","san"].includes(sc))continue; const L = S.layouts[sc]; if (L && c.data) { L.wall = c.data.wall || L.wall; L.floor = c.data.floor || L.floor; CLOUD.meta[sc] = L.wall + "|" + L.floor; store.set(sc === "san" ? KEY.yard : KEY.layout, E.serialize(L)); if (sc === S.scene) buildShell(); } continue; }
-    for (const sc of ["nha", "san"]) if (c.id.startsWith("i_" + sc + "_")) byScene[sc].push(c);
+    if (c.id.startsWith("m_")) { const sc = c.id.slice(2); if(!WD.SCENES[sc])continue; if(c.data)CLOUD.known.add(sc); const L = S.layouts[sc]; if (L && c.data) { L.wall = c.data.wall || L.wall; L.floor = c.data.floor || L.floor; CLOUD.meta[sc] = L.wall + "|" + L.floor; store.set(sceneKey(sc), E.serialize(L)); if (sc === S.scene) buildShell(); } continue; }
+    for (const sc of Object.keys(WD.SCENES)) if (c.id.startsWith("i_" + sc + "_")) { CLOUD.known.add(sc); byScene[sc].push(c); }
   }
-  for (const sc of ["nha", "san"]) {
+  for (const sc of Object.keys(WD.SCENES)) {
     if (!byScene[sc].length) continue;
     const L = S.layouts[sc], touched = SY.applyItemChanges(L, sc, byScene[sc]);
     if (!touched.length) continue;
     SY.remember(CLOUD.last[sc], L);
-    store.set(sc === "san" ? KEY.yard : KEY.layout, E.serialize(L));
+    store.set(sceneKey(sc), E.serialize(L));
     if (sc !== S.scene) continue;
     for (const uid of touched) {
       const it = itemByUid(uid);
@@ -1075,20 +1130,21 @@ async function startCloud() {
   CLOUD.api = api;
   let all;
   try { all = await api.getAll(); } catch (e) { console.warn(e); toast("Chưa tải được đảo chung, đang dùng bản trên máy"); return; }
-  for (const sc of ["nha", "san"]) {
+  for (const sc of Object.keys(WD.SCENES)) {
     const room = WD.SCENES[sc], docs = all.filter(d => d.id.startsWith("i_" + sc + "_"));
-    if (docs.length) {
-      // Đảo chung đã có: dùng bản trên Firebase cho mọi máy.
-      const meta = all.find(d => d.id === SY.metaId(sc))?.data;
+    const meta = all.find(d => d.id === SY.metaId(sc))?.data;
+    if (docs.length || meta) {
+      // Có metadata nhưng không có đồ: phòng cố ý để trống, tuyệt đối không tái gieo đồ mặc định.
+      CLOUD.known.add(sc);
       const raw = { v: E.LAYOUT_VERSION, wall: meta?.wall, floor: meta?.floor, items: docs.map(d => SY.decodeItem(d.data)).filter(Boolean) };
       S.layouts[sc] = E.sanitizeLayout(raw, room).layout;
       SY.remember(CLOUD.last[sc], S.layouts[sc]); CLOUD.meta[sc] = S.layouts[sc].wall + "|" + S.layouts[sc].floor;
-      store.set(sc === "san" ? KEY.yard : KEY.layout, E.serialize(S.layouts[sc]));
+      store.set(sceneKey(sc), E.serialize(S.layouts[sc]));
     }
   }
   CLOUD.on = true;
   // Cảnh chưa có trên Firebase: máy này góp bố cục của mình làm bản chung đầu tiên.
-  for (const sc of ["nha", "san"]) if (!CLOUD.last[sc].size) pushScene(sc);
+  for (const sc of new Set(["nha", "san", S.scene])) if (!CLOUD.known.has(sc)) { CLOUD.known.add(sc); pushScene(sc); } // phòng khác chỉ seed khi bước vào
   CLOUD.remote = all.find(d => d.id === SY.presenceId(partner().who))?.data || null;
   useScene(S.scene); buildShell(); rebuildAll();
   const p = partner(); p.stop(); if (p.mode === "sit") p.standUp(); p.root.visible = false;
@@ -1106,11 +1162,22 @@ function orderDrink(actor, it, treat) {
   floatAt(actor.x, 1.4, actor.z, d.slice(-2), 2); actor.emote("wave", 1);
 }
 let switching = false;
-function walkThroughDoor() {
-  const m = me(), to = S.scene === "san" ? WD.DOOR_OUT : WD.DOOR_IN;
+function walkThroughPortal(door) {
+  if(!door||door.from.scene!==S.scene||switching)return;
   hideActions();
-  if (Math.hypot(m.x - to.x, m.z - to.z) < 0.6) { goScene(S.scene === "san" ? "nha" : "san"); return; }
-  if (!m.goTo(to.x, to.z, () => goScene(S.scene === "san" ? "nha" : "san"))) toast("Chưa đi tới cửa được");
+  const m=me(), to=door.from;
+  if(Math.hypot(m.x-to.x,m.z-to.z)<0.70){goScene(door.to.scene);return;}
+  let x=to.x,z=to.z;
+  if(E.circleBlocked(S.G,x,z,E.AVATAR_R)) {
+    const cell=E.worldToCell(x,z), free=E.nearestFreeCell(S.G,cell.i,cell.j,3);
+    if(!free){toast("Lối cửa bị chặn, hãy dọn bớt đồ");return;}
+    ({x,z}=E.cellCenter(free.i,free.j));
+  }
+  if(!m.goTo(x,z,()=>goScene(door.to.scene)))toast("Chưa đi tới cửa được");
+}
+function walkThroughDoor() {
+  const dest=S.scene==="san"?"nha":"san";
+  walkThroughPortal(WD.sceneDoors(S.scene).find(d=>d.to.scene===dest));
 }
 function goScene(id) {
   if (switching || id === S.scene || !WD.SCENES[id]) return;
@@ -1119,19 +1186,24 @@ function goScene(id) {
   setTimeout(() => {
     for (const a of Object.values(actors)) { a.standUp(); a.stop(); }
     S.seats.clear(); S.transient.clear(); mailOpen.clear();
+    const from=S.scene;
     useScene(id); store.set(KEY.scene, id);
+    S.history=new E.History(40); $("#btn-undo").disabled=true;
+    if(CLOUD.on&&!CLOUD.known.has(id)){CLOUD.known.add(id);pushScene(id);}
     buildShell(); buildGrid(); rebuildAll();
-    const sp = id === "san" ? WD.SPAWN_OUT : WD.SPAWN_IN, m = me(), p = partner();
-    m.place(sp.x, sp.z, sp.face);
+    const sp = WD.spawnFrom(id, from), m = me(), p = partner();
+    const start=E.circleBlocked(S.G,sp.x,sp.z,E.AVATAR_R)?E.nearestFreeCell(S.G,E.worldToCell(sp.x,sp.z).i,E.worldToCell(sp.x,sp.z).j,8):null;
+    const entry=start?E.cellCenter(start.i,start.j):sp;
+    m.place(entry.x,entry.z,sp.face);
     // người kia bước qua cửa ngay sau mình
     const c = E.worldToCell(sp.x + 0.5, sp.z + (id === "san" ? 0.5 : -0.5)), n = E.nearestFreeCell(S.G, c.i, c.j) || E.worldToCell(sp.x, sp.z), q = E.cellCenter(n.i, n.j);
     if (!CLOUD.on) p.place(q.x, q.z, sp.face);
     cat.root.visible = id === "nha";
-    $("#btn-edit").hidden = id !== "nha";
+    $("#btn-edit").hidden = !WD.canDecorate(id);
     document.body.dataset.scene = id;
     cam.target.set(m.x, 0.55, m.z); cam.goal.copy(cam.target); cam.goalPpm = cam.ppm = playPpm();
     AI.timer = 2;
-    setTimeout(()=>{fade.classList.remove("on");switching=false;if(guideIntent)guideArrive();toast(id==="san"?"Ra sân rồi · vườn bên trái, bến thuyền phía trước":"Về nhà rồi");},120);
+    setTimeout(()=>{fade.classList.remove("on");switching=false;if(guideIntent)guideArrive();toast(id==="san"?"Ra sân rồi · vườn bên trái":("Đã tới "+(WD.SCENE_LABELS[id]||"phòng mới")));},120);
   }, 260);
 }
 
@@ -1298,12 +1370,12 @@ function dragTo(cx, cy) {
   let cand;
   if (def.kind === "wall") {
     const wp = wallPoint(cx, cy); if (!wp) return;
-    const len = wp.wall === "L" ? ROOM.d : ROOM.w;
+    const len = wp.wall === "L" ? RM.d : RM.w;
     cand = { ...it, wall: wp.wall, at: THREE.MathUtils.clamp(Math.round(wp.along / CELL - def.w / 2), 0, len - def.w) };
   } else {
     const fp = floorPoint(cx, cy); if (!fp) return;
     const { w, d } = E.dims(def, it.r);
-    cand = { ...it, gx: THREE.MathUtils.clamp(Math.round((fp.x - drag.grab.x + W / 2) / CELL - w / 2), 0, ROOM.w - w), gz: THREE.MathUtils.clamp(Math.round((fp.z - drag.grab.z + D / 2) / CELL - d / 2), 0, ROOM.d - d) };
+    cand = { ...it, gx: THREE.MathUtils.clamp(Math.round((fp.x - drag.grab.x + W / 2) / CELL - w / 2), 0, RM.w - w), gz: THREE.MathUtils.clamp(Math.round((fp.z - drag.grab.z + D / 2) / CELL - d / 2), 0, RM.d - d) };
   }
   drag.cand = cand; drag.ok = E.validatePlacement(S.layout, cand).ok;
   placeView(views.get(it.uid), cand, 0.08); showTiles(cand, drag.ok);
@@ -1325,13 +1397,13 @@ $("#btn-rot").addEventListener("click", () => {
   const def = CATALOG[it.type];
   let cand;
   if (def.kind === "wall") {
-    const other = it.wall === "L" ? "R" : "L", len = other === "L" ? ROOM.d : ROOM.w;
+    const other = it.wall === "L" ? "R" : "L", len = other === "L" ? RM.d : RM.w;
     cand = { ...it, wall: other, at: Math.min(it.at, len - def.w) };
     if (!E.validatePlacement(S.layout, cand).ok) { const s = E.findSpot({ items: S.layout.items.filter(i => i.uid !== it.uid) }, it.type); if (s && s.wall === other) cand = { ...it, wall: other, at: s.at }; }
   } else {
     const a = E.dims(def, it.r), r = (it.r + 1) & 3, b = E.dims(def, r);
     cand = { ...it, r, gx: Math.round(it.gx + a.w / 2 - b.w / 2), gz: Math.round(it.gz + a.d / 2 - b.d / 2) };
-    cand.gx = THREE.MathUtils.clamp(cand.gx, 0, ROOM.w - b.w); cand.gz = THREE.MathUtils.clamp(cand.gz, 0, ROOM.d - b.d);
+    cand.gx = THREE.MathUtils.clamp(cand.gx, 0, RM.w - b.w); cand.gz = THREE.MathUtils.clamp(cand.gz, 0, RM.d - b.d);
   }
   const res = E.validatePlacement(S.layout, cand);
   if (!res.ok) { toast("Không đủ chỗ để xoay: " + res.reason.toLowerCase()); return; }
@@ -1348,7 +1420,7 @@ $("#btn-store").addEventListener("click", () => {
 $("#btn-ok").addEventListener("click", () => select(null));
 $("#btn-undo").addEventListener("click", () => {
   const prev = S.history.undo(); if (!prev) return;
-  S.layout = E.sanitizeLayout(prev).layout; select(null); buildShell(); rebuildAll(); commit(); paintSwatches();
+  S.layout = E.sanitizeLayout(prev, RM).layout; S.layouts[S.scene] = S.layout; select(null); buildShell(); rebuildAll(); commit(); paintSwatches();
 });
 
 // kho đồ
@@ -1408,11 +1480,11 @@ function paintSwatches() {
 }
 $("#btn-paint").addEventListener("click", () => { paintSwatches(); openSheet("#paint"); });
 $("#btn-reset").addEventListener("click", () => {
-  S.history.push(S.layout); S.layout = E.clone(DEFAULT_LAYOUT); select(null); buildShell(); rebuildAll(); commit(); paintSwatches(); toast("Đã bày lại như mới · bấm ↶ để quay lại");
+  S.history.push(S.layout); S.layout = E.clone(RM.defaultLayout || DEFAULT_LAYOUT); S.layouts[S.scene] = S.layout; select(null); buildShell(); rebuildAll(); commit(); paintSwatches(); toast("Đã bày lại phòng này · bấm ↶ để quay lại");
 });
 
 function setMode(mode) {
-  if(mode==="edit"&&S.scene!=="nha")return;
+  if(mode==="edit"&&!WD.canDecorate(S.scene))return;
   S.mode = mode; document.body.dataset.mode = mode; hideActions(); facesEl.hidden = true;
   document.querySelectorAll(".sheet").forEach(s => { s.hidden = true; });
   grid.visible = mode === "edit";
@@ -1443,8 +1515,9 @@ function step(dt) {
   if (S.scene === "nha") catThink(dt);
   for (const a of Object.values(actors)) a.update(dt);
   if (S.mode === "play" && !switching) {
-    const m = me(), moving = m.joy || m.path.length > 0;
-    if (moving && WD.crossesDoor(S.scene, m.x, m.z, Math.sin(m.face), Math.cos(m.face))) goScene(S.scene === "san" ? "nha" : "san");
+    const m = me(), moving = m.joy || (m.path.length > 0 && !m.onArrive);
+    const portal=moving&&WD.crossedPortal(S.scene,m.x,m.z,Math.sin(m.face),Math.cos(m.face));
+    if(portal)goScene(portal.to.scene);
   }
   cat.root.position.set(cat.x, cat.path.length && !reduced() ? Math.abs(Math.sin(simClock * 11)) * 0.05 : 0, cat.z); cat.root.rotation.y = cat.face;
 }
@@ -1513,7 +1586,7 @@ window.__NHA3D__ = {
   doors: () => ({ out: WD.DOOR_OUT, in: WD.DOOR_IN }),
   cloud: () => ({ on: CLOUD.on, remote: CLOUD.remote, partnerVisible: partner().root.visible }),
   // Cho test: giả lập máy kia bằng một bộ nối giả (không Firebase).
-  useFakeCloud(api) { CLOUD.api = api; CLOUD.on = true; for (const sc of ["nha", "san"]) SY.remember(CLOUD.last[sc], S.layouts[sc]); partner().root.visible = false; $("#btn-me").hidden = true; },
+  useFakeCloud(api) { CLOUD.api = api; CLOUD.on = true; for (const sc of Object.keys(WD.SCENES)) { SY.remember(CLOUD.last[sc], S.layouts[sc]); CLOUD.known.add(sc); } partner().root.visible = false; $("#btn-me").hidden = true; },
   remoteChanges(changes) { applyRemote(changes); },
   sentPresence: () => CLOUD.sentP
 };
