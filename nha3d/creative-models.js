@@ -12,8 +12,8 @@ function pictureTexture(strokes){
     const pts=stroke.points||[];if(!pts.length)continue;
     ctx.strokeStyle=stroke.color;ctx.fillStyle=stroke.color;ctx.lineWidth=Math.max(1,stroke.width*.8);
     ctx.lineCap="round";ctx.lineJoin="round";ctx.beginPath();
-    pts.forEach(([x,y],i)=>{if(i)ctx.lineTo(x*384,y*256);else ctx.moveTo(x*384,y*256);});
-    if(pts.length===1){ctx.arc(pts[0][0]*384,pts[0][1]*256,stroke.width/2,0,Math.PI*2);ctx.fill();}else ctx.stroke();
+    pts.forEach(({x,y},i)=>{if(i)ctx.lineTo(x*384,y*256);else ctx.moveTo(x*384,y*256);});
+    if(pts.length===1){ctx.arc(pts[0].x*384,pts[0].y*256,stroke.width/2,0,Math.PI*2);ctx.fill();}else ctx.stroke();
   }
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
 }
