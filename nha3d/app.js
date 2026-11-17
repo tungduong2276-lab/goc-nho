@@ -439,7 +439,7 @@ function placeDoorTag() {
   doorTag._door=d;
   doorTag.hidden=S.mode!=="play"||!d||(S.scene==="hanh-lang"&&dist>2.7);
   if(doorTag.hidden)return;
-  doorTag.textContent=d.to.scene==="nha"?"🏠 Vào nhà":d.to.scene==="san"?"🚪 Ra sân":"🚪 "+d.label;
+  doorTag.textContent=d.to.scene==="san"?"🚪 Ra sân":d.to.scene==="nha"&&S.scene==="san"?"🏠 Vào nhà":"🚪 "+d.label;
   const [x,y]=toScreen(d.from.x,S.scene==="san"?2.75:1.95,d.from.z);
   doorTag.style.left=x+"px";doorTag.style.top=y+"px";
 }
@@ -1514,7 +1514,7 @@ function step(dt) {
   if (S.scene === "nha") catThink(dt);
   for (const a of Object.values(actors)) a.update(dt);
   if (S.mode === "play" && !switching) {
-    const m = me(), moving = m.joy || m.path.length > 0;
+    const m = me(), moving = m.joy || (m.path.length > 0 && !m.onArrive);
     const portal=moving&&WD.crossedPortal(S.scene,m.x,m.z,Math.sin(m.face),Math.cos(m.face));
     if(portal)goScene(portal.to.scene);
   }
