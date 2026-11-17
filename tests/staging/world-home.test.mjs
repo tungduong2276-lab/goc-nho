@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {WORLD_FEATURES,featureOf,featureFromHash,worldUrl,validWorldMessage} from '../../src/world-features.mjs';
+import {SCENES} from '../../nha3d/world.mjs';
 test('every former top-level feature has a world destination, without needing the old navigation',()=>{
  const html=readFileSync('index.html','utf8'),nav=html.slice(html.indexOf('const NAVG='),html.indexOf('const TABNAME='));
  const tabs=[...nav.matchAll(/tabs:\[([^\]]+)\]/g)].flatMap(m=>JSON.parse('['+m[1]+']')).filter(t=>t!=='nha');
  for(const tab of tabs)assert.ok(featureOf(tab),tab);
  for(const id of ['gifts','pet','dates','badges','settings'])assert.ok(featureOf(id),id);
  assert.equal(new Set(WORLD_FEATURES.map(f=>f.id)).size,WORLD_FEATURES.length);
- for(const f of WORLD_FEATURES)if(f.id!=='settings')assert.ok(['san','nha'].includes(f.scene)&&f.object&&f.place);
+ for(const f of WORLD_FEATURES)if(f.id!=='settings')assert.ok(SCENES[f.scene]&&f.object&&f.place);
 });
 test('only known deep links are accepted; the house link opens the world, not the old overview',()=>{
  assert.equal(featureFromHash('#nha'),null);assert.equal(featureFromHash('#cac-mua').id,'khu-vuon');
