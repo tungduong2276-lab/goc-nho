@@ -1,0 +1,41 @@
+import { test,expect } from "@playwright/test";
+import { existsSync,readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+test.describe.configure({timeout:120000});
+const THREE_DIR=resolve("node_modules/three");
+test("trồng - kho - nấu chung - hồ cá - thú cưng chơi trực tiếp trong đảo 3D",async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  const errors=[],firebase=[];
+  page.on("pageerror",e=>errors.push(e.message));
+  page.on("request",req=>{if(/firestore\.googleapis|firebaseio|identitytoolkit|securetoken/.test(req.url()))firebase.push(req.url());});
+  await page.route("https://www.gstatic.com/**",route=>route.abort());
+  await page.route("https://fonts.googleapis.com/**",route=>route.abort());
+  await page.route("https://fonts.gstatic.com/**",route=>route.abort());
+  if(existsSync(THREE_DIR))await page.route("https://cdn.jsdelivr.net/npm/three@0.169.0/**",route=>{
+    const rel=new URL(route.request().url()).pathname.replace("/npm/three@0.169.0/","");
+    route.fulfill({contentType:"text/javascript",body:readFileSync(resolve(THREE_DIR,rel))});
+  });
+  await page.goto("/nha3d/index.html?scene=bep&host=1&cloud=0");
+  await page.waitForFunction(()=>window.__NHA3D__?.ready,null,{timeout:90000});
+  const N=(method,...args)=>page.evaluate(([m,a])=>window.__NHA3D__[m](...a),[method,args]);
+  await N("openLife","kitchen");
+  await expect(page.locator("#life-sheet")).toBeVisible();
+  await expect(page.locator(".life-sync")).toContainText("Chế độ trên máy");
+  await page.getByRole("button",{name:/Salad vườn nhà/}).click();
+  await expect(page.locator("#life-sheet")).toContainText("Đang chờ người kia");
+  await page.getByRole("button",{name:/Tự hoàn thành/}).click();
+  await expect(page.locator("#life-sheet")).toContainText("Hai đứa cùng nấu");
+  await page.getByRole("button",{name:/Kho thức ăn/}).click();
+  await expect(page.locator("#life-sheet")).toContainText("Salad vườn nhà");
+  expect((await N("life")).meals.length).toBe(1);
+  await N("goScene","san");await N("settle");
+  const fish=await N("lifeAction",{type:"catchFish"});
+  expect(fish.ok).toBe(true);
+  const s=await N("life");
+  expect(s.stock.ca).toBeGreaterThan(1);
+  await N("openLife","pond");await expect(page.locator("#life-sheet")).toContainText("bé cá");
+  await N("goScene","ngu");await N("settle");
+  await N("openLife","pet");await expect(page.locator("#life-sheet")).toContainText("thú cưng chung");
+  expect(errors).toEqual([]);expect(firebase).toEqual([]);
+});
