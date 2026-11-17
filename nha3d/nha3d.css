@@ -1,6 +1,7 @@
 :root {
   --ink: #1D2B4F; --ink-soft: #4B5A80; --pink: #E8558A; --pink-deep: #B8366A; --petal: #FFE4ED;
-  --leaf: #2FA463; --sky: #7CC3F2; --butter: #FFD66B; --surface: #FFFFFF; --bg: #FFF3F6;
+  --leaf: #2FA463; --sky: #7CC3F2; --butter: #FFD66B; --surface: #FFFFFF; --bg: #F3FCFA;
+  --mint: #ADEAD6; --pink-soft: #FFCADE; --blue-soft: #BDE3FF;
   --display: "Baloo 2", "Nunito", system-ui, sans-serif; --body: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --edge: 2.5px solid var(--ink); --shadow: 0 3px 0 var(--ink);
   --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px);
@@ -24,13 +25,13 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--pink); outline-
 .pill.ghost { background: var(--petal); }
 .round { width: 48px; height: 48px; border-radius: 50%; border: var(--edge); background: var(--surface); box-shadow: var(--shadow);
   display: grid; place-items: center; font-size: 22px; padding: 0; line-height: 1; }
-.round.accent { background: var(--butter); }
+.round.accent { background: var(--mint); }
 .round.ok { background: var(--leaf); color: #fff; }
 
 .top { position: fixed; top: calc(10px + var(--safe-t)); left: 12px; right: 12px; display: flex; align-items: center; gap: 8px; pointer-events: none; z-index: 5; }
 .top > * { pointer-events: auto; }
 .top .back { font-size: 15px; padding: 0 12px; white-space: nowrap; }
-.top .tag { min-height: 30px; font-size: 12px; padding: 0 10px; background: var(--petal); box-shadow: none; border-width: 2px; font-family: var(--body); font-weight: 800; white-space: nowrap; }
+.top .tag { min-height: 30px; font-size: 12px; padding: 0 10px; background: var(--blue-soft); box-shadow: none; border-width: 2px; font-family: var(--body); font-weight: 800; white-space: nowrap; }
 .top-r { margin-left: auto; display: flex; gap: 8px; }
 body[data-mode="play"] .edit-only, body[data-mode="edit"] .play-only { display: none !important; }
 
@@ -40,7 +41,7 @@ body[data-mode="play"] .edit-only, body[data-mode="edit"] .play-only { display: 
 
 /* cần điều khiển */
 #joy { position: fixed; left: 16px; bottom: calc(18px + var(--safe-b)); width: 132px; height: 132px; z-index: 4; touch-action: none; }
-.joy-base { position: absolute; inset: 0; border-radius: 50%; background: rgba(255,255,255,.55); border: var(--edge); box-shadow: var(--shadow); }
+.joy-base { position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(140deg,rgba(173,234,214,.72),rgba(255,202,222,.72) 55%,rgba(189,227,255,.78)); border: var(--edge); box-shadow: var(--shadow); }
 .joy-knob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: var(--pink); border: var(--edge); transition: transform .12s; }
 #joy.active .joy-knob { transition: none; }
 
@@ -92,17 +93,17 @@ body[data-mode="play"] .edit-only, body[data-mode="edit"] .play-only { display: 
 @keyframes ping { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(1.4); } }
 @media (prefers-reduced-motion: reduce) { .float, .ring { animation-duration: .01s; } #sky { transition: none; } }
 
-#loading { position: fixed; inset: 0; z-index: 20; display: grid; place-content: center; justify-items: center; background: var(--bg); font-family: var(--display); font-weight: 700; font-size: 18px; transition: opacity .4s; }
+#loading { position: fixed; inset: 0; z-index: 20; display: grid; place-content: center; justify-items: center; background: radial-gradient(circle at 24% 22%,#FFF0F6,transparent 47%),radial-gradient(circle at 80% 78%,#DBF2FF,transparent 52%),#EBFFF5; font-family: var(--display); font-weight: 700; font-size: 18px; transition: opacity .4s; }
 #loading.gone { opacity: 0; pointer-events: none; }
-.spin { width: 44px; height: 44px; border-radius: 50%; border: 5px solid var(--petal); border-top-color: var(--pink); animation: sp .9s linear infinite; }
+.spin { width: 44px; height: 44px; border-radius: 50%; border: 5px solid var(--mint); border-right-color: var(--blue-soft); border-top-color: var(--pink); animation: sp .9s linear infinite; }
 @keyframes sp { to { transform: rotate(360deg); } }
 .noscript { position: fixed; inset: 40% 20px auto; text-align: center; font-weight: 800; }
 
 /* Chuyển cảnh khi bước qua cửa */
-#fade{position:fixed;inset:0;background:#FFF4F8;opacity:0;pointer-events:none;transition:opacity .24s ease;z-index:40}
+#fade{position:fixed;inset:0;background:linear-gradient(135deg,#E4FFF5,#FFF0F6 55%,#E2F3FF);opacity:0;pointer-events:none;transition:opacity .24s ease;z-index:40}
 #fade.on{opacity:1}
 @media (prefers-reduced-motion: reduce){#fade{transition:none}}
-.doortag{position:fixed;z-index:6;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;min-height:36px;padding:6px 12px;font:inherit;font-weight:800;font-size:14px;background:#fff;color:#1D2B4F;border:2.5px solid #1D2B4F;border-radius:999px;box-shadow:2px 2px 0 #1D2B4F;white-space:nowrap}
+.doortag{position:fixed;z-index:6;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;min-height:36px;padding:6px 12px;font:inherit;font-weight:800;font-size:14px;background:linear-gradient(110deg,#E5FFF4,#FFE7F0 58%,#DCEEFF);color:#1D2B4F;border:2.5px solid #1D2B4F;border-radius:999px;box-shadow:2px 2px 0 #1D2B4F;white-space:nowrap}
 .doortag[hidden]{display:none}
 #partner-status{background:#fff;max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #partner-status[data-here="true"]{background:#FFE6F0}
@@ -134,3 +135,9 @@ body[data-host="true"]{--safe-t:0px;--safe-b:0px}
 .actions.readcard .title { font-size: 14px; }
 .actions .card-body { margin: 0; padding: 12px 14px; border-radius: 16px; border: var(--edge); background: #FFF9E8; box-shadow: var(--shadow); font-size: 16px; line-height: 1.45; font-weight: 700; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 38vh; overflow: auto; }
 .actions.readcard button { white-space: normal; }
+
+/* Mở cửa Góc Nhỏ: ít chuyển động, đáng yêu, không che các vùng chạm. */
+.loading-emblem { display:flex; align-items:center; gap:10px; font-size:36px; margin-bottom:14px; filter:drop-shadow(0 3px 0 #fff); }
+.loading-emblem span { color:var(--pink); font-size:48px; }
+#loading p { margin:14px 0 2px; }
+#loading small { font:800 13px var(--body); color:var(--ink-soft); text-align:center; padding:0 20px; }
