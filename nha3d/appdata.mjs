@@ -25,6 +25,13 @@ export function mailboxState(letters, history, me, seenIds = [], now = new Date(
   return { unread, sealed, total: toMe.length };
 }
 
+// Các phong bì trong hộp thư: thư gửi mình, mới nhất trước; thư chưa tới hạn giữ niêm phong (không lộ nội dung).
+export function mailboxLetters(letters, history, me, seenIds = [], now = new Date(), max = 6) {
+  return Object.values(letters || {}).filter(l => l && l.id && l.to === me)
+    .sort((a, b) => ((a.date || "") < (b.date || "") ? 1 : -1)).slice(0, max)
+    .map(l => { const open = letterUnlocked(l, history, now); return { id: l.id, from: l.from, date: l.date || "", open, seen: open && seenIds.includes(l.id), season: l.unlockSeason || null, unlockDate: l.unlockDate || null }; });
+}
+
 // Các mẩu giấy mới nhất để dán lên cửa tủ (tối đa max), và số tin mới của người kia kể từ lần xem cuối.
 export function fridgeState(notes, me, seenAt = "", max = 8) {
   const all = Object.values(notes || {}).filter(n => n && n.date).sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -34,7 +41,14 @@ export function fridgeState(notes, me, seenAt = "", max = 8) {
     if (n.by === other && n.date > seenAt) fresh++;
     for (const r of n.replies || []) if (r.by === other && r.date > seenAt) fresh++;
   }
-  const shown = all.slice(0, max).map(n => ({ id: n.id, color: NOTE_COLORS[Number.isInteger(n.color) && n.color >= 0 && n.color < 4 ? n.color : 0], voice: !!n.voice, heart: Array.isArray(n.hearts) && n.hearts.some(Boolean) }));
+  const shown = all.slice(0, max).map(n => ({
+    id: n.id, color: NOTE_COLORS[Number.isInteger(n.color) && n.color >= 0 && n.color < 4 ? n.color : 0], voice: !!n.voice,
+    heart: Array.isArray(n.hearts) && n.hearts.some(Boolean),
+    // Phần đọc trên cửa tủ: chữ ngắn gọn, ai dán, mình đã thả tim chưa, bao nhiêu câu đáp.
+    text: typeof n.text === "string" ? n.text.slice(0, 240) : "", by: n.by === 0 || n.by === 1 ? n.by : null, date: n.date,
+    mine: !!(Array.isArray(n.hearts) && me !== null && me !== undefined && n.hearts[me]), replies: Array.isArray(n.replies) ? n.replies.length : 0,
+    fresh: n.by === other && n.date > seenAt
+  }));
   return { count: all.length, fresh, shown };
 }
 
@@ -92,3 +106,9 @@ export function memoryState(data, me) {
   };
 }
 
+
+// Chi tiết lá trong hũ để hiện ngay trên đảo: số lá đang chờ / buổi đang mở (tên lá do app gốc gửi sang).
+export function jarDetail(meta, history) {
+  const p = meta && meta.pending, hs = Object.values(history || {}).filter(Boolean).sort((a, b) => a.no - b.no), last = hs[hs.length - 1];
+  return { pendingN: p && Number.isFinite(p.n) ? p.n : null, gold: !!(p && p.gold), openN: last && !last.closed && Number.isFinite(last.n) ? last.n : null };
+}

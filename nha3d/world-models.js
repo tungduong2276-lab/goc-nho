@@ -205,14 +205,31 @@ export function letterBadge() {
   piece(sphere(0.035, 10, 8), C.pink, { pos: [0, 0.0, 0.03], parent: g });
   return g;
 }
-// Các mẩu giấy nhắn thật dán lên cửa tủ lạnh: màu đúng như trong app, thả tim thì có nam châm tim hồng.
+// Các mẩu giấy nhắn thật dán lên cửa tủ lạnh: màu đúng như trong app, thả tim thì có nam châm tim hồng,
+// giấy mới của người kia có ghim hồng. Mỗi mẩu là một vùng chạm riêng (userData.part) để đọc ngay trên cửa.
 export function fridgeNotes(notes) {
   const g = G();
   notes.slice(0, 8).forEach((n, i) => {
-    const x = i % 2 ? 0.17 : -0.17, y = 1.68 - Math.floor(i / 2) * 0.27, r = ((i * 37) % 7 - 3) * 0.035;
-    piece(rbox(0.25, 0.23, 0.012, 0.006, 1), n.color, { pos: [x, y, 0.385], rot: [0, 0, r], parent: g });
-    for (let k = 0; k < 3; k++) piece(rbox(0.16 - k * 0.03, 0.012, 0.004, 0.002, 1), 0xB98AA0, { noOutline: true, pos: [x, y + 0.03 - k * 0.04, 0.393], rot: [0, 0, r], parent: g });
-    piece(sphere(0.028, 10, 8).scale(1, 1, 0.6), n.heart ? C.pink : n.voice ? C.sky : C.leaf, { pos: [x, y + 0.1, 0.4], parent: g });
+    const x = i % 2 ? 0.18 : -0.18, y = 1.7 - Math.floor(i / 2) * 0.28, r = ((i * 37) % 7 - 3) * 0.035;
+    const note = G(); note.position.set(x, y, 0); note.rotation.z = r; note.userData.part = { kind: "note", id: n.id }; g.add(note);
+    piece(rbox(0.27, 0.25, 0.014, 0.006, 1), n.color, { pos: [0, 0, 0.386], parent: note });
+    for (let k = 0; k < 3; k++) piece(rbox(0.17 - k * 0.03, 0.013, 0.004, 0.002, 1), 0xB98AA0, { noOutline: true, pos: [0, 0.03 - k * 0.045, 0.395], parent: note });
+    piece(sphere(0.03, 10, 8).scale(1, 1, 0.6), n.heart ? C.pink : n.voice ? C.sky : C.leaf, { pos: [0, 0.11, 0.402], parent: note });
+    if (n.fresh) piece(sphere(0.022, 8, 6), C.pink, { pos: [0.1, 0.1, 0.4], parent: note });
+  });
+  return g;
+}
+// Phong bì bay ra trước hộp thư khi mở: hồng có tim = thư mới, kem = đã đọc, tím có khoá vàng = còn niêm phong.
+export function mailEnvelopes(letters) {
+  const g = G(); const n = letters.length;
+  letters.forEach((l, i) => {
+    const e = G(), a = (i - (n - 1) / 2) * 0.34;
+    e.position.set(Math.sin(a) * 0.7, 1.05 + Math.cos(a * 2) * 0.08 + (i % 2) * 0.12, 0.55 + Math.cos(a) * 0.15);
+    e.rotation.set(-0.15, a * 0.6, a * -0.2); e.userData.part = { kind: "letter", id: l.id }; e.userData.float = i; g.add(e);
+    piece(rbox(0.3, 0.2, 0.03, 0.02), !l.open ? 0xE8DFFF : l.seen ? 0xFFF7EA : C.white, { parent: e });
+    const flap = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.1, 3), mat(!l.open ? 0xD5C6F5 : C.pinkL)); flap.rotation.set(Math.PI / 2, 0, Math.PI); flap.scale.z = 0.25; flap.position.set(0, 0.04, 0.02); e.add(flap);
+    if (!l.open) piece(rcyl(0.04, 0.04, 0.02, 0.005, 12), C.butter, { pos: [0, -0.01, 0.025], rot: [Math.PI / 2, 0, 0], parent: e });
+    else piece(sphere(0.035, 10, 8), l.seen ? C.pinkL : C.pink, { pos: [0, 0, 0.03], parent: e });
   });
   return g;
 }

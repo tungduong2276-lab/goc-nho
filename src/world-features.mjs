@@ -24,3 +24,13 @@ export const featureOf=id=>WORLD_FEATURES.find(f=>f.id===id)||null;
 export function featureFromHash(hash){const id=String(hash||'').replace(/^#/,'');return featureOf(id==='cac-mua'?'khu-vuon':id);}
 export function worldUrl(base,user){const url=new URL('./nha3d/index.html',base);url.searchParams.set('host','1');url.searchParams.set('cloud',user.cloud?'1':'0');url.searchParams.set('scene','san');if(user.who==='anh'||user.who==='em')url.searchParams.set('me',user.who);return url;}
 export const validWorldMessage=(event,frame,origin)=>event.source===frame&&event.origin===origin&&event.data&&typeof event.data==='object';
+// A record id the world may point at (a note or letter to highlight). Never HTML or a selector.
+export const focusId=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(v)?v:null;
+// The only actions the world may ask the host to run, each through the app's existing handler.
+export const WORLD_ACTIONS=Object.freeze({'tu-lanh':['heart'],'hom-nay':['draw']});
+export function worldAction(d){
+ if(!d||typeof d.feature!=='string'||typeof d.action!=='string')return null;
+ if(!(WORLD_ACTIONS[d.feature]||[]).includes(d.action))return null;
+ const id=d.id===undefined?null:focusId(d.id);if(d.action==='heart'&&!id)return null;
+ return {feature:d.feature,action:d.action,id};
+}

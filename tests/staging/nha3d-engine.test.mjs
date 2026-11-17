@@ -9,7 +9,6 @@ import {
 
 // Hộp bao thật (m) đo từ mô hình _xuong-3d bằng three.js r169, ngày 2026-11-08 (trước khi scale/off).
 const MEASURED = {
-  henPier:[1.3,3],banPhaChe:[1.9,.9],diemCau:[1.3,3],picnic:[1.9,1.8],luaTrai:[.94,.94],
   sofa: [2.30, 1.00], banTra: [1.10, 1.10], banAn: [2.16, 0.80], dem: [0.64, 0.64], banLamViec: [1.35, 1.13],
   giuong: [1.24, 2.07], tuDo: [1.10, 0.66], banTrangDiem: [1.00, 1.00], ruong: [1.02, 0.65], keSach: [1.30, 0.42],
   tuLanh: [0.90, 0.80], bepNau: [1.02, 0.75], huHenHo: [0.42, 0.42], loUocMo: [0.42, 0.42], giaVe: [0.98, 0.74], mayDanhChu: [1.00, 0.60],

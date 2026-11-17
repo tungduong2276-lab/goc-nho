@@ -408,7 +408,15 @@ test("W3: hộp thư báo thư mới, mở thư bằng màn hình gốc của ap
   for (const f of [0.5, 0.35, 0.65, 0.2, 0.8]) { const [px, py] = await N("screenOfItem", "y-m1", f); for (const dx of [0, -6, 6]) if (!pt && await N("pickAt", px + dx, py) === "y-m1") pt = [px + dx, py]; }
   expect(pt).not.toBeNull();
   await page.mouse.click(...pt);
-  await page.locator("#actions button", { hasText: "Đọc thư (1 thư mới)" }).click();
+  await page.locator("#actions button", { hasText: "Mở hộp thư (1 thư mới)" }).click();
+  await N("tick", 12);
+  // Phong bì bay ra: một thư mới, một thư còn niêm phong.
+  expect((await N("partsOf", "y-m1")).map(p => p.id).sort()).toEqual(["l1", "l2"]);
+  await N("snapCam");
+  const [ex, ey] = await N("screenOfPart", "y-m1", "l1");
+  expect(await N("pickPart", ex, ey)).toEqual({ kind: "letter", id: "l1" });
+  await page.mouse.click(ex, ey);
+  await page.locator("#actions button", { hasText: "Bóc thư" }).click();
   await N("tick", 12);
   await expect(page.locator("#appsheet")).toBeVisible();
   const frame = page.frameLocator("#appsheet-frame");
@@ -431,13 +439,16 @@ test("W3: tủ lạnh dán đúng giấy nhắn thật, hũ có lá đang chờ 
   expect(st.fridge.count).toBe(1);
   expect(st.fridge.fresh).toBe(1);
   expect(st.fridge.shown[0]).toMatchObject({ id: "f1", color: 0xD8F1DF, heart: true });
-  expect(await N("viewKey", "c1")).toBe("trong|ff1h");
+  expect(await N("viewKey", "c1")).toBe("trong|ff1hn");
   expect(await N("appDeco", "c4")).toBe(1);
   await N("nearItem", "c1"); await N("tick", 2);
-  const [x, y] = await N("screenOfItem", "c1", 0.6);
-  expect(await N("pickAt", x, y)).toBe("c1");
+  // Chạm thẳng vào mẩu giấy trên cửa: đọc được chữ ngay trong cảnh.
+  await N("snapCam");
+  const [x, y] = await N("screenOfPart", "c1", "f1");
+  expect(await N("pickPart", x, y)).toEqual({ kind: "note", id: "f1" });
   await page.mouse.click(x, y);
-  await page.locator("#actions button", { hasText: "Đọc giấy nhắn (1 mới)" }).click();
+  await expect(page.locator("#actions .card-body")).toHaveText("Nhớ ăn sáng nha");
+  await page.locator("#actions button", { hasText: "Đáp lại" }).click();
   await N("tick", 12);
   const frame = page.frameLocator("#appsheet-frame");
   await expect(frame.locator("#tab-fridge")).toContainText("Nhớ ăn sáng nha");
@@ -446,7 +457,7 @@ test("W3: tủ lạnh dán đúng giấy nhắn thật, hũ có lá đang chờ 
   const [jx, jy] = await N("screenOfItem", "c4", 0.6);
   expect(await N("pickAt", jx, jy)).toBe("c4");
   await page.mouse.click(jx, jy);
-  await page.locator("#actions button", { hasText: "Xem lá đang chờ" }).click();
+  await page.locator("#actions button", { hasText: "Đọc lá đang chờ" }).click();
   await N("tick", 12);
   await expect(page.locator("#appsheet-title")).toHaveText("Hũ hẹn hò");
   await expect(frame.locator("#playBtn")).toBeVisible();
