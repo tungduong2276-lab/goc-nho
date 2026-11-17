@@ -259,7 +259,7 @@ test("W2: đảo chung — gửi thay đổi, nhận người kia và đồ đ�
   await N("remoteChanges", [{ id: "p_em", data: { k: "presence", who: "em", scene: "nha", x: 0, z: 2, face: 0, mode: "idle", at: Date.now() } }]);
   await N("tick", 0.2);
   expect((await N("cloud")).partnerVisible).toBe(false);
-  await expect(page.locator("#partner-status")).toHaveText("Em đang ở trong nhà");
+  await expect(page.locator("#partner-status")).toHaveText("Em đang ở Phòng khách");
   // Em gieo dâu ở luống khác và dời ghế dài: máy này thấy ngay
   await N("remoteChanges", [
     { id: "i_san_y-g2", data: { k: "item", scene: "san", uid: "y-g2", it: { type: "luongTrong", gx: 9, gz: 14, r: 0 }, plant: { sp: "dau", at: Date.now() - 1000, by: "em" }, w: [{ t: Date.now() - 1000, by: "em" }] } },
