@@ -41,5 +41,15 @@ export function bookSpines(count=0){
   return group;
 }
 export function disposeCreativeTextures(root){
-  root?.traverse(o=>{if(o.userData?.creativeTexture){o.userData.creativeTexture.dispose();o.material?.dispose();o.geometry?.dispose();}});
+  // Mỗi lần đổi phòng, giải phóng cả khung tranh/gáy sách tạo riêng; không đụng
+  // vào vật liệu dùng chung của furniture hoặc avatar.
+  root?.traverse(o=>{
+    if(o.name!=="co-creative-gallery"&&o.name!=="co-creative-books")return;
+    o.traverse(mesh=>{
+      if(!mesh.isMesh)return;
+      mesh.userData?.creativeTexture?.dispose();
+      mesh.geometry?.dispose();
+      for(const m of Array.isArray(mesh.material)?mesh.material:[mesh.material])m?.dispose();
+    });
+  });
 }
