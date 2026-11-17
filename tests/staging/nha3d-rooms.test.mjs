@@ -56,7 +56,7 @@ test("Chuyển cảnh chỉ kích hoạt khi bước đúng hướng vào cửa"
   const door=WD.sceneDoors("hanh-lang").find(d=>d.to.scene==="bao-tang");
   assert.equal(WD.crossedPortal("hanh-lang",door.from.x,door.from.z,0,-1)?.to.scene,"bao-tang");
   assert.equal(WD.crossedPortal("hanh-lang",door.from.x,door.from.z,0,1),null);
-  assert.equal(WD.crossedPortal("hanh-lang",door.from.x+2,door.from.z,0,-1),null);
+  assert.equal(WD.crossedPortal("hanh-lang",door.from.x,door.from.z+2,0,-1),null);
   assert.equal(WD.crossedPortal("san",WD.DOOR_OUT.x,WD.DOOR_OUT.z,0,-1)?.to.scene,"nha");
   assert.equal(WD.crossedPortal("nha",WD.DOOR_IN.x,WD.DOOR_IN.z,0,1)?.to.scene,"san");
   assert.equal(WD.crossesDoor("san",WD.DOOR_OUT.x,WD.DOOR_OUT.z,0,-1),true);
