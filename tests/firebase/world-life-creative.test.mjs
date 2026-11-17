@@ -41,7 +41,7 @@ test("shared pantry & creative docs remain private to the two members",async()=>
 
 test("two phones cannot harvest the same ripe bed twice: crop + stock are one transaction",async()=>{
   const T=Date.UTC(2026,10,17,8);
-  const plant=water(newPlant("cachua","anh",T-48*HOUR),"anh",T-48*HOUR);
+  const plant=water(water(newPlant("cachua","anh",T-48*HOUR),"anh",T-48*HOUR),"em",T-24*HOUR);
   assert.equal(cropStatus(plant,T).ripe,true);
   const bed={uid:"bed1",type:"luongTrong",gx:3,gz:5,r:0,plant};
   await setDoc(ref(alice,"i_san_bed1"),encodeItem("san",bed));
