@@ -24,7 +24,7 @@ async function connect(browser,name){
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:"block"});
  const unexpected=[],blocked=[];
  await context.route("**/*",route=>{
-   const url=new URL(route.request().url);
+   const url=new URL(route.request().url());
    const isLoop=["localhost","127.0.0.1"].includes(url.hostname)&&[4173,Number(firestoreHost.split(":")[1]),Number(authHost.split(":")[1])].includes(Number(url.port));
    if(isLoop)return route.continue();
    blocked.push(url.hostname);
