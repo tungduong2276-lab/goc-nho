@@ -21,6 +21,7 @@ export const ROOM_PRESETS = Object.freeze({
     I("bed-bed","giuong",2,2),I("bed-closet","tuDo",11,2),
     I("bed-mirror","banTrangDiem",11,6),I("bed-cat","oMeo",3,9),
     I("bed-rug","thamTron",6,6),I("bed-light","denCay",13,10),
+    I("bed-story-books","keSach",1,12),
     wall("bed-window","cuaSo","R",3)
   ]),
   bep: makeRoom("bep",[
