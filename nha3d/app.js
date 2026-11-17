@@ -23,7 +23,7 @@ import { lifeYardScene } from "./life-scene.js";
 import * as CM from "./creative.mjs";
 import { localCreative } from "./creative-local.mjs";
 import { createCreativeUI } from "./creative-ui.js";
-import { galleryFrames, bookSpines, disposeCreativeTextures } from "./creative-models.js";
+import { galleryFrames, bookSpines, easelPreview, disposeCreativeTextures } from "./creative-models.js";
 import * as AD from "./appdata.mjs";
 import {WORLD_FEATURES,featureOf} from "../src/world-features.mjs";
 
@@ -128,7 +128,10 @@ async function creativeWork(type,args={}){
       {k:"creative-draft",session:args.session,who,text:String(args.text||"").slice(0,300),at:Date.now()});
   } else if(type==="appendStory")result=await api.appendStory(args.session,who,args.text);
   else if(type==="publishBook")result=await api.publishStory(args.session);
-  creativeUI.refresh();return result;
+  creativeUI.refresh();
+  if(type==="savePaint"||type==="startPaint"||type==="publishPaint")for(const it of S.layout.items)if(it.type==="giaVe")refreshView(it);
+  if(type==="publishBook"||type==="appendStory")for(const it of S.layout.items)if(it.type==="mayDanhChu"||it.type==="keSach")refreshView(it);
+  return result;
 }
 const creativeUI=createCreativeUI({getState:creativeState,work:creativeWork,who:()=>S.me,online:()=>CLOUD.on});
 function pushScene(scene) {
@@ -940,7 +943,7 @@ function appKey(it) {
   if (it.type === "hopThu") return "m" + APPST.mail.unread + (mailOpen.has(it.uid) ? "o" + APPST.letters.map(l => l.id + (l.open ? 1 : 0) + (l.seen ? 1 : 0)).join(",") : "");
   if (it.type === "tuLanh") return "f" + APPST.fridge.shown.map(n => n.id + (n.heart ? "h" : "") + (n.fresh ? "n" : "")).join(",");
   if (it.type === "loUocMo") return "w" + APPST.wishes.fresh;
-  if (it.type === "giaVe") return "d" + APPST.drawing.mode;
+  if (it.type === "giaVe") return "d" + APPST.drawing.mode + (S.scene==="xuong"?(creativeState().painting?"|live":"|empty"):"");
   if (it.type === "mayDanhChu") return "s" + APPST.story.myTurn;
   if (it.type === "bangGhim") return "r" + APPST.rules.count;
   if (it.type === "tuKinh") return "museum" + APPST.memory.museum + (S.scene==="bao-tang"?"|art"+creativeState().artworks.length:"");
@@ -957,6 +960,7 @@ function addAppDeco(it, root) {
   if (it.type === "huHenHo" && (APPST.jar.pending || APPST.jar.openNo)) root.add(WM.jarSlip(!!APPST.jar.openNo));
   if (it.type === "loUocMo" && APPST.wishes.fresh) root.add(WM.jarSlip(false));
   if (it.type === "giaVe" && (creativeState().painting || APPST.drawing.mode === "bottom")) { const badge = WM.jarSlip(true); badge.position.y = 1.75; root.add(badge); }
+  if (it.type === "giaVe" && S.scene==="xuong" && creativeState().painting) root.add(easelPreview(creativeState().painting));
   if (it.type === "mayDanhChu" && (creativeState().story || APPST.story.myTurn)) { const badge = WM.jarSlip(true); badge.position.y = 1.55; root.add(badge); }
   if (it.type === "tuKinh") {
     root.add(WM.exhibits(APPST.memory.museum));
@@ -1258,14 +1262,15 @@ async function startCloud() {
   $("#btn-me").hidden = true; $("#trial-pill").textContent = "Đảo chung";
   api.listen(changes=>{
     applyRemote(changes);
-    let needsArt=false;
+    let needsArt=false,needsLive=false;
     for(const c of changes)if(c.id.startsWith("cc_")){
       if(c.data===null)CREATIVE.cloud.delete(c.id);else CREATIVE.cloud.set(c.id,c.data);
       if(c.id.startsWith("cc_art_")||c.id.startsWith("cc_book_"))needsArt=true;
+      if(c.id==="cc_paint_meta"||c.id.startsWith("cc_paint_"))needsLive=true;
     }
     creativeUI.refresh();
-    if(needsArt)for(const it of S.layout.items)if((S.scene==="bao-tang"&&it.type==="tuKinh")||
-      (S.scene==="ngu"&&it.type==="keSach"))refreshView(it);
+    if(needsArt||needsLive)for(const it of S.layout.items)if((S.scene==="bao-tang"&&it.type==="tuKinh")||
+      (S.scene==="ngu"&&it.type==="keSach")||(S.scene==="xuong"&&it.type==="giaVe"&&needsLive))refreshView(it);
   });
   if (api.watchApp) { APPSRC.cloud = true; api.watchApp(d => setAppData(d)); }
   toast("Đã nối đảo chung · " + NAMES[partner().who] + " vào là thấy nhau");
