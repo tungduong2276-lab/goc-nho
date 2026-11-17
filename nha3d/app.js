@@ -939,8 +939,8 @@ function appKey(it) {
   if (it.type === "giaVe") return "d" + APPST.drawing.mode;
   if (it.type === "mayDanhChu") return "s" + APPST.story.myTurn;
   if (it.type === "bangGhim") return "r" + APPST.rules.count;
-  if (it.type === "tuKinh") return "museum" + APPST.memory.museum;
-  if (it.type === "keSach") return "words" + APPST.memory.words;
+  if (it.type === "tuKinh") return "museum" + APPST.memory.museum + (S.scene==="bao-tang"?"|art"+creativeState().artworks.length:"");
+  if (it.type === "keSach") return "words" + APPST.memory.words + (S.scene==="ngu"?"|books"+creativeState().books.length:"");
   if (it.type === "banDo") return "places" + APPST.memory.places;
   if (it.type === "benThuyen") return "kingdom" + APPST.memory.kingdom.pending;
   if (it.type === "cayHoa") return "gifts-entry";
@@ -1234,6 +1234,7 @@ async function startCloud() {
       store.set(sceneKey(sc), E.serialize(S.layouts[sc]));
     }
   }
+  CREATIVE.cloud=CM.readCreativeDocs(all);
   CLOUD.on = true;
   try { LIFE.state=await api.getLife();lifeUI.refresh();api.watchLife(next=>{LIFE.state=next;lifeUI.refresh();}); }
   catch(e){console.warn("Chưa đọc được kho chung",e);}
@@ -1243,7 +1244,17 @@ async function startCloud() {
   useScene(S.scene); buildShell(); rebuildAll();
   const p = partner(); p.stop(); if (p.mode === "sit") p.standUp(); p.root.visible = false;
   $("#btn-me").hidden = true; $("#trial-pill").textContent = "Đảo chung";
-  api.listen(applyRemote);
+  api.listen(changes=>{
+    applyRemote(changes);
+    let needsArt=false;
+    for(const c of changes)if(c.id.startsWith("cc_")){
+      if(c.data===null)CREATIVE.cloud.delete(c.id);else CREATIVE.cloud.set(c.id,c.data);
+      if(c.id.startsWith("cc_art_")||c.id.startsWith("cc_book_"))needsArt=true;
+    }
+    creativeUI.refresh();
+    if(needsArt)for(const it of S.layout.items)if((S.scene==="bao-tang"&&it.type==="tuKinh")||
+      (S.scene==="ngu"&&it.type==="keSach"))refreshView(it);
+  });
   if (api.watchApp) { APPSRC.cloud = true; api.watchApp(d => setAppData(d)); }
   toast("Đã nối đảo chung · " + NAMES[partner().who] + " vào là thấy nhau");
 }
@@ -1294,7 +1305,7 @@ function goScene(id) {
     if (!CLOUD.on) p.place(q.x, q.z, sp.face);
     cat.root.visible = id === "nha" || id === "ngu";
     lifeProps.visible = id === "san";
-    lifeUI.close();
+    lifeUI.close();creativeUI.close();
     $("#btn-edit").hidden = !WD.canDecorate(id);
     document.body.dataset.scene = id;
     cam.target.set(m.x, 0.55, m.z); cam.goal.copy(cam.target); cam.goalPpm = cam.ppm = playPpm();
@@ -1676,6 +1687,9 @@ window.__NHA3D__ = {
   plantKey: uid => views.get(uid)?.key,
   basket: () => ({ ...basket }),
   life: () => JSON.parse(JSON.stringify(LIFE.state)),
+  creative: () => JSON.parse(JSON.stringify(creativeState())),
+  creativeWork: (type,args) => creativeWork(type,args),
+  openCreative: zone => creativeUI.open(zone),
   lifeAction: (op) => doLife(op),
   openLife: zone => lifeUI.open(zone),
   scene: () => S.scene,
