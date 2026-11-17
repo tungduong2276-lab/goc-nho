@@ -19,7 +19,8 @@ test("nét vẽ không nhận màu lạ, mã xấu, điểm NaN hoặc mảng qu
   const c=cleanStroke(dirty);
   assert.equal(c.color,ART_COLORS[0]);assert.equal(c.width,5);
   assert.ok(c.points.length<=90);
-  assert.ok(c.points.flat().every(v=>v>=0&&v<=1));
+  assert.ok(c.points.every(p=>p.x>=0&&p.x<=1&&p.y>=0&&p.y<=1));
+  assert.deepEqual(cleanStroke({...dirty,points:[{x:.25,y:.75}]}).points,[{x:.25,y:.75}]);
   assert.equal(cleanStrokes([dirty], "em").length,0);
 });
 test("vẽ chung: mỗi bên viết document riêng, xuất bản thành tranh bảo tàng; không sửa drawings cũ",()=>{
