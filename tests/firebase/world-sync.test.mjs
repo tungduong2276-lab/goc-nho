@@ -121,3 +121,27 @@ test("W3: the island reads the app's own letters, fridge notes, history and meta
 });
 
 
+
+
+test("W4 rooms: both members share distinct museum/bedroom items without touching the old living-room record",async()=>{
+  const legacy={uid:"a2",type:"sofa",gx:5,gz:6,r:0};
+  const museum={uid:"museum-case-main",type:"tuKinh",gx:6,gz:2,r:0};
+  const bedroom={uid:"bed-bed",type:"giuong",gx:2,gz:2,r:0};
+  const livingRef=wdoc(ALICE,SY.itemId("nha",legacy.uid));
+  await assertSucceeds(setDoc(livingRef,SY.encodeItem("nha",legacy)));
+  await assertSucceeds(setDoc(wdoc(ALICE,SY.itemId("bao-tang",museum.uid)),SY.encodeItem("bao-tang",museum)));
+  await assertSucceeds(setDoc(wdoc(BOB,SY.itemId("ngu",bedroom.uid)),SY.encodeItem("ngu",bedroom)));
+  const fromOther=await assertSucceeds(getDocs(world(BOB)));
+  const museumLayout={items:[]},bedroomLayout={items:[]};
+  const events=fromOther.docs.map(d=>({id:d.id,data:d.data()}));
+  SY.applyItemChanges(museumLayout,"bao-tang",events);
+  SY.applyItemChanges(bedroomLayout,"ngu",events);
+  assert.deepEqual(museumLayout.items,[museum]);
+  assert.deepEqual(bedroomLayout.items,[bedroom]);
+  assert.deepEqual(SY.decodeItem((await getDoc(livingRef)).data()),legacy);
+  await assertFails(getDoc(wdoc(EVE,SY.itemId("bao-tang",museum.uid))));
+  await assertFails(getDoc(wdoc(null,SY.itemId("ngu",bedroom.uid))));
+  await assertSucceeds(setDoc(wdoc(ALICE,SY.presenceId("anh")),{k:"presence",who:"anh",scene:"bao-tang",x:0,z:1,at:Date.now()}));
+  const who=SY.readPresence((await assertSucceeds(getDoc(wdoc(BOB,SY.presenceId("anh"))))).data());
+  assert.equal(who?.scene,"bao-tang");
+});
