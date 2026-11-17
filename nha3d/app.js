@@ -827,6 +827,10 @@ $("#btn-world-guide").onclick=()=>{
  for(const [id,label]of [["kitchen","🍳 Bếp chung"],["pantry","🧺 Kho nguyên liệu"],["coop","🐔 Chuồng gà vịt"],["pond","🐠 Hồ cá"],["pet","🐾 Thú cưng"]]){
    const b=document.createElement("button");b.className="pill";b.textContent=label;b.onclick=()=>{$("#world-guide").hidden=true;lifeUI.open(id);};root.append(b);
  }
+ for(const [id,label]of [["museum","🖼️ Xem tranh đã hoàn thành · bảo tàng"],["books","📚 Truyện đã xuất bản · phòng ngủ"]]){
+   const b=document.createElement("button");b.className="pill";b.textContent=label;
+   b.onclick=()=>{$("#world-guide").hidden=true;creativeUI.open(id);};root.append(b);
+ }
  for(const f of WORLD_FEATURES){const b=document.createElement("button");b.className="pill";b.textContent=f.title+" · "+f.place;b.onclick=()=>{$("#world-guide").hidden=true;if(!f.scene){openApp(f.id);return;}guideIntent=f;guideArrive();};root.append(b);}
  openSheet("#world-guide");
 };
