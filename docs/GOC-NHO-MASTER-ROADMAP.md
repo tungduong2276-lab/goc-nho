@@ -1,5 +1,17 @@
 # GÓC NHỎ — MASTER ROADMAP & AI HANDOFF
 
+## ★ SHARED LIFE LOOP — farm, pantry, cooking, fish, pets (user request 2026-11-17)
+
+User wants practical co-op living in the 3D world: harvest vegetables/fruit, keep livestock, store ingredients, cook together, care for pets and fish. User additionally wants a **single simultaneous drawing canvas** rather than old hidden halves; published paintings go into the 3D museum, finished stories onto the bedroom bookshelf. Preserve all old `drawings`, `story`, `museum`, `pet`, garden and other production records.
+
+**Life candidate branch:** `feature/world-shared-life-20261117` stacked on cozy PR #124. Additive data `couples/{cid}/world/l_home` contains sanitized shared pantry, recipes, animal/fish/pet state. Transactions serialize cooking, feeding and fishing across the two phones; shared harvest reads the plant document and writes harvested plot + pantry in the **same Firestore transaction**, preventing duplicate credits on race. Offline-only mode is explicitly labelled and uses a separate local key; no claim of shared offline sync. The preexisting local harvest basket remains for continuity and flowers remain harvestable, outside edible stock. New 3D static chicken coop and fish pond live in the yard without overwriting saved furniture. The existing stove/fridge/pet bed open native in-scene cooking/pantry/pet controls; the guide exposes all zones.
+
+**Design gate:** cooking sequence has one partner prep and the other finish; solo fallback is available. Carrots, potatoes, pumpkins added to plant catalogue/models; chickens and ducks produce eggs, fishing and stocking/feeding fish, cat/dog/rabbit care. These are initial playable mechanics, not full animated agricultural sims; animal models are still incremental.
+
+**Next separate milestone:** collaborative painting strokes with live partner previews; co-writing with drafts and book release; gallery frames for published drawings and bedroom bookcase, while keeping legacy half-drawings as archival access. Must implement and test separately.
+
+**Release gates:** exact-head static/Node/browser/Firebase Emulator, concurrency and offline retry tests, visual 360/390/430px and two real-phone runs. Do NOT merge/deploy merely on Node unit success.
+
 ## ★ VISUAL DIRECTION — Cozy three-color home (user decision 2026-11-17)
 
 The user wants the first impression and every house room to feel **adorable**, with **mint green, pastel pink and baby blue** as the three principal colours. Build the mood into the real Three.js house, not just the UI or old tab screenshots. Keep dark ink outlines and readable controls. Do not add roses or sunflowers.
