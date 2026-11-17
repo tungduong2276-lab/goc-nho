@@ -760,7 +760,7 @@ function onTap(cx, cy) {
 // ---------- menu hành động ----------
 const actionsEl = $("#actions");
 function showActions(title, list, wx, wy, wz, body) {
-  actionsEl.innerHTML = "";
+  actionsEl.innerHTML = ""; actionsEl._jar = null;
   const t = document.createElement("div"); t.className = "title"; t.textContent = title; actionsEl.appendChild(t);
   // Nội dung đọc ngay trong cảnh (giấy nhắn, lá thăm): luôn là chữ thuần, không bao giờ là HTML.
   actionsEl.classList.toggle("readcard", !!body);
@@ -1104,6 +1104,8 @@ function setJarNames(d) {
   JAR.open = ok(d.open) ? { no: d.open.no, n: d.open.n, name: jarText(d.open.name, 80), todo: Number.isFinite(d.open.todo) ? d.open.todo : null } : null;
   JAR.ready = Number.isFinite(d.ready) ? d.ready : null;
   if (d.got === true) JAR.got = true;
+  // Thẻ lá đang mở mà lá đó đã được chơi/đổi (trên máy này hay máy kia): cất thẻ đi, khỏi che đảo.
+  if (!actionsEl.hidden && actionsEl._jar && actionsEl._jar !== jarCardKey()) hideActions();
   const it = S.layout.items.find(i => i.type === "huHenHo");
   if (it && views.get(it.uid)?.key !== viewKeyOf(it)) refreshView(it);
   if (JAR.wantDraw && JAR.pending && JAR.pending.id !== JAR.wantFrom) { JAR.wantDraw = 0; JAR.wantFrom = null; const id = JAR.pending.id; if (it) slipOut(it, () => { if (JAR.pending && JAR.pending.id === id && !JAR.open) jarCard(it); }); }
@@ -1136,16 +1138,17 @@ function hostActed(d) {
   openApp("hom-nay", 400);
 }
 function jarAct(action) { window.parent.postMessage({ type: "gocnho:act", feature: "hom-nay", action }, location.origin); }
+function jarCardKey() { return JAR.open ? "open" + JAR.open.no : JAR.pending ? "slip" + JAR.pending.id : null; }
 // Đọc lá ngay trên hũ: tên, cách chơi, các thứ đã bốc kèm, người bắt đầu; chơi hoặc đổi lá không cần mở sổ.
 function jarCard(it) {
   const j = JAR, m = me();
   if (j.open) {
     const left = j.open.todo ? `\nCòn ${j.open.todo} việc trong nghi thức: lưu kỷ niệm và thả tim kết thúc buổi.` : "";
-    showActions(`Buổi hẹn #${j.open.no} đang diễn ra`, [["Mở nghi thức · thả tim kết thúc buổi", () => useItem(m, it, () => openApp("hom-nay"))]], ...anchorOf(it), (j.open.name || "Buổi hẹn") + left);
+    showActions(`Buổi hẹn #${j.open.no} đang diễn ra`, [["Mở nghi thức · thả tim kết thúc buổi", () => useItem(m, it, () => openApp("hom-nay"))]], ...anchorOf(it), (j.open.name || "Buổi hẹn") + left); actionsEl._jar = jarCardKey();
     return;
   }
   const p = j.pending;
-  if (p && p.lost) { showActions(`Lá #${p.n}`, [["🔄 Bốc lá khác", () => drawFromJar(it)]], ...anchorOf(it), "Lá này không còn trong hũ (có thể là lá tự tạo đã bị xoá). Bốc lá khác nhé, lượt đổi không bị trừ."); return; }
+  if (p && p.lost) { showActions(`Lá #${p.n}`, [["🔄 Bốc lá khác", () => drawFromJar(it)]], ...anchorOf(it), "Lá này không còn trong hũ (có thể là lá tự tạo đã bị xoá). Bốc lá khác nhé, lượt đổi không bị trừ."); actionsEl._jar = jarCardKey(); return; }
   if (p) {
     const lines = [p.name];
     if (p.special) lines.push("✨ " + p.special + (p.combo ? " · lá thứ hai: " + p.combo : ""));
@@ -1161,7 +1164,7 @@ function jarCard(it) {
       if (p.swaps > 0) acts.push([`🔄 Đổi lá (còn ${p.swaps})`, () => { shakeJar(it); JAR.wantDraw = Date.now(); JAR.wantFrom = p.id; jarAct("swap"); }]);
       acts.push(["📖 Xem trong sổ hũ", () => useItem(m, it, () => openApp("hom-nay"))]);
     }
-    showActions(`Lá ${p.n} · ${p.group || "Hũ hẹn hò"}${p.gold ? " · lá vàng ✨" : ""}`, acts, ...anchorOf(it), lines.join("\n"));
+    showActions(`Lá ${p.n} · ${p.group || "Hũ hẹn hò"}${p.gold ? " · lá vàng ✨" : ""}`, acts, ...anchorOf(it), lines.join("\n")); actionsEl._jar = jarCardKey();
     return;
   }
   openApp("hom-nay");

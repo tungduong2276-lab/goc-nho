@@ -164,7 +164,9 @@ test('the date jar is played on the island: full slip card, play, open-date guid
  await tapJar();await world.getByRole('button',{name:'Đọc lá đang chờ',exact:true}).click();await N('tick',12);
  await world.getByRole('button',{name:'🔄 Bốc lá khác',exact:true}).click();await N('tick',12);
  await expect.poll(()=>page.evaluate(()=>!!S.meta.pending&&!!byN(S.meta.pending.n)),{timeout:8000}).toBe(true);
- await page.evaluate(()=>{S.meta.pending=null;rerender();});
+ await expect(world.locator('#actions .card-body')).toContainText(await page.evaluate(()=>byN(S.meta.pending.n).name),{timeout:8000});
+ // When the slip stops waiting (played on the other phone), its card on this island is put away.
+ await page.evaluate(()=>{S.meta.pending=null;rerender();});await expect(world.locator('#actions')).toBeHidden();
  // The host app decides what the jar offers, even when the island's own copy of the data lags behind.
  await page.evaluate(()=>{S.history.hx={id:'hx',no:7,n:101,aux:[],starter:0,date:new Date().toISOString(),closed:false};rerender();});
  expect((await N('appState')).jar.openNo).toBe(null);
