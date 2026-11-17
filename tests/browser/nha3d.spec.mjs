@@ -189,7 +189,7 @@ test("thế giới mở: đi ra vào cửa nhà, sân có vườn, quầy cà ph
   await expect.poll(async () => { await N("tick", 0.2); return N("scene"); }, { timeout: 40_000 }).toBe("nha");
   await page.keyboard.up("w"); await page.keyboard.up("d");
   await page.evaluate(() => window.__NHA3D__.settle());
-  await expect(page.locator(".doortag")).toHaveText("🚪 Ra sân");
+  // Nhãn cửa trong nhà chỉ hiện khi nhân vật đến gần để không che vùng chạm đồ.
   await expect(page.locator("#btn-edit")).toBeVisible();
   expect((await N("layout")).items.some(i => i.type === "sofa")).toBe(true);
   // Đi ra bằng thảm cửa
@@ -203,7 +203,10 @@ test("thế giới mở: đi ra vào cửa nhà, sân có vườn, quầy cà ph
   await page.locator("#actions button", { hasText: "Vào nhà" }).click();
   await expect.poll(async () => { await N("tick", 0.2); return N("scene"); }, { timeout: 40_000 }).toBe("nha");
   await page.evaluate(() => window.__NHA3D__.settle());
-  // Nhãn cửa cũng đưa ra sân
+  // Kiểm tra affordance thật: tới gần cửa thì nhãn hiện và bấm để ra sân.
+  const door=await N("doors");
+  await N("teleport",door.in.x,door.in.z-0.3);
+  await expect(page.locator(".doortag")).toHaveText("🚪 Ra sân");
   await page.locator(".doortag").click();
   await expect.poll(async () => { await N("tick", 0.2); return N("scene"); }, { timeout: 40_000 }).toBe("san");
   // Lưu cảnh đang đứng qua lần mở sau
