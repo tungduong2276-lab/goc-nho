@@ -50,6 +50,15 @@ Không gian mới: **Hành lang** (không cho trang trí chắn cửa), **Phòng
 
 **Cổng phát hành:** test static/staging/browser/Firestore Emulator; quan sát ảnh 360/390/430px, cửa ra/vào và vùng chạm; nghiệm thu hai điện thoại. Chỉ merge khi đạt và không phát sinh xóa dữ liệu. PR thử nghiệm: xem branch `feature/world-multiroom-museum-20261117`; chưa có xác nhận hoàn tất tại thời điểm viết.
 
+## Đợt C — Sinh hoạt và sáng tác cùng nhau (nhánh thử nghiệm, chưa phát hành)
+
+**Nhánh thử nghiệm xếp chồng trên B:** `feature/world-shared-life-20261117` và `feature/world-live-creative-20261117`. **Chưa merge vào main, chưa hoàn tất nghiệm thu hai điện thoại.**
+
+- **Bếp và nông trại:** Luống rau/cây thực phẩm thêm cà rốt, khoai tây, bí ngô; thu hoạch chung được ghi vào `world/l_home` bằng transaction đồng thời bỏ cây khỏi luống, tránh hai máy cộng sản phẩm hai lần. Còn hoa cũ thì chỉ thu hoa, không đưa vào thực phẩm. Một người sơ chế món, người kia hoàn tất món và cả hai có thể ăn. Gà/vịt cung cấp trứng, cá câu được có thể cất kho/thả vào hồ; thú cưng có thức ăn và trò chơi. Các bảng tương tác nằm ngay trên nhà 3D, có phân biệt chơi tại máy / Firebase chung.
+- **Vẽ mới:** Một canvas với tất cả nét của hai người; họ nhìn nét mới thông qua snapshot Firestore và nháp nét đang vẽ được đẩy theo nhịp. Bức vẽ xuất bản là `world/cc_art_*`, xuất hiện thành khung tranh trên tủ kính trong Bảo tàng và mở được toàn bộ trong gallery. Không viết vào collection `drawings` (các tranh chia nửa cũ vẫn đọc từ công cụ lưu trữ riêng).
+- **Truyện mới:** Hai người cùng đọc, nhìn bản nháp văn bản theo từng người và ghi đoạn tiếp theo vào bản thảo chung. Truyện được cả hai góp đoạn mới xuất bản thành `world/cc_book_*`; có sách ở kệ phòng ngủ và nút mở đọc toàn bộ. Không ghi đè `story` cũ.
+- **Giới hạn kỹ thuật:** Cảnh chuồng/hồ và gáy sách đã dựng, chưa phải AI sinh hoạt hoặc động vật hoạt hình sâu. “Thời gian thực” là cập nhật Firestore có debounce và độ trễ mạng, không phải video/chia sẻ pixel tức thời. Không tự chuyển kho/đồ cũ vào kho mới, không giả vờ offline state đã được đồng bộ chung. Cần kiểm tra race conditions, privacy, kích thước tài liệu, FPS trên máy thật và mượt mà của canvas trước khi phát hành.
+
 ## Thứ tự sau đợt A
 
 1. ~~Tủ lạnh, hộp thư, hũ: tương tác vật thể rõ hơn, vẫn dùng id/schema cũ.~~ Xong 2026-11-17: chạm từng giấy trên cửa tủ (đọc, thả tim, đáp), phong bì bay ra từ hộp thư, lắc hũ bốc lá hiện tên ngay trong cảnh. Đảo hẹn hò đã gỡ theo yêu cầu người dùng.
