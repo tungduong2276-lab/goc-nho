@@ -16,8 +16,12 @@ export function cleanStroke(raw){
   if(!raw||!Array.isArray(raw.points)||raw.points.length<1||!WHO.has(raw.by))return null;
   const color=ART_COLORS.includes(raw.color)?raw.color:ART_COLORS[0];
   const width=[2,5,9].includes(raw.width)?raw.width:5;
-  const points=raw.points.slice(0,MAX_POINTS).filter(p=>Array.isArray(p)&&p.length===2&&Number.isFinite(p[0])&&Number.isFinite(p[1]))
-    .map(p=>[n(p[0]),n(p[1])]);
+  // Firestore cấm nested arrays: lưu {x,y} thay vì [[x,y]]. Vẫn đọc tuple từ bản nháp local cũ.
+  const points=raw.points.slice(0,MAX_POINTS).map(p=>{
+    if(Array.isArray(p)&&p.length===2&&Number.isFinite(p[0])&&Number.isFinite(p[1]))return {x:n(p[0]),y:n(p[1])};
+    if(p&&typeof p==="object"&&Number.isFinite(p.x)&&Number.isFinite(p.y))return {x:n(p.x),y:n(p.y)};
+    return null;
+  }).filter(Boolean);
   if(!points.length)return null;
   return {id:validId(raw.id)?raw.id:"s"+Math.max(0,Math.floor(raw.at||0)).toString(36),by:raw.by,
     at:Number.isFinite(raw.at)?raw.at:0,color,width,points};
