@@ -27,7 +27,7 @@ export const validWorldMessage=(event,frame,origin)=>event.source===frame&&event
 // A record id the world may point at (a note or letter to highlight). Never HTML or a selector.
 export const focusId=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(v)?v:null;
 // The only actions the world may ask the host to run, each through the app's existing handler.
-export const WORLD_ACTIONS=Object.freeze({'tu-lanh':['heart'],'hom-nay':['draw']});
+export const WORLD_ACTIONS=Object.freeze({'tu-lanh':['heart'],'hom-nay':['draw','play','swap']});
 export function worldAction(d){
  if(!d||typeof d.feature!=='string'||typeof d.action!=='string')return null;
  if(!(WORLD_ACTIONS[d.feature]||[]).includes(d.action))return null;

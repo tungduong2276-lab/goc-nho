@@ -52,19 +52,19 @@ test("the jar has the new replayable cards without clashing with saved custom ca
   await openAs(page, 0, "hom-nay");
   const jar = await page.evaluate(() => {
     const builtIn = GAMES.map(g => g.n);
-    return { count: GAMES.length, added: builtIn.filter(n => n > 30), clash: builtIn.filter(n => n > 30 && n < 101),
+    return { count: GAMES.length, added: builtIn.filter(n => n > 30), clash: builtIn.filter(n => n > 30 && n < 101), clash3: builtIn.filter(n => n > 122 && n < 201),
       noVariety: GAMES.filter(g => !g.joker && !g.aux.length).map(g => g.n),
       thin: GAMES.flatMap(g => g.aux.filter(a => a.list && a.list.length < (a.count || 1) + 3).map(() => g.n)),
       lastIsJoker: !!GAMES[GAMES.length - 1].joker, unique: new Set(builtIn).size === builtIn.length,
       groups: [...new Set(GAMES.map(g => g.g))].every(g => GROUPS[g]),
       topics: [STORY_START, TWISTS, DRAW_THEMES].map(a => [a.length, new Set(a).size]) };
   });
-  expect(jar.count).toBe(52);
-  expect(jar.added).toHaveLength(22);
-  expect(jar).toMatchObject({ clash: [], noVariety: [], thin: [], lastIsJoker: true, unique: true, groups: true });
+  expect(jar.count).toBe(76);
+  expect(jar.added).toHaveLength(46);
+  expect(jar).toMatchObject({ clash: [], clash3: [], noVariety: [], thin: [], lastIsJoker: true, unique: true, groups: true });
   expect(jar.topics).toEqual([[28, 28], [32, 32], [44, 44]]);
   await page.locator("details:has(#allList) summary").click();
-  await expect(page.locator("#allList li")).toHaveCount(52);
+  await expect(page.locator("#allList li")).toHaveCount(76);
 });
 
 test("home tab links into the 3D house as the person holding the phone", async ({ page }) => {
