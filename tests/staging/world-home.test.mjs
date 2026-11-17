@@ -34,7 +34,8 @@ test('the world may only ask for two in-scene actions, with a plain record id', 
  const { worldAction, focusId } = await import('../../src/world-features.mjs');
  assert.deepEqual(worldAction({ feature: 'tu-lanh', action: 'heart', id: 'f1' }), { feature: 'tu-lanh', action: 'heart', id: 'f1' });
  assert.deepEqual(worldAction({ feature: 'hom-nay', action: 'draw' }), { feature: 'hom-nay', action: 'draw', id: null });
- for (const bad of [{ feature: 'tu-lanh', action: 'delete', id: 'f1' }, { feature: 'tu-lanh', action: 'heart' }, { feature: 'tu-lanh', action: 'heart', id: '<img>' }, { feature: 'settings', action: 'draw' }, null, { feature: 1, action: 'heart' }])
+ for (const action of ['play', 'swap']) assert.deepEqual(worldAction({ feature: 'hom-nay', action }), { feature: 'hom-nay', action, id: null });
+ for (const bad of [{ feature: 'tu-lanh', action: 'delete', id: 'f1' }, { feature: 'tu-lanh', action: 'heart' }, { feature: 'tu-lanh', action: 'heart', id: '<img>' }, { feature: 'settings', action: 'draw' }, { feature: 'hom-nay', action: 'close' }, { feature: 'tu-lanh', action: 'play' }, null, { feature: 1, action: 'heart' }])
   assert.equal(worldAction(bad), null);
  assert.equal(focusId('l1'), 'l1'); assert.equal(focusId('a"]'), null); assert.equal(focusId('x'.repeat(65)), null); assert.equal(focusId(5), null);
 });

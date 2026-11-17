@@ -114,6 +114,31 @@ test('fridge notes, envelopes and the date jar work on the objects through the a
  const name=await page.evaluate(()=>byN(S.meta.pending.n).name);
  await expect(world.locator('#actions .card-body')).toContainText(name,{timeout:8000});
  expect((await N('jarNames')).pending.name).toBe(name);
+ // The card shows how to play, and the slip can be played right on the jar through the app's own handler.
+ const desc=await page.evaluate(()=>byN(S.meta.pending.n).desc);await expect(world.locator('#actions .card-body')).toContainText(desc.slice(0,30));
+ mkdirSync('test-results/world-home',{recursive:true});await page.screenshot({path:'test-results/world-home/jar-card.png'});
+ await world.getByRole('button',{name:'▶ Chơi lá này',exact:true}).click();
+ await expect.poll(()=>page.evaluate(()=>!S.meta.pending&&!!openDate())).toBe(true);
+ await expect.poll(()=>N('jarNames').then(j=>j.open&&j.open.no)).toBe(1);
+ const tapJar=async()=>{await N('nearItem',jar.uid);await N('settle');await N('tick',2);await N('snapCam');let at=null;for(const f of [.5,.3,.7]){const p=await N('screenOfItem',jar.uid,f);if(await N('pickAt',...p)===jar.uid){at=p;break;}}expect(at).toBeTruthy();await world.locator('#world').click({position:{x:at[0],y:at[1]}});};
+ await tapJar();await expect(world.getByRole('button',{name:'Buổi hẹn #1 đang diễn ra',exact:true})).toBeVisible();
+ // A draw while a date is open is refused with a reason, and the jar opens the ritual instead of a dead end.
+ await frame.evaluate(()=>parent.postMessage({type:'gocnho:act',feature:'hom-nay',action:'draw'},location.origin));
+ await expect(page.locator('#world-surface-title')).toHaveText('Hũ hẹn hò',{timeout:8000});await expect(page.locator('#rituals')).toContainText('Buổi hẹn #1');
+ await page.locator('#closeNoRate').click();await expect.poll(()=>page.evaluate(()=>!openDate())).toBe(true);
+ await page.getByRole('button',{name:'Đóng đồ dùng, về đảo'}).click();
+ // A waiting slip whose card no longer exists used to leave an empty screen; it can now be redrawn from the jar.
+ await page.evaluate(()=>{S.meta.pending={id:'lostslip',n:999,aux:[],starter:0};rerender();});
+ await expect.poll(()=>N('jarNames').then(j=>j.pending&&j.pending.lost)).toBe(true);
+ await tapJar();await world.getByRole('button',{name:'Đọc lá đang chờ',exact:true}).click();await N('tick',12);
+ await world.getByRole('button',{name:'🔄 Bốc lá khác',exact:true}).click();await N('tick',12);
+ await expect.poll(()=>page.evaluate(()=>!!S.meta.pending&&!!byN(S.meta.pending.n)),{timeout:8000}).toBe(true);
+ await page.evaluate(()=>{S.meta.pending=null;rerender();});
+ // The host app decides what the jar offers, even when the island's own copy of the data lags behind.
+ await page.evaluate(()=>{S.history.hx={id:'hx',no:7,n:101,aux:[],starter:0,date:new Date().toISOString(),closed:false};rerender();});
+ expect((await N('appState')).jar.openNo).toBe(null);
+ await tapJar();await expect(world.getByRole('button',{name:'Buổi hẹn #7 đang diễn ra',exact:true})).toBeVisible();
+ await page.evaluate(()=>{delete S.history.hx;rerender();});
  // Mailbox: opening it lets envelopes out; the sealed one stays sealed, the open one goes to that letter.
  await N('goScene','san');await N('settle');await N('pauseAI',true);
  const box=(await N('layout')).items.find(i=>i.type==='hopThu');await N('nearItem',box.uid);await N('settle');await N('tick',2);await N('snapCam');

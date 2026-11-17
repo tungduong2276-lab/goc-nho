@@ -35,7 +35,7 @@ const APPSRC = { cloud: false };
 const APPDATA = { letters: {}, fridge: {}, history: {}, meta: null, wishes: {}, drawings: {}, story: {}, rules: {}, ...Object.fromEntries(AD.MEMORY_COLLECTIONS.map(k => [k, {}])) };
 const APPST = { known: false, mail: { unread: 0, sealed: 0, total: 0 }, letters: [], fridge: { count: 0, fresh: 0, shown: [] }, jar: { pending: false, openNo: null, done: 0 }, jarN: { pendingN: null, gold: false, openN: null } };
 const mailOpen = new Set(); // hộp thư đang mở trên đảo (phong bì bay ra)
-const JAR = { pending: null, open: null, wantDraw: 0 }; // tên lá do app gốc gửi sang
+const JAR = { got: false, pending: null, open: null, ready: null, wantDraw: 0, wantFrom: null }; // lá do app gốc gửi sang (app gốc là nguồn đúng khi đảo nằm trong app)
 Object.assign(APPST, { wishes: AD.wishesState({}, null), drawing: AD.drawingState({}, null), story: AD.storyState({}, null), rules: AD.rulesState({}) });
 APPST.memory = AD.memoryState({}, null);
 const APP_TYPES = new Set(["hopThu", "tuLanh", "huHenHo", "loUocMo", "giaVe", "mayDanhChu", "bangGhim", "tuKinh", "keSach", "banDo", "benThuyen", "cayHoa"]);
@@ -954,13 +954,13 @@ function appKey(it) {
   if (it.type === "banDo") return "places" + APPST.memory.places;
   if (it.type === "benThuyen") return "kingdom" + APPST.memory.kingdom.pending;
   if (it.type === "cayHoa") return "gifts-entry";
-  return "j" + APPST.jar.pending + APPST.jar.openNo;
+  const j = jarNow(); return "j" + j.pending + j.openNo;
 }
 function addAppDeco(it, root) {
   if (it.type === "hopThu" && APPST.mail.unread > 0 && !mailOpen.has(it.uid)) root.add(WM.letterBadge());
   if (it.type === "hopThu" && mailOpen.has(it.uid)) { const env = WM.mailEnvelopes(APPST.letters); env.rotation.y = Math.atan2(CAMDIR.x, CAMDIR.z) - E.itemPose(it).ry; root.add(env); } // phong bì luôn bay về phía người xem
   if (it.type === "tuLanh" && APPST.known && stateOf(it) === "trong") root.add(WM.fridgeNotes(APPST.fridge.shown));
-  if (it.type === "huHenHo" && (APPST.jar.pending || APPST.jar.openNo)) root.add(WM.jarSlip(!!APPST.jar.openNo));
+  if (it.type === "huHenHo") { const j = jarNow(); if (j.pending || j.openNo) root.add(WM.jarSlip(!!j.openNo)); }
   if (it.type === "loUocMo" && APPST.wishes.fresh) root.add(WM.jarSlip(false));
   if (it.type === "giaVe" && (creativeState().painting || APPST.drawing.mode === "bottom")) { const badge = WM.jarSlip(true); badge.position.y = 1.75; root.add(badge); }
   if (it.type === "giaVe" && S.scene==="xuong" && creativeState().painting) root.add(easelPreview(creativeState().painting));
@@ -989,9 +989,9 @@ function appMenu(it, use, list) {
     return;
   }
   if (it.type === "huHenHo") {
-    const j = APPST.jar;
-    if (j.openNo) list.push([`Buổi hẹn #${j.openNo}: xem nghi thức`, () => useItem(m, it, () => jarCard(it))]);
-    else if (j.pending) list.push(["Đọc lá đang chờ", () => useItem(m, it, () => jarCard(it))]);
+    const j = jarNow();
+    if (j.openNo) list.push([`Buổi hẹn #${j.openNo} đang diễn ra`, () => useItem(m, it, () => jarCard(it))]);
+    else if (j.pending) list.push([JAR.pending?.name && !JAR.pending.lost ? `Lá đang chờ: ${JAR.pending.name}` : "Đọc lá đang chờ", () => useItem(m, it, () => jarCard(it))]);
     else list.push(["Lắc hũ, bốc một lá", () => useItem(m, it, () => drawFromJar(it))]);
     list.push(["Mở sổ hũ hẹn hò", () => useItem(m, it, () => openApp("hom-nay"))]);
     return;
@@ -1083,27 +1083,97 @@ function heartNote(it, n) {
   if (hosted()) { window.parent.postMessage({ type: "gocnho:act", feature: "tu-lanh", action: "heart", id: n.id }, location.origin); return; }
   openApp("tu-lanh", 0, { focus: n.id });
 }
+// Khi đảo nằm trong app, app gốc là nguồn đúng cho hũ (nó cũng là nơi thực sự bốc lá).
+// Trước đây menu đọc trạng thái hũ từ kết nối Firebase riêng của đảo; khi kết nối đó chậm hoặc lỗi,
+// hũ vẫn mời "Lắc hũ" trong khi app đang có buổi hẹn mở, nên bấm vào chỉ nhận "chưa bốc được".
+function jarNow() {
+  if (JAR.got && window.parent !== window) return { pending: !!JAR.pending, openNo: JAR.open ? JAR.open.no : null };
+  return APPST.jar;
+}
+const jarText = (v, n) => String(v ?? "").slice(0, n);
 function setJarNames(d) {
   const ok = x => x && typeof x === "object" && Number.isFinite(x.n);
-  JAR.pending = ok(d.pending) ? { n: d.pending.n, name: String(d.pending.name || "").slice(0, 80), gold: !!d.pending.gold, special: d.pending.special ? String(d.pending.special).slice(0, 60) : null } : null;
-  JAR.open = ok(d.open) ? { no: d.open.no, n: d.open.n, name: String(d.open.name || "").slice(0, 80) } : null;
-  if (JAR.wantDraw && JAR.pending) { const it = S.layout.items.find(i => i.type === "huHenHo"); JAR.wantDraw = 0; if (it) slipOut(it, () => jarCard(it)); }
+  const aux = a => Array.isArray(a) ? a.slice(0, 4).filter(x => x && typeof x === "object" && Array.isArray(x.values))
+    .map(x => ({ label: jarText(x.label, 60), values: x.values.slice(0, 6).map(v => jarText(v, 80)) })) : [];
+  const before = JAR.pending?.id || null, hadOpen = JAR.open?.no || null;
+  const p = d.pending;
+  JAR.pending = ok(p) ? { id: jarText(p.id, 40), n: p.n, name: jarText(p.name, 80), desc: jarText(p.desc, 320), group: jarText(p.group, 30), aux: aux(p.aux),
+    secret: !!p.secret, starter: p.starter ? jarText(p.starter, 30) : null, gold: !!p.gold, bonus: p.bonus ? jarText(p.bonus, 120) : null,
+    special: p.special ? jarText(p.special, 60) : null, combo: p.combo ? jarText(p.combo, 80) : null, joker: !!p.joker, lost: !!p.lost,
+    swaps: Number.isFinite(p.swaps) ? Math.max(0, Math.min(99, p.swaps)) : 0 } : null;
+  JAR.open = ok(d.open) ? { no: d.open.no, n: d.open.n, name: jarText(d.open.name, 80), todo: Number.isFinite(d.open.todo) ? d.open.todo : null } : null;
+  JAR.ready = Number.isFinite(d.ready) ? d.ready : null;
+  if (d.got === true) JAR.got = true;
+  const it = S.layout.items.find(i => i.type === "huHenHo");
+  if (it && views.get(it.uid)?.key !== viewKeyOf(it)) refreshView(it);
+  if (JAR.wantDraw && JAR.pending && JAR.pending.id !== JAR.wantFrom) { JAR.wantDraw = 0; JAR.wantFrom = null; if (it) slipOut(it, () => { if (JAR.pending || JAR.open) jarCard(it); }); }
+  if (hadOpen === null && JAR.open && it && before) floatAt(...(() => { const q = E.itemPose(it); return [q.x, 1.6, q.z]; })(), "💞", 4);
 }
+const JAR_WHY = {
+  open: () => `Buổi hẹn #${JAR.open?.no || ""} vẫn đang diễn ra · thả tim kết thúc buổi rồi bốc lá mới nhé`,
+  pending: () => "Đang có một lá chờ chơi rồi nè",
+  empty: () => "Hũ tạm hết lá: các lá vừa chơi đang nghỉ",
+  noswap: () => "Mùa này hết lượt đổi lá rồi",
+  joker: () => "Lá Joker: mở sổ hũ để tự chọn lá",
+  who: () => "Chọn xem điện thoại này của ai trước đã nhé",
+  none: () => "Hũ đã đổi trên máy kia · xem lại nhé",
+  lost: () => "Lá này không còn trong hũ · bốc lá khác nhé"
+};
 function hostActed(d) {
-  if (d.feature === "hom-nay" && !d.ok) { JAR.wantDraw = 0; toast("Hũ chưa bốc được lúc này · mở sổ hũ xem nhé"); }
+  if (d.feature !== "hom-nay") return;
+  const it = S.layout.items.find(i => i.type === "huHenHo");
+  if (d.ok) {
+    if (d.action === "play" && it) { const p = E.itemPose(it); floatAt(p.x, 1.4, p.z, "💗", 5); me().emote?.("wave", 1.2); }
+    return;
+  }
+  JAR.wantDraw = 0; JAR.wantFrom = null;
+  const why = (JAR_WHY[d.reason] || (() => "Hũ chưa làm được lúc này"))();
+  toast(why);
+  // Không để người chơi đứng trước hũ mà không biết làm gì: luôn mở đúng chỗ giải quyết được.
+  if (d.reason === "pending" && it) { jarCard(it); return; }
+  if (d.reason === "noswap" && it) { jarCard(it); return; }
+  if (d.reason === "empty") return;
+  openApp("hom-nay", 400);
 }
+function jarAct(action) { window.parent.postMessage({ type: "gocnho:act", feature: "hom-nay", action }, location.origin); }
+// Đọc lá ngay trên hũ: tên, cách chơi, các thứ đã bốc kèm, người bắt đầu; chơi hoặc đổi lá không cần mở sổ.
 function jarCard(it) {
   const j = JAR, m = me();
-  if (j.open) { showActions(`Buổi hẹn #${j.open.no}`, [["Mở nghi thức buổi hẹn", () => useItem(m, it, () => openApp("hom-nay"))]], ...anchorOf(it), j.open.name || "Buổi hẹn đang diễn ra"); return; }
-  if (j.pending) { showActions(`Lá #${j.pending.n}${j.pending.gold ? " · lá vàng ✨" : ""}`, [["Chơi lá này hoặc đổi lá", () => useItem(m, it, () => openApp("hom-nay"))]], ...anchorOf(it), (j.pending.special ? j.pending.special + " · " : "") + (j.pending.name || "Một buổi hẹn bất ngờ")); return; }
+  if (j.open) {
+    const left = j.open.todo ? `\nCòn ${j.open.todo} việc trong nghi thức: lưu kỷ niệm và thả tim kết thúc buổi.` : "";
+    showActions(`Buổi hẹn #${j.open.no} đang diễn ra`, [["Mở nghi thức · thả tim kết thúc buổi", () => useItem(m, it, () => openApp("hom-nay"))]], ...anchorOf(it), (j.open.name || "Buổi hẹn") + left);
+    return;
+  }
+  const p = j.pending;
+  if (p && p.lost) { showActions(`Lá #${p.n}`, [["🔄 Bốc lá khác", () => drawFromJar(it)]], ...anchorOf(it), "Lá này không còn trong hũ (có thể là lá tự tạo đã bị xoá). Bốc lá khác nhé, lượt đổi không bị trừ."); return; }
+  if (p) {
+    const lines = [p.name];
+    if (p.special) lines.push("✨ " + p.special + (p.combo ? " · lá thứ hai: " + p.combo : ""));
+    if (p.desc) lines.push("", p.desc);
+    for (const a of p.aux) lines.push("", a.label + ":", ...a.values.map(v => "• " + v));
+    if (p.secret) lines.push("", "🤫 Có phần bí mật riêng cho mỗi người · mở trong sổ hũ");
+    if (p.bonus) lines.push("", "🎁 Thưởng lá vàng: " + p.bonus);
+    if (p.starter) lines.push("", "Người bắt đầu: " + p.starter);
+    const acts = [];
+    if (p.joker) acts.push(["🃏 Tự chọn lá trong sổ hũ", () => useItem(m, it, () => openApp("hom-nay"))]);
+    else {
+      acts.push(["▶ Chơi lá này", () => jarAct("play")]);
+      if (p.swaps > 0) acts.push([`🔄 Đổi lá (còn ${p.swaps})`, () => { shakeJar(it); JAR.wantDraw = Date.now(); JAR.wantFrom = p.id; jarAct("swap"); }]);
+      acts.push(["📖 Xem trong sổ hũ", () => useItem(m, it, () => openApp("hom-nay"))]);
+    }
+    showActions(`Lá ${p.n} · ${p.group || "Hũ hẹn hò"}${p.gold ? " · lá vàng ✨" : ""}`, acts, ...anchorOf(it), lines.join("\n"));
+    return;
+  }
   openApp("hom-nay");
 }
 function drawFromJar(it) {
   shakeJar(it);
   if (!hosted() || appMe() === null) { openApp("hom-nay", 700); return; }
-  JAR.wantDraw = Date.now();
-  setTimeout(() => window.parent.postMessage({ type: "gocnho:act", feature: "hom-nay", action: "draw" }, location.origin), 500);
-  setTimeout(() => { if (JAR.wantDraw && Date.now() - JAR.wantDraw > 5000) { JAR.wantDraw = 0; openApp("hom-nay"); } }, 5200);
+  JAR.wantDraw = Date.now(); JAR.wantFrom = JAR.pending?.id || null;
+  try { navigator.vibrate?.(25); } catch { /* không rung được thì thôi */ }
+  setTimeout(() => jarAct("draw"), 500);
+  // Mạng chậm (Firebase giao dịch lâu): sau 8 giây mở sổ hũ để thấy lá đã bốc.
+  setTimeout(() => { if (JAR.wantDraw && Date.now() - JAR.wantDraw > 7500) { JAR.wantDraw = 0; openApp("hom-nay"); } }, 8000);
 }
 // Lá thăm bay vọt khỏi miệng hũ, xoay rồi dừng trên cao; lá vàng lơ lửng ở lại như mọi khi.
 function slipOut(it, then) {

@@ -1,5 +1,23 @@
 # GÓC NHỎ — MASTER ROADMAP & AI HANDOFF
 
+## ★ Hũ hẹn hò — sửa lỗi bốc lá, 24 lá mới, chơi ngay trên hũ (2026-11-18)
+
+**User report:** "bốc lá hẹn hò không thực hiện được"; asked to fix bugs, add more and more fun cards, improve UX.
+
+**Root causes fixed (branch `fix/jar-draw-more-cards-20261118`):**
+- The 3D jar menu read jar state from the island's *own* Firebase listener (`APPST.jar`, via `cloud.watchApp`), while the draw runs in the host app. When that listener lagged or failed, or a date was still open (played but never closed with hearts), the jar kept offering "Lắc hũ" and the host refused with a vague toast. In hosted mode the host's `gocnho:jar` message (now with `got:true`) is the source of truth (`jarNow()` in `nha3d/app.js`).
+- A refused action was a dead end. `api.act` now returns `{ok, reason}` (`pending|open|empty|noswap|joker|lost|none`), `world-home.js` always answers (`reason:'who'` when the phone owner is unknown or gated), and the island explains and opens the place that resolves it (ritual for an open date, the slip card for a waiting slip).
+- A waiting slip whose card no longer exists (e.g. a deleted custom card) rendered an empty jar screen with no button. It now shows "Lá này không còn trong hũ" with "Bốc lá khác" (`redrawLost`, no swap charged); history untouched.
+- `drawNow()` returns an outcome and toasts when all cards are cooling down.
+
+**UX:** the jar card on the island shows the full slip (name, how to play, drawn extras, bonus, starter; secret parts never leave the host) and offers **▶ Chơi lá này** and **🔄 Đổi lá** directly (new bridge actions `hom-nay/play`, `hom-nay/swap`, which call the same `playPending()`/`swapPending()` handlers as the jar screen). Menu labels show the waiting card's name and "Buổi hẹn #N đang diễn ra"; the tool's hint shows how many cards are ready.
+
+**Cards:** 24 new replayable cards `n:201–224` (numbers start at 201 because saved custom cards can already use 123+), Joker stays last, two use the existing timer, one uses the per-person secret aux. Built-in total 76. No rose/sunflower content.
+
+**Data/safety:** no schema, Rules or migration change; `meta.pending` / `history` written by the same handlers. Cache `goc-nho-v30`.
+
+**Verified here:** static checks, 111 Node staging tests, world-home + dates/kingdom + all-tabs browser specs (Chromium, synthetic local data) including new tests: play on the jar, refused draw while a date is open opens the ritual, lost-slip recovery, host-authoritative menu when the island's copy lags. The other non-emulator browser specs also pass locally except two `nha3d-multiroom` two-tab lab tests that fail identically on unchanged `main` in this sandbox. Firebase Emulator suites were not run in this session (no emulator available); rely on CI. **Not verified:** live Firebase on two real phones.
+
 ## ★ LIVE CO-CREATION — shared canvas, visible drafts, authored room artefacts (2026-11-17)
 
 **Latest creative requirement:** Both people can paint on ONE canvas and see each other's evolving strokes; abandon the hidden top/bottom half workflow for **new paintings**. Completed paintings enter a real 3D-framed gallery in the museum. Co-written story drafts and paragraphs are visible to both without forced turn-taking; when both have contributed and the story is published it becomes an interactive book in the bedroom bookshelf. Keep all historic drawings and stories readable, never auto-merge or delete their original Firestore documents.
