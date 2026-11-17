@@ -1,8 +1,10 @@
 // W2 — nối đảo 3D với Firebase của Góc Nhỏ (SDK compat 10.12.2 nạp trong index.html, cùng bản với app chính).
 // Dùng lại phiên đăng nhập của app (cùng trang web nên Firebase Auth đã nhớ). Không đăng nhập được thì trả null
 // và đảo chạy như bản thử chỉ lưu trên máy.
-import { COLLECTION, itemId, metaId, presenceId, encodeItem, encodeWater } from "./sync.mjs";
+import { COLLECTION, itemId, metaId, presenceId, encodeItem, encodeWater, decodeItem as decodeCrop } from "./sync.mjs";
 import { MEMORY_COLLECTIONS } from "./appdata.mjs";
+import { status as cropStatus } from "./garden.mjs";
+import { sanitizeLife, applyLife } from "./life.mjs";
 
 function waitForUser(auth, ms = 8000) {
   return new Promise(resolve => {
@@ -49,6 +51,40 @@ export async function connectCloud() {
     },
     setMeta(scene, wall, floor) { return swallow(col.doc(metaId(scene)).set({ k: "meta", scene, wall, floor, ts: ts() })); },
     setPresence(who, data) { return swallow(col.doc(presenceId(who)).set({ ...data, k: "presence", who, ts: ts() })); },
+    // Hoạt động sinh hoạt dùng tài liệu riêng trong collection world vốn đã được phân quyền cho cặp đôi.
+    // Đảm bảo không mất nguyên liệu nếu hai máy nấu/thu hoạch cùng lúc.
+    getLife() { return col.doc("l_home").get().then(s => sanitizeLife(s.exists ? s.data().state : null)); },
+    watchLife(cb) {
+      return col.doc("l_home").onSnapshot(s => cb(sanitizeLife(s.exists ? s.data().state : null)),
+        e => console.warn("Kho chung chưa đồng bộ", e));
+    },
+    actLife(op, who, at = Date.now()) {
+      const ref = col.doc("l_home");
+      return fs.runTransaction(async tx => {
+        const snap = await tx.get(ref);
+        const result = applyLife(snap.exists ? snap.data().state : null, op, who, at);
+        if(result.ok) tx.set(ref, { k:"life", state:result.next, ts:ts() });
+        return result;
+      });
+    },
+    harvestLife(scene, uid, who, at = Date.now()) {
+      if(!["san","nha"].includes(scene)||!/^[\\w-]{1,64}$/.test(uid)) return Promise.resolve({ok:false,message:"Luống không hợp lệ"});
+      const ref = col.doc(itemId(scene, uid)), life = col.doc("l_home");
+      return fs.runTransaction(async tx => {
+        const [cropSnap, lifeSnap] = await Promise.all([tx.get(ref), tx.get(life)]);
+        if(!cropSnap.exists) return {ok:false,message:"Cây chưa được đồng bộ lên vườn chung"};
+        const it = decodeCrop(cropSnap.data());
+        if(!it || !["luongTrong","chauTrong"].includes(it.type) || !it.plant) return {ok:false,message:"Luống đang trống"};
+        const status = cropStatus(it.plant, at);
+        if(!status.ripe) return {ok:false,message:"Cây chưa chín, hai đứa tưới thêm nhé"};
+        const result = applyLife(lifeSnap.exists ? lifeSnap.data().state : null,
+          {type:"harvest",sp:status.sp,amount:it.type==="luongTrong"?3:1},who,at);
+        if(!result.ok)return result;
+        tx.set(life, {k:"life",state:result.next,ts:ts()});
+        tx.set(ref, {...encodeItem(scene,{...it,plant:undefined},true),ts:ts()});
+        return {...result, uid, sp:status.sp};
+      });
+    },
     // W3: chỉ ĐỌC dữ liệu của app (thư, tủ lạnh, hũ) để đồ vật 3D hiện đúng trạng thái. Không ghi gì vào đây.
     watchApp(cb) {
       const base = `couples/${cid}/`, data = { letters: {}, fridge: {}, history: {}, meta: null, wishes: {}, drawings: {}, story: {}, rules: {}, ...Object.fromEntries(MEMORY_COLLECTIONS.map(k => [k, {}])) };
