@@ -18,7 +18,7 @@ export const RECIPES=Object.freeze({
 });
 const WHO=new Set(["anh","em"]),MAX_STOCK=999,MAX_MEALS=24;
 const number=(n,upper=MAX_STOCK)=>Number.isInteger(n)&&n>=0?Math.min(n,upper):0;
-export const INITIAL_LIFE=Object.freeze({v:1,stock:{},hens:{ga:0,vit:0},fish:{count:2,fedAt:0,caughtAt:0},pet:{kind:"meo",name:"Miu",fedAt:0,playedAt:0},pending:null,meals:[]});
+export const INITIAL_LIFE=Object.freeze({v:1,stock:{xalach:3,cachua:2,dau:3,carot:1,khoai:1,ca:1},hens:{ga:0,vit:0},fish:{count:2,fedAt:0,caughtAt:0},pet:{kind:"meo",name:"Miu",fedAt:0,playedAt:0},pending:null,meals:[]});
 export function sanitizeLife(raw){
   const d=raw&&raw.v===1?raw:INITIAL_LIFE,stock={};
   for(const k of Object.keys(FOOD))stock[k]=number(d.stock?.[k]);
