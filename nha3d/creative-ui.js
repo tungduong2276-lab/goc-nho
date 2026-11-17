@@ -17,7 +17,7 @@ function drawStrokes(canvas,all){
 }
 const ordered=strokes=>[...strokes].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id));
 
-export function createCreativeUI({getState,work,who,online}){
+export function createCreativeUI({getState,work,who,online,connected=online}){
   const el=document.createElement("section");el.id="creative-sheet";el.className="sheet creative-sheet";
   el.setAttribute("aria-label","Xưởng sáng tác của hai đứa");el.setAttribute("role","dialog");el.hidden=true;document.body.append(el);
   let zone="paint",note="",busy=false,paintSession=null,paintWho=null,ownStrokes=[],liveStroke=null,canvas=null;
@@ -73,7 +73,8 @@ export function createCreativeUI({getState,work,who,online}){
       const b=document.createElement("button");b.type="button";b.textContent=label;b.setAttribute("aria-pressed",String(id===zone));
       b.onclick=()=>{zone=id;note="";render();};tabs.append(b);
     }el.append(tabs);
-    el.append(text("p",online()?"💞 Đang nối trực tiếp hai người":"📱 Bản chơi trên máy này — cần nối Góc Nhỏ để xem nét vẽ từ điện thoại kia","creative-sync"));
+    const syncText=()=>connected()?(online()?"💞 Đang nối trực tiếp hai người":"⚠️ Mất mạng · nét/nháp chưa gửi sẽ được thử lưu lại khi kết nối"):"📱 Bản chơi trên máy này — cần nối Góc Nhỏ để xem nét vẽ từ điện thoại kia";
+    el.append(text("p",syncText(),"creative-sync"));
     if(note)el.append(text("p",note,"creative-note"));
     const panel=document.createElement("div");panel.className="creative-panel";el.append(panel);
     const section=t=>panel.append(text("h3",t));
@@ -192,6 +193,7 @@ export function createCreativeUI({getState,work,who,online}){
   }
   function refresh(){
     if(el.hidden)return;
+    const status=el.querySelector(".creative-sync");if(status)status.textContent=connected()?(online()?"💞 Đang nối trực tiếp hai người":"⚠️ Mất mạng · nét/nháp chưa gửi sẽ được thử lưu lại khi kết nối"):"📱 Bản chơi trên máy này — cần nối Góc Nhỏ để xem nét vẽ từ điện thoại kia";
     if(zone==="paint"&&canvas&&getState().painting?.id===paintSession){repaint();return;}
     if(zone==="story"&&storyTextarea&&getState().story?.id===seenStory){
       const s=getState().story,other=who()==="anh"?"em":"anh";
@@ -204,6 +206,17 @@ export function createCreativeUI({getState,work,who,online}){
     }
     render();
   }
+  // Trong chế độ đã nối Firebase, giữ nét trên canvas địa phương nếu mất mạng.
+  // Khi reconnect, gửi lại phiên tranh/nháp hiện còn mở. Không tự xuất bản.
+  window.addEventListener("online",()=>{
+    if(el.hidden)return;
+    if(zone==="paint"&&paintSession&&ownStrokes.length)schedulePaint(true);
+    if(zone==="story"&&seenStory&&storyTextarea){
+      work("saveDraft",{session:seenStory,text:storyTextarea.value}).catch(e=>console.warn("Chưa khôi phục được nháp",e));
+    }
+    refresh();
+  });
+  window.addEventListener("offline",refresh);
   el.addEventListener("keydown",e=>{if(e.key==="Escape"){e.preventDefault();el.hidden=true;}});
   return {open,refresh,close:()=>{el.hidden=true;},active:()=>!el.hidden,element:el};
 }
