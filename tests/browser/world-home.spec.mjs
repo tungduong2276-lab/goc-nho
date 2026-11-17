@@ -88,6 +88,7 @@ test('typing keeps presence alive in the foreground and stops heartbeats when th
 
 // Core objects played in the scene: read a note on the fridge door and heart it, open an envelope, shake the jar.
 test('fridge notes, envelopes and the date jar work on the objects through the app\'s own handlers',async({page})=>{
+ test.setTimeout(360000); // fridge + whole jar loop + mailbox in one software-rendered session
  await page.addInitScript(()=>{if(sessionStorage.getItem('seeded'))return;sessionStorage.setItem('seeded','1');localStorage.setItem('v3-news-init','1');localStorage.setItem('hu-hen-ho-v2',JSON.stringify({
   meta:{names:['Anh','Em'],swaps:{},extraSwaps:{},pending:null,custom:[],startDate:'',bday:['','']},
   letters:{l1:{id:'l1',from:0,to:1,body:'Thư thử trên đảo',unlockSeason:null,unlockDate:'2020-01-01',date:'2026-11-01T00:00:00.000Z'},l2:{id:'l2',from:0,to:1,body:'Chưa mở',unlockSeason:null,unlockDate:'2099-01-01',date:'2026-11-02T00:00:00.000Z'}},
