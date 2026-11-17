@@ -17,7 +17,7 @@ import { COZY, ROOM_MOODS } from "./cozy-palette.mjs";
 import { decorateCozyRoom, disposeCozyRoom, COZY_DECOR_NAME } from "./cozy-decor.js";
 import * as SY from "./sync.mjs";
 import { connectCloud } from "./cloud.js";
-import { applyLife, sanitizeLife } from "./life.mjs";
+import { applyLife, sanitizeLife, FOOD } from "./life.mjs";
 import { createLifeUI } from "./life-ui.js";
 import { lifeYardScene } from "./life-scene.js";
 import * as AD from "./appdata.mjs";
@@ -843,7 +843,7 @@ async function harvest(actor, it) {
   const st = GD.status(it.plant, now()); if (!st.ripe) return;
   const def = GD.SPECIES[st.sp], p = E.itemPose(it), n = it.type === "luongTrong" ? 3 : 1;
   let result=null;
-  if (!(st.sp in (await import("./life.mjs")).FOOD)) {
+  if (!(st.sp in FOOD)) {
     // Hoa trang trí vẫn thu như trước, không ép đưa vào kho nguyên liệu ăn được.
     it.plant=undefined;saveLayout();result={ok:true,message:"Đã hái "+n+" "+def.noun+" để trang trí 🌼"};
   } else if (CLOUD.on) {
