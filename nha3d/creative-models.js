@@ -3,6 +3,7 @@
 // từ nét của hai người, không nạp URL ngoài hoặc tiết lộ quà bị niêm phong.
 import * as THREE from "three";
 import { COZY } from "./cozy-palette.mjs";
+import { combinePainting } from "./creative.mjs";
 
 function pictureTexture(strokes){
   const canvas=document.createElement("canvas");canvas.width=384;canvas.height=256;
@@ -29,6 +30,17 @@ export function galleryFrames(artworks=[]){
   }
   return group;
 }
+// Giấy thật trên giá vẽ: cả hai nhìn bức tranh trong căn phòng ngay cả khi đóng bảng bút.
+export function easelPreview(painting){
+  const group=new THREE.Group();group.name="co-creative-easel";
+  if(!painting)return group;
+  const strokes=combinePainting(painting.anh,painting.em);
+  const texture=pictureTexture(strokes);
+  const board=new THREE.Mesh(new THREE.PlaneGeometry(.80,.54),
+    new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}));
+  board.position.set(0,1.05,.115);board.userData.creativeTexture=texture;
+  group.add(board);return group;
+}
 export function bookSpines(count=0){
   const group=new THREE.Group();group.name="co-creative-books";
   const shades=[COZY.pink,COZY.mint,COZY.blue];
@@ -44,7 +56,7 @@ export function disposeCreativeTextures(root){
   // Mỗi lần đổi phòng, giải phóng cả khung tranh/gáy sách tạo riêng; không đụng
   // vào vật liệu dùng chung của furniture hoặc avatar.
   root?.traverse(o=>{
-    if(o.name!=="co-creative-gallery"&&o.name!=="co-creative-books")return;
+    if(o.name!=="co-creative-gallery"&&o.name!=="co-creative-books"&&o.name!=="co-creative-easel")return;
     o.traverse(mesh=>{
       if(!mesh.isMesh)return;
       mesh.userData?.creativeTexture?.dispose();
