@@ -13,6 +13,8 @@ import * as GD from "./garden.mjs";
 import { gardenBed, gardenPot, wateringCan } from "./garden-models.js";
 import * as WD from "./world.mjs";
 import * as WM from "./world-models.js";
+import { COZY, ROOM_MOODS } from "./cozy-palette.mjs";
+import { decorateCozyRoom, disposeCozyRoom, COZY_DECOR_NAME } from "./cozy-decor.js";
 import * as SY from "./sync.mjs";
 import { connectCloud } from "./cloud.js";
 import * as AD from "./appdata.mjs";
@@ -188,8 +190,8 @@ function buildPortalModels() {
   for (const d of WD.sceneDoors(S.scene)) {
     if (d.to.scene === "san") continue; // thảm cửa chính đã có sẵn
     const g = new THREE.Group();
-    const museum = d.to.scene === "bao-tang", accent = museum ? 0xC7A0E8 : 0xF5B5CA;
-    const frame = new THREE.MeshToonMaterial({color: 0xFAF0DE});
+    const accent = [COZY.mint, COZY.pink, COZY.blue][ROOM_MOODS[d.to.scene]?.accent ?? 1];
+    const frame = new THREE.MeshToonMaterial({color: COZY.cream});
     const tint = new THREE.MeshToonMaterial({color:accent,transparent:true,opacity:.56});
     const add = (w,h,dep,x,y,z,mat=frame) => {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,dep),mat);
@@ -205,12 +207,13 @@ function buildPortalModels() {
   }
 }
 function buildShell() {
-  if (shell) scene.remove(shell);
+  if (shell) { disposeCozyRoom(shell); scene.remove(shell); }
   const wc = (WALL_COLORS.find(c => c.id === S.layout.wall) || WALL_COLORS[0]).wall;
   const fc = FLOOR_COLORS.find(c => c.id === S.layout.floor) || FLOOR_COLORS[0];
   if (S.scene === "san") { shell = WM.island(W,D,S.time); scene.add(shell); buildPortalModels(); return; }
   shell = F.roomShell({ n: W, d: D, h: RM.wallH, wallL: wc, wallR: wc, floor: fc.floor, plank: fc.plank });
   if (S.scene === "nha") { const m = WM.doorMat(); m.position.set(WD.DOOR_IN.x, 0, WD.DOOR_IN.z); shell.add(m); }
+  decorateCozyRoom(shell, S.scene, W, D, RM.wallH);
   scene.add(shell); buildPortalModels();
 }
 function buildGrid() {
@@ -437,7 +440,8 @@ function placeDoorTag() {
     .sort((a,b)=>Math.hypot(m.x-a.from.x,m.z-a.from.z)-Math.hypot(m.x-b.from.x,m.z-b.from.z));
   const d=opts[0], dist=d?Math.hypot(m.x-d.from.x,m.z-d.from.z):Infinity;
   doorTag._door=d;
-  // Interior portal tag appears only nearby: avoids intercepting taps on furniture/easel.
+  // Chỉ mở nhãn cửa trong tầm tay ở phòng: tránh một nút nổi che giá vẽ/giấy nhắn gần cửa.
+  // Ngoài sân vẫn gợi ý cửa chính từ xa để người mới biết chỗ vào nhà.
   doorTag.hidden=S.mode!=="play"||!d||(S.scene!=="san"&&dist>0.9);
   if(doorTag.hidden)return;
   doorTag.textContent=d.to.scene==="san"?"🚪 Ra sân":d.to.scene==="nha"&&S.scene==="san"?"🏠 Vào nhà":"🚪 "+d.label;
@@ -1571,6 +1575,7 @@ window.__NHA3D__ = {
   viewKey: uid => views.get(uid)?.key,
   appDeco: uid => { let n = 0; views.get(uid)?.root.traverse(o => { if (o.userData.bob) n++; }); return n; },
   info: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, ppm: cam.ppm }),
+  cozy: () => ({ scene: S.scene, wall: S.layout.wall, floor: S.layout.floor, decorParts: shell?.getObjectByName(COZY_DECOR_NAME)?.children.length || 0 }),
   pauseAI(on) { AI.timer = on ? 1e9 : 1; cat.wait = on ? 1e9 : 1; },
   // Tua nhanh logic (không vẽ) để test không phụ thuộc tốc độ GPU của máy chạy CI.
   tick(sec) { for (let t = 0; t < sec; t += 1 / 30) step(1 / 30); },

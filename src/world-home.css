@@ -1,11 +1,11 @@
 :root{--world-safe-t:env(safe-area-inset-top,0px);--world-safe-b:env(safe-area-inset-bottom,0px);--world-safe-l:env(safe-area-inset-left,0px);--world-safe-r:env(safe-area-inset-right,0px)}
 /* The island owns navigation; existing data-entry components remain object-bound tools. */
-html.world-only body{margin:0;padding:0;overflow:hidden;background:#BFE3FA}
+html.world-only body{margin:0;padding:0;overflow:hidden;background:#EAFBF8}
 html.world-only body::before{display:none}
 html.world-only #app{display:none}
-#world-home{position:fixed;inset:0;z-index:10;background:#BFE3FA;padding:var(--world-safe-t) var(--world-safe-r) var(--world-safe-b) var(--world-safe-l)}
+#world-home{position:fixed;inset:0;z-index:10;background:#EAFBF8;padding:var(--world-safe-t) var(--world-safe-r) var(--world-safe-b) var(--world-safe-l)}
 #world-frame{width:100%;height:100%;border:0;display:block}
-#world-home-loading{position:fixed;inset:0;display:grid;place-content:center;justify-items:center;gap:12px;padding:24px;background:#FFF3F6;color:#1D2B4F;text-align:center;z-index:11}
+#world-home-loading{position:fixed;inset:0;display:grid;place-content:center;justify-items:center;gap:12px;padding:24px;background:radial-gradient(circle at 18% 15%,#FFECF4,transparent 50%),radial-gradient(circle at 85% 80%,#DCF1FF,transparent 50%),#E8FFF4;color:#1D2B4F;text-align:center;z-index:11}
 #world-home-loading[hidden],#world-veil[hidden],#world-surface[hidden]{display:none}
 #world-veil{position:fixed;inset:0;z-index:25;background:rgba(29,43,79,.12)}
 #world-surface{position:fixed;z-index:30;inset:max(12px,var(--world-safe-t)) max(12px,var(--world-safe-r)) auto max(12px,var(--world-safe-l));height:min(58dvh,520px);max-width:540px;margin:auto;display:flex;flex-direction:column;background:var(--surface);border:3px solid #1D2B4F;border-radius:22px;box-shadow:4px 5px 0 #1D2B4F;overflow:hidden}
@@ -39,3 +39,5 @@ html.world-only #stage>.jar{display:none}
 #world-surface .world-focus{outline:3px solid #F07AA6;outline-offset:3px;border-radius:14px;animation:world-focus-pulse 1.2s ease-in-out 2}
 @keyframes world-focus-pulse{50%{outline-color:#FFC2D8}}
 @media (prefers-reduced-motion:reduce){#world-surface .world-focus{animation:none}}
+
+#world-home-loading::before{content:"☁️  ♡  ✨";color:#C54F80;font:800 38px var(--display);line-height:1.3}

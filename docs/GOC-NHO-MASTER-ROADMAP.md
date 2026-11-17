@@ -1,5 +1,15 @@
 # GÓC NHỎ — MASTER ROADMAP & AI HANDOFF
 
+## ★ VISUAL DIRECTION — Cozy three-color home (user decision 2026-11-17)
+
+The user wants the first impression and every house room to feel **adorable**, with **mint green, pastel pink and baby blue** as the three principal colours. Build the mood into the real Three.js house, not just the UI or old tab screenshots. Keep dark ink outlines and readable controls. Do not add roses or sunflowers.
+
+**Implementation candidate:** `feature/cozy-mint-pink-blue-house-20261117` is stacked on the existing Draft multi-room PR #123; NOT a main release. `nha3d/cozy-palette.mjs` defines the palette and defaults; the living room and six new rooms use mint/pink/blue defaults when there is no saved layout. `nha3d/cozy-decor.js` adds only non-colliding, non-interactive pastel rails, bunting and cloud shapes to the rendered shell. The facade has a mint body, pink roof and baby-blue door. Loading and controls echo the same colours.
+
+**Compatibility:** Existing `nha` and `san` scene IDs, localStorage keys, Firestore document IDs, furniture positions and user-selected wall/floor colours are unchanged. The new defaults apply only to rooms without saved colours. Shell decoration is not part of `S.layout.items`, not synced, and cannot block navigation. Paint tools still expose old colours. No production Rules/config/data change or deployment.
+
+**Required checks before merge:** new Node palette/legacy-layout/geometry tests and browser palette/reload tests; exact-head full CI, visual inspection in 360/390/430px, scene door traversal, two-device real phone acceptance and security gates of parent PR #123. Keep this candidate Draft/stacked until verified.
+
 ## ★ LATEST DECISION — date island removed, focus on the original core (user decision 2026-11-17)
 
 The user asked to **remove the date island** (W4a: boat to `hen`, drinks, fishing, picnic, campfire) and instead improve and add to the **original core** features: date jar, fridge notes, letters, garden, wishes, story/drawing, kingdom, museum. Do not rebuild the date island or add new separate "activity islands" unless the user asks again. The old additive Firestore docs `couples/{cid}/world/a_date_*` are left in place and ignored by the world (`applyRemote` skips `a_*` ids); never delete live data.
