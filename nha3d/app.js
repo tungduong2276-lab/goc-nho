@@ -958,7 +958,15 @@ function addAppDeco(it, root) {
   if (it.type === "loUocMo" && APPST.wishes.fresh) root.add(WM.jarSlip(false));
   if (it.type === "giaVe" && (creativeState().painting || APPST.drawing.mode === "bottom")) { const badge = WM.jarSlip(true); badge.position.y = 1.75; root.add(badge); }
   if (it.type === "mayDanhChu" && (creativeState().story || APPST.story.myTurn)) { const badge = WM.jarSlip(true); badge.position.y = 1.55; root.add(badge); }
-  if (it.type === "tuKinh") { root.add(WM.exhibits(APPST.memory.museum));if(S.scene==="bao-tang")root.add(galleryFrames(creativeState().artworks)); }
+  if (it.type === "tuKinh") {
+    root.add(WM.exhibits(APPST.memory.museum));
+    if(S.scene==="bao-tang"){
+      // Mỗi tủ trưng bày một dải tranh khác nhau, không nhân ba cùng tác phẩm.
+      const all=S.layout.items.filter(x=>x.type==="tuKinh").map(x=>x.uid).sort();
+      const shelf=Math.max(0,all.indexOf(it.uid));
+      root.add(galleryFrames(creativeState().artworks.slice(shelf*3,shelf*3+3)));
+    }
+  }
   if (it.type === "keSach" && S.scene==="ngu") root.add(bookSpines(creativeState().books.length));
   if (it.type === "banDo") root.add(WM.mapPins(APPST.memory.places));
   if (it.type === "benThuyen" && APPST.memory.kingdom.pending) root.add(WM.kingdomFlag());
