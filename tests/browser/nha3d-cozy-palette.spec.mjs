@@ -26,6 +26,9 @@ test("mint/hồng/blue xuất hiện ở nhà 3D; sơn phòng không xóa đồ 
   expect(await N("cozy")).toMatchObject({ scene: "nha", wall: "mint" });
   expect((await N("cozy")).decorParts).toBeGreaterThan(12);
   const original = await N("layout");
+  // Giấy vẽ sát vách: nhãn cửa không được che lần chạm vào món đồ.
+  await N("nearItem", "d1");
+  await expect(page.locator(".doortag")).toBeHidden();
 
   await page.locator("#btn-edit").click();
   await page.locator("#btn-paint").click();
