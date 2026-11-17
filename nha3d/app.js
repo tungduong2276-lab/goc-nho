@@ -1705,6 +1705,7 @@ window.__NHA3D__ = {
   basket: () => ({ ...basket }),
   life: () => JSON.parse(JSON.stringify(LIFE.state)),
   creative: () => JSON.parse(JSON.stringify(creativeState())),
+  creativeEasel: () => views.get("studio-easel")?.root.getObjectByName("co-creative-easel")?.children.length || 0,
   creativeWork: (type,args) => creativeWork(type,args),
   openCreative: zone => creativeUI.open(zone),
   lifeAction: (op) => doLife(op),
