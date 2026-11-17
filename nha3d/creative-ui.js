@@ -10,8 +10,8 @@ function drawStrokes(canvas,all){
     const points=stroke.points||[];if(!points.length)continue;
     ctx.strokeStyle=stroke.color;ctx.fillStyle=stroke.color;ctx.lineWidth=stroke.width;
     ctx.lineJoin="round";ctx.lineCap="round";ctx.beginPath();
-    points.forEach(([x,y],i)=>{if(i)ctx.lineTo(x*w,y*h);else ctx.moveTo(x*w,y*h);});
-    if(points.length===1){ctx.arc(points[0][0]*w,points[0][1]*h,stroke.width/2,0,Math.PI*2);ctx.fill();}
+    points.forEach(({x,y},i)=>{if(i)ctx.lineTo(x*w,y*h);else ctx.moveTo(x*w,y*h);});
+    if(points.length===1){ctx.arc(points[0].x*w,points[0].y*h,stroke.width/2,0,Math.PI*2);ctx.fill();}
     else ctx.stroke();
   }
 }
@@ -95,15 +95,15 @@ export function createCreativeUI({getState,work,who,online}){
         canvas.addEventListener("pointerdown",e=>{
           if(ownStrokes.length>=MAX_STROKES){note="Mỗi người đã đủ 80 nét, xuất bản để vẽ bức mới nhé.";render();return;}
           e.preventDefault();canvas.setPointerCapture(e.pointerId);dragging=true;
-          const r=canvas.getBoundingClientRect(),pt=[Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))];
+          const r=canvas.getBoundingClientRect(),pt={x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))};
           liveStroke={id:freshId("s"),by:me,at:Date.now(),color:selected,width,points:[pt]};
           repaint();schedulePaint();
         });
         canvas.addEventListener("pointermove",e=>{
           if(!dragging||!liveStroke)return;e.preventDefault();
-          const r=canvas.getBoundingClientRect(),pt=[Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))];
+          const r=canvas.getBoundingClientRect(),pt={x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))};
           const old=liveStroke.points.at(-1);
-          if(Math.hypot((pt[0]-old[0])*480,(pt[1]-old[1])*320)>=3&&liveStroke.points.length<90){
+          if(Math.hypot((pt.x-old.x)*480,(pt.y-old.y)*320)>=3&&liveStroke.points.length<90){
             liveStroke.points.push(pt);repaint();schedulePaint();
           }
         });
