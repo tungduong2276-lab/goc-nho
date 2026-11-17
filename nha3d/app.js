@@ -843,7 +843,10 @@ async function harvest(actor, it) {
   const st = GD.status(it.plant, now()); if (!st.ripe) return;
   const def = GD.SPECIES[st.sp], p = E.itemPose(it), n = it.type === "luongTrong" ? 3 : 1;
   let result=null;
-  if (CLOUD.on) {
+  if (!(st.sp in (await import("./life.mjs")).FOOD)) {
+    // Hoa trang trí vẫn thu như trước, không ép đưa vào kho nguyên liệu ăn được.
+    it.plant=undefined;saveLayout();result={ok:true,message:"Đã hái "+n+" "+def.noun+" để trang trí 🌼"};
+  } else if (CLOUD.on) {
     try { result=await CLOUD.api.harvestLife(S.scene,it.uid,S.me,Date.now()); }
     catch(e){console.warn("Không thể thu hoạch chung",e);toast("Chưa lưu được rau củ; kiểm tra mạng rồi thử lại");return;}
     if(!result.ok){toast(result.message);return;}
