@@ -603,15 +603,21 @@ function pickAt(cx, cy) {
   const objs = [itemsG];
   if (S.mode === "play") objs.push(portalsG, actors.anh.root, actors.em.root, cat.root);
   const hits = ray.intersectObjects(objs, true);
+  let portalHit = null;
   for (const h of hits) {
     if (!h.object.visible) continue;
     const ud = h.object.userData;
-    if (ud.portalId) return { portal: WD.sceneDoors(S.scene).find(d => d.id === ud.portalId) };
+    // Cửa là lớp hình học trang trí: không được nuốt vùng chạm tủ lạnh, hũ và người.
+    // Nếu có một món thật cùng tọa độ màn hình, ưu tiên dùng món; cửa vẫn có nhãn riêng.
+    if (ud.portalId) {
+      if (!portalHit) portalHit = { portal: WD.sceneDoors(S.scene).find(d => d.id === ud.portalId) };
+      continue;
+    }
     if (ud.actor && ud.actor.root.visible) return { actor: ud.actor };
     if (ud.cat) return { cat: true };
     if (ud.uid) { let o = h.object, part = null; while (o && !part) { part = o.userData.part || null; o = o.parent; } return { uid: ud.uid, point: h.point, part }; }
   }
-  return null;
+  return portalHit;
 }
 function wallPoint(cx, cy) {
   setRay(cx, cy);
