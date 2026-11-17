@@ -36,6 +36,20 @@ Các phiếu viết/đọc/chọn ảnh dùng lại thành phần và hàm ghi d
 | Thời tiết và bài hát đã chọn | Cài đặt ngôi nhà | Giữ lựa chọn; ngày/đêm đã 3D, adapter thời tiết/âm nhạc cần chuyển tiếp |
 | Tài khoản, ghép đôi, bản sao lưu | Sổ tay → Tài khoản và ngôi nhà | Luồng cũ giữ nguyên, không tự chạy thao tác quản trị |
 
+## Đợt B — Nhà nhiều phòng (nhánh thử nghiệm, chưa phát hành)
+
+Yêu cầu mới 2026-11-17: giữ một đảo 3D, nhưng bên trong nhà phải có các không gian riêng phục vụ đời sống và hoạt động của hai người. Trước đây scene `nha` là **một phòng duy nhất** chứa cả sofa/giường/bếp; không chuyển hay xoá các món đã lưu trong đó. Trong đợt B, scene `nha` vẫn giữ nguyên id và toàn bộ furniture, được gọi là **Phòng khách cũ** để đảm bảo tương thích; khi chủ nhà chuyển đồ sang các phòng mới trong các đợt sau mới được phép sửa.
+
+Không gian mới: **Hành lang** (không cho trang trí chắn cửa), **Phòng ngủ** (giường, tủ, góc thú cưng), **Bếp** (tủ lạnh, bếp, bàn ăn), **Bảo tàng** (tủ trưng bày kỷ niệm, bản đồ, sách), **Xưởng sáng tạo** (vẽ, viết truyện, ước mơ, lời hứa), **Phòng hoạt động** (hũ hẹn hò, sofa, đài). Các phòng dùng mô hình 3D và đặt nội thất trực tiếp trong scene; đi từ sân → phòng khách → hành lang → phòng khác bằng cửa; nút la bàn tự đi theo từng chặng.
+
+- Lưu cảnh mới dưới các key riêng `gocnho.nha3d.room.<scene>.v1`; dữ liệu `nha` và `san` không đổi key.
+- Firebase tiếp tục dùng `couples/{cid}/world/` với id scene mới (không migration; không xóa/đọc bản ghi riêng tư trong quá trình triển khai). Seed phòng mới khi vào lần đầu; scene có meta dù không còn nội thất sẽ không bị gieo lại mặc định.
+- Presence hai người phải phân biệt đúng từng phòng, và không hiển thị avatar của người khác khi khác phòng; hiện tại vẫn cần test Emulator + hai máy thật.
+- Tủ kính bảo tàng đang kết nối đến **cùng dữ liệu `museum` cũ**, chưa phải hệ thống sắp xếp kỷ vật tự do bằng kéo-thả. Không được ghi là bảo tàng bản hoàn chỉnh.
+- Bộ ghế/giường/bếp cũ trong phòng khách giữ nguyên: tránh chuyển tự động làm mất nội thất đã được hai người sắp xếp; bổ sung luồng “chuyển đồ giữa phòng” ở đợt sau với xác nhận và rollback.
+
+**Cổng phát hành:** test static/staging/browser/Firestore Emulator; quan sát ảnh 360/390/430px, cửa ra/vào và vùng chạm; nghiệm thu hai điện thoại. Chỉ merge khi đạt và không phát sinh xóa dữ liệu. PR thử nghiệm: xem branch `feature/world-multiroom-museum-20261117`; chưa có xác nhận hoàn tất tại thời điểm viết.
+
 ## Thứ tự sau đợt A
 
 1. ~~Tủ lạnh, hộp thư, hũ: tương tác vật thể rõ hơn, vẫn dùng id/schema cũ.~~ Xong 2026-11-17: chạm từng giấy trên cửa tủ (đọc, thả tim, đáp), phong bì bay ra từ hộp thư, lắc hũ bốc lá hiện tên ngay trong cảnh. Đảo hẹn hò đã gỡ theo yêu cầu người dùng.
