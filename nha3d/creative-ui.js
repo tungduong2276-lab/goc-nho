@@ -161,7 +161,8 @@ export function createCreativeUI({getState,work,who,online}){
           if(v?.ok){area.value="";await work("saveDraft",{session:p.id,text:""});}
           return v;
         }));
-        panel.append(button("📚 Kết truyện → cất vào kệ phòng ngủ",()=>work("publishBook",{session:p.id}),!canPublishBook(p.lines)));
+        const publishBook=button("📚 Kết truyện → cất vào kệ phòng ngủ",()=>work("publishBook",{session:p.id}),!canPublishBook(p.lines));
+        publishBook.id="creative-publish-book";panel.append(publishBook);
         line("Chỉ xuất bản khi cả hai đều đã góp ít nhất một đoạn.");
       }
     }else if(zone==="museum"){
@@ -194,6 +195,7 @@ export function createCreativeUI({getState,work,who,online}){
     if(zone==="story"&&storyTextarea&&getState().story?.id===seenStory){
       const s=getState().story,other=who()==="anh"?"em":"anh";
       otherDraft.textContent=s.drafts[other]?"✍️ "+names[other]+" đang viết: "+s.drafts[other]:"Đang đợi người kia mở bàn viết…";
+      const pub=el.querySelector("#creative-publish-book");if(pub)pub.disabled=!canPublishBook(s.lines);
       if(linesBox&&linesBox.children.length!==s.lines.length){
         linesBox.replaceChildren(...s.lines.map(l=>text("p",names[l.by]+": "+l.text)));
       }
