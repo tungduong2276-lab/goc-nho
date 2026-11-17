@@ -5,6 +5,7 @@ import { COLLECTION, itemId, metaId, presenceId, encodeItem, encodeWater, decode
 import { MEMORY_COLLECTIONS } from "./appdata.mjs";
 import { status as cropStatus } from "./garden.mjs";
 import { sanitizeLife, applyLife } from "./life.mjs";
+import { key as creativeKey,painter,draft,artId,bookId,validId,title,cleanStrokes,combinePainting,canPublishPainting,cleanLines,canPublishBook } from "./creative.mjs";
 
 function waitForUser(auth, ms = 8000) {
   return new Promise(resolve => {
@@ -83,6 +84,69 @@ export async function connectCloud() {
         tx.set(life, {k:"life",state:result.next,ts:ts()});
         tx.set(ref, {...encodeItem(scene,{...it,plant:undefined},true),ts:ts()});
         return {...result, uid, sp:status.sp};
+      });
+    },
+    // Hai người sáng tác trên cùng khung: tách các lượt nét vẽ và nháp theo người để không ghi đè nhau.
+    startCreative(kind, label, who, id, at = Date.now()) {
+      if(!["paint","story"].includes(kind)||!["anh","em"].includes(who)||!validId(id)||!title(label))
+        return Promise.resolve({ok:false,message:"Tên tác phẩm chưa hợp lệ"});
+      const ref=col.doc(creativeKey(kind));
+      return fs.runTransaction(async tx=>{
+        const snap=await tx.get(ref),current=snap.exists?snap.data():null;
+        if(current&&validId(current.id))return {ok:true,session:current.id};
+        tx.set(ref,{k:"creative-meta",kind,id,title:title(label),by:who,at,lines:kind==="story"?[]:null,ts:ts()});
+        return {ok:true,session:id};
+      });
+    },
+    savePaint(session,who,strokes,at=Date.now()){
+      if(!validId(session)||!["anh","em"].includes(who))return Promise.resolve(false);
+      const clean=cleanStrokes(strokes,who);
+      return col.doc(painter(who)).set({k:"creative-paint",session,who,strokes:clean,at,ts:ts()}).then(()=>true);
+    },
+    publishPainting(session,at=Date.now()){
+      if(!validId(session))return Promise.resolve({ok:false,message:"Bức tranh chưa hợp lệ"});
+      const meta=col.doc(creativeKey("paint")),a=col.doc(painter("anh")),b=col.doc(painter("em")),out=col.doc(artId(session));
+      return fs.runTransaction(async tx=>{
+        const [m,aa,bb]=await Promise.all([tx.get(meta),tx.get(a),tx.get(b)]);
+        if(!m.exists||m.data().id!==session)return {ok:false,message:"Bức tranh đã được cất hoặc thay đổi"};
+        const A=aa.exists&&aa.data().session===session?aa.data().strokes:[],
+          B=bb.exists&&bb.data().session===session?bb.data().strokes:[];
+        if(!canPublishPainting(A,B))return {ok:false,message:"Cần cả hai người cùng vẽ ít nhất một nét"};
+        tx.set(out,{k:"creative-art",id:session,title:title(m.data().title),strokes:combinePainting(A,B),at,ts:ts()});
+        tx.delete(meta);
+        // Không xoá bản phác: nếu máy kia còn gửi một nét chậm, session cũ vẫn được nhận ra và bỏ qua.
+        return {ok:true,message:"Bức tranh chung đã vào bảo tàng 🖼️",id:session};
+      });
+    },
+    saveStoryDraft(session,who,text,at=Date.now()){
+      if(!validId(session)||!["anh","em"].includes(who))return Promise.resolve(false);
+      return col.doc(draft(who)).set({k:"creative-draft",session,who,text:String(text||"").slice(0,300),at,ts:ts()}).then(()=>true);
+    },
+    appendStory(session,who,text,at=Date.now()){
+      if(!validId(session)||!["anh","em"].includes(who)||!String(text||"").trim())
+        return Promise.resolve({ok:false,message:"Hãy viết một đoạn trước nhé"});
+      const meta=col.doc(creativeKey("story"));
+      return fs.runTransaction(async tx=>{
+        const snap=await tx.get(meta);
+        if(!snap.exists||snap.data().id!==session)return {ok:false,message:"Truyện đã được xuất bản hoặc đổi phiên"};
+        const lines=cleanLines(snap.data().lines);
+        if(lines.length>=80)return {ok:false,message:"Truyện đã đủ dài, hãy xuất bản nhé"};
+        lines.push({by:who,text:String(text).trim().slice(0,300),at});
+        tx.update(meta,{lines,ts:ts()});
+        return {ok:true,message:"Đã thêm đoạn mới. Người kia thấy ngay trong xưởng! 📖"};
+      });
+    },
+    publishStory(session,at=Date.now()){
+      if(!validId(session))return Promise.resolve({ok:false,message:"Truyện không hợp lệ"});
+      const meta=col.doc(creativeKey("story")),out=col.doc(bookId(session));
+      return fs.runTransaction(async tx=>{
+        const snap=await tx.get(meta);
+        if(!snap.exists||snap.data().id!==session)return {ok:false,message:"Truyện đã được cất hoặc đổi phiên"};
+        const lines=cleanLines(snap.data().lines);
+        if(!canPublishBook(lines))return {ok:false,message:"Cả hai cần cùng viết ít nhất một đoạn trước khi kết truyện"};
+        tx.set(out,{k:"creative-book",id:session,title:title(snap.data().title),lines,at,ts:ts()});
+        tx.delete(meta);
+        return {ok:true,message:"Truyện hoàn thành đã vào kệ sách phòng ngủ 📚",id:session};
       });
     },
     // W3: chỉ ĐỌC dữ liệu của app (thư, tủ lạnh, hũ) để đồ vật 3D hiện đúng trạng thái. Không ghi gì vào đây.

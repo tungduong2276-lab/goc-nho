@@ -189,7 +189,7 @@ test("thế giới mở: đi ra vào cửa nhà, sân có vườn, quầy cà ph
   await expect.poll(async () => { await N("tick", 0.2); return N("scene"); }, { timeout: 40_000 }).toBe("nha");
   await page.keyboard.up("w"); await page.keyboard.up("d");
   await page.evaluate(() => window.__NHA3D__.settle());
-  // Nhãn cửa trong nhà chỉ hiện khi nhân vật đến gần để không che vùng chạm đồ.
+  // Nhãn cửa chỉ hiện khi ở sát cửa, tránh che các đồ vật trong phòng.
   await expect(page.locator("#btn-edit")).toBeVisible();
   expect((await N("layout")).items.some(i => i.type === "sofa")).toBe(true);
   // Đi ra bằng thảm cửa
@@ -203,7 +203,7 @@ test("thế giới mở: đi ra vào cửa nhà, sân có vườn, quầy cà ph
   await page.locator("#actions button", { hasText: "Vào nhà" }).click();
   await expect.poll(async () => { await N("tick", 0.2); return N("scene"); }, { timeout: 40_000 }).toBe("nha");
   await page.evaluate(() => window.__NHA3D__.settle());
-  // Kiểm tra affordance thật: tới gần cửa thì nhãn hiện và bấm để ra sân.
+  // Đến gần cửa thì nhãn mở ra sân mới hiện để không che giá vẽ.
   const door=await N("doors");
   await N("teleport",door.in.x,door.in.z-0.3);
   await expect(page.locator(".doortag")).toHaveText("🚪 Ra sân");
@@ -354,7 +354,7 @@ for (const width of [360, 390, 430]) test(`W3c: memory portals and the gift tree
   expect(firebase).toEqual([]); expect(errors).toEqual([]);
 });
 
-for (const width of [360, 390, 430]) test(`W3b: four creative objects open existing app screens at ${width}px`, async ({ page }) => {
+for (const width of [360, 390, 430]) test(`W3b: creative studio is native while legacy archives stay intact at ${width}px`, async ({ page }) => {
   await seedApp(page);
   const { errors, firebase, N } = await openHouse(page, { width });
   expect((await N("appState")).drawing.mode).toBe("bottom");
@@ -365,8 +365,8 @@ for (const width of [360, 390, 430]) test(`W3b: four creative objects open exist
   const original = await page.evaluate(() => localStorage.getItem("hu-hen-ho-v2"));
   for (const [uid, label, tab, selector, text] of [
     ["d6", "Xem ước mơ (1 mới)", "uoc-mo", "#tab-wishes", "Cùng đi ngắm biển"],
-    ["d1", "Đến lượt bạn vẽ nửa dưới", "ve", "#draw-state", "Chú mèo"],
-    ["d5", "Đến lượt bạn viết tiếp", "truyen", "#tab-story", "Đảo nhỏ của hai đứa"],
+    ["d1", "🎨 Cùng vẽ trên một khung tranh", "ve", "#draw-state", "Chú mèo"],
+    ["d5", "✍️ Cùng viết truyện ngay lúc này", "truyen", "#tab-story", "Đảo nhỏ của hai đứa"],
     ["w4", "Bộ luật của hai đứa (1)", "bo-luat", "#tab-rules", "Nhớ ăn sáng"]
   ]) {
     await N("nearItem", uid); await N("tick", 2);
@@ -379,6 +379,12 @@ for (const width of [360, 390, 430]) test(`W3b: four creative objects open exist
     await page.mouse.click(...pt);
     await page.getByRole("button", { name: label, exact: true }).click();
     await N("tick", 12);
+    if(uid==="d1"||uid==="d5"){
+      await expect(page.locator("#creative-sheet")).toBeVisible();
+      await expect(page.locator("#creative-sheet")).toContainText(uid==="d1"?"một mặt giấy":"viết");
+      await page.locator(".creative-close").click();
+      continue;
+    }
     await expect(page.locator("#appsheet")).toBeVisible();
     await expect(page.locator("#appsheet-frame")).toHaveAttribute("src", new RegExp(`#${tab}$`));
     await expect(page.frameLocator("#appsheet-frame").locator(selector)).toContainText(text);

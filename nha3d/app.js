@@ -20,6 +20,10 @@ import { connectCloud } from "./cloud.js";
 import { applyLife, sanitizeLife, FOOD } from "./life.mjs";
 import { createLifeUI } from "./life-ui.js";
 import { lifeYardScene } from "./life-scene.js";
+import * as CM from "./creative.mjs";
+import { localCreative } from "./creative-local.mjs";
+import { createCreativeUI } from "./creative-ui.js";
+import { galleryFrames, bookSpines, easelPreview, disposeCreativeTextures } from "./creative-models.js";
 import * as AD from "./appdata.mjs";
 import {WORLD_FEATURES,featureOf} from "../src/world-features.mjs";
 
@@ -87,6 +91,7 @@ const CLOUD = { on: false, api: null, last: Object.fromEntries(Object.keys(WD.SC
 const LIFE_KEY = "gocnho.nha3d.life.v1";
 const LIFE = { state: (() => { try { return sanitizeLife(JSON.parse(store.get(LIFE_KEY)||"null")); } catch {return sanitizeLife(null);} })() };
 async function doLife(op){
+  if(CLOUD.on&&!navigator.onLine)return {ok:false,message:"Đang mất mạng. Kho chung chưa đổi; thử lại khi có kết nối nhé."};
   if(CLOUD.on){
     const result = await CLOUD.api.actLife(op,S.me);
     if(result.ok)LIFE.state=result.next;
@@ -96,7 +101,41 @@ async function doLife(op){
   if(result.ok){LIFE.state=result.next;store.set(LIFE_KEY,JSON.stringify(result.next));}
   lifeUI.refresh();return result;
 }
-const lifeUI=createLifeUI({getState:()=>LIFE.state,act:doLife,who:()=>S.me,online:()=>CLOUD.on});
+const lifeUI=createLifeUI({getState:()=>LIFE.state,act:doLife,who:()=>S.me,online:()=>CLOUD.on&&navigator.onLine,connected:()=>CLOUD.on});
+// Tranh và truyện đời cũ giữ nguyên dữ liệu; studio mới ghi vào các doc world/cc_* riêng.
+const CREATIVE_KEY="gocnho.nha3d.creative.v1";
+const CREATIVE={
+  cloud:new Map(),
+  local:localCreative((()=>{try{return JSON.parse(store.get(CREATIVE_KEY)||"[]");}catch{return [];}})(),
+    docs=>{store.set(CREATIVE_KEY,JSON.stringify(docs));creativeUI.refresh();})
+};
+function creativeState(){return CM.creativeState(CLOUD.on?CREATIVE.cloud:CREATIVE.local.docs);}
+async function creativeWork(type,args={}){
+  if(CLOUD.on&&!navigator.onLine)throw Error("Mất mạng, chưa thể xác nhận tác phẩm chung");
+  const api=CLOUD.on?CLOUD.api:CREATIVE.local,who=S.me;
+  let result;
+  if(type==="startPaint"||type==="startStory"){
+    const kind=type==="startPaint"?"paint":"story";
+    result=await api.startCreative(kind,args.title,who,args.id);
+    if(CLOUD.on&&result?.ok&&result.session===args.id)CREATIVE.cloud.set(CM.key(kind),
+      {k:"creative-meta",kind,id:args.id,title:CM.title(args.title),by:who,at:Date.now(),lines:kind==="story"?[]:null});
+  } else if(type==="savePaint") {
+    result=await api.savePaint(args.session,who,args.strokes);
+    if(CLOUD.on&&result===true)CREATIVE.cloud.set(CM.painter(who),
+      {k:"creative-paint",session:args.session,who,strokes:CM.cleanStrokes(args.strokes,who),at:Date.now()});
+  } else if(type==="publishPaint")result=await api.publishPainting(args.session);
+  else if(type==="saveDraft"){
+    result=await api.saveStoryDraft(args.session,who,args.text);
+    if(CLOUD.on&&result===true)CREATIVE.cloud.set(CM.draft(who),
+      {k:"creative-draft",session:args.session,who,text:String(args.text||"").slice(0,300),at:Date.now()});
+  } else if(type==="appendStory")result=await api.appendStory(args.session,who,args.text);
+  else if(type==="publishBook")result=await api.publishStory(args.session);
+  creativeUI.refresh();
+  if(type==="savePaint"||type==="startPaint"||type==="publishPaint")for(const it of S.layout.items)if(it.type==="giaVe")refreshView(it);
+  if(type==="publishBook"||type==="appendStory")for(const it of S.layout.items)if(it.type==="mayDanhChu"||it.type==="keSach")refreshView(it);
+  return result;
+}
+const creativeUI=createCreativeUI({getState:creativeState,work:creativeWork,who:()=>S.me,online:()=>CLOUD.on&&navigator.onLine,connected:()=>CLOUD.on});
 function pushScene(scene) {
   if (!CLOUD.on) return;
   const L = S.layouts[scene], last = CLOUD.last[scene], { upserts, removes } = SY.diffLayout(last, L);
@@ -296,7 +335,7 @@ function placeView(view, it, lift = 0) {
 }
 function refreshView(it) {
   const old = views.get(it.uid);
-  if (old) itemsG.remove(old.root);
+  if (old) {disposeCreativeTextures(old.root);itemsG.remove(old.root);}
   const root = makeModel(it.type, stateOf(it));
   addAppDeco(it, root);
   root.userData.uid = it.uid;
@@ -309,7 +348,7 @@ function refreshView(it) {
   itemsG.add(root); views.set(it.uid, view);
 }
 function rebuildAll() {
-  for (const v of views.values()) itemsG.remove(v.root);
+  for (const v of views.values()) { disposeCreativeTextures(v.root);itemsG.remove(v.root); }
   views.clear();
   for (const it of S.layout.items) refreshView(it);
   S.G = E.blockGrid(S.layout);
@@ -708,7 +747,7 @@ function onTap(cx, cy) {
   if (hit && hit.portal) return walkThroughPortal(hit.portal);
   if (hit && hit.actor) return actorMenu(hit.actor, cx, cy);
   if (hit && hit.lifeSpot) { lifeUI.open(hit.lifeSpot); return; }
-  if (hit && hit.cat) { floatAt(cat.x, 0.9, cat.z, "💗", 2); bubble(cat.x, 1.0, cat.z, "Meo~", 1400); return; }
+  if (hit && hit.cat) { floatAt(cat.x, 0.9, cat.z, "💗", 2);lifeUI.open("pet");return; }
   if (hit && hit.part) return partMenu(itemByUid(hit.uid), hit.part, hit.point);
   if (hit && hit.uid) return itemMenu(itemByUid(hit.uid), cx, cy);
   const p = floorPoint(cx, cy);
@@ -778,6 +817,7 @@ function guideArrive(){
  if(f.scene!==S.scene){const door=WD.nextPortal(S.scene,f.scene);if(door)walkThroughPortal(door);else{guideIntent=null;toast("Chưa có đường tới nơi này");}return;}
  guideIntent=null;
  if(f.roomOnly){toast("Đã tới "+(WD.SCENE_LABELS[f.scene]||"phòng mới"));return;}
+ if(f.id==="ve"||f.id==="truyen"){creativeUI.open(f.id==="ve"?"paint":"story");return;}
  const it=S.layout.items.find(it=>it.type===f.object);
  if(it){useItem(me(),it,()=>openApp(f.id));return;}
  const n=E.nearestFreeCell(S.G,Math.floor(RM.w/2),Math.floor(RM.d/2));
@@ -791,6 +831,10 @@ $("#btn-world-guide").onclick=()=>{
  const toolsHeading=document.createElement("h3");toolsHeading.textContent="💌 Đồ dùng và hoạt động";root.append(toolsHeading);
  for(const [id,label]of [["kitchen","🍳 Bếp chung"],["pantry","🧺 Kho nguyên liệu"],["coop","🐔 Chuồng gà vịt"],["pond","🐠 Hồ cá"],["pet","🐾 Thú cưng"]]){
    const b=document.createElement("button");b.className="pill";b.textContent=label;b.onclick=()=>{$("#world-guide").hidden=true;lifeUI.open(id);};root.append(b);
+ }
+ for(const [id,label]of [["museum","🖼️ Xem tranh đã hoàn thành · bảo tàng"],["books","📚 Truyện đã xuất bản · phòng ngủ"]]){
+   const b=document.createElement("button");b.className="pill";b.textContent=label;
+   b.onclick=()=>{$("#world-guide").hidden=true;creativeUI.open(id);};root.append(b);
  }
  for(const f of WORLD_FEATURES){const b=document.createElement("button");b.className="pill";b.textContent=f.title+" · "+f.place;b.onclick=()=>{$("#world-guide").hidden=true;if(!f.scene){openApp(f.id);return;}guideIntent=f;guideArrive();};root.append(b);}
  openSheet("#world-guide");
@@ -847,6 +891,7 @@ async function harvest(actor, it) {
     // Hoa trang trí vẫn thu như trước, không ép đưa vào kho nguyên liệu ăn được.
     it.plant=undefined;saveLayout();result={ok:true,message:"Đã hái "+n+" "+def.noun+" để trang trí 🌼"};
   } else if (CLOUD.on) {
+    if(!navigator.onLine){toast("Mất mạng, chưa thể cất rau củ vào kho chung; thử lại khi có kết nối");return;}
     try { result=await CLOUD.api.harvestLife(S.scene,it.uid,S.me,Date.now()); }
     catch(e){console.warn("Không thể thu hoạch chung",e);toast("Chưa lưu được rau củ; kiểm tra mạng rồi thử lại");return;}
     if(!result.ok){toast(result.message);return;}
@@ -901,11 +946,11 @@ function appKey(it) {
   if (it.type === "hopThu") return "m" + APPST.mail.unread + (mailOpen.has(it.uid) ? "o" + APPST.letters.map(l => l.id + (l.open ? 1 : 0) + (l.seen ? 1 : 0)).join(",") : "");
   if (it.type === "tuLanh") return "f" + APPST.fridge.shown.map(n => n.id + (n.heart ? "h" : "") + (n.fresh ? "n" : "")).join(",");
   if (it.type === "loUocMo") return "w" + APPST.wishes.fresh;
-  if (it.type === "giaVe") return "d" + APPST.drawing.mode;
+  if (it.type === "giaVe") return "d" + APPST.drawing.mode + (S.scene==="xuong"?(creativeState().painting?"|live":"|empty"):"");
   if (it.type === "mayDanhChu") return "s" + APPST.story.myTurn;
   if (it.type === "bangGhim") return "r" + APPST.rules.count;
-  if (it.type === "tuKinh") return "museum" + APPST.memory.museum;
-  if (it.type === "keSach") return "words" + APPST.memory.words;
+  if (it.type === "tuKinh") return "museum" + APPST.memory.museum + (S.scene==="bao-tang"?"|art"+creativeState().artworks.length:"");
+  if (it.type === "keSach") return "words" + APPST.memory.words + (S.scene==="ngu"?"|books"+creativeState().books.length:"");
   if (it.type === "banDo") return "places" + APPST.memory.places;
   if (it.type === "benThuyen") return "kingdom" + APPST.memory.kingdom.pending;
   if (it.type === "cayHoa") return "gifts-entry";
@@ -917,9 +962,19 @@ function addAppDeco(it, root) {
   if (it.type === "tuLanh" && APPST.known && stateOf(it) === "trong") root.add(WM.fridgeNotes(APPST.fridge.shown));
   if (it.type === "huHenHo" && (APPST.jar.pending || APPST.jar.openNo)) root.add(WM.jarSlip(!!APPST.jar.openNo));
   if (it.type === "loUocMo" && APPST.wishes.fresh) root.add(WM.jarSlip(false));
-  if (it.type === "giaVe" && APPST.drawing.mode === "bottom") { const badge = WM.jarSlip(true); badge.position.y = 1.75; root.add(badge); }
-  if (it.type === "mayDanhChu" && APPST.story.myTurn) { const badge = WM.jarSlip(true); badge.position.y = 1.55; root.add(badge); }
-  if (it.type === "tuKinh") root.add(WM.exhibits(APPST.memory.museum));
+  if (it.type === "giaVe" && (creativeState().painting || APPST.drawing.mode === "bottom")) { const badge = WM.jarSlip(true); badge.position.y = 1.75; root.add(badge); }
+  if (it.type === "giaVe" && S.scene==="xuong" && creativeState().painting) root.add(easelPreview(creativeState().painting));
+  if (it.type === "mayDanhChu" && (creativeState().story || APPST.story.myTurn)) { const badge = WM.jarSlip(true); badge.position.y = 1.55; root.add(badge); }
+  if (it.type === "tuKinh") {
+    root.add(WM.exhibits(APPST.memory.museum));
+    if(S.scene==="bao-tang"){
+      // Mỗi tủ trưng bày một dải tranh khác nhau, không nhân ba cùng tác phẩm.
+      const all=S.layout.items.filter(x=>x.type==="tuKinh").map(x=>x.uid).sort();
+      const shelf=Math.max(0,all.indexOf(it.uid));
+      root.add(galleryFrames(creativeState().artworks.slice(shelf*3,shelf*3+3)));
+    }
+  }
+  if (it.type === "keSach" && S.scene==="ngu") root.add(bookSpines(creativeState().books.length));
   if (it.type === "banDo") root.add(WM.mapPins(APPST.memory.places));
   if (it.type === "benThuyen" && APPST.memory.kingdom.pending) root.add(WM.kingdomFlag());
 }
@@ -947,17 +1002,27 @@ function appMenu(it, use, list) {
     return;
   }
   if (it.type === "giaVe") {
-    const labels = { noid: "Chọn người vẽ", start: "Bắt đầu bức tranh", wait: `Chờ ${other} vẽ tiếp`, bottom: "Đến lượt bạn vẽ nửa dưới" };
-    list.push([labels[APPST.drawing.mode], () => useItem(m, it, () => openApp(use.tab))]);
+    list.push(["🎨 Cùng vẽ trên một khung tranh",()=>useItem(m,it,()=>creativeUI.open("paint"))]);
+    list.push(["🗂️ Xem tranh hai nửa ngày trước",()=>useItem(m,it,()=>openApp("ve"))]);
     return;
   }
   if (it.type === "mayDanhChu") {
-    const s = APPST.story;
-    list.push([s.myTurn ? "Đến lượt bạn viết tiếp" : s.active ? "Đọc truyện đang viết" : "Bắt đầu câu chuyện", () => useItem(m, it, () => openApp(use.tab))]);
+    list.push(["✍️ Cùng viết truyện ngay lúc này",()=>useItem(m,it,()=>creativeUI.open("story"))]);
+    list.push(["🗂️ Xem truyện nối cũ",()=>useItem(m,it,()=>openApp("truyen"))]);
     return;
   }
   if (it.type === "bangGhim") {
     list.push([`Bộ luật của hai đứa (${APPST.rules.count})`, () => useItem(m, it, () => openApp(use.tab))]);
+    return;
+  }
+  if(it.type==="tuKinh"&&S.scene==="bao-tang"){
+    list.push(["🖼️ Tranh của hai đứa ("+creativeState().artworks.length+")",()=>creativeUI.open("museum")]);
+    list.push(["💌 Kỷ vật cũ",()=>useItem(m,it,()=>openApp("bao-tang"))]);
+    return;
+  }
+  if(it.type==="keSach"&&S.scene==="ngu"){
+    list.push(["📚 Đọc truyện chung ("+creativeState().books.length+")",()=>creativeUI.open("books")]);
+    list.push(["✍️ Viết tiếp truyện",()=>creativeUI.open("story")]);
     return;
   }
   const memory = APPST.memory;
@@ -1188,6 +1253,7 @@ async function startCloud() {
       store.set(sceneKey(sc), E.serialize(S.layouts[sc]));
     }
   }
+  CREATIVE.cloud=CM.readCreativeDocs(all);
   CLOUD.on = true;
   try { LIFE.state=await api.getLife();lifeUI.refresh();api.watchLife(next=>{LIFE.state=next;lifeUI.refresh();}); }
   catch(e){console.warn("Chưa đọc được kho chung",e);}
@@ -1197,7 +1263,18 @@ async function startCloud() {
   useScene(S.scene); buildShell(); rebuildAll();
   const p = partner(); p.stop(); if (p.mode === "sit") p.standUp(); p.root.visible = false;
   $("#btn-me").hidden = true; $("#trial-pill").textContent = "Đảo chung";
-  api.listen(applyRemote);
+  api.listen(changes=>{
+    applyRemote(changes);
+    let needsArt=false,needsLive=false;
+    for(const c of changes)if(c.id.startsWith("cc_")){
+      if(c.data===null)CREATIVE.cloud.delete(c.id);else CREATIVE.cloud.set(c.id,c.data);
+      if(c.id.startsWith("cc_art_")||c.id.startsWith("cc_book_"))needsArt=true;
+      if(c.id==="cc_paint_meta"||c.id.startsWith("cc_paint_"))needsLive=true;
+    }
+    creativeUI.refresh();
+    if(needsArt||needsLive)for(const it of S.layout.items)if((S.scene==="bao-tang"&&it.type==="tuKinh")||
+      (S.scene==="ngu"&&it.type==="keSach")||(S.scene==="xuong"&&it.type==="giaVe"&&needsLive))refreshView(it);
+  });
   if (api.watchApp) { APPSRC.cloud = true; api.watchApp(d => setAppData(d)); }
   toast("Đã nối đảo chung · " + NAMES[partner().who] + " vào là thấy nhau");
 }
@@ -1248,7 +1325,7 @@ function goScene(id) {
     if (!CLOUD.on) p.place(q.x, q.z, sp.face);
     cat.root.visible = id === "nha" || id === "ngu";
     lifeProps.visible = id === "san";
-    lifeUI.close();
+    lifeUI.close();creativeUI.close();
     $("#btn-edit").hidden = !WD.canDecorate(id);
     document.body.dataset.scene = id;
     cam.target.set(m.x, 0.55, m.z); cam.goal.copy(cam.target); cam.goalPpm = cam.ppm = playPpm();
@@ -1630,6 +1707,10 @@ window.__NHA3D__ = {
   plantKey: uid => views.get(uid)?.key,
   basket: () => ({ ...basket }),
   life: () => JSON.parse(JSON.stringify(LIFE.state)),
+  creative: () => JSON.parse(JSON.stringify(creativeState())),
+  creativeEasel: () => views.get("studio-easel")?.root.getObjectByName("co-creative-easel")?.children.length || 0,
+  creativeWork: (type,args) => creativeWork(type,args),
+  openCreative: zone => creativeUI.open(zone),
   lifeAction: (op) => doLife(op),
   openLife: zone => lifeUI.open(zone),
   scene: () => S.scene,

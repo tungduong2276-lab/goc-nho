@@ -1,7 +1,7 @@
 import { FOOD, RECIPES, sufficient, sanitizeLife } from "./life.mjs";
 
 // Phiếu thao tác nổi ngay trên đảo 3D; toàn bộ dữ liệu từ Firebase chỉ dùng qua textContent.
-export function createLifeUI({ getState, act, who, online }) {
+export function createLifeUI({ getState, act, who, online, connected = online }) {
   const el=document.createElement("section");el.id="life-sheet";el.className="sheet life-sheet";el.hidden=true;
   el.setAttribute("aria-label","Nhịp sống của hai đứa");el.setAttribute("role","dialog");
   document.body.appendChild(el);
@@ -34,7 +34,8 @@ export function createLifeUI({ getState, act, who, online }) {
       b.setAttribute("aria-pressed",String(id===zone));b.addEventListener("click",()=>{zone=id;note="";render();});tabs.append(b);
     }
     el.append(tabs);
-    const status=text("p",online()?"💞 Kho của hai người · tự đồng bộ":"📱 Chế độ trên máy · chưa đồng bộ với người kia","life-sync");el.append(status);
+    const sync=connected()?(online()?"💞 Kho của hai người · tự đồng bộ":"⚠️ Mất mạng · kho chung chưa thể ghi tiếp"):"📱 Chế độ trên máy · chưa đồng bộ với người kia";
+    const status=text("p",sync,"life-sync");el.append(status);
     if(note)el.append(text("p",note,"life-note"));
     const panel=document.createElement("div");panel.className="life-panel";el.append(panel);
     const action=(label,op,disabled)=>panel.append(button(label,()=>act(op),disabled));
