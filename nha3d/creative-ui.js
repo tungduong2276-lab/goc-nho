@@ -209,7 +209,7 @@ export function createCreativeUI({getState,work,who,online,connected=online}){
   // Trong chế độ đã nối Firebase, giữ nét trên canvas địa phương nếu mất mạng.
   // Khi reconnect, gửi lại phiên tranh/nháp hiện còn mở. Không tự xuất bản.
   window.addEventListener("online",()=>{
-    if(el.hidden)return;
+    // Cũng thử gửi lại khi bảng đã đóng: bức tranh dở không mất chỉ vì rời xưởng.
     if(zone==="paint"&&paintSession&&ownStrokes.length)schedulePaint(true);
     if(zone==="story"&&seenStory&&storyTextarea){
       work("saveDraft",{session:seenStory,text:storyTextarea.value}).catch(e=>console.warn("Chưa khôi phục được nháp",e));
