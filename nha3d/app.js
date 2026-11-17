@@ -78,7 +78,7 @@ useScene(S.scene);
 const saveLayout = () => { store.set(sceneKey(S.scene), E.serialize(S.layout)); pushScene(S.scene); };
 // ---------- đồng bộ hai máy (W2) ----------
 // CLOUD.on = đã đăng nhập Góc Nhỏ và vào được nhà chung; khi đó người kia do máy kia điều khiển.
-const CLOUD = { on: false, api: null, last: Object.fromEntries(Object.keys(WD.SCENES).map(sc => [sc, new Map()])), meta: {}, remote: null, sentP: null, ev: null, lastEv: null, lastTarget: null };
+const CLOUD = { on: false, api: null, last: Object.fromEntries(Object.keys(WD.SCENES).map(sc => [sc, new Map()])), known: new Set(), meta: {}, remote: null, sentP: null, ev: null, lastEv: null, lastTarget: null };
 function pushScene(scene) {
   if (!CLOUD.on) return;
   const L = S.layouts[scene], last = CLOUD.last[scene], { upserts, removes } = SY.diffLayout(last, L);
@@ -1091,8 +1091,8 @@ function applyRemote(changes) {
   for (const c of changes) {
     if (c.id.startsWith("a_")) continue; // bản ghi hoạt động cũ (đảo hẹn hò đã gỡ) — để yên, không đọc
     if (c.id === SY.presenceId(partner().who)) { CLOUD.remote = c.data; continue; }
-    if (c.id.startsWith("m_")) { const sc = c.id.slice(2); if(!WD.SCENES[sc])continue; const L = S.layouts[sc]; if (L && c.data) { L.wall = c.data.wall || L.wall; L.floor = c.data.floor || L.floor; CLOUD.meta[sc] = L.wall + "|" + L.floor; store.set(sceneKey(sc), E.serialize(L)); if (sc === S.scene) buildShell(); } continue; }
-    for (const sc of Object.keys(WD.SCENES)) if (c.id.startsWith("i_" + sc + "_")) byScene[sc].push(c);
+    if (c.id.startsWith("m_")) { const sc = c.id.slice(2); if(!WD.SCENES[sc])continue; if(c.data)CLOUD.known.add(sc); const L = S.layouts[sc]; if (L && c.data) { L.wall = c.data.wall || L.wall; L.floor = c.data.floor || L.floor; CLOUD.meta[sc] = L.wall + "|" + L.floor; store.set(sceneKey(sc), E.serialize(L)); if (sc === S.scene) buildShell(); } continue; }
+    for (const sc of Object.keys(WD.SCENES)) if (c.id.startsWith("i_" + sc + "_")) { CLOUD.known.add(sc); byScene[sc].push(c); }
   }
   for (const sc of Object.keys(WD.SCENES)) {
     if (!byScene[sc].length) continue;
@@ -1121,9 +1121,10 @@ async function startCloud() {
   try { all = await api.getAll(); } catch (e) { console.warn(e); toast("Chưa tải được đảo chung, đang dùng bản trên máy"); return; }
   for (const sc of Object.keys(WD.SCENES)) {
     const room = WD.SCENES[sc], docs = all.filter(d => d.id.startsWith("i_" + sc + "_"));
-    if (docs.length) {
-      // Đảo chung đã có: dùng bản trên Firebase cho mọi máy.
-      const meta = all.find(d => d.id === SY.metaId(sc))?.data;
+    const meta = all.find(d => d.id === SY.metaId(sc))?.data;
+    if (docs.length || meta) {
+      // Có metadata nhưng không có đồ: phòng cố ý để trống, tuyệt đối không tái gieo đồ mặc định.
+      CLOUD.known.add(sc);
       const raw = { v: E.LAYOUT_VERSION, wall: meta?.wall, floor: meta?.floor, items: docs.map(d => SY.decodeItem(d.data)).filter(Boolean) };
       S.layouts[sc] = E.sanitizeLayout(raw, room).layout;
       SY.remember(CLOUD.last[sc], S.layouts[sc]); CLOUD.meta[sc] = S.layouts[sc].wall + "|" + S.layouts[sc].floor;
@@ -1132,7 +1133,7 @@ async function startCloud() {
   }
   CLOUD.on = true;
   // Cảnh chưa có trên Firebase: máy này góp bố cục của mình làm bản chung đầu tiên.
-  for (const sc of ["nha", "san"]) if (!CLOUD.last[sc].size) pushScene(sc);
+  for (const sc of new Set(["nha", "san", S.scene])) if (!CLOUD.known.has(sc)) { CLOUD.known.add(sc); pushScene(sc); } // phòng khác chỉ seed khi bước vào
   CLOUD.remote = all.find(d => d.id === SY.presenceId(partner().who))?.data || null;
   useScene(S.scene); buildShell(); rebuildAll();
   const p = partner(); p.stop(); if (p.mode === "sit") p.standUp(); p.root.visible = false;
@@ -1174,8 +1175,9 @@ function goScene(id) {
   setTimeout(() => {
     for (const a of Object.values(actors)) { a.standUp(); a.stop(); }
     S.seats.clear(); S.transient.clear(); mailOpen.clear();
-    const from=store.get(KEY.scene)===S.scene?S.scene:S.scene;
+    const from=S.scene;
     useScene(id); store.set(KEY.scene, id);
+    S.history=new E.History(40); $("#btn-undo").disabled=true;
     if(CLOUD.on&&!CLOUD.known.has(id)){CLOUD.known.add(id);pushScene(id);}
     buildShell(); buildGrid(); rebuildAll();
     const sp = WD.spawnFrom(id, from), m = me(), p = partner();
@@ -1573,7 +1575,7 @@ window.__NHA3D__ = {
   doors: () => ({ out: WD.DOOR_OUT, in: WD.DOOR_IN }),
   cloud: () => ({ on: CLOUD.on, remote: CLOUD.remote, partnerVisible: partner().root.visible }),
   // Cho test: giả lập máy kia bằng một bộ nối giả (không Firebase).
-  useFakeCloud(api) { CLOUD.api = api; CLOUD.on = true; for (const sc of ["nha", "san"]) SY.remember(CLOUD.last[sc], S.layouts[sc]); partner().root.visible = false; $("#btn-me").hidden = true; },
+  useFakeCloud(api) { CLOUD.api = api; CLOUD.on = true; for (const sc of Object.keys(WD.SCENES)) { SY.remember(CLOUD.last[sc], S.layouts[sc]); CLOUD.known.add(sc); } partner().root.visible = false; $("#btn-me").hidden = true; },
   remoteChanges(changes) { applyRemote(changes); },
   sentPresence: () => CLOUD.sentP
 };
