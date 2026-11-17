@@ -25,7 +25,7 @@ test("trồng - kho - nấu chung - hồ cá - thú cưng chơi trực tiếp tr
   await page.getByRole("button",{name:/Salad vườn nhà/}).click();
   await expect(page.locator("#life-sheet")).toContainText("Đang chờ người kia");
   await page.getByRole("button",{name:/Tự hoàn thành/}).click();
-  await expect(page.locator("#life-sheet")).toContainText("Hai đứa cùng nấu");
+  await expect(page.locator("#life-sheet")).toContainText("Đã nấu xong");
   await page.getByRole("button",{name:/Kho thức ăn/}).click();
   await expect(page.locator("#life-sheet")).toContainText("Salad vườn nhà");
   expect((await N("life")).meals.length).toBe(1);
