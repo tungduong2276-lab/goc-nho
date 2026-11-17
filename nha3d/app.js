@@ -743,6 +743,7 @@ function guideArrive(){
  const f=guideIntent;
  if(f.scene!==S.scene){const door=WD.nextPortal(S.scene,f.scene);if(door)walkThroughPortal(door);else{guideIntent=null;toast("Chưa có đường tới nơi này");}return;}
  guideIntent=null;
+ if(f.roomOnly){toast("Đã tới "+(WD.SCENE_LABELS[f.scene]||"phòng mới"));return;}
  const it=S.layout.items.find(it=>it.type===f.object);
  if(it){useItem(me(),it,()=>openApp(f.id));return;}
  const n=E.nearestFreeCell(S.G,Math.floor(RM.w/2),Math.floor(RM.d/2));
@@ -751,6 +752,9 @@ function guideArrive(){
 }
 $("#btn-world-guide").onclick=()=>{
  guideIntent=null;me().stop();clearWorldInput();const root=$("#world-guide-places");root.replaceChildren();
+ const heading=document.createElement("h3");heading.textContent="🚪 Các phòng trong nhà";root.append(heading);
+ for(const id of ["nha","ngu","bep","bao-tang","xuong","phong-choi","hanh-lang"]){const b=document.createElement("button");b.className="pill";b.textContent="Đi tới "+WD.SCENE_LABELS[id];b.onclick=()=>{$("#world-guide").hidden=true;guideIntent={scene:id,roomOnly:true};guideArrive();};root.append(b);}
+ const toolsHeading=document.createElement("h3");toolsHeading.textContent="💌 Đồ dùng và hoạt động";root.append(toolsHeading);
  for(const f of WORLD_FEATURES){const b=document.createElement("button");b.className="pill";b.textContent=f.title+" · "+f.place;b.onclick=()=>{$("#world-guide").hidden=true;if(!f.scene){openApp(f.id);return;}guideIntent=f;guideArrive();};root.append(b);}
  openSheet("#world-guide");
 };
