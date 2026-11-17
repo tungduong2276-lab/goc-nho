@@ -20,7 +20,7 @@ const ordered=strokes=>[...strokes].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.
 export function createCreativeUI({getState,work,who,online}){
   const el=document.createElement("section");el.id="creative-sheet";el.className="sheet creative-sheet";
   el.setAttribute("aria-label","Xưởng sáng tác của hai đứa");el.setAttribute("role","dialog");el.hidden=true;document.body.append(el);
-  let zone="paint",note="",busy=false,paintSession=null,ownStrokes=[],liveStroke=null,canvas=null;
+  let zone="paint",note="",busy=false,paintSession=null,paintWho=null,ownStrokes=[],liveStroke=null,canvas=null;
   let selected=ART_COLORS[0],width=5,dragging=false,lastSend=0,sendTimer=null,writeQueue=Promise.resolve();
   let storyTextarea=null,otherDraft=null,linesBox=null,seenStory=null;
   const modes={paint:"🎨 Vẽ cùng nhau",story:"✍️ Viết truyện chung",museum:"🖼️ Bảo tàng tranh",books:"📚 Kệ sách phòng ngủ"};
@@ -34,7 +34,7 @@ export function createCreativeUI({getState,work,who,online}){
   const sendPaint=()=>{
     const session=paintSession;if(!session)return;
     clearTimeout(sendTimer);sendTimer=null;lastSend=Date.now();
-    const payload=cleanStrokes(ownStrokes,who());
+    const payload=cleanStrokes([...ownStrokes,...(liveStroke?[liveStroke]:[])],who());
     writeQueue=writeQueue.catch(()=>{}).then(()=>work("savePaint",{session,strokes:payload}))
       .catch(e=>{console.warn("Nét vẽ chưa đồng bộ",e);note="Nét vẽ chưa lưu được. Kiểm tra mạng rồi vẽ tiếp nhé.";});
   };
@@ -49,6 +49,8 @@ export function createCreativeUI({getState,work,who,online}){
     if(!p||p.id!==paintSession)return;
     const partnerStrokes=p[who()==="anh"?"em":"anh"]||[];
     drawStrokes(canvas,ordered([...partnerStrokes,...ownStrokes,...(liveStroke?[liveStroke]:[])]));
+    const pub=el.querySelector("#creative-publish");
+    if(pub)pub.disabled=!canPublishPainting(who()==="anh"?ownStrokes:p.anh,who()==="em"?ownStrokes:p.em);
     const status=el.querySelector("#creative-partner");
     if(status){const n=partnerStrokes.length;status.textContent=n?"💞 Người kia đã góp "+n+" nét. Cả hai đang thấy chung một bức tranh.":"💗 Đang chờ người kia vào vẽ nét đầu tiên";}
   }
@@ -86,8 +88,8 @@ export function createCreativeUI({getState,work,who,online}){
       }else{
         section(p.title);
         line("Màu từ hai người cùng nằm trên một khung vẽ. Dùng ngón tay hoặc chuột để vẽ.");
-        if(p.id!==paintSession){
-          clearTimeout(sendTimer);paintSession=p.id;ownStrokes=cleanStrokes(p[me],me);liveStroke=null;
+        if(p.id!==paintSession||paintWho!==me){
+          clearTimeout(sendTimer);paintSession=p.id;paintWho=me;ownStrokes=cleanStrokes(p[me],me);liveStroke=null;
         }
         canvas=makeCanvas(ordered([...p[other],...ownStrokes]));canvas.setAttribute("aria-label","Tranh chung của Anh và Em");panel.append(canvas);
         canvas.addEventListener("pointerdown",e=>{
@@ -124,11 +126,11 @@ export function createCreativeUI({getState,work,who,online}){
         }panel.append(tools);
         panel.append(text("p","💞 Người kia đang thấy những nét được đồng bộ gần như trực tiếp","creative-hint")).id="creative-partner";
         const both=canPublishPainting(me==="anh"?ownStrokes:p.anh,me==="em"?ownStrokes:p.em);
-        panel.append(button("🖼️ Hoàn thành → đưa vào bảo tàng",async()=>{
+        const publish=button("🖼️ Hoàn thành → đưa vào bảo tàng",async()=>{
           if(dragging)return {message:"Kết thúc nét vẽ trước nhé"};
           clearTimeout(sendTimer);sendPaint();await writeQueue;
           const v=await work("publishPaint",{session:p.id});if(v?.ok){paintSession=null;ownStrokes=[];}return v;
-        },!both));
+        },!both);publish.id="creative-publish";panel.append(publish);
         line("Cần mỗi người góp ít nhất một nét trước khi xuất bản. Các tranh cũ vẽ nửa trên/dưới vẫn được giữ trong kho lưu trữ.");
       }
     }else if(zone==="story"){
