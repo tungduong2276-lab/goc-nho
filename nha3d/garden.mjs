@@ -14,6 +14,9 @@ export const SPECIES = {
   xalach:     { name: "Xà lách",     grow: 18, yield: "🥬", noun: "cây xà lách", color: 0x8FD6A5 },
   dau:        { name: "Dâu tây",     grow: 36, yield: "🍓", noun: "quả dâu",     color: 0xFF5A7A },
   cachua:     { name: "Cà chua bi",  grow: 48, yield: "🍅", noun: "quả cà chua", color: 0xFF6B4A },
+  carot:      { name: "Cà rốt",      grow: 24, yield: "🥕", noun: "củ cà rốt", color: 0xFF9D47 },
+  khoai:      { name: "Khoai tây",   grow: 30, yield: "🥔", noun: "củ khoai", color: 0xD7B889 },
+  bingo:      { name: "Bí ngô",      grow: 42, yield: "🎃", noun: "quả bí", color: 0xFFA64D },
   tulip:      { name: "Tulip hồng",  grow: 30, yield: "🌷", noun: "bông tulip",  color: 0xFF8FB8 },
   cucHoaMi:   { name: "Cúc họa mi",  grow: 40, yield: "🌼", noun: "bông cúc họa mi", color: 0xFFFFFF },
   oaihuong:   { name: "Oải hương",   grow: 42, yield: "💜", noun: "nhánh oải hương", color: 0xB79CE8 }
