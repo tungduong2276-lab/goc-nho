@@ -56,10 +56,11 @@ test('old deep links open a single object tool over 3D and login stays accessibl
 test('world guide walks through the house door before opening its object tool',async({page})=>{
  const{world,N,errors}=await open(page);expect(await N('scene')).toBe('san');
  await world.getByRole('button',{name:'Bản đồ và đồ dùng trên đảo'}).click();
- await world.getByRole('button',{name:'Giấy nhắn trên tủ lạnh · Tủ lạnh',exact:true}).click();
- await N('tick',15);await N('settle');await N('tick',15);
- await expect(page.locator('#world-surface-title')).toHaveText('Giấy nhắn trên tủ lạnh');expect(await N('scene')).toBe('nha');
- await page.getByRole('button',{name:'Đóng đồ dùng, về đảo'}).click();expect(await N('scene')).toBe('nha');expect(errors).toEqual([]);
+ await world.getByRole('button',{name:'Giấy nhắn trên tủ lạnh · Tủ lạnh · phòng bếp',exact:true}).click();
+ // Từ sân qua phòng khách và hành lang tới tủ lạnh thật trong bếp.
+ for(let k=0;k<8;k++){await N('tick',12);await N('settle');if(await page.locator('#world-surface-title').textContent()==='Giấy nhắn trên tủ lạnh'&&await page.locator('#world-surface').isVisible())break;}
+ await expect(page.locator('#world-surface-title')).toHaveText('Giấy nhắn trên tủ lạnh');expect(await N('scene')).toBe('bep');
+ await page.getByRole('button',{name:'Đóng đồ dùng, về đảo'}).click();expect(await N('scene')).toBe('bep');expect(errors).toEqual([]);
 });
 
 test('3D home keeps phone notch and home-indicator insets out of its controls and tool view',async({page})=>{
