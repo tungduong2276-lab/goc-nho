@@ -120,6 +120,8 @@ test("two isolated phones live-sync strokes, co-writing, offline catch-up; outsi
    await Promise.all([add(alice.page,"anh","Con đường đầy sao."),add(bob.page,"em","Và một bé mèo.")]);
    await expect.poll(async()=>(await last(bob.page,"cc_story_meta"))?.lines?.length,
      {timeout:15000}).toBe(2);
+   await expect.poll(async()=>(await last(alice.page,"cc_story_meta"))?.lines?.length,
+     {timeout:15000}).toBe(2);
    const lines=(await last(alice.page,"cc_story_meta")).lines;
    expect(new Set(lines.map(p=>p.by))).toEqual(new Set(["anh","em"]));
 
