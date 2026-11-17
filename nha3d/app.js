@@ -91,6 +91,7 @@ const CLOUD = { on: false, api: null, last: Object.fromEntries(Object.keys(WD.SC
 const LIFE_KEY = "gocnho.nha3d.life.v1";
 const LIFE = { state: (() => { try { return sanitizeLife(JSON.parse(store.get(LIFE_KEY)||"null")); } catch {return sanitizeLife(null);} })() };
 async function doLife(op){
+  if(CLOUD.on&&!navigator.onLine)return {ok:false,message:"Đang mất mạng. Kho chung chưa đổi; thử lại khi có kết nối nhé."};
   if(CLOUD.on){
     const result = await CLOUD.api.actLife(op,S.me);
     if(result.ok)LIFE.state=result.next;
@@ -100,7 +101,7 @@ async function doLife(op){
   if(result.ok){LIFE.state=result.next;store.set(LIFE_KEY,JSON.stringify(result.next));}
   lifeUI.refresh();return result;
 }
-const lifeUI=createLifeUI({getState:()=>LIFE.state,act:doLife,who:()=>S.me,online:()=>CLOUD.on});
+const lifeUI=createLifeUI({getState:()=>LIFE.state,act:doLife,who:()=>S.me,online:()=>CLOUD.on&&navigator.onLine,connected:()=>CLOUD.on});
 // Tranh và truyện đời cũ giữ nguyên dữ liệu; studio mới ghi vào các doc world/cc_* riêng.
 const CREATIVE_KEY="gocnho.nha3d.creative.v1";
 const CREATIVE={
@@ -110,6 +111,7 @@ const CREATIVE={
 };
 function creativeState(){return CM.creativeState(CLOUD.on?CREATIVE.cloud:CREATIVE.local.docs);}
 async function creativeWork(type,args={}){
+  if(CLOUD.on&&!navigator.onLine)throw Error("Mất mạng, chưa thể xác nhận tác phẩm chung");
   const api=CLOUD.on?CLOUD.api:CREATIVE.local,who=S.me;
   let result;
   if(type==="startPaint"||type==="startStory"){
@@ -133,7 +135,7 @@ async function creativeWork(type,args={}){
   if(type==="publishBook"||type==="appendStory")for(const it of S.layout.items)if(it.type==="mayDanhChu"||it.type==="keSach")refreshView(it);
   return result;
 }
-const creativeUI=createCreativeUI({getState:creativeState,work:creativeWork,who:()=>S.me,online:()=>CLOUD.on});
+const creativeUI=createCreativeUI({getState:creativeState,work:creativeWork,who:()=>S.me,online:()=>CLOUD.on&&navigator.onLine,connected:()=>CLOUD.on});
 function pushScene(scene) {
   if (!CLOUD.on) return;
   const L = S.layouts[scene], last = CLOUD.last[scene], { upserts, removes } = SY.diffLayout(last, L);
@@ -889,6 +891,7 @@ async function harvest(actor, it) {
     // Hoa trang trí vẫn thu như trước, không ép đưa vào kho nguyên liệu ăn được.
     it.plant=undefined;saveLayout();result={ok:true,message:"Đã hái "+n+" "+def.noun+" để trang trí 🌼"};
   } else if (CLOUD.on) {
+    if(!navigator.onLine){toast("Mất mạng, chưa thể cất rau củ vào kho chung; thử lại khi có kết nối");return;}
     try { result=await CLOUD.api.harvestLife(S.scene,it.uid,S.me,Date.now()); }
     catch(e){console.warn("Không thể thu hoạch chung",e);toast("Chưa lưu được rau củ; kiểm tra mạng rồi thử lại");return;}
     if(!result.ok){toast(result.message);return;}
