@@ -839,13 +839,26 @@ function waterPlant(actor, it) {
   setTimeout(() => refreshView(it), 300);
   if (after.wateredBy.length > 1 && before.wateredBy.length < 2) { setTimeout(() => { floatAt(p.x, h + 0.35, p.z, "💚", 3); bubble(p.x, h + 0.4, p.z, "Hai đứa cùng tưới, cây lớn nhanh hơn!", 2600); }, 700); }
 }
-function harvest(actor, it) {
+async function harvest(actor, it) {
   const st = GD.status(it.plant, now()); if (!st.ripe) return;
   const def = GD.SPECIES[st.sp], p = E.itemPose(it), n = it.type === "luongTrong" ? 3 : 1;
-  basket[st.sp] = (basket[st.sp] || 0) + n; saveBasket();
-  floatAt(p.x, 0.8, p.z, def.yield, 5); actor.emote("wave", 1.4); actor.setFace?.("cuoi");
-  it.plant = undefined; saveLayout(); refreshView(it);
-  toast(`Thu được ${n} ${def.noun} · trong giỏ có ${basket[st.sp]} ${def.yield}`);
+  let result=null;
+  if (CLOUD.on) {
+    try { result=await CLOUD.api.harvestLife(S.scene,it.uid,S.me,Date.now()); }
+    catch(e){console.warn("Không thể thu hoạch chung",e);toast("Chưa lưu được rau củ; kiểm tra mạng rồi thử lại");return;}
+    if(!result.ok){toast(result.message);return;}
+    LIFE.state=result.next;lifeUI.refresh();
+    // Transaction đã lưu cây và kho cùng lúc; không pushScene lại item cũ.
+    it.plant=undefined;store.set(sceneKey(S.scene),E.serialize(S.layout));
+    SY.remember(CLOUD.last[S.scene],S.layout);
+  } else {
+    result=applyLife(LIFE.state,{type:"harvest",sp:st.sp,amount:n},actor.who,now());
+    if(result.ok){LIFE.state=result.next;store.set(LIFE_KEY,JSON.stringify(result.next));lifeUI.refresh();}
+    it.plant=undefined;saveLayout();
+  }
+  basket[st.sp]=(basket[st.sp]||0)+n;saveBasket();
+  floatAt(p.x, 0.8, p.z, def.yield, 5);actor.emote("wave", 1.4);actor.setFace?.("cuoi");
+  refreshView(it);toast(result.message);
 }
 // Cây lớn theo thời gian thật: vẽ lại khi giai đoạn hoặc độ ẩm đổi.
 function refreshGarden() { for (const it of S.layout.items) if (isGarden(it) && views.get(it.uid)?.key !== stateOf(it)) refreshView(it); }
