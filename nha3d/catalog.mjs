@@ -1,3 +1,5 @@
+import { COZY, ROOM_MOODS } from "./cozy-palette.mjs";
+
 // Danh mục đồ cho bản thử nhà 3D. Dữ liệu thuần (không phụ thuộc three.js) để test được bằng Node.
 // Kích thước ô (w × d, mỗi ô 0,5 m) lấy từ hộp bao thật của mô hình trong _xuong-3d (đo ngày 2026-11-08);
 // tests/staging/nha3d-engine.test.mjs và tests/browser/nha3d.spec.mjs kiểm tra lại cho khớp.
@@ -107,6 +109,8 @@ export const CATALOG = {
 // Màu tường / sàn (giá trị số để Node và three.js dùng chung).
 export const WALL_COLORS = [
   { id: "may",   name: "Mây",       wall: 0xEAF5FF },
+  { id: "mint",  name: "Xanh mint", wall: COZY.mintWall },
+  { id: "babyblue", name: "Baby blue", wall: COZY.blueWall },
   { id: "hong",  name: "Hồng phấn", wall: 0xFFE6F0 },
   { id: "bo",    name: "Bơ",        wall: 0xFFF3C9 },
   { id: "la",    name: "Lá non",    wall: 0xDDF3E4 },
@@ -114,6 +118,7 @@ export const WALL_COLORS = [
 ];
 export const FLOOR_COLORS = [
   { id: "go",    name: "Gỗ sáng",   floor: 0xE8C9A0, plank: 0xDDB98C },
+  { id: "mint",  name: "Gạch mint", floor: COZY.mintFloor, plank: COZY.mintGrout },
   { id: "godam", name: "Gỗ trầm",   floor: 0xC99B6D, plank: 0xB58758 },
   { id: "da",    name: "Đá trắng",  floor: 0xF4F7FB, plank: 0xDCE6F2 },
   { id: "hong",  name: "Gạch hồng", floor: 0xFFD9E6, plank: 0xF7C2D5 }
@@ -123,8 +128,8 @@ export const FLOOR_COLORS = [
 // gx, gz = ô góc trên-trái của dấu chân sau khi xoay; r = số lần xoay 90°.
 export const DEFAULT_LAYOUT = {
   v: 1,
-  wall: "may",
-  floor: "go",
+  wall: ROOM_MOODS.nha.wall,
+  floor: ROOM_MOODS.nha.floor,
   items: [
     { uid: "a1", type: "thamTron",    gx: 6,  gz: 7,  r: 0 },
     { uid: "a2", type: "sofa",        gx: 5,  gz: 6,  r: 0 },
