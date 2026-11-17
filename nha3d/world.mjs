@@ -1,6 +1,7 @@
 // Thế giới mở (V3, xem đầu docs/GOC-NHO-MASTER-ROADMAP.md): đảo ngoài sân + trong nhà, nối bằng cửa trước.
 // Dữ liệu thuần, không phụ thuộc three.js. Toạ độ ô giống catalog.mjs: mỗi ô 0,5 m, gốc ở giữa cảnh.
 import { CELL, ROOM } from "./catalog.mjs";
+import { ROOM_PRESETS, ROOM_LINKS, SCENE_LABELS, directedDoors, crossingDoor, nextDoor, entryPoint } from "./rooms.mjs";
 
 // Sân 22 m × 18 m. Nhà (14 × 10 ô) nằm giữa phía sau; cửa trước ở giữa mặt trước.
 export const HOUSE_AT = { gx: 15, gz: 2, w: 14, d: 10 };
@@ -61,7 +62,23 @@ const mat = center(ROOM, 8, 13.5);
 export const DOOR_IN = { x: mat.x, z: mat.z };
 export const SPAWN_IN = { x: mat.x, z: mat.z - 0.9, face: Math.PI };
 
-export const SCENES = { nha: ROOM, san: YARD };
+export const SCENES = { nha: ROOM, san: YARD, ...ROOM_PRESETS };
+export { SCENE_LABELS };
+// Cửa cũ ra sân giữ nguyên vị trí và định dạng lưu dữ liệu. Phòng mới chỉ thêm cảnh và cửa.
+export const PORTALS = Object.freeze([
+  { id: "san-nha", a: { scene: "san", ...DOOR_OUT, nx: 0, nz: -1 }, b: { scene: "nha", ...DOOR_IN, nx: 0, nz: 1 } },
+  ...ROOM_LINKS
+]);
+export const sceneDoors = id => directedDoors(id, PORTALS);
+export const crossedPortal = (id, x, z, dx, dz) => crossingDoor(id, x, z, dx, dz, PORTALS);
+export const nextPortal = (id, target) => nextDoor(id, target, PORTALS);
+export function spawnFrom(id, source) {
+  if (id === "san" && source === "nha") return SPAWN_OUT;
+  if (id === "nha" && source === "san") return SPAWN_IN;
+  return entryPoint(id, source, PORTALS) || (id === "san" ? SPAWN_OUT : SPAWN_IN);
+}
+export const isInterior = id => id !== "san";
+export const canDecorate = id => isInterior(id) && id !== "hanh-lang";
 
 // Bước qua cửa: đang ở gần cửa và đi về phía cửa. dir = hướng đi (x, z) trên sàn.
 export function crossesDoor(scene, x, z, dirX, dirZ) {
