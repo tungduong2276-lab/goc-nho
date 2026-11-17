@@ -1,5 +1,15 @@
 # GÓC NHỎ — MASTER ROADMAP & AI HANDOFF
 
+## ★ LIVE CO-CREATION — shared canvas, visible drafts, authored room artefacts (2026-11-17)
+
+**Latest creative requirement:** Both people can paint on ONE canvas and see each other's evolving strokes; abandon the hidden top/bottom half workflow for **new paintings**. Completed paintings enter a real 3D-framed gallery in the museum. Co-written story drafts and paragraphs are visible to both without forced turn-taking; when both have contributed and the story is published it becomes an interactive book in the bedroom bookshelf. Keep all historic drawings and stories readable, never auto-merge or delete their original Firestore documents.
+
+**Implementation branch:** `feature/world-live-creative-20261117`, stacked on the shared-life PR #125, not in `main`. New isolated docs `couples/{cid}/world/cc_*`: `cc_paint_meta`, per-person `cc_paint_<anh|em>` strokes; `cc_story_meta`, per-person `cc_draft_<anh|em>` live text; published `cc_art_<id>` and `cc_book_<id>`. The client writes bounded, sanitized strokes per artist separately (debounced) and story paragraphs via transaction; publication reads both contributions and writes the archive atomically while closing the active session. Text content uses safe DOM text nodes, no secret gift data or legacy collection writes. A local-only preview has its own separate key and explicitly states it cannot sync to the partner.
+
+**3D integration:** The easel and typewriter open native creative panels over the world rather than an old tab. They still retain a separately labelled legacy-archive entry for old drawings/stories. Museum `tuKinh` displays up to three framed canvas textures sourced from published strokes, and opening it shows the complete painting gallery. Bedroom preset adds a `keSach` with spines from finished story books; opening the shelf shows the full books. Saved bedroom layouts are *not* overwritten or forcibly seeded with this shelf: the compass also offers the book archive for that case. Dispose GPU textures when rooms rebuild.
+
+**Acceptance gates:** Node document sanitization and co-author tests, Emulator auth/concurrent story+harvest tests, real Playwright canvas stroke and 2-author publish at phone widths, performance review and two *physical* phone real-time session; failures or missing proof mean no merge. No actual hardware acceptance can be claimed here.
+
 ## ★ SHARED LIFE LOOP — farm, pantry, cooking, fish, pets (user request 2026-11-17)
 
 User wants practical co-op living in the 3D world: harvest vegetables/fruit, keep livestock, store ingredients, cook together, care for pets and fish. User additionally wants a **single simultaneous drawing canvas** rather than old hidden halves; published paintings go into the 3D museum, finished stories onto the bedroom bookshelf. Preserve all old `drawings`, `story`, `museum`, `pet`, garden and other production records.
