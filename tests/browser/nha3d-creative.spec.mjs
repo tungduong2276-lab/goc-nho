@@ -33,6 +33,7 @@ test("hai người vẽ trực tiếp một canvas, tranh vào bảo tàng và t
   await expect(page.locator(".creative-sync")).toContainText("Bản chơi trên máy này");
   await page.locator("#creative-new-art").fill("Ngôi nhà ba màu");
   await page.getByRole("button",{name:/Mở giá vẽ chung/}).click();
+  expect(await N("creativeEasel")).toBe(1);
   await paint();
   await expect.poll(async()=>(await N("creative")).painting?.anh.length).toBeGreaterThan(0);
   await page.locator(".creative-close").click();
@@ -41,6 +42,7 @@ test("hai người vẽ trực tiếp một canvas, tranh vào bảo tàng và t
   await N("openCreative","paint");
   await paint();
   await expect.poll(async()=>(await N("creative")).painting?.em.length).toBeGreaterThan(0);
+  expect(await N("creativeEasel")).toBe(1);
   await expect(page.locator("#creative-publish")).toBeEnabled();
   await page.locator("#creative-publish").click();
   await expect.poll(async()=>(await N("creative")).artworks.length).toBe(1);
