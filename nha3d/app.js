@@ -177,6 +177,33 @@ function applyTime() {
 
 // ---------- vỏ phòng ----------
 let shell = null, grid = null;
+// Cửa dựng bằng hình học thật, có vùng chạm; chuyển phòng khi nhân vật đi tới ngưỡng cửa.
+const portalsG = new THREE.Group(); scene.add(portalsG);
+function buildPortalModels() {
+  for (const obj of [...portalsG.children]) {
+    obj.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    portalsG.remove(obj);
+  }
+  if (S.scene === "san") return; // cửa ngoài đã nằm trên mô hình căn nhà
+  for (const d of WD.sceneDoors(S.scene)) {
+    if (d.to.scene === "san") continue; // thảm cửa chính đã có sẵn
+    const g = new THREE.Group();
+    const museum = d.to.scene === "bao-tang", accent = museum ? 0xC7A0E8 : 0xF5B5CA;
+    const frame = new THREE.MeshToonMaterial({color: 0xFAF0DE});
+    const tint = new THREE.MeshToonMaterial({color:accent,transparent:true,opacity:.56});
+    const add = (w,h,dep,x,y,z,mat=frame) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,dep),mat);
+      mesh.position.set(x,y,z); mesh.castShadow=true; g.add(mesh);
+    };
+    add(.12,1.52,.15,-.55,.76,0); add(.12,1.52,.15,.55,.76,0);
+    add(1.22,.14,.15,0,1.52,0);
+    add(1.05,1.40,.065,0,.76,0,tint);
+    add(.18,.045,.82,0,.027,.14,new THREE.MeshToonMaterial({color:accent}));
+    g.position.set(d.from.x,0,d.from.z);
+    g.traverse(o => { o.userData.portalId=d.id; });
+    portalsG.add(g);
+  }
+}
 function buildShell() {
   if (shell) scene.remove(shell);
   const wc = (WALL_COLORS.find(c => c.id === S.layout.wall) || WALL_COLORS[0]).wall;
@@ -399,12 +426,22 @@ scene.add(cat.root);
 // ---------- nhãn tên, bong bóng, tim ----------
 const labels = $("#labels");
 const tags = {};
-// Nhãn cửa nổi: "Vào nhà" ngoài sân, "Ra sân" trong nhà.
-const doorTag = (() => { const el = document.createElement("button"); el.className = "nametag doortag"; el.type = "button"; document.body.appendChild(el); el.addEventListener("click", () => walkThroughDoor()); return el; })();
+// Nhãn chỉ hiện tại cửa gần nhất, tránh sáu nhãn đè lên nhau trên màn hình điện thoại.
+const doorTag = (() => {
+  const el = document.createElement("button"); el.className = "nametag doortag"; el.type = "button";
+  document.body.appendChild(el); el.addEventListener("click", () => { if (el._door) walkThroughPortal(el._door); });
+  return el;
+})();
 function placeDoorTag() {
-  const d = S.scene === "san" ? WD.DOOR_OUT : WD.DOOR_IN, y = S.scene === "san" ? 2.75 : 0.35;
-  doorTag.textContent = S.scene === "san" ? "🏠 Vào nhà" : "🚪 Ra sân"; doorTag.hidden = S.mode !== "play";
-  const [x, yy] = toScreen(d.x, y, S.scene === "san" ? d.z - 0.3 : d.z); doorTag.style.left = x + "px"; doorTag.style.top = yy + "px";
+  const m=me(), opts=WD.sceneDoors(S.scene).slice()
+    .sort((a,b)=>Math.hypot(m.x-a.from.x,m.z-a.from.z)-Math.hypot(m.x-b.from.x,m.z-b.from.z));
+  const d=opts[0], dist=d?Math.hypot(m.x-d.from.x,m.z-d.from.z):Infinity;
+  doorTag._door=d;
+  doorTag.hidden=S.mode!=="play"||!d||(S.scene==="hanh-lang"&&dist>2.7);
+  if(doorTag.hidden)return;
+  doorTag.textContent=d.to.scene==="nha"?"🏠 Vào nhà":d.to.scene==="san"?"🚪 Ra sân":"🚪 "+d.label;
+  const [x,y]=toScreen(d.from.x,S.scene==="san"?2.75:1.95,d.from.z);
+  doorTag.style.left=x+"px";doorTag.style.top=y+"px";
 }
 function makeTag(who) { const el = document.createElement("div"); el.className = "nametag"; labels.appendChild(el); tags[who] = el; }
 function bubble(x, y, z, text, ms = 2200) {
@@ -439,7 +476,7 @@ function spawn() {
   });
 }
 spawn();
-cat.root.visible = S.scene === "nha"; $("#btn-edit").hidden = S.scene !== "nha"; document.body.dataset.scene = S.scene;
+cat.root.visible = S.scene === "nha"; $("#btn-edit").hidden = !WD.canDecorate(S.scene); document.body.dataset.scene = S.scene;
 const me = () => actors[S.me];
 const partner = () => actors[S.me === "anh" ? "em" : "anh"];
 function updateMe() {
@@ -564,11 +601,12 @@ function floorPoint(cx, cy) { setRay(cx, cy); const p = new THREE.Vector3(); ret
 function pickAt(cx, cy) {
   setRay(cx, cy);
   const objs = [itemsG];
-  if (S.mode === "play") objs.push(actors.anh.root, actors.em.root, cat.root);
+  if (S.mode === "play") objs.push(portalsG, actors.anh.root, actors.em.root, cat.root);
   const hits = ray.intersectObjects(objs, true);
   for (const h of hits) {
     if (!h.object.visible) continue;
     const ud = h.object.userData;
+    if (ud.portalId) return { portal: WD.sceneDoors(S.scene).find(d => d.id === ud.portalId) };
     if (ud.actor && ud.actor.root.visible) return { actor: ud.actor };
     if (ud.cat) return { cat: true };
     if (ud.uid) { let o = h.object, part = null; while (o && !part) { part = o.userData.part || null; o = o.parent; } return { uid: ud.uid, point: h.point, part }; }
@@ -637,13 +675,15 @@ function onTap(cx, cy) {
   const m = me();
   if (m.mode === "sleep") { m.standUp(); return; }
   const hit = pickAt(cx, cy);
+  if (hit && hit.portal) return walkThroughPortal(hit.portal);
   if (hit && hit.actor) return actorMenu(hit.actor, cx, cy);
   if (hit && hit.cat) { floatAt(cat.x, 0.9, cat.z, "💗", 2); bubble(cat.x, 1.0, cat.z, "Meo~", 1400); return; }
   if (hit && hit.part) return partMenu(itemByUid(hit.uid), hit.part, hit.point);
   if (hit && hit.uid) return itemMenu(itemByUid(hit.uid), cx, cy);
   const p = floorPoint(cx, cy);
   if (!p || Math.abs(p.x) > W / 2 || Math.abs(p.z) > D / 2) return;
-  if (S.scene === "nha" && Math.abs(p.x - WD.DOOR_IN.x) < 0.6 && Math.abs(p.z - WD.DOOR_IN.z) < 0.35) return walkThroughDoor();
+  const near=WD.sceneDoors(S.scene).find(d=>Math.hypot(p.x-d.from.x,p.z-d.from.z)<0.65);
+  if(near)return walkThroughPortal(near);
   if (m.goTo(p.x, p.z)) ring(p.x, p.z); else toast("Chỗ đó chưa tới được");
 }
 
@@ -701,7 +741,7 @@ let guideIntent=null;
 function guideArrive(){
  if(!guideIntent||switching)return;
  const f=guideIntent;
- if(f.scene!==S.scene){walkThroughDoor();return;}
+ if(f.scene!==S.scene){const door=WD.nextPortal(S.scene,f.scene);if(door)walkThroughPortal(door);else{guideIntent=null;toast("Chưa có đường tới nơi này");}return;}
  guideIntent=null;
  const it=S.layout.items.find(it=>it.type===f.object);
  if(it){useItem(me(),it,()=>openApp(f.id));return;}
@@ -1110,11 +1150,22 @@ function orderDrink(actor, it, treat) {
   floatAt(actor.x, 1.4, actor.z, d.slice(-2), 2); actor.emote("wave", 1);
 }
 let switching = false;
-function walkThroughDoor() {
-  const m = me(), to = S.scene === "san" ? WD.DOOR_OUT : WD.DOOR_IN;
+function walkThroughPortal(door) {
+  if(!door||door.from.scene!==S.scene||switching)return;
   hideActions();
-  if (Math.hypot(m.x - to.x, m.z - to.z) < 0.6) { goScene(S.scene === "san" ? "nha" : "san"); return; }
-  if (!m.goTo(to.x, to.z, () => goScene(S.scene === "san" ? "nha" : "san"))) toast("Chưa đi tới cửa được");
+  const m=me(), to=door.from;
+  if(Math.hypot(m.x-to.x,m.z-to.z)<0.70){goScene(door.to.scene);return;}
+  let x=to.x,z=to.z;
+  if(E.circleBlocked(S.G,x,z,E.AVATAR_R)) {
+    const cell=E.worldToCell(x,z), free=E.nearestFreeCell(S.G,cell.i,cell.j,3);
+    if(!free){toast("Lối cửa bị chặn, hãy dọn bớt đồ");return;}
+    ({x,z}=E.cellCenter(free.i,free.j));
+  }
+  if(!m.goTo(x,z,()=>goScene(door.to.scene)))toast("Chưa đi tới cửa được");
+}
+function walkThroughDoor() {
+  const dest=S.scene==="san"?"nha":"san";
+  walkThroughPortal(WD.sceneDoors(S.scene).find(d=>d.to.scene===dest));
 }
 function goScene(id) {
   if (switching || id === S.scene || !WD.SCENES[id]) return;
@@ -1123,19 +1174,23 @@ function goScene(id) {
   setTimeout(() => {
     for (const a of Object.values(actors)) { a.standUp(); a.stop(); }
     S.seats.clear(); S.transient.clear(); mailOpen.clear();
+    const from=store.get(KEY.scene)===S.scene?S.scene:S.scene;
     useScene(id); store.set(KEY.scene, id);
+    if(CLOUD.on&&!CLOUD.known.has(id)){CLOUD.known.add(id);pushScene(id);}
     buildShell(); buildGrid(); rebuildAll();
-    const sp = id === "san" ? WD.SPAWN_OUT : WD.SPAWN_IN, m = me(), p = partner();
-    m.place(sp.x, sp.z, sp.face);
+    const sp = WD.spawnFrom(id, from), m = me(), p = partner();
+    const start=E.circleBlocked(S.G,sp.x,sp.z,E.AVATAR_R)?E.nearestFreeCell(S.G,E.worldToCell(sp.x,sp.z).i,E.worldToCell(sp.x,sp.z).j,8):null;
+    const entry=start?E.cellCenter(start.i,start.j):sp;
+    m.place(entry.x,entry.z,sp.face);
     // người kia bước qua cửa ngay sau mình
     const c = E.worldToCell(sp.x + 0.5, sp.z + (id === "san" ? 0.5 : -0.5)), n = E.nearestFreeCell(S.G, c.i, c.j) || E.worldToCell(sp.x, sp.z), q = E.cellCenter(n.i, n.j);
     if (!CLOUD.on) p.place(q.x, q.z, sp.face);
     cat.root.visible = id === "nha";
-    $("#btn-edit").hidden = id !== "nha";
+    $("#btn-edit").hidden = !WD.canDecorate(id);
     document.body.dataset.scene = id;
     cam.target.set(m.x, 0.55, m.z); cam.goal.copy(cam.target); cam.goalPpm = cam.ppm = playPpm();
     AI.timer = 2;
-    setTimeout(()=>{fade.classList.remove("on");switching=false;if(guideIntent)guideArrive();toast(id==="san"?"Ra sân rồi · vườn bên trái, bến thuyền phía trước":"Về nhà rồi");},120);
+    setTimeout(()=>{fade.classList.remove("on");switching=false;if(guideIntent)guideArrive();toast(id==="san"?"Ra sân rồi · vườn bên trái":("Đã tới "+(WD.SCENE_LABELS[id]||"phòng mới")));},120);
   }, 260);
 }
 
@@ -1448,7 +1503,8 @@ function step(dt) {
   for (const a of Object.values(actors)) a.update(dt);
   if (S.mode === "play" && !switching) {
     const m = me(), moving = m.joy || m.path.length > 0;
-    if (moving && WD.crossesDoor(S.scene, m.x, m.z, Math.sin(m.face), Math.cos(m.face))) goScene(S.scene === "san" ? "nha" : "san");
+    const portal=moving&&WD.crossedPortal(S.scene,m.x,m.z,Math.sin(m.face),Math.cos(m.face));
+    if(portal)goScene(portal.to.scene);
   }
   cat.root.position.set(cat.x, cat.path.length && !reduced() ? Math.abs(Math.sin(simClock * 11)) * 0.05 : 0, cat.z); cat.root.rotation.y = cat.face;
 }
