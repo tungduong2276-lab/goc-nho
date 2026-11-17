@@ -82,3 +82,28 @@ test("hũ: biết lá đang chờ và buổi hẹn đang mở", () => {
   assert.deepEqual(AD.jarState(null, {}), { pending: false, openNo: null, done: 0 });
 });
 
+
+test("phong bì: thư gửi mình, mới nhất trước, thư chưa tới hạn giữ niêm phong", () => {
+  const letters = {
+    a: { id: "a", from: 1, to: 0, unlockDate: "2026-11-16", date: "2026-11-10T00:00:00Z" },
+    b: { id: "b", from: 1, to: 0, unlockDate: "2026-12-24", date: "2026-11-12T00:00:00Z", body: "bí mật" },
+    c: { id: "c", from: 0, to: 1, unlockDate: "2020-01-01", date: "2026-11-13T00:00:00Z" }
+  };
+  const env = AD.mailboxLetters(letters, {}, 0, ["a"], NOW);
+  assert.deepEqual(env.map(e => [e.id, e.open, e.seen]), [["b", false, false], ["a", true, true]]);
+  assert.equal(env[0].unlockDate, "2026-12-24");
+  assert.equal("body" in env[0], false); // nội dung thư không bao giờ vào cảnh 3D
+  assert.equal(AD.mailboxLetters(letters, {}, 0, [], NOW, 1).length, 1);
+});
+
+test("giấy trên cửa tủ mang chữ, người dán, tim của mình và số câu đáp", () => {
+  const notes = { x: { id: "x", by: 1, color: 1, text: "a".repeat(300), date: "2026-11-15T00:00:00Z", hearts: [true, false], replies: [{ by: 0 }] } };
+  const [n] = AD.fridgeState(notes, 0, "2026-11-14T00:00:00Z").shown;
+  assert.equal(n.text.length, 240); assert.equal(n.by, 1); assert.equal(n.mine, true); assert.equal(n.replies, 1); assert.equal(n.fresh, true);
+  assert.equal(AD.fridgeState(notes, 1, "").shown[0].mine, false);
+});
+
+test("hũ: số lá đang chờ, lá vàng và buổi đang mở", () => {
+  assert.deepEqual(AD.jarDetail({ pending: { n: 7, gold: true } }, {}), { pendingN: 7, gold: true, openN: null });
+  assert.deepEqual(AD.jarDetail(null, { h: { no: 1, n: 12, closed: false } }), { pendingN: null, gold: false, openN: 12 });
+});

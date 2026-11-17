@@ -2304,10 +2304,10 @@ function renderLetters(){
   const meKnown=ME!==null;
   const L=l=>{
     const un=letterUnlocked(l),mine=meKnown&&l.from===ME;
-    if(un||(mine&&showOwn[l.id]))return `<article class="letter"><div class="to">Gửi ${N(l.to)},</div><p>${esc(l.body)}</p><div class="from">${N(l.from)}</div>
+    if(un||(mine&&showOwn[l.id]))return `<article class="letter" data-focus-id="${esc(l.id)}"><div class="to">Gửi ${N(l.to)},</div><p>${esc(l.body)}</p><div class="from">${N(l.from)}</div>
       <div style="font-size:12px;color:var(--muted);font-weight:700;line-height:1.6">Viết ngày ${fmtDate(l.date)}${un?"":" · "+unlockText(l)}</div>
       ${mine?`<div class="entry-actions">${!un?`<button class="linkish" data-lhide="${l.id}">Gấp thư lại</button>`:""}<button class="linkish" data-ldel="${l.id}">${ldelArm===l.id?"Bấm lần nữa để xoá":"Xoá"}</button></div>`:""}</article>`;
-    return `<div class="envelope"><span class="seal">♥</span><div><b>Thư của ${N(l.from)} gửi ${N(l.to)}</b><span>${esc(unlockText(l))}</span>${mine?`<div class="entry-actions"><button class="linkish" data-lshow="${l.id}">Đọc lại thư mình viết</button><button class="linkish" data-ldel="${l.id}">${ldelArm===l.id?"Bấm lần nữa để xoá":"Xoá"}</button></div>`:""}</div></div>`;
+    return `<div class="envelope" data-focus-id="${esc(l.id)}"><span class="seal">♥</span><div><b>Thư của ${N(l.from)} gửi ${N(l.to)}</b><span>${esc(unlockText(l))}</span>${mine?`<div class="entry-actions"><button class="linkish" data-lshow="${l.id}">Đọc lại thư mình viết</button><button class="linkish" data-ldel="${l.id}">${ldelArm===l.id?"Bấm lần nữa để xoá":"Xoá"}</button></div>`:""}</div></div>`;
   };
   $("tab-letters").innerHTML=`<div class="tab-head"><div><h2>Thư hẹn giờ</h2><p>Viết thư cho nhau, nhưng chỉ mở được khi hết mùa hoặc đúng ngày đã hẹn.</p></div></div>
     ${meKnown?`<form class="formcard" id="letterForm"><h3>Viết thư cho ${N(1-ME)}</h3>
@@ -2796,7 +2796,7 @@ async function compressAudio(file){
 }
 function noteHTML(n){
   const rot=((parseInt(n.id.slice(-4),36)||0)%9-4)*.7,h=n.hearts||[false,false],hc=h.filter(Boolean).length;
-  return `<article class="note" style="--nc:var(${NOTE_C[n.color]||"--n0"});--rot:${rot.toFixed(1)}deg"><span class="magnet"></span>
+  return `<article class="note" data-focus-id="${esc(n.id)}" style="--nc:var(${NOTE_C[n.color]||"--n0"});--rot:${rot.toFixed(1)}deg"><span class="magnet"></span>
     ${n.sticker&&STK[n.sticker]?`<span class="stk">${STK[n.sticker]}</span>`:""}
     ${n.text?`<p class="nt">${esc(n.text)}</p>`:""}
     ${n.voice?`<button type="button" class="voice${playing===n.id?" playing":""}" data-play="${n.id}"><i></i>${playing===n.id?"Đang nghe":"Nghe"} · ${n.dur||"?"} giây</button>`:""}
@@ -4544,7 +4544,15 @@ let worldActiveFeature=null;
 window.GOCNHO_WORLD={
  user:()=>({who:ME===null?(lsGet("gocnho.nha3d.me")||"anh"):CH(ME),known:ME!==null,cloud:!!CLOUD.cid&&ME!==null&&!document.body.classList.contains("gated"),names:S.meta.names.slice(),avatars:(S.meta.chars||["anh","em"]).slice(),key:(CLOUD.uid||"local")+"|"+(CLOUD.cid||"")}),
  select:who=>{if(CLOUD.uid)return;const i=(S.meta.chars||["anh","em"]).indexOf(who);if(i<0)return;ME=i;lsSet("hu-hen-ho-me",String(ME));rerender();},
- open:f=>{worldActiveFeature=f;$("settings").hidden=true;if(f.id==="settings"){$("openSettings").click();return;}location.hash=f.route||f.id;route();rerender();},
+ open:(f,opts={})=>{worldActiveFeature=f;$("settings").hidden=true;if(f.id==="settings"){$("openSettings").click();return;}if(f.id==="tu-lanh"&&opts.focus&&S.fridge[opts.focus]){if(opts.reply)replyOpen=opts.focus;const at=list("fridge").sort((a,b)=>a.date<b.date?1:-1).findIndex(n=>n.id===opts.focus);if(at>=frShow)frShow=at+1;}location.hash=f.route||f.id;route();rerender();},
+ // Two narrow in-scene actions, each running the same handler and write as the app's own button.
+ act:a=>{
+  if(a.feature==="tu-lanh"&&a.action==="heart"){const n=S.fridge[a.id];if(!n||ME===null)return false;const h=(n.hearts||[false,false]).slice();h[ME]=!h[ME];put("fridge",Object.assign({},n,{hearts:h}));rerender();return true;}
+  if(a.feature==="hom-nay"&&a.action==="draw"){if(S.meta.pending||openDate())return false;drawNow();return true;}
+  return false;
+ },
+ // Name of the waiting slip / the open date, so the jar can show it in the scene.
+ jar:()=>{const p=S.meta.pending,o=openDate(),g=x=>x&&byN(x.n);return{pending:p&&g(p)?{n:p.n,name:g(p).name,gold:!!p.gold,special:p.special||null}:null,open:o&&g(o)?{no:o.no,n:o.n,name:g(o).name}:null};},
  close:()=>{worldActiveFeature=null;$("settings").hidden=true;}
 };
 {const render=renderAll;renderAll=function(){

@@ -24,7 +24,7 @@ for(const width of [360,390,430])test('3D-only home opens tools on the same isla
  const fridge=(await N('layout')).items.find(i=>i.type==='tuLanh');await N('nearItem',fridge.uid);await N('tick',1);
  let hit;for(const f of [.5,.25,.75]){const p=await N('screenOfItem',fridge.uid,f);if(await N('pickAt',...p)===fridge.uid){hit=p;break;}}
  expect(hit).toBeTruthy();await world.locator('#world').click({position:{x:hit[0],y:hit[1]}});
- await world.getByRole('button',{name:'Xem giấy nhắn · dán giấy',exact:true}).click();await N('tick',12);
+ await world.getByRole('button',{name:'Dán một mẩu giấy',exact:true}).click();await N('tick',12);
  await expect(page.locator('#world-surface-title')).toHaveText('Giấy nhắn trên tủ lạnh');await expect(page.locator('#v-tu-lanh')).toBeVisible();await expect(page.locator('#world-surface #syncBox')).toBeVisible();await expect(page.locator('iframe')).toHaveCount(1);
  await expect.poll(async()=>{const m=await N('me'),[,y]=await N('screenOfWorld',m.x,1.32,m.z),panel=await page.locator('#world-surface').boundingBox(),frameBox=await page.locator('#world-frame').boundingBox();return y+frameBox.y>panel.y+panel.height+4&&y+frameBox.y<704;}).toBe(true);
  const text=page.locator('#fr-text');await expect(text).toBeVisible();await text.fill('Giấy nhắn thử trên đảo');
@@ -83,4 +83,50 @@ test('typing keeps presence alive in the foreground and stops heartbeats when th
  await page.clock.runFor(16000);expect(await frame.evaluate(()=>window.presenceCalls)).toBe(before);
  await frame.evaluate(()=>{window.fakeHidden=false;});await page.clock.runFor(16000);
  expect(await frame.evaluate(()=>window.presenceCalls)).toBeGreaterThan(before);expect(errors).toEqual([]);expect(apiRequests).toEqual([]);
+});
+
+// Core objects played in the scene: read a note on the fridge door and heart it, open an envelope, shake the jar.
+test('fridge notes, envelopes and the date jar work on the objects through the app\'s own handlers',async({page})=>{
+ await page.addInitScript(()=>{if(sessionStorage.getItem('seeded'))return;sessionStorage.setItem('seeded','1');localStorage.setItem('v3-news-init','1');localStorage.setItem('hu-hen-ho-v2',JSON.stringify({
+  meta:{names:['Anh','Em'],swaps:{},extraSwaps:{},pending:null,custom:[],startDate:'',bday:['','']},
+  letters:{l1:{id:'l1',from:0,to:1,body:'Thư thử trên đảo',unlockSeason:null,unlockDate:'2020-01-01',date:'2026-11-01T00:00:00.000Z'},l2:{id:'l2',from:0,to:1,body:'Chưa mở',unlockSeason:null,unlockDate:'2099-01-01',date:'2026-11-02T00:00:00.000Z'}},
+  fridge:{f1:{id:'f1',by:0,text:'Tối nay ăn lẩu nha',color:2,sticker:null,voice:null,dur:0,date:'2026-11-15T08:00:00.000Z',hearts:[false,false],replies:[]}},history:{}}));});
+ const{world,frame,N,errors,apiRequests}=await open(page);
+ const tapPart=async(uid,id)=>{await N('snapCam');const p=await N('screenOfPart',uid,id);expect(p).toBeTruthy();expect(await N('pickPart',...p)).toEqual(expect.objectContaining({id}));await world.locator('#world').click({position:{x:p[0],y:p[1]}});};
+ // Fridge: the note itself is the button; its card shows the real text; heart uses the app's write.
+ await N('goScene','nha');await N('settle');await N('pauseAI',true);
+ const fridge=(await N('layout')).items.find(i=>i.type==='tuLanh');await N('nearItem',fridge.uid);await N('settle');await N('tick',2);await N('snapCam');
+ expect(await N('partsOf',fridge.uid)).toEqual([{kind:'note',id:'f1'}]);
+ await tapPart(fridge.uid,'f1');
+ await expect(world.locator('#actions .card-body')).toHaveText('Tối nay ăn lẩu nha');await expect(world.locator('#actions .title')).toContainText('Giấy của Anh');
+ await world.getByRole('button',{name:'💗 Thả tim',exact:true}).click();
+ await expect.poll(()=>page.evaluate(()=>S.fridge.f1.hearts[1])).toBe(true);
+ await expect.poll(()=>N('appState').then(s=>s.fridge.shown[0].mine)).toBe(true);
+ await tapPart(fridge.uid,'f1');await world.getByRole('button',{name:'↩ Đáp lại',exact:true}).click();await N('tick',12);
+ await expect(page.locator('#world-surface-title')).toHaveText('Giấy nhắn trên tủ lạnh');await expect(page.locator('#rep-f1')).toBeFocused();
+ await page.getByRole('button',{name:'Đóng đồ dùng, về đảo'}).click();
+ // Jar: shaking it draws through drawNow(); the slip's real name is shown in the scene.
+ const jar=(await N('layout')).items.find(i=>i.type==='huHenHo');await N('nearItem',jar.uid);await N('settle');await N('tick',2);await N('snapCam');
+ let hit;for(const f of [.5,.3,.7]){const p=await N('screenOfItem',jar.uid,f);if(await N('pickAt',...p)===jar.uid){hit=p;break;}}expect(hit).toBeTruthy();
+ await world.locator('#world').click({position:{x:hit[0],y:hit[1]}});await world.getByRole('button',{name:'Lắc hũ, bốc một lá',exact:true}).click();await N('tick',12);
+ await expect.poll(()=>page.evaluate(()=>!!S.meta.pending),{timeout:8000}).toBe(true);
+ const name=await page.evaluate(()=>byN(S.meta.pending.n).name);
+ await expect(world.locator('#actions .card-body')).toContainText(name,{timeout:8000});
+ expect((await N('jarNames')).pending.name).toBe(name);
+ // Mailbox: opening it lets envelopes out; the sealed one stays sealed, the open one goes to that letter.
+ await N('goScene','san');await N('settle');await N('pauseAI',true);
+ const box=(await N('layout')).items.find(i=>i.type==='hopThu');await N('nearItem',box.uid);await N('settle');await N('tick',2);await N('snapCam');
+ let mp;for(const f of [.5,.35,.65,.2,.8]){const [x,y]=await N('screenOfItem',box.uid,f);for(const dx of [0,-6,6])if(!mp&&await N('pickAt',x+dx,y)===box.uid)mp=[x+dx,y];}expect(mp).toBeTruthy();
+ await world.locator('#world').click({position:{x:mp[0],y:mp[1]}});await world.getByRole('button',{name:'Mở hộp thư (1 thư mới)',exact:true}).click();await N('tick',12);
+ expect((await N('partsOf',box.uid)).map(p=>p.id).sort()).toEqual(['l1','l2']);
+ await tapPart(box.uid,'l2');await expect(world.locator('#actions .title')).toContainText('còn niêm phong');await expect(world.getByRole('button',{name:/Bóc thư/})).toHaveCount(0);
+ await tapPart(box.uid,'l1');await world.getByRole('button',{name:'💌 Bóc thư',exact:true}).click();await N('tick',12);
+ await expect(page.locator('#world-surface-title')).toHaveText('Thư hẹn giờ');await expect(page.locator('#world-surface [data-focus-id="l1"]')).toContainText('Thư thử trên đảo');
+ mkdirSync('test-results/world-home',{recursive:true});await page.screenshot({path:'test-results/world-home/letter-focus.png'});
+ await page.getByRole('button',{name:'Đóng đồ dùng, về đảo'}).click();
+ await expect.poll(()=>N('appState').then(s=>s.mail.unread)).toBe(0);
+ // Untrusted or unknown actions are refused by the host.
+ await frame.evaluate(()=>parent.postMessage({type:'gocnho:act',feature:'tu-lanh',action:'delete',id:'f1'},location.origin));await page.waitForTimeout(50);
+ expect(await page.evaluate(()=>!!S.fridge.f1)).toBe(true);
+ expect(errors).toEqual([]);expect(apiRequests).toEqual([]);
 });

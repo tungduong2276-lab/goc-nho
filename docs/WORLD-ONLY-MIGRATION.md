@@ -14,11 +14,11 @@ Các phiếu viết/đọc/chọn ảnh dùng lại thành phần và hàm ghi d
 |---|---|---|
 | Nhà, di chuyển, trang trí | Cửa nhà, nút Trang trí | Đang là 3D; mở rộng các phòng sau |
 | Presence, ôm, đập tay, biểu cảm | Chạm nhân vật | Đang là 3D; còn nghiệm thu hai điện thoại |
-| Hũ và các nghi thức hẹn hò, `meta/history` | Hũ hẹn hò | Phiếu bốc/lưu giữ nguyên; tiếp theo làm sâu hoạt ảnh và lượt chơi |
+| Hũ và các nghi thức hẹn hò, `meta/history` | Hũ hẹn hò | Lắc hũ bốc lá ngay trong cảnh (dùng `drawNow()` cũ), tên lá hiện trên đảo; nghi thức/đổi lá vẫn trên phiếu |
 | Nhật ký, `history` | Sổ bên hũ | Phiếu đọc; sau đó gắn dấu vết vào địa điểm/đồ vật |
 | Lời hứa, `rules` | Bảng ghim | Phiếu nhập dùng dữ liệu cũ |
-| Thư hẹn giờ, `letters` | Hộp thư | Phiếu đọc/viết; tiếp theo phong bì và bàn viết tương tác |
-| Giấy nhắn, giọng nói, sticker, `fridge` | Tủ lạnh | Phiếu dán/đáp/thả tim/gỡ; tiếp theo chọn trực tiếp từng giấy trên cửa |
+| Thư hẹn giờ, `letters` | Hộp thư | Phong bì bay ra, chạm từng lá (niêm phong giữ kín); đọc/viết trên phiếu, mở đúng lá |
+| Giấy nhắn, giọng nói, sticker, `fridge` | Tủ lạnh | Chạm từng giấy trên cửa: đọc chữ, thả tim (ghi bằng hàm cũ), đáp lại mở đúng giấy; dán giấy mới trên phiếu |
 | Ước mơ, `wishes` | Lọ ước mơ | Phiếu giữ nguyên |
 | Truyện, `story` | Máy đánh chữ / bàn viết | Phiếu nối truyện; tiếp theo giấy trên bàn và phản hồi trong cảnh |
 | Vẽ, `drawings` | Giá vẽ | Canvas nhập liệu giữ nguyên; tiếp theo tranh trên giá trong cảnh |
@@ -32,14 +32,13 @@ Các phiếu viết/đọc/chọn ảnh dùng lại thành phần và hàm ghi d
 | Thú nuôi, `pet` | Góc của bé / sổ tay | Phiếu chăm giữ nguyên; cần đồng bộ loài/tên/trạng thái lên mô hình 3D |
 | Ngày kỷ niệm, huy hiệu, việc chung, kho báu | Lịch/tủ kính/sổ tay | Các thành phần cũ còn truy cập được; săn kho báu trong cảnh là đợt sau |
 | Trang phục và tâm trạng | Tủ đồ / biểu cảm | Mô hình mới đã có; chưa tự chuyển trang phục cũ sang lựa chọn mới |
-| Pha nước, câu cá, picnic | Đảo hẹn hò | Đang chơi trực tiếp trong 3D (PR #118) |
 | Trạng thái lưu và gửi lại khi lỗi | HUD và phiếu đồ dùng | Giữ nguyên nút đồng bộ/gửi lại thủ công hiện có, không tự gửi lại |
 | Thời tiết và bài hát đã chọn | Cài đặt ngôi nhà | Giữ lựa chọn; ngày/đêm đã 3D, adapter thời tiết/âm nhạc cần chuyển tiếp |
 | Tài khoản, ghép đôi, bản sao lưu | Sổ tay → Tài khoản và ngôi nhà | Luồng cũ giữ nguyên, không tự chạy thao tác quản trị |
 
 ## Thứ tự sau đợt A
 
-1. Tủ lạnh, hộp thư, hũ: tương tác vật thể rõ hơn, vẫn dùng id/schema cũ.
+1. ~~Tủ lạnh, hộp thư, hũ: tương tác vật thể rõ hơn, vẫn dùng id/schema cũ.~~ Xong 2026-11-17: chạm từng giấy trên cửa tủ (đọc, thả tim, đáp), phong bì bay ra từ hộp thư, lắc hũ bốc lá hiện tên ngay trong cảnh. Đảo hẹn hò đã gỡ theo yêu cầu người dùng.
 2. Vườn: đưa cây và bộ sưu tập cũ lên mô hình, dùng tham chiếu/idempotency; không tự gộp hay xoá bản ghi.
 3. Đảo vương quốc và khu bảo tàng: đi tới được, xây/trưng bày bằng thao tác trong cảnh.
 4. Studio viết/vẽ, kho báu và thêm hoạt động phối hợp; hoàn thành rồi có thứ ở lại trong thế giới.

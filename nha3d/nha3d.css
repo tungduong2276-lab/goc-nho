@@ -114,16 +114,6 @@ body[data-mode="play"] .edit-only, body[data-mode="edit"] .play-only { display: 
 .appsheet-head h2 { margin: 0; }
 .appsheet iframe { flex: 1; width: 100%; border: 0; border-radius: 16px 16px 0 0; background: #fff; }
 
-#btn-date{position:fixed;right:12px;top:calc(74px + var(--safe-t,0px));z-index:7;min-height:44px;background:#FFF3C9}
-#dateplay{position:fixed;left:12px;right:12px;top:calc(126px + var(--safe-t,0px));z-index:10;max-width:440px;margin:auto;border:var(--edge);border-radius:22px;background:rgba(255,249,251,.97);box-shadow:var(--shadow);overflow:hidden;color:var(--ink)}
-#dateplay[hidden]{display:none}
-#dateplay>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:#FFE6F0}
-#dateplay h2{font:700 19px var(--display);margin:0;line-height:1.1}
-#dateplay [data-date-close]{min-height:44px;flex:none;font-size:12px;padding:0 10px}
-.dateplay-body{padding:0 12px 12px;max-height:min(37vh,300px);overflow:auto;touch-action:pan-y}
-.dateplay-body p{font-size:14px;line-height:1.35;margin:10px 0;font-weight:700}
-.dateplay-body .date-mode{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em}
-.dateplay-body .date-small,.dateplay-body .date-collection{font-size:12px;color:var(--ink-soft)}
 .date-result{font-family:var(--display);font-size:17px!important;color:#B83D6A}
 .date-action,.date-recipes button{min-height:44px;border:2px solid var(--ink);border-radius:14px;padding:9px 12px;background:white;color:var(--ink);font:800 14px Nunito,sans-serif;margin:3px 5px 3px 0;cursor:pointer}
 .date-action:disabled,.date-recipes button:disabled{opacity:.55;cursor:wait}
@@ -131,7 +121,6 @@ body[data-mode="play"] .edit-only, body[data-mode="edit"] .play-only { display: 
 .date-meter{position:relative;height:26px;border-radius:14px;background:#DFEEF4;border:2px solid var(--ink);overflow:hidden;margin:12px 0}
 .date-target{position:absolute;width:28%;top:0;bottom:0;background:#F9A7CA}
 .date-meter i{position:absolute;top:1px;bottom:1px;width:5px;border-radius:5px;background:var(--ink);transform:translateX(-50%)}
-@media(max-height:650px){#dateplay{top:calc(110px + var(--safe-t,0px))}.dateplay-body{max-height:32vh}#btn-date{top:64px}}
 
 .bubble{white-space:normal;width:max-content;max-width:min(80vw,300px);overflow-wrap:anywhere;text-align:center;line-height:1.3}
 
@@ -140,3 +129,8 @@ body[data-mode="play"] .edit-only, body[data-mode="edit"] .play-only { display: 
 body[data-host="true"] #partner-status{position:fixed;left:12px;top:calc(74px + var(--safe-t,0px));max-width:calc(100vw - 160px)}
 
 body[data-host="true"]{--safe-t:0px;--safe-b:0px}
+/* Thẻ đọc ngay trong cảnh: mẩu giấy trên tủ lạnh, phong bì, lá thăm */
+.actions.readcard { width: min(300px, calc(100vw - 24px)); }
+.actions.readcard .title { font-size: 14px; }
+.actions .card-body { margin: 0; padding: 12px 14px; border-radius: 16px; border: var(--edge); background: #FFF9E8; box-shadow: var(--shadow); font-size: 16px; line-height: 1.45; font-weight: 700; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 38vh; overflow: auto; }
+.actions.readcard button { white-space: normal; }

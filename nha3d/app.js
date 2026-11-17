@@ -16,9 +16,7 @@ import * as WM from "./world-models.js";
 import * as SY from "./sync.mjs";
 import { connectCloud } from "./cloud.js";
 import * as AD from "./appdata.mjs";
-import * as DM from "./date-models.js";
 import {WORLD_FEATURES,featureOf} from "../src/world-features.mjs";
-import { createDatePlay } from "./date-play.js";
 
 const $ = s => document.querySelector(s);
 // Cảnh hiện tại: "san" (ngoài sân) hoặc "nha" (trong nhà). W, D đổi theo cảnh.
@@ -26,7 +24,9 @@ let RM = ROOM, W = ROOM.w * CELL, D = ROOM.d * CELL;
 // W3: trạng thái đọc từ dữ liệu app (thư, tủ lạnh, hũ) — khai báo sớm vì stateOf() dùng khi dựng cảnh.
 const APPSRC = { cloud: false };
 const APPDATA = { letters: {}, fridge: {}, history: {}, meta: null, wishes: {}, drawings: {}, story: {}, rules: {}, ...Object.fromEntries(AD.MEMORY_COLLECTIONS.map(k => [k, {}])) };
-const APPST = { known: false, mail: { unread: 0, sealed: 0, total: 0 }, fridge: { count: 0, fresh: 0, shown: [] }, jar: { pending: false, openNo: null, done: 0 } };
+const APPST = { known: false, mail: { unread: 0, sealed: 0, total: 0 }, letters: [], fridge: { count: 0, fresh: 0, shown: [] }, jar: { pending: false, openNo: null, done: 0 }, jarN: { pendingN: null, gold: false, openN: null } };
+const mailOpen = new Set(); // hộp thư đang mở trên đảo (phong bì bay ra)
+const JAR = { pending: null, open: null, wantDraw: 0 }; // tên lá do app gốc gửi sang
 Object.assign(APPST, { wishes: AD.wishesState({}, null), drawing: AD.drawingState({}, null), story: AD.storyState({}, null), rules: AD.rulesState({}) });
 APPST.memory = AD.memoryState({}, null);
 const APP_TYPES = new Set(["hopThu", "tuLanh", "huHenHo", "loUocMo", "giaVe", "mayDanhChu", "bangGhim", "tuKinh", "keSach", "banDo", "benThuyen", "cayHoa"]);
@@ -56,7 +56,7 @@ function loadLooks() {
 const S = {
   mode: "play",
   layout: null,
-  layouts: { nha: E.deserialize(store.get(KEY.layout) || "null", ROOM).layout, san: E.deserialize(store.get(KEY.yard) || "null", WD.YARD).layout, hen: E.clone(WD.DATE_LAYOUT) },
+  layouts: { nha: E.deserialize(store.get(KEY.layout) || "null", ROOM).layout, san: E.deserialize(store.get(KEY.yard) || "null", WD.YARD).layout },
   scene: (() => { const q = new URLSearchParams(location.search).get("scene"); if (WD.SCENES[q]) return q; const saved=store.get(KEY.scene); return WD.SCENES[saved] ? saved : "san"; })(),
   looks: loadLooks(),
   // ?me=anh|em do app Góc Nhỏ truyền sang (máy này của ai); không có thì nhớ lần trước.
@@ -72,12 +72,12 @@ function useScene(id) {
   E.setRoom(RM); S.layout = S.layouts[id]; S.G = E.blockGrid(S.layout);
 }
 useScene(S.scene);
-const saveLayout = () => { if(S.scene==="hen")return; store.set(S.scene === "san" ? KEY.yard : KEY.layout, E.serialize(S.layout)); pushScene(S.scene); };
+const saveLayout = () => { store.set(S.scene === "san" ? KEY.yard : KEY.layout, E.serialize(S.layout)); pushScene(S.scene); };
 // ---------- đồng bộ hai máy (W2) ----------
 // CLOUD.on = đã đăng nhập Góc Nhỏ và vào được nhà chung; khi đó người kia do máy kia điều khiển.
 const CLOUD = { on: false, api: null, last: { nha: new Map(), san: new Map() }, meta: {}, remote: null, sentP: null, ev: null, lastEv: null, lastTarget: null };
 function pushScene(scene) {
-  if (!CLOUD.on || scene==="hen") return;
+  if (!CLOUD.on) return;
   const L = S.layouts[scene], last = CLOUD.last[scene], { upserts, removes } = SY.diffLayout(last, L);
   for (const u of upserts) CLOUD.api.setItem(scene, u.it, u.withWater);
   for (const uid of removes) CLOUD.api.delItem(scene, uid);
@@ -145,9 +145,8 @@ function editFit() {
   cam.goal.set(0, 1.1, 0);
 }
 function updateCamera() {
-  // Keep the activity and the character visible together on a phone.
-  const panel = document.querySelector("#dateplay");
-  const bottom = Math.max(hostPanelBottom,S.scene === "hen" && panel && !panel.hidden ? panel.getBoundingClientRect().bottom : 0);
+  // Keep the host tool panel and the character visible together on a phone.
+  const bottom = hostPanelBottom;
   const focus = bottom ? bottom + Math.max(0, innerHeight - 150 - bottom) * .6 : 0;
   const shift = bottom ? innerHeight / 2 - focus : cam.shift;
   const w = innerWidth / cam.ppm / 2, h = innerHeight / cam.ppm / 2, s = shift / cam.ppm;
@@ -179,7 +178,7 @@ function buildShell() {
   if (shell) scene.remove(shell);
   const wc = (WALL_COLORS.find(c => c.id === S.layout.wall) || WALL_COLORS[0]).wall;
   const fc = FLOOR_COLORS.find(c => c.id === S.layout.floor) || FLOOR_COLORS[0];
-  if (S.scene !== "nha") { shell = S.scene==="hen"?DM.dateIsland(W,D,S.time):WM.island(W,D,S.time); scene.add(shell); return; }
+  if (S.scene !== "nha") { shell = WM.island(W,D,S.time); scene.add(shell); return; }
   shell = F.roomShell({ n: W, d: D, h: ROOM.wallH, wallL: wc, wallR: wc, floor: fc.floor, plank: fc.plank });
   const m = WM.doorMat(); m.position.set(WD.DOOR_IN.x, 0, WD.DOOR_IN.z); shell.add(m);
   scene.add(shell);
@@ -196,7 +195,6 @@ function buildGrid() {
 // ---------- đồ đạc ----------
 const col = k => (typeof k === "string" ? C[k] : k);
 const BUILDERS = {
-  "D.picnic":()=>DM.picnic(), "D.campfire":()=>DM.campfire(),
   "F.sofa": () => F.sofa(), "F.coffeeTable": () => F.coffeeTable(), "F.cushion": () => F.cushion(C.pink),
   "F.bookshelfLow": s => F.bookshelfLow(s), "F.jar": s => F.jar(s || "day"), "F.radio": s => F.radio(!!s),
   "F.floorLamp": s => F.floorLamp(!!s), "F.pothos": () => F.pothos(), "F.petBed": () => F.petBed(), "F.rug": () => F.rug(),
@@ -249,10 +247,10 @@ function refreshView(it) {
   const old = views.get(it.uid);
   if (old) itemsG.remove(old.root);
   const root = makeModel(it.type, stateOf(it));
+  addAppDeco(it, root);
   root.userData.uid = it.uid;
   root.traverse(o => { o.userData.uid = it.uid; });
   const view = { root, key: viewKeyOf(it) };
-  addAppDeco(it, root);
   placeView(view, it);
   root.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(root);
@@ -401,7 +399,7 @@ const tags = {};
 const doorTag = (() => { const el = document.createElement("button"); el.className = "nametag doortag"; el.type = "button"; document.body.appendChild(el); el.addEventListener("click", () => walkThroughDoor()); return el; })();
 function placeDoorTag() {
   const d = S.scene === "san" ? WD.DOOR_OUT : WD.DOOR_IN, y = S.scene === "san" ? 2.75 : 0.35;
-  doorTag.textContent = S.scene === "san" ? "🏠 Vào nhà" : "🚪 Ra sân"; doorTag.hidden = S.mode !== "play" || S.scene==="hen";
+  doorTag.textContent = S.scene === "san" ? "🏠 Vào nhà" : "🚪 Ra sân"; doorTag.hidden = S.mode !== "play";
   const [x, yy] = toScreen(d.x, y, S.scene === "san" ? d.z - 0.3 : d.z); doorTag.style.left = x + "px"; doorTag.style.top = yy + "px";
 }
 function makeTag(who) { const el = document.createElement("div"); el.className = "nametag"; labels.appendChild(el); tags[who] = el; }
@@ -467,19 +465,6 @@ function goSit(actor, item, seat, say) {
     if (say) bubble(actor.x, 1.5, actor.z, say);
   });
 }
-function picnicTogether(it) {
-  // A direct invitation takes priority over the companion's current seat or idle plan.
-  // Clear its old seat before choosing the two new seats, including when it is already here.
-  if (!CLOUD.on) {
-    partner().standUp(); partner().stop();
-    AI.timer = Math.max(AI.timer, 40);
-  }
-  const seats = freeSeats(it), mine = seats.find(s => s.k === (S.me === "anh" ? 0 : 1)) || seats[0];
-  if (!mine || !goSit(me(), it, mine)) { toast("Chưa tới được thảm hẹn hò"); return; }
-  if (CLOUD.on) { emitEv("invite", { text: "rủ bạn ngồi cùng trên thảm hẹn hò" }); return; }
-  const other = seats.find(s => s.k !== mine.k);
-  if (other && !goSit(partner(), it, other, "Ngồi cạnh bạn nè")) toast("Bạn ấy chưa tới được thảm");
-}
 function partnerThink(dt) {
   const p = partner(), m = me();
   if (p.mode === "sleep") return;
@@ -531,7 +516,7 @@ function catThink(dt) {
 // ---------- điều khiển: cần gạt ----------
 const joy = { el: $("#joy"), knob: $(".joy-knob"), id: null, x: 0, y: 0 };
 joy.el.addEventListener("pointerdown", e => {
-  pendingDateTravel=false;guideIntent=null;
+  guideIntent=null;
   joy.id = e.pointerId; joy.el.setPointerCapture(e.pointerId); joy.el.classList.add("active"); joyMove(e); hideActions();
   const m = me(); if (m.mode !== "idle") m.standUp(); m.stop();
 });
@@ -549,7 +534,7 @@ let worldObscured=false,hostPanelBottom=0,worldNeedsRender=false;
 const keys = new Set();
 function clearWorldInput(){keys.clear();joy.id=null;joy.x=joy.y=0;joy.knob.style.transform="";joy.el.classList.remove("active");me().joy=false;}
 addEventListener("blur",clearWorldInput);
-addEventListener("message",e=>{if(e.source!==window.parent||e.origin!==location.origin)return;if(e.data?.type==="gocnho:surface"){const bottom=e.data.open&&Number.isFinite(e.data.bottom)?Math.max(0,Math.min(innerHeight,e.data.bottom)):0;if(bottom!==hostPanelBottom||worldObscured!==!!e.data.open)worldNeedsRender=true;hostPanelBottom=bottom;worldObscured=!!e.data.open;if(worldObscured){clearWorldInput();me().stop();cam.target.set(me().x,.55,me().z);cam.goal.copy(cam.target);}}if(e.data?.type==="gocnho:user"){const {names,avatars}=e.data;if(Array.isArray(names)&&names.length===2&&Array.isArray(avatars)&&new Set(avatars).size===2&&avatars.every(a=>a==="anh"||a==="em")){avatars.forEach((a,i)=>{NAMES[a]=String(names[i]).slice(0,30);});updateMe();}}});
+addEventListener("message",e=>{if(e.source!==window.parent||e.origin!==location.origin)return;if(e.data?.type==="gocnho:surface"){const bottom=e.data.open&&Number.isFinite(e.data.bottom)?Math.max(0,Math.min(innerHeight,e.data.bottom)):0;if(bottom!==hostPanelBottom||worldObscured!==!!e.data.open)worldNeedsRender=true;hostPanelBottom=bottom;worldObscured=!!e.data.open;if(worldObscured){clearWorldInput();me().stop();cam.target.set(me().x,.55,me().z);cam.goal.copy(cam.target);}}if(e.data?.type==="gocnho:jar")setJarNames(e.data);if(e.data?.type==="gocnho:acted")hostActed(e.data);if(e.data?.type==="gocnho:user"){const {names,avatars}=e.data;if(Array.isArray(names)&&names.length===2&&Array.isArray(avatars)&&new Set(avatars).size===2&&avatars.every(a=>a==="anh"||a==="em")){avatars.forEach((a,i)=>{NAMES[a]=String(names[i]).slice(0,30);});updateMe();}}});
 addEventListener("keydown", e => { if (e.target.closest?.("button,input")) return; keys.add(e.key.toLowerCase()); });
 addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
 function joyStep(dt) {
@@ -559,7 +544,7 @@ function joyStep(dt) {
   const m = me(), mag = Math.min(1, Math.hypot(jx, jy));
   m.joy = mag > 0.12 && S.mode === "play";
   if (!m.joy) return;
-  guideIntent=null;pendingDateTravel=false;
+  guideIntent=null;
   if (m.mode === "sit" || m.mode === "sleep") m.standUp();
   m.stop();
   const dx = (RIGHT.x * jx + UPG.x * jy), dz = (RIGHT.z * jx + UPG.z * jy), l = Math.hypot(dx, dz) || 1, sp = m.speed * mag * dt;
@@ -582,7 +567,7 @@ function pickAt(cx, cy) {
     const ud = h.object.userData;
     if (ud.actor && ud.actor.root.visible) return { actor: ud.actor };
     if (ud.cat) return { cat: true };
-    if (ud.uid) return { uid: ud.uid, point: h.point };
+    if (ud.uid) { let o = h.object, part = null; while (o && !part) { part = o.userData.part || null; o = o.parent; } return { uid: ud.uid, point: h.point, part }; }
   }
   return null;
 }
@@ -642,7 +627,7 @@ canvas.addEventListener("wheel", e => { e.preventDefault(); cam.goalPpm = THREE.
 
 function onTap(cx, cy) {
   guideIntent=null;
-  pendingDateTravel=false;
+  
   hideActions();
   if (S.mode === "edit") { const hit = pickAt(cx, cy); if (hit && hit.uid) select(hit.uid); else select(null); return; }
   const m = me();
@@ -650,6 +635,7 @@ function onTap(cx, cy) {
   const hit = pickAt(cx, cy);
   if (hit && hit.actor) return actorMenu(hit.actor, cx, cy);
   if (hit && hit.cat) { floatAt(cat.x, 0.9, cat.z, "💗", 2); bubble(cat.x, 1.0, cat.z, "Meo~", 1400); return; }
+  if (hit && hit.part) return partMenu(itemByUid(hit.uid), hit.part, hit.point);
   if (hit && hit.uid) return itemMenu(itemByUid(hit.uid), cx, cy);
   const p = floorPoint(cx, cy);
   if (!p || Math.abs(p.x) > W / 2 || Math.abs(p.z) > D / 2) return;
@@ -659,9 +645,12 @@ function onTap(cx, cy) {
 
 // ---------- menu hành động ----------
 const actionsEl = $("#actions");
-function showActions(title, list, wx, wy, wz) {
+function showActions(title, list, wx, wy, wz, body) {
   actionsEl.innerHTML = "";
   const t = document.createElement("div"); t.className = "title"; t.textContent = title; actionsEl.appendChild(t);
+  // Nội dung đọc ngay trong cảnh (giấy nhắn, lá thăm): luôn là chữ thuần, không bao giờ là HTML.
+  actionsEl.classList.toggle("readcard", !!body);
+  if (body) { const p = document.createElement("p"); p.className = "card-body"; p.textContent = body; actionsEl.appendChild(p); }
   for (const [label, fn] of list) {
     const b = document.createElement("button"); b.textContent = label;
     b.addEventListener("click", () => { hideActions(); fn(); }); actionsEl.appendChild(b);
@@ -694,15 +683,10 @@ function itemMenu(it, cx, cy) {
   if (use.type === "cycle") list.push([use.label, () => useItem(m, it, () => cycleState(it, use.states))]);
   if (use.type === "wardrobe") list.push([use.label, () => useItem(m, it, () => openWardrobe(it))]);
   if (use.type === "app") appMenu(it, use, list);
-  if(use.type==="cafe")list.unshift(["Cùng pha đồ uống trên đảo",()=>travelToDate()]);
-  if(it.type==="benThuyen")list.unshift(["⛵ Đi thuyền sang đảo hẹn hò",()=>useItem(m,it,()=>goScene("hen"))]);
-  if(use.type==="travel")list.push([use.label,()=>useItem(m,it,()=>goScene(use.scene))]);
-  if(use.type==="activity")list.push([use.label,()=>useItem(m,it,()=>datePlay.open(use.activity))]);
-  if(use.type==="moment")list.push([use.label,()=>useItem(m,it,()=>{
-    const questions=["Nếu được trốn đi một ngày, hai đứa sẽ đi đâu?","Kỷ niệm rất nhỏ nào làm bạn thấy được thương?","Đặt tên cho buổi hẹn hôm nay đi.","Lần đầu nào bạn muốn cùng người kia thử?","Tuần này mình có thể chăm nhau bằng điều gì?","Nếu đảo này có một điều ước, bạn chọn gì?"];
-    const q=questions[Math.floor(rand()*questions.length)];bubble(p.x,1.4,p.z,q,7000);emitEv("invite",{text:"rủ bạn ngồi bên lửa: "+q});
-  })]);
-  if (it.type === "tuLanh") list.push([APPST.fridge.fresh ? `Đọc giấy nhắn (${APPST.fridge.fresh} mới)` : "Xem giấy nhắn · dán giấy", () => useItem(m, it, () => openApp("tu-lanh"))]);
+  if (it.type === "tuLanh") {
+    if (APPST.fridge.shown.length) list.push([APPST.fridge.fresh ? `Đọc giấy mới (${APPST.fridge.fresh})` : "Đọc giấy trên cửa", () => useItem(m, it, () => { const n = APPST.fridge.shown.find(x => x.fresh) || APPST.fridge.shown[0]; partMenu(it, { kind: "note", id: n.id }); })]);
+    list.push(["Dán một mẩu giấy", () => useItem(m, it, () => openApp("tu-lanh"))]);
+  }
   if (use.type === "garden") { gardenMenu(it, anchor); return; }
   if (use.type === "enter") list.push([use.label, () => walkThroughDoor()]);
   if (use.type === "cafe") list.push([use.label, () => useItem(m, it, () => orderDrink(m, it))], ["Mời " + NAMES[partner().who] + " một ly", () => useItem(m, it, () => { orderDrink(m, it, true); if (CLOUD.on) { emitEv("invite", { text: "mời bạn một ly ở quầy cà phê ☕" }); return; } setTimeout(() => useItem(partner(), it, () => partner().emote("wave")), 300); })]);
@@ -713,7 +697,7 @@ let guideIntent=null;
 function guideArrive(){
  if(!guideIntent||switching)return;
  const f=guideIntent;
- if(f.scene!==S.scene){if(S.scene==="hen"){const dock=itemByUid("h-return");if(dock)useItem(me(),dock,()=>goScene("san"));return;}walkThroughDoor();return;}
+ if(f.scene!==S.scene){walkThroughDoor();return;}
  guideIntent=null;
  const it=S.layout.items.find(it=>it.type===f.object);
  if(it){useItem(me(),it,()=>openApp(f.id));return;}
@@ -722,8 +706,7 @@ function guideArrive(){
  toast("Chưa tới được nơi này");
 }
 $("#btn-world-guide").onclick=()=>{
- guideIntent=null;pendingDateTravel=false;me().stop();clearWorldInput();datePlay.close();const root=$("#world-guide-places");root.replaceChildren();
- const date=document.createElement("button");date.className="pill";date.textContent="⛵ Đảo hẹn hò · pha nước, câu cá";date.onclick=()=>{$("#world-guide").hidden=true;travelToDate();};root.append(date);
+ guideIntent=null;me().stop();clearWorldInput();const root=$("#world-guide-places");root.replaceChildren();
  for(const f of WORLD_FEATURES){const b=document.createElement("button");b.className="pill";b.textContent=f.title+" · "+f.place;b.onclick=()=>{$("#world-guide").hidden=true;if(!f.scene){openApp(f.id);return;}guideIntent=f;guideArrive();};root.append(b);}
  openSheet("#world-guide");
 };
@@ -795,6 +778,8 @@ function setAppData(d) {
   const meI = appMe();
   APPST.known = true;
   APPST.mail = AD.mailboxState(APPDATA.letters, APPDATA.history, meI, seenLetters());
+  APPST.letters = meI === null ? [] : AD.mailboxLetters(APPDATA.letters, APPDATA.history, meI, seenLetters());
+  APPST.jarN = AD.jarDetail(APPDATA.meta, APPDATA.history);
   APPST.fridge = AD.fridgeState(APPDATA.fridge, meI, store.get("v3-fridge-seen") || "");
   APPST.jar = AD.jarState(APPDATA.meta, APPDATA.history);
   APPST.wishes = AD.wishesState(APPDATA.wishes, meI, store.get("v3-wish-seen") || "");
@@ -812,8 +797,8 @@ function readLocalApp() {
 function viewKeyOf(it) { return APP_TYPES.has(it.type) ? stateOf(it) + "|" + appKey(it) : stateOf(it); }
 function appKey(it) {
   if (!APP_TYPES.has(it.type)) return "";
-  if (it.type === "hopThu") return "m" + APPST.mail.unread;
-  if (it.type === "tuLanh") return "f" + APPST.fridge.shown.map(n => n.id + (n.heart ? "h" : "")).join(",");
+  if (it.type === "hopThu") return "m" + APPST.mail.unread + (mailOpen.has(it.uid) ? "o" + APPST.letters.map(l => l.id + (l.open ? 1 : 0) + (l.seen ? 1 : 0)).join(",") : "");
+  if (it.type === "tuLanh") return "f" + APPST.fridge.shown.map(n => n.id + (n.heart ? "h" : "") + (n.fresh ? "n" : "")).join(",");
   if (it.type === "loUocMo") return "w" + APPST.wishes.fresh;
   if (it.type === "giaVe") return "d" + APPST.drawing.mode;
   if (it.type === "mayDanhChu") return "s" + APPST.story.myTurn;
@@ -826,7 +811,8 @@ function appKey(it) {
   return "j" + APPST.jar.pending + APPST.jar.openNo;
 }
 function addAppDeco(it, root) {
-  if (it.type === "hopThu" && APPST.mail.unread > 0) root.add(WM.letterBadge());
+  if (it.type === "hopThu" && APPST.mail.unread > 0 && !mailOpen.has(it.uid)) root.add(WM.letterBadge());
+  if (it.type === "hopThu" && mailOpen.has(it.uid)) { const env = WM.mailEnvelopes(APPST.letters); env.rotation.y = Math.atan2(CAMDIR.x, CAMDIR.z) - E.itemPose(it).ry; root.add(env); } // phong bì luôn bay về phía người xem
   if (it.type === "tuLanh" && APPST.known && stateOf(it) === "trong") root.add(WM.fridgeNotes(APPST.fridge.shown));
   if (it.type === "huHenHo" && (APPST.jar.pending || APPST.jar.openNo)) root.add(WM.jarSlip(!!APPST.jar.openNo));
   if (it.type === "loUocMo" && APPST.wishes.fresh) root.add(WM.jarSlip(false));
@@ -839,15 +825,19 @@ function addAppDeco(it, root) {
 function appMenu(it, use, list) {
   const m = me(), other = NAMES[partner().who];
   if (it.type === "hopThu") {
-    const { unread, sealed } = APPST.mail;
-    list.push([unread ? `Đọc thư (${unread} thư mới)` : "Mở hộp thư", () => useItem(m, it, () => openApp("thu"))]);
+    const { unread, sealed } = APPST.mail, open = mailOpen.has(it.uid);
+    if (!open) list.push([unread ? `Mở hộp thư (${unread} thư mới)` : "Mở hộp thư", () => useItem(m, it, () => openMailbox(it))]);
+    else list.push(["Cất thư, đóng hộp", () => closeMailbox(it)]);
     list.push(["Viết thư cho " + other, () => useItem(m, it, () => openApp("thu"))]);
-    if (sealed) list.push([`${sealed} thư còn niêm phong`, () => bubble(...anchorOf(it), "Thư niêm phong chỉ mở được khi hết mùa hoặc đúng ngày hẹn 💌", 2800)]);
+    if (sealed && !open) list.push([`${sealed} thư còn niêm phong`, () => bubble(...anchorOf(it), "Thư niêm phong chỉ mở được khi hết mùa hoặc đúng ngày hẹn 💌", 2800)]);
     return;
   }
   if (it.type === "huHenHo") {
     const j = APPST.jar;
-    list.push([j.openNo ? `Buổi hẹn #${j.openNo} đang diễn ra` : j.pending ? "Xem lá đang chờ" : use.label, () => useItem(m, it, () => { if (!j.pending && !j.openNo) shakeJar(it); openApp("hom-nay", j.pending || j.openNo ? 0 : 700); })]);
+    if (j.openNo) list.push([`Buổi hẹn #${j.openNo}: xem nghi thức`, () => useItem(m, it, () => jarCard(it))]);
+    else if (j.pending) list.push(["Đọc lá đang chờ", () => useItem(m, it, () => jarCard(it))]);
+    else list.push(["Lắc hũ, bốc một lá", () => useItem(m, it, () => drawFromJar(it))]);
+    list.push(["Mở sổ hũ hẹn hò", () => useItem(m, it, () => openApp("hom-nay"))]);
     return;
   }
   if (it.type === "loUocMo") {
@@ -885,6 +875,80 @@ function shakeJar(it) {
   requestAnimationFrame(tick);
   const p = E.itemPose(it); floatAt(p.x, 0.8, p.z, "📜", 1);
 }
+// ---------- tương tác ngay trên vật: giấy trên cửa tủ, phong bì, lá thăm ----------
+const ago = iso => { const h = (Date.now() - Date.parse(iso)) / 36e5; if (!Number.isFinite(h)) return ""; if (h < 1) return "vừa xong"; if (h < 24) return Math.floor(h) + " giờ trước"; const d = Math.floor(h / 24); return d < 30 ? d + " ngày trước" : new Date(iso).toLocaleDateString("vi-VN"); };
+const nameOfIdx = i => { const av = ["anh", "em"]; const w = appMe() === null ? av[i] : (i === appMe() ? S.me : partner().who); return NAMES[w] || (i === 0 ? "Anh" : "Em"); };
+const hosted = () => new URLSearchParams(location.search).get("host") === "1" && window.parent !== window;
+function partMenu(it, part, point) {
+  const m = me();
+  if (part.kind === "note") {
+    const n = APPST.fridge.shown.find(x => x.id === part.id); if (!n) return;
+    const p = point || anchorOf(it), at = Array.isArray(p) ? p : [p.x, p.y + 0.2, p.z];
+    const who = n.by === null ? "" : nameOfIdx(n.by), body = n.text || (n.voice ? "🎤 Một lời nhắn bằng giọng nói" : "(một sticker)");
+    const list = [[n.mine ? "💗 Bỏ tim" : "💗 Thả tim", () => heartNote(it, n)], ["↩ Đáp lại", () => useItem(m, it, () => openApp("tu-lanh", 0, { focus: n.id, reply: true }))]];
+    if (n.voice) list.push(["▶ Nghe lời nhắn", () => useItem(m, it, () => openApp("tu-lanh", 0, { focus: n.id }))]);
+    if (n.replies) list.push([`Xem ${n.replies} câu đáp`, () => useItem(m, it, () => openApp("tu-lanh", 0, { focus: n.id }))]);
+    const i = APPST.fridge.shown.indexOf(n), next = APPST.fridge.shown[(i + 1) % APPST.fridge.shown.length];
+    if (next && next !== n) list.push(["Mẩu kế tiếp →", () => partMenu(it, { kind: "note", id: next.id })]);
+    showActions(`Giấy của ${who}${n.date ? " · " + ago(n.date) : ""}`, list, ...at, body);
+    return;
+  }
+  if (part.kind === "letter") {
+    const l = APPST.letters.find(x => x.id === part.id); if (!l) return;
+    const at = anchorOf(it), from = nameOfIdx(l.from);
+    if (!l.open) {
+      const when = l.season ? `khi hai đứa hết mùa ${l.season}` : l.unlockDate ? "vào ngày " + new Date(l.unlockDate + "T12:00:00").toLocaleDateString("vi-VN") : "sau";
+      showActions(`Thư của ${from} · còn niêm phong`, [["Để dành, cất lại", () => {}]], ...at, `Phong bì này chỉ mở được ${when}. Lắc nhẹ thấy có gì đó bên trong 💌`);
+      const v = views.get(it.uid); v?.root.traverse(o => { if (o.userData.part?.id === l.id && !reduced()) { const r0 = o.rotation.z; let k = 0; const t = () => { k++; o.rotation.z = r0 + Math.sin(k * 0.9) * 0.15 * (1 - k / 18); if (k < 18) requestAnimationFrame(t); else o.rotation.z = r0; }; requestAnimationFrame(t); } });
+      return;
+    }
+    showActions(`Thư của ${from}${l.date ? " · " + ago(l.date) : ""}`, [[l.seen ? "Đọc lại thư" : "💌 Bóc thư", () => useItem(m, it, () => openApp("thu", 0, { focus: l.id }))]], ...at, l.seen ? "Lá thư bạn đã đọc." : "Một lá thư mới, đã tới ngày được mở.");
+  }
+}
+function openMailbox(it) {
+  if (appMe() === null) { openApp("thu"); return; }
+  mailOpen.add(it.uid); refreshView(it);
+  if (!APPST.letters.length) { bubble(...anchorOf(it), "Hộp thư còn trống · viết lá đầu tiên nhé ✉️", 2600); return; }
+  toast(APPST.mail.unread ? "Phong bì hồng là thư mới · chạm để bóc" : "Chạm một phong bì để đọc lại");
+}
+function closeMailbox(it) { mailOpen.delete(it.uid); refreshView(it); }
+function heartNote(it, n) {
+  floatAt(...(() => { const p = E.itemPose(it); return [p.x, 1.9, p.z]; })(), "💗", n.mine ? 1 : 3);
+  if (hosted()) { window.parent.postMessage({ type: "gocnho:act", feature: "tu-lanh", action: "heart", id: n.id }, location.origin); return; }
+  openApp("tu-lanh", 0, { focus: n.id });
+}
+function setJarNames(d) {
+  const ok = x => x && typeof x === "object" && Number.isFinite(x.n);
+  JAR.pending = ok(d.pending) ? { n: d.pending.n, name: String(d.pending.name || "").slice(0, 80), gold: !!d.pending.gold, special: d.pending.special ? String(d.pending.special).slice(0, 60) : null } : null;
+  JAR.open = ok(d.open) ? { no: d.open.no, n: d.open.n, name: String(d.open.name || "").slice(0, 80) } : null;
+  if (JAR.wantDraw && JAR.pending) { const it = S.layout.items.find(i => i.type === "huHenHo"); JAR.wantDraw = 0; if (it) slipOut(it, () => jarCard(it)); }
+}
+function hostActed(d) {
+  if (d.feature === "hom-nay" && !d.ok) { JAR.wantDraw = 0; toast("Hũ chưa bốc được lúc này · mở sổ hũ xem nhé"); }
+}
+function jarCard(it) {
+  const j = JAR, m = me();
+  if (j.open) { showActions(`Buổi hẹn #${j.open.no}`, [["Mở nghi thức buổi hẹn", () => useItem(m, it, () => openApp("hom-nay"))]], ...anchorOf(it), j.open.name || "Buổi hẹn đang diễn ra"); return; }
+  if (j.pending) { showActions(`Lá #${j.pending.n}${j.pending.gold ? " · lá vàng ✨" : ""}`, [["Chơi lá này hoặc đổi lá", () => useItem(m, it, () => openApp("hom-nay"))]], ...anchorOf(it), (j.pending.special ? j.pending.special + " · " : "") + (j.pending.name || "Một buổi hẹn bất ngờ")); return; }
+  openApp("hom-nay");
+}
+function drawFromJar(it) {
+  shakeJar(it);
+  if (!hosted() || appMe() === null) { openApp("hom-nay", 700); return; }
+  JAR.wantDraw = Date.now();
+  setTimeout(() => window.parent.postMessage({ type: "gocnho:act", feature: "hom-nay", action: "draw" }, location.origin), 500);
+  setTimeout(() => { if (JAR.wantDraw && Date.now() - JAR.wantDraw > 5000) { JAR.wantDraw = 0; openApp("hom-nay"); } }, 5200);
+}
+// Lá thăm bay vọt khỏi miệng hũ, xoay rồi dừng trên cao; lá vàng lơ lửng ở lại như mọi khi.
+function slipOut(it, then) {
+  const p = E.itemPose(it);
+  if (reduced()) { then(); return; }
+  const s = WM.jarSlip(!!JAR.open); s.userData.bob = false; s.position.set(p.x, 0.6, p.z); scene.add(s);
+  const t0 = performance.now();
+  const tick = t => { const k = Math.min(1, (t - t0) / 900); s.position.y = 0.6 + Math.sin(k * Math.PI * 0.5) * 1.1; s.rotation.y = k * 9; s.scale.setScalar(1.6 + k * 0.8); worldNeedsRender = true; if (k < 1) requestAnimationFrame(tick); else { scene.remove(s); floatAt(p.x, 1.6, p.z, "✨", 3); then(); } };
+  requestAnimationFrame(tick);
+}
+
 let appOpen = null;
 // Gifts reuse the existing #gifts section of the home screen. No gift subscription or payload enters APPDATA.
 function focusAppPanel() {
@@ -899,11 +963,10 @@ function focusAppPanel() {
   }catch{}
 }
 $("#appsheet-frame").addEventListener("load", focusAppPanel);
-function openApp(tab, delay = 0) {
-  datePlay.close();
+function openApp(tab, delay = 0, opts = {}) {
   if(new URLSearchParams(location.search).get("host")==="1"&&window.parent!==window&&featureOf(tab)){
     clearWorldInput();me().stop();hideActions();
-    setTimeout(()=>window.parent.postMessage({type:"gocnho:open",id:tab},location.origin),delay);return;
+    setTimeout(()=>window.parent.postMessage({type:"gocnho:open",id:tab,focus:opts.focus,reply:!!opts.reply},location.origin),delay);return;
   }
   setTimeout(() => {
     const sheet = $("#appsheet"), fr = $("#appsheet-frame");
@@ -925,7 +988,7 @@ addEventListener("storage", e => { if (!e.key || /^(hu-hen-ho|v3-)/.test(e.key))
 readLocalApp();
 
 // ---------- người kia thật (W2) ----------
-const SCENE_NAME = { san: "ngoài sân", nha: "trong nhà", hen:"đảo hẹn hò" };
+const SCENE_NAME = { san: "ngoài sân", nha: "trong nhà" };
 function partnerStatus() {
   const el = $("#partner-status"); if (!el) return;
   if (!CLOUD.on) { el.hidden = true; return; }
@@ -982,7 +1045,7 @@ setInterval(partnerStatus, 1000);
 function applyRemote(changes) {
   const byScene = { nha: [], san: [] };
   for (const c of changes) {
-    if(c.id.startsWith("a_date_")){datePlay.receive(c.id,c.data);continue;}
+    if (c.id.startsWith("a_")) continue; // bản ghi hoạt động cũ (đảo hẹn hò đã gỡ) — để yên, không đọc
     if (c.id === SY.presenceId(partner().who)) { CLOUD.remote = c.data; continue; }
     if (c.id.startsWith("m_")) { const sc = c.id.slice(2); if(!["nha","san"].includes(sc))continue; const L = S.layouts[sc]; if (L && c.data) { L.wall = c.data.wall || L.wall; L.floor = c.data.floor || L.floor; CLOUD.meta[sc] = L.wall + "|" + L.floor; store.set(sc === "san" ? KEY.yard : KEY.layout, E.serialize(L)); if (sc === S.scene) buildShell(); } continue; }
     for (const sc of ["nha", "san"]) if (c.id.startsWith("i_" + sc + "_")) byScene[sc].push(c);
@@ -1024,7 +1087,6 @@ async function startCloud() {
     }
   }
   CLOUD.on = true;
-  for(const d of all)if(d.id.startsWith("a_date_"))datePlay.receive(d.id,d.data);
   // Cảnh chưa có trên Firebase: máy này góp bố cục của mình làm bản chung đầu tiên.
   for (const sc of ["nha", "san"]) if (!CLOUD.last[sc].size) pushScene(sc);
   CLOUD.remote = all.find(d => d.id === SY.presenceId(partner().who))?.data || null;
@@ -1037,15 +1099,6 @@ async function startCloud() {
 }
 
 // ---------- ra vào nhà ----------
-let pendingDateTravel=false;
-function travelToDate(){
- guideIntent=null;
- if(S.scene==="hen"){datePlay.open("guide");return;}
- if(S.scene==="nha"){pendingDateTravel=true;walkThroughDoor();return;}
- const pier=S.layout.items.find(i=>i.type==="benThuyen");
- if(!pier){toast("Chưa tìm thấy bến thuyền trong sân");return;}
- hideActions();useItem(me(),pier,()=>goScene("hen"));
-}
 const DRINKS = ["Trà sữa trân châu 🧋", "Cà phê sữa đá ☕", "Nước cam 🍊", "Trà đào 🍑", "Sinh tố dâu 🍓", "Matcha latte 🍵"];
 function orderDrink(actor, it, treat) {
   const p = E.itemPose(it), d = DRINKS[Math.floor(rand() * DRINKS.length)];
@@ -1054,7 +1107,6 @@ function orderDrink(actor, it, treat) {
 }
 let switching = false;
 function walkThroughDoor() {
-  if(S.scene==="hen")return;
   const m = me(), to = S.scene === "san" ? WD.DOOR_OUT : WD.DOOR_IN;
   hideActions();
   if (Math.hypot(m.x - to.x, m.z - to.z) < 0.6) { goScene(S.scene === "san" ? "nha" : "san"); return; }
@@ -1062,15 +1114,14 @@ function walkThroughDoor() {
 }
 function goScene(id) {
   if (switching || id === S.scene || !WD.SCENES[id]) return;
-  datePlay.close();
   switching = true; hideActions(); select(null);
   const fade = $("#fade"); fade.classList.add("on");
   setTimeout(() => {
     for (const a of Object.values(actors)) { a.standUp(); a.stop(); }
-    S.seats.clear(); S.transient.clear();
+    S.seats.clear(); S.transient.clear(); mailOpen.clear();
     useScene(id); store.set(KEY.scene, id);
     buildShell(); buildGrid(); rebuildAll();
-    const sp = id === "hen"?WD.DATE_SPAWN:id === "san" ? WD.SPAWN_OUT : WD.SPAWN_IN, m = me(), p = partner();
+    const sp = id === "san" ? WD.SPAWN_OUT : WD.SPAWN_IN, m = me(), p = partner();
     m.place(sp.x, sp.z, sp.face);
     // người kia bước qua cửa ngay sau mình
     const c = E.worldToCell(sp.x + 0.5, sp.z + (id === "san" ? 0.5 : -0.5)), n = E.nearestFreeCell(S.G, c.i, c.j) || E.worldToCell(sp.x, sp.z), q = E.cellCenter(n.i, n.j);
@@ -1080,8 +1131,7 @@ function goScene(id) {
     document.body.dataset.scene = id;
     cam.target.set(m.x, 0.55, m.z); cam.goal.copy(cam.target); cam.goalPpm = cam.ppm = playPpm();
     AI.timer = 2;
-    datePlay.sceneChanged();
-    setTimeout(()=>{fade.classList.remove("on");switching=false;if(guideIntent)guideArrive();toast(id==="hen"?"Đảo hẹn hò · quầy bên trái, bến câu bên phải":id==="san"?"Ra sân rồi · vườn bên trái, bến thuyền phía trước":"Về nhà rồi");if(id==="san"&&pendingDateTravel){pendingDateTravel=false;travelToDate();}},120);
+    setTimeout(()=>{fade.classList.remove("on");switching=false;if(guideIntent)guideArrive();toast(id==="san"?"Ra sân rồi · vườn bên trái, bến thuyền phía trước":"Về nhà rồi");},120);
   }, 260);
 }
 
@@ -1363,7 +1413,6 @@ $("#btn-reset").addEventListener("click", () => {
 
 function setMode(mode) {
   if(mode==="edit"&&S.scene!=="nha")return;
-  datePlay.close();
   S.mode = mode; document.body.dataset.mode = mode; hideActions(); facesEl.hidden = true;
   document.querySelectorAll(".sheet").forEach(s => { s.hidden = true; });
   grid.visible = mode === "edit";
@@ -1382,18 +1431,6 @@ $("#btn-edit").addEventListener("click", () => setMode("edit"));
 $("#btn-done").addEventListener("click", () => setMode("play"));
 
 // ---------- vòng lặp ----------
-let dateSkew=0;
-const datePlay=createDatePlay({
- store,cloud:()=>CLOUD,who:()=>S.me,scene:()=>S.scene,actors,models:DM,sceneRoot:scene,reduced,
- now:()=>Date.now()+dateSkew,toast,travel:travelToDate,
- near:kind=>{const it=itemByUid(kind==="cook"?"h-cook":"h-fish"),ap=it&&E.approachPoint(S.G,it);return !!ap&&Math.hypot(me().x-ap.x,me().z-ap.z)<1.5;},
- practiceMove:()=>{const ap=E.approachPoint(S.G,itemByUid("h-cook"));if(ap)partner().goTo(ap.x+.45,ap.z,()=>partner().emote("wave",1));},
- position:uid=>{const it=itemByUid(uid);return it?E.itemPose(it):{x:0,z:0};},
- route:(uid,kind)=>{const it=itemByUid(uid);if(!it)return;useItem(me(),it,()=>{if(kind==="sit")picnicTogether(it);else datePlay.open(kind);});},
- invite:()=>emitEv("invite",{text:"vừa pha đồ uống, đến lượt bạn trên đảo hẹn hò 🧋"}),
- celebrate:(message,type)=>{toast(message);if(type){for(const a of Object.values(actors))a.emote("wave",1.8);floatAt(me().x,1.4,me().z,"💗",5);}else floatAt(me().x,1.4,me().z,"✨",2);}
-});
-addEventListener("keydown",e=>{if(e.key==="Escape")datePlay.close();});
 setInterval(()=>{if(worldObscured&&CLOUD.on&&!document.hidden)sendPresence();},15000);
 let hasRenderedWorld=false;
 let last = performance.now();
@@ -1405,8 +1442,6 @@ function step(dt) {
   if (CLOUD.on) sendPresence();
   if (S.scene === "nha") catThink(dt);
   for (const a of Object.values(actors)) a.update(dt);
-  datePlay.step(dt,simClock);
-  if(S.scene==="hen"){DM.animate(shell,simClock,reduced());itemsG.traverse(o=>{if(o.userData.flame!==undefined&&!reduced())o.scale.y=1+Math.sin(simClock*6+o.userData.flame)*.13;});}
   if (S.mode === "play" && !switching) {
     const m = me(), moving = m.joy || m.path.length > 0;
     if (moving && WD.crossesDoor(S.scene, m.x, m.z, Math.sin(m.face), Math.cos(m.face))) goScene(S.scene === "san" ? "nha" : "san");
@@ -1425,7 +1460,7 @@ function frame(now) {
   updateCamera();
   // lift món đang chọn
   if (S.mode === "edit" && S.selected && !drag) { const it = itemByUid(S.selected), v = views.get(S.selected); if (it && v) placeView(v, it, 0.04 + (reduced() ? 0 : Math.sin(now / 160) * 0.025)); }
-  if (!reduced()) itemsG.traverse(o => { if (o.userData.bob) { o.position.y = o.userData.y0 ?? (o.userData.y0 = o.position.y); o.position.y += Math.sin(now / 420) * 0.05; o.rotation.y = Math.sin(now / 900) * 0.4; } });
+  if (!reduced()) itemsG.traverse(o => { if (o.userData.bob) { o.position.y = o.userData.y0 ?? (o.userData.y0 = o.position.y); o.position.y += Math.sin(now / 420) * 0.05; o.rotation.y = Math.sin(now / 900) * 0.4; } if (o.userData.float !== undefined) { o.position.y = (o.userData.fy0 ??= o.position.y) + Math.sin(now / 600 + o.userData.float) * 0.03; } });
   renderer.render(scene, camera);hasRenderedWorld=true;worldNeedsRender=false;
   // nhãn
   for (const a of Object.values(actors)) {
@@ -1447,10 +1482,9 @@ else $("#trial-pill").textContent="Chỉ trên máy này";
 // Móc cho test tự động (chỉ đọc + vài thao tác như người dùng); không chứa dữ liệu thật.
 window.__NHA3D__ = {
   ready: true,
-  date:()=>datePlay.snapshot(),
-  openDate:kind=>datePlay.open(kind),
-  dateAction:(kind,action,value,asPartner=false)=>datePlay.act(kind,action,value,asPartner),
-  skipDate:ms=>{dateSkew+=ms;},
+  partsOf: uid => { const out = []; views.get(uid)?.root.traverse(o => { if (o.userData.part) out.push(o.userData.part); }); return out; },
+  screenOfPart: (uid, id) => { let t = null; views.get(uid)?.root.traverse(o => { if (o.userData.part?.id === id) t = o; }); if (!t) return null; const b = new THREE.Box3().setFromObject(t), c = b.getCenter(new THREE.Vector3()).project(camera); return [(c.x + 1) / 2 * innerWidth, (1 - c.y) / 2 * innerHeight]; },
+  jarNames: () => JSON.parse(JSON.stringify(JAR)),
   layout: () => E.clone(S.layout),
   mode: () => S.mode,
   me: () => ({ who: S.me, x: me().x, z: me().z, mode: me().mode }),
@@ -1458,6 +1492,8 @@ window.__NHA3D__ = {
   screenOfItem(uid, yFrac = 0.6) { const it = itemByUid(uid), p = E.itemPose(it), v = views.get(uid); return toScreen(p.x, (v.height || 1) * yFrac, p.z); },
   screenOfWorld: (x, y, z) => toScreen(x, y, z),
   pickAt: (x, y) => { const h = pickAt(x, y); return h && (h.uid || (h.actor && h.actor.who) || (h.cat && "cat")); },
+  pickPart: (x, y) => pickAt(x, y)?.part || null,
+  snapCam: () => { const m = me(); cam.goal.set(m.x, 0.55, m.z); cam.target.copy(cam.goal); cam.ppm = cam.goalPpm; updateCamera(); renderer.render(scene, camera); },
   appState: () => JSON.parse(JSON.stringify(APPST)),
   viewKey: uid => views.get(uid)?.key,
   appDeco: uid => { let n = 0; views.get(uid)?.root.traverse(o => { if (o.userData.bob) n++; }); return n; },

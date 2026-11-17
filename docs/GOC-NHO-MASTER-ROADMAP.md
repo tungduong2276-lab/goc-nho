@@ -1,5 +1,11 @@
 # GÓC NHỎ — MASTER ROADMAP & AI HANDOFF
 
+## ★ LATEST DECISION — date island removed, focus on the original core (user decision 2026-11-17)
+
+The user asked to **remove the date island** (W4a: boat to `hen`, drinks, fishing, picnic, campfire) and instead improve and add to the **original core** features: date jar, fridge notes, letters, garden, wishes, story/drawing, kingdom, museum. Do not rebuild the date island or add new separate "activity islands" unless the user asks again. The old additive Firestore docs `couples/{cid}/world/a_date_*` are left in place and ignored by the world (`applyRemote` skips `a_*` ids); never delete live data.
+
+Order of work from here: (1) fridge, mailbox and jar played on the objects themselves — **done in this PR**; (2) legacy garden progress shown on the 3D garden; (3) a walkable kingdom island and museum rooms; (4) writing/drawing studio and treasure hunt; (5) two-phone acceptance throughout.
+
 ## ★ LATEST DECISION — 3D-ONLY WORLD (2026-11-16, supersedes older W3/W5 interface gates)
 
 The user now explicitly wants no old tab interface: enter the 3D island directly and integrate every existing feature there. This authorizes the default-home transition now; physical-phone acceptance remains unverified, not waived as evidence. Preserve the existing Firebase records and all feature access. The previous requirement to wait before making 3D the home screen is superseded by this explicit decision.
@@ -33,9 +39,8 @@ What the user asked for, in their words translated: walk in and out of the house
 - Tests: `tests/staging/nha3d-*.test.mjs` (Node), `tests/browser/nha3d*.spec.mjs` (Playwright, use `window.__NHA3D__` hooks and `tick()` instead of waiting for frames).
 - Local rendering in a session without jsDelivr: shallow-clone `mrdoob/three.js` at tag `r169` and route `cdn.jsdelivr.net/npm/three@0.169.0/*` to it (see `tests/browser/nha3d.spec.mjs`).
 
-### Experiential priority — user decision 2026-11-16 (after W3c)
-The user says the current app is still boring and wants a love version of Play Together for just the two of them. **Prioritise playable shared activities and a world that reacts to both players, rather than additional object-to-page links.**
-First W4 increment: a separate walkable date island reached by boat, cooperative drinks with alternating real accounts, timed fishing with a species collection, picnic and campfire moments. Next increments should deepen real two-player activities (cooking, dates, photos/memories, discovery) and revisit old shallow interactions, alongside more places. Do not interpret this as a request to delete existing content or rebuild Firebase.
+### Experiential priority — superseded 2026-11-17
+The 2026-11-16 note asked for playable shared activities first; its first increment (date island, PR #118) was **removed on 2026-11-17 at the user's request**. Shared play now goes into the original core objects (jar, fridge, mailbox, garden, kingdom, museum) instead of separate activity islands.
 
 ### Build order (V3)
 1. **W1 — Outdoor island + door in/out (built 2026-11-16, PR "W1", awaiting phone check):** `nha3d/world.mjs` (yard layout, door points, `crossesDoor`), `nha3d/world-models.js` (island, house exterior, props); `app.js` `goScene()` swaps scenes with a fade, partner follows, cat stays inside, build mode only indoors; `engine.setRoom()` switches the grid. Original W1 spec: outdoor scene with the house exterior, a walkable yard, garden plots outside, paths to café corner, mailbox, swing and dock; front door enters the existing interior, interior door leads back out. Garden moves outdoors.
@@ -47,7 +52,16 @@ First W4 increment: a separate walkable date island reached by boat, cooperative
 4. **W4 — More places:** upstairs rooms, kingdom island scene, café interior, seasonal outdoor decor.
 5. **W5 — Make the world the home screen** once W1–W3 are accepted on both phones.
 
-## Latest operational handoff — 2026-11-16 — W5a 3D-only home released
+## Latest operational handoff — 2026-11-17 — date island removed; fridge, mailbox, jar played on the objects
+
+- **Removed:** scene `hen`, `nha3d/date-play.js`, `date-models.js`, `date-activities.mjs`, catalog items `henPier/banPhaChe/diemCau/picnic/luaTrai`, the "⛵ Hẹn hò" button, the guide entry, café/dock travel options, `cloud.actDate`, the date workflow and its tests. A saved `gocnho.nha3d.scene="hen"` falls back to the yard; presence with `scene:"hen"` reads as offline. `a_date_*` docs stay untouched and ignored.
+- **Fridge:** each of the 8 newest notes on the door is its own tap target (`userData.part`). Tapping shows the real text, author and age in an in-scene card (`#actions.readcard`, text only). "💗 Thả tim" runs the app's own heart write via the host; "↩ Đáp lại" opens the fridge tool scrolled to that note with its reply box focused; "Mẩu kế tiếp →" pages through. New notes from the partner carry a pink pin.
+- **Mailbox:** "Mở hộp thư" lets up to six envelopes fly out, turned toward the camera: pink with heart = new, cream = read, lilac with gold lock = sealed (shakes, says when it opens, never shows content). "💌 Bóc thư" opens the letters tool on that letter, which marks it read; the flag drops.
+- **Jar:** "Lắc hũ, bốc một lá" shakes the jar, the host runs `drawNow()` (same write as the app button), a slip flies out and the card shows the real slip name (host sends `gocnho:jar` with names from `byN`). Waiting slip / open date show their name in the scene before opening the tool.
+- **Bridge (src/world-features.mjs):** `gocnho:open` may carry `focus` (plain id, `focusId`) and `reply`; new `gocnho:act` accepts only `tu-lanh/heart` (with id) and `hom-nay/draw` (`WORLD_ACTIONS`, `worldAction`), runs only for a known, ungated user, and the host answers `gocnho:acted`. App markup: notes/letters carry `data-focus-id`. Re-entering the same tool on its own hashchange no longer reopens it (kept reply focus). No schema, Rules or data migration. Cache `goc-nho-v25`.
+- **Next:** legacy garden progress on the 3D beds (reference, no merge), then the kingdom island and museum rooms.
+
+## Previous operational handoff — 2026-11-16 — W5a 3D-only home released
 
 - **[PR #120](https://github.com/tungduong2276-lab/goc-nho/pull/120) merged** as `beb952abdf69f7bdccfc2e919d05835ec99b3192`, exact tested head `e17666112fc49d6333759aa7033135a220700665`. [Full npm test](https://github.com/tungduong2276-lab/goc-nho/actions/runs/43918418381) passed static checks, **94 staging / 71 browser / 78 Firestore Emulator**; one older browser spec requiring a separately configured Emulator run is intentionally skipped in this normal suite. [Home gate](https://github.com/tungduong2276-lab/goc-nho/actions/runs/43918418439) passed 4 Node and 8 browser scenarios; [date core](https://github.com/tungduong2276-lab/goc-nho/actions/runs/43918418417) passed 17 state/navigation tests and 2 browser scenarios. [Pages deployment](https://github.com/tungduong2276-lab/goc-nho/actions/runs/43921095128) verified separately.
 - **Normal entry:** one root-hosted Three.js island, no legacy tab navigation or user-facing classic switch. The compass covers 19 groups, guides through real doors/boat and supports saved layouts without newer props. Existing data-entry tools open on the parent host; closing keeps scene/position. Old deep links, gifts/pet/dates/badges/common-book sections, authentication, pairing, backup, and the original sync/manual-retry handler remain reachable. Only the active legacy component is rendered. Internal `?classic=1` keeps regression/rollback access; `?embed=1` remains for internal older tools.

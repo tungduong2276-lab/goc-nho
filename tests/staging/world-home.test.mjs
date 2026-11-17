@@ -28,3 +28,12 @@ test('messages from another frame or origin cannot open account or data entry to
  assert.ok(!validWorldMessage({source:frame,origin:'https://evil.test',data:{}},frame,origin));
  assert.ok(!validWorldMessage({source:frame,origin,data:null},frame,origin));
 });
+
+test('the world may only ask for two in-scene actions, with a plain record id', async () => {
+ const { worldAction, focusId } = await import('../../src/world-features.mjs');
+ assert.deepEqual(worldAction({ feature: 'tu-lanh', action: 'heart', id: 'f1' }), { feature: 'tu-lanh', action: 'heart', id: 'f1' });
+ assert.deepEqual(worldAction({ feature: 'hom-nay', action: 'draw' }), { feature: 'hom-nay', action: 'draw', id: null });
+ for (const bad of [{ feature: 'tu-lanh', action: 'delete', id: 'f1' }, { feature: 'tu-lanh', action: 'heart' }, { feature: 'tu-lanh', action: 'heart', id: '<img>' }, { feature: 'settings', action: 'draw' }, null, { feature: 1, action: 'heart' }])
+  assert.equal(worldAction(bad), null);
+ assert.equal(focusId('l1'), 'l1'); assert.equal(focusId('a"]'), null); assert.equal(focusId('x'.repeat(65)), null); assert.equal(focusId(5), null);
+});
