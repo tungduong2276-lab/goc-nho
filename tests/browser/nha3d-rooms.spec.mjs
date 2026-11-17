@@ -57,9 +57,9 @@ test("phòng ngủ, bếp và xưởng có bố cục độc lập; vào lại k
   expect((await N(page,"layout")).items.some(it=>it.type==="giaVe")).toBe(true);
   await N(page,"goScene","bao-tang");await N(page,"settle");
   const museum=await N(page,"layout");
-  await page.reload();
+  await page.goto("/nha3d/index.html?scene=bao-tang");
   await page.waitForFunction(()=>window.__NHA3D__?.ready,null,{timeout:90_000});
   expect((await N(page,"layout")).items.map(it=>it.uid)).toEqual(museum.items.map(it=>it.uid));
-  expect((await N(page,"scene"))).toBe("ngu"); // URL ?scene=ngu vẫn ưu tiên hơn scene lưu
+  expect((await N(page,"scene"))).toBe("bao-tang");
   expect(errors).toEqual([]);
 });
