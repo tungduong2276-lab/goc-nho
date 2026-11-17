@@ -124,7 +124,8 @@ export function createCreativeUI({getState,work,who,online}){
           const b=document.createElement("button");b.type="button";b.className="creative-width";b.textContent=w===2?"Nét mảnh":w===5?"Nét vừa":"Nét đậm";
           b.setAttribute("aria-pressed",String(w===width));b.onclick=()=>{width=w;render();};tools.append(b);
         }panel.append(tools);
-        panel.append(text("p","💞 Người kia đang thấy những nét được đồng bộ gần như trực tiếp","creative-hint")).id="creative-partner";
+        const partnerHint=text("p","💞 Người kia đang thấy những nét được đồng bộ gần như trực tiếp","creative-hint");
+        partnerHint.id="creative-partner";panel.append(partnerHint);
         const both=canPublishPainting(me==="anh"?ownStrokes:p.anh,me==="em"?ownStrokes:p.em);
         const publish=button("🖼️ Hoàn thành → đưa vào bảo tàng",async()=>{
           if(dragging)return {message:"Kết thúc nét vẽ trước nhé"};
