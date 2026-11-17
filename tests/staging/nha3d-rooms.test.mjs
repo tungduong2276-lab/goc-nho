@@ -67,3 +67,17 @@ test("Hiện diện người kia nhận phòng mới, từ chối scene lạ",()
   for(const id of Object.keys(WD.SCENES))assert.equal(readPresence({...base,scene:id})?.scene,id);
   for(const id of ["hen","not-a-room","../nha"])assert.equal(readPresence({...base,scene:id}),null);
 });
+
+
+test("Các cửa mặc định tới được bằng A*, kể cả nhà cũ và hành lang rộng",()=>{
+  for(const [scene,room] of Object.entries(WD.SCENES)){
+    const layout=room.defaultLayout||DEFAULT_LAYOUT;
+    const G=E.blockGrid(layout,room);
+    for(const door of WD.sceneDoors(scene)){
+      const sp=WD.spawnFrom(scene,door.to.scene);
+      assert.equal(E.circleBlocked(G,door.from.x,door.from.z,E.AVATAR_R,room),false,scene+": cửa bị đồ chặn: "+door.id);
+      const path=E.worldPath(G,sp.x,sp.z,door.from.x,door.from.z,room);
+      assert.ok(path?.length>=2,scene+": không thể tới cửa "+door.id);
+    }
+  }
+});
