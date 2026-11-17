@@ -343,7 +343,7 @@ function refreshView(it) {
   itemsG.add(root); views.set(it.uid, view);
 }
 function rebuildAll() {
-  for (const v of views.values()) itemsG.remove(v.root);
+  for (const v of views.values()) { disposeCreativeTextures(v.root);itemsG.remove(v.root); }
   views.clear();
   for (const it of S.layout.items) refreshView(it);
   S.G = E.blockGrid(S.layout);
