@@ -1,44 +1,46 @@
+import { ROOM_MOODS } from "./cozy-palette.mjs";
+
 // V3 — các phòng có thể đi lại, nối bằng cửa. Chỉ dùng bố cục additive, không chuyển/xoá đồ cũ.
 // IDs ổn định: mỗi phòng sở hữu bản lưu riêng; "nha" vẫn là phòng khách lịch sử.
 const I = (uid, type, gx, gz, r = 0) => ({uid, type, gx, gz, r});
 const wall = (uid, type, side, at) => ({uid, type, wall: side, at, r: 0});
-const makeRoom = (id, wallColor, floorColor, items, w=16, d=14) => ({
+const makeRoom = (id, items, w=16, d=14) => ({
   id, w, d, wallH: 2.7,
   // Cửa ở mép trước, dành lối thoát; hành lang có thêm các cửa ở mép sau.
   reserved: id === "hanh-lang"
     ? [[11,16],[12,16],[11,17],[12,17], ...[3,7,11,15,19].flatMap(i=>[[i,0],[i,1],[i+1,0],[i+1,1]])]
     : [[7,12],[8,12],[7,13],[8,13]],
-  defaultLayout: {v:1, wall:wallColor, floor:floorColor, items}
+  defaultLayout: {v:1, wall:ROOM_MOODS[id].wall, floor:ROOM_MOODS[id].floor, items}
 });
 export const ROOM_PRESETS = Object.freeze({
-  "hanh-lang": makeRoom("hanh-lang","may","go",[
+  "hanh-lang": makeRoom("hanh-lang",[
     I("hall-rug","thamLon",9,7),I("hall-light-l","denCay",1,6),
     I("hall-light-r","denCay",22,6),wall("hall-photo","khungAnh","L",5)
   ],24,18),
-  ngu: makeRoom("ngu","hong","go",[
+  ngu: makeRoom("ngu",[
     I("bed-bed","giuong",2,2),I("bed-closet","tuDo",11,2),
     I("bed-mirror","banTrangDiem",11,6),I("bed-cat","oMeo",3,9),
     I("bed-rug","thamTron",6,6),I("bed-light","denCay",13,10),
     wall("bed-window","cuaSo","R",3)
   ]),
-  bep: makeRoom("bep","bo","da",[
+  bep: makeRoom("bep",[
     I("kitchen-fridge","tuLanh",12,2),I("kitchen-stove","bepNau",9,2),
     I("kitchen-table","banAn",3,5),I("kitchen-date","huHenHo",7,2),
     I("kitchen-plant","chauLuoiHo",12,9),wall("kitchen-window","cuaSo","R",4)
   ]),
-  "bao-tang": makeRoom("bao-tang","oaihuong","godam",[
+  "bao-tang": makeRoom("bao-tang",[
     I("museum-case-main","tuKinh",6,2),I("museum-case-left","tuKinh",2,5),
     I("museum-case-right","tuKinh",11,5),I("museum-chest","ruong",6,8),
     I("museum-book","keSach",2,2),I("museum-rug","thamTron",6,7),
     wall("museum-photo","khungAnh","R",4),wall("museum-map","banDo","L",4)
   ]),
-  xuong: makeRoom("xuong","la","go",[
+  xuong: makeRoom("xuong",[
     I("studio-easel","giaVe",2,2),I("studio-palette","hopMau",4,5),
     I("studio-typewriter","mayDanhChu",10,2),
     I("studio-desk","banLamViec",9,6),I("studio-wishes","loUocMo",5,8),
     wall("studio-rules","bangGhim","L",3)
   ]),
-  "phong-choi": makeRoom("phong-choi","bo","hong",[
+  "phong-choi": makeRoom("phong-choi",[
     I("play-rug","thamTron",6,5),I("play-sofa","sofa",2,3),
     I("play-table","banTra",8,8),I("play-jar","huHenHo",11,2),
     I("play-radio","radio",12,4),I("play-cushion","dem",12,8),
