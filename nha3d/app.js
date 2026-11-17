@@ -1106,7 +1106,7 @@ function setJarNames(d) {
   if (d.got === true) JAR.got = true;
   const it = S.layout.items.find(i => i.type === "huHenHo");
   if (it && views.get(it.uid)?.key !== viewKeyOf(it)) refreshView(it);
-  if (JAR.wantDraw && JAR.pending && JAR.pending.id !== JAR.wantFrom) { JAR.wantDraw = 0; JAR.wantFrom = null; if (it) slipOut(it, () => { if (JAR.pending || JAR.open) jarCard(it); }); }
+  if (JAR.wantDraw && JAR.pending && JAR.pending.id !== JAR.wantFrom) { JAR.wantDraw = 0; JAR.wantFrom = null; const id = JAR.pending.id; if (it) slipOut(it, () => { if (JAR.pending && JAR.pending.id === id && !JAR.open) jarCard(it); }); }
   if (hadOpen === null && JAR.open && it && before) floatAt(...(() => { const q = E.itemPose(it); return [q.x, 1.6, q.z]; })(), "💞", 4);
 }
 const JAR_WHY = {
@@ -1130,7 +1130,7 @@ function hostActed(d) {
   const why = (JAR_WHY[d.reason] || (() => "Hũ chưa làm được lúc này"))();
   toast(why);
   // Không để người chơi đứng trước hũ mà không biết làm gì: luôn mở đúng chỗ giải quyết được.
-  if (d.reason === "pending" && it) { jarCard(it); return; }
+  if (d.reason === "pending" && it) { if (actionsEl.hidden) jarCard(it); return; }
   if (d.reason === "noswap" && it) { jarCard(it); return; }
   if (d.reason === "empty") return;
   openApp("hom-nay", 400);
@@ -1167,6 +1167,7 @@ function jarCard(it) {
   openApp("hom-nay");
 }
 function drawFromJar(it) {
+  if (JAR.wantDraw && Date.now() - JAR.wantDraw < 8000) return; // một lần lắc đang chờ app trả lời
   shakeJar(it);
   if (!hosted() || appMe() === null) { openApp("hom-nay", 700); return; }
   JAR.wantDraw = Date.now(); JAR.wantFrom = JAR.pending?.id || null;

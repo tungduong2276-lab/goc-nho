@@ -88,7 +88,7 @@ test('typing keeps presence alive in the foreground and stops heartbeats when th
 
 // Core objects played in the scene: read a note on the fridge door and heart it, open an envelope, shake the jar.
 test('fridge notes, envelopes and the date jar work on the objects through the app\'s own handlers',async({page})=>{
- test.setTimeout(360000); // fridge + whole jar loop + mailbox in one software-rendered session
+ test.setTimeout(240000);
  await page.addInitScript(()=>{if(sessionStorage.getItem('seeded'))return;sessionStorage.setItem('seeded','1');localStorage.setItem('v3-news-init','1');localStorage.setItem('hu-hen-ho-v2',JSON.stringify({
   meta:{names:['Anh','Em'],swaps:{},extraSwaps:{},pending:null,custom:[],startDate:'',bday:['','']},
   letters:{l1:{id:'l1',from:0,to:1,body:'Thư thử trên đảo',unlockSeason:null,unlockDate:'2020-01-01',date:'2026-11-01T00:00:00.000Z'},l2:{id:'l2',from:0,to:1,body:'Chưa mở',unlockSeason:null,unlockDate:'2099-01-01',date:'2026-11-02T00:00:00.000Z'}},
@@ -115,13 +115,43 @@ test('fridge notes, envelopes and the date jar work on the objects through the a
  const name=await page.evaluate(()=>byN(S.meta.pending.n).name);
  await expect(world.locator('#actions .card-body')).toContainText(name,{timeout:8000});
  expect((await N('jarNames')).pending.name).toBe(name);
+ // Mailbox: opening it lets envelopes out; the sealed one stays sealed, the open one goes to that letter.
+ await N('goScene','san');await N('settle');await N('pauseAI',true);
+ const box=(await N('layout')).items.find(i=>i.type==='hopThu');await N('nearItem',box.uid);await N('settle');await N('tick',2);await N('snapCam');
+ let mp;for(const f of [.5,.35,.65,.2,.8]){const [x,y]=await N('screenOfItem',box.uid,f);for(const dx of [0,-6,6])if(!mp&&await N('pickAt',x+dx,y)===box.uid)mp=[x+dx,y];}expect(mp).toBeTruthy();
+ await world.locator('#world').click({position:{x:mp[0],y:mp[1]}});await world.getByRole('button',{name:'Mở hộp thư (1 thư mới)',exact:true}).click();await N('tick',12);
+ expect((await N('partsOf',box.uid)).map(p=>p.id).sort()).toEqual(['l1','l2']);
+ await tapPart(box.uid,'l2');await expect(world.locator('#actions .title')).toContainText('còn niêm phong');await expect(world.getByRole('button',{name:/Bóc thư/})).toHaveCount(0);
+ await tapPart(box.uid,'l1');await world.getByRole('button',{name:'💌 Bóc thư',exact:true}).click();await N('tick',12);
+ await expect(page.locator('#world-surface-title')).toHaveText('Thư hẹn giờ');await expect(page.locator('#world-surface [data-focus-id="l1"]')).toContainText('Thư thử trên đảo');
+ mkdirSync('test-results/world-home',{recursive:true});await page.screenshot({path:'test-results/world-home/letter-focus.png'});
+ await page.getByRole('button',{name:'Đóng đồ dùng, về đảo'}).click();
+ await expect.poll(()=>N('appState').then(s=>s.mail.unread)).toBe(0);
+ // Untrusted or unknown actions are refused by the host.
+ await frame.evaluate(()=>parent.postMessage({type:'gocnho:act',feature:'tu-lanh',action:'delete',id:'f1'},location.origin));await page.waitForTimeout(50);
+ expect(await page.evaluate(()=>!!S.fridge.f1)).toBe(true);
+ expect(errors).toEqual([]);expect(apiRequests).toEqual([]);
+});
+test('the date jar is played on the island: full slip card, play, open-date guidance, lost slip and host-authoritative state',async({page})=>{
+ test.setTimeout(300000);
+ await page.addInitScript(()=>{if(sessionStorage.getItem('seeded'))return;sessionStorage.setItem('seeded','1');localStorage.setItem('v3-news-init','1');localStorage.setItem('hu-hen-ho-v2',JSON.stringify({
+  meta:{names:['Anh','Em'],swaps:{},extraSwaps:{},pending:null,custom:[],startDate:'',bday:['','']},
+  letters:{l1:{id:'l1',from:0,to:1,body:'Thư thử trên đảo',unlockSeason:null,unlockDate:'2020-01-01',date:'2026-11-01T00:00:00.000Z'},l2:{id:'l2',from:0,to:1,body:'Chưa mở',unlockSeason:null,unlockDate:'2099-01-01',date:'2026-11-02T00:00:00.000Z'}},
+  fridge:{f1:{id:'f1',by:0,text:'Tối nay ăn lẩu nha',color:2,sticker:null,voice:null,dur:0,date:'2026-11-15T08:00:00.000Z',hearts:[false,false],replies:[]}},history:{}}));});
+ const{world,frame,N,errors}=await open(page);
+ await N('goScene','nha');await N('settle');await N('pauseAI',true);
+ const jar=(await N('layout')).items.find(i=>i.type==='huHenHo');
+ const tapJar=async()=>{await N('nearItem',jar.uid);await N('settle');await N('tick',2);await N('snapCam');let at=null;for(const f of [.5,.3,.7]){const p=await N('screenOfItem',jar.uid,f);if(await N('pickAt',...p)===jar.uid){at=p;break;}}expect(at).toBeTruthy();await world.locator('#world').click({position:{x:at[0],y:at[1]}});};
+ await tapJar();await world.getByRole('button',{name:'Lắc hũ, bốc một lá',exact:true}).click();await N('tick',12);
+ await expect.poll(()=>page.evaluate(()=>!!S.meta.pending),{timeout:8000}).toBe(true);
+ await expect(world.locator('#actions .card-body')).toContainText(await page.evaluate(()=>byN(S.meta.pending.n).name),{timeout:8000});
  // The card shows how to play, and the slip can be played right on the jar through the app's own handler.
  const desc=await page.evaluate(()=>byN(S.meta.pending.n).desc);await expect(world.locator('#actions .card-body')).toContainText(desc.slice(0,30));
  mkdirSync('test-results/world-home',{recursive:true});await page.screenshot({path:'test-results/world-home/jar-card.png'});
  await world.getByRole('button',{name:'▶ Chơi lá này',exact:true}).click();
  await expect.poll(()=>page.evaluate(()=>!S.meta.pending&&!!openDate())).toBe(true);
  await expect.poll(()=>N('jarNames').then(j=>j.open&&j.open.no)).toBe(1);
- const tapJar=async()=>{await N('nearItem',jar.uid);await N('settle');await N('tick',2);await N('snapCam');let at=null;for(const f of [.5,.3,.7]){const p=await N('screenOfItem',jar.uid,f);if(await N('pickAt',...p)===jar.uid){at=p;break;}}expect(at).toBeTruthy();await world.locator('#world').click({position:{x:at[0],y:at[1]}});};
+ await N('tick',2);await expect(world.locator('#actions')).toBeHidden(); // the played slip's card must not come back
  await tapJar();await expect(world.getByRole('button',{name:'Buổi hẹn #1 đang diễn ra',exact:true})).toBeVisible();
  // A draw while a date is open is refused with a reason, and the jar opens the ritual instead of a dead end.
  await frame.evaluate(()=>parent.postMessage({type:'gocnho:act',feature:'hom-nay',action:'draw'},location.origin));
@@ -140,20 +170,5 @@ test('fridge notes, envelopes and the date jar work on the objects through the a
  expect((await N('appState')).jar.openNo).toBe(null);
  await tapJar();await expect(world.getByRole('button',{name:'Buổi hẹn #7 đang diễn ra',exact:true})).toBeVisible();
  await page.evaluate(()=>{delete S.history.hx;rerender();});
- // Mailbox: opening it lets envelopes out; the sealed one stays sealed, the open one goes to that letter.
- await N('goScene','san');await N('settle');await N('pauseAI',true);
- const box=(await N('layout')).items.find(i=>i.type==='hopThu');await N('nearItem',box.uid);await N('settle');await N('tick',2);await N('snapCam');
- let mp;for(const f of [.5,.35,.65,.2,.8]){const [x,y]=await N('screenOfItem',box.uid,f);for(const dx of [0,-6,6])if(!mp&&await N('pickAt',x+dx,y)===box.uid)mp=[x+dx,y];}expect(mp).toBeTruthy();
- await world.locator('#world').click({position:{x:mp[0],y:mp[1]}});await world.getByRole('button',{name:'Mở hộp thư (1 thư mới)',exact:true}).click();await N('tick',12);
- expect((await N('partsOf',box.uid)).map(p=>p.id).sort()).toEqual(['l1','l2']);
- await tapPart(box.uid,'l2');await expect(world.locator('#actions .title')).toContainText('còn niêm phong');await expect(world.getByRole('button',{name:/Bóc thư/})).toHaveCount(0);
- await tapPart(box.uid,'l1');await world.getByRole('button',{name:'💌 Bóc thư',exact:true}).click();await N('tick',12);
- await expect(page.locator('#world-surface-title')).toHaveText('Thư hẹn giờ');await expect(page.locator('#world-surface [data-focus-id="l1"]')).toContainText('Thư thử trên đảo');
- mkdirSync('test-results/world-home',{recursive:true});await page.screenshot({path:'test-results/world-home/letter-focus.png'});
- await page.getByRole('button',{name:'Đóng đồ dùng, về đảo'}).click();
- await expect.poll(()=>N('appState').then(s=>s.mail.unread)).toBe(0);
- // Untrusted or unknown actions are refused by the host.
- await frame.evaluate(()=>parent.postMessage({type:'gocnho:act',feature:'tu-lanh',action:'delete',id:'f1'},location.origin));await page.waitForTimeout(50);
- expect(await page.evaluate(()=>!!S.fridge.f1)).toBe(true);
- expect(errors).toEqual([]);expect(apiRequests).toEqual([]);
+ expect(errors).toEqual([]);
 });
