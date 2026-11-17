@@ -440,7 +440,9 @@ function placeDoorTag() {
     .sort((a,b)=>Math.hypot(m.x-a.from.x,m.z-a.from.z)-Math.hypot(m.x-b.from.x,m.z-b.from.z));
   const d=opts[0], dist=d?Math.hypot(m.x-d.from.x,m.z-d.from.z):Infinity;
   doorTag._door=d;
-  doorTag.hidden=S.mode!=="play"||!d||(S.scene==="hanh-lang"&&dist>2.7);
+  // Chỉ mở nhãn cửa trong tầm tay ở phòng: tránh một nút nổi che giá vẽ/giấy nhắn gần cửa.
+  // Ngoài sân vẫn gợi ý cửa chính từ xa để người mới biết chỗ vào nhà.
+  doorTag.hidden=S.mode!=="play"||!d||(S.scene!=="san"&&dist>0.9);
   if(doorTag.hidden)return;
   doorTag.textContent=d.to.scene==="san"?"🚪 Ra sân":d.to.scene==="nha"&&S.scene==="san"?"🏠 Vào nhà":"🚪 "+d.label;
   const [x,y]=toScreen(d.from.x,S.scene==="san"?2.75:1.95,d.from.z);
