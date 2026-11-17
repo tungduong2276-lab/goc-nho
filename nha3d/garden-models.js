@@ -49,6 +49,17 @@ function sprout(g, x, z, plant) {
   const col = def.color;
   if (sp === "dau") for (let i = 0; i < 4; i++) { const a = i * 1.6; const p = [x + Math.cos(a) * 0.09, 0.1 + (i % 2) * 0.08, z + Math.sin(a) * 0.09]; piece(sphere(0.045, 12, 10).scale(1, 1.25, 1), col, { pos: p, parent: g }); piece(leafGeo(0.04, 0.03, 0.01), C.leaf, { pos: [p[0], p[1] + 0.055, p[2]], rot: [-1.4, a, 0], parent: g, noOutline: true }); }
   else if (sp === "cachua") for (let i = 0; i < 6; i++) { const a = i * 1.1; piece(sphere(0.04, 12, 10), i === 5 ? 0xFFB347 : col, { pos: [x + Math.cos(a) * 0.08, 0.14 + (i % 3) * 0.07, z + Math.sin(a) * 0.08], parent: g }); }
+  else if (sp === "carot") for (let i = 0; i < 3; i++) {
+    const a = i*2.1;
+    piece(sphere(.065,12,10).scale(.72,1.45,.72),col,{pos:[x+Math.sin(a)*.065,.08,z+Math.cos(a)*.065],parent:g});
+  }
+  else if (sp === "khoai") for (let i = 0; i < 3; i++) {
+    const a=i*2.1;piece(sphere(.08,12,10).scale(1,.68,.78),col,{pos:[x+Math.sin(a)*.09,.065,z+Math.cos(a)*.09],parent:g});
+  }
+  else if (sp === "bingo") {
+    piece(sphere(.17,16,10).scale(1,.7,1),col,{pos:[x,.14,z],parent:g});
+    piece(rcyl(.035,.05,.09,.01,8),C.leafD,{pos:[x,.28,z],parent:g});
+  }
   else if (sp === "tulip") { piece(sphere(0.07, 14, 10).scale(0.85, 1.25, 0.85), col, { pos: [x, h + 0.07, z], parent: g }); for (let i = 0; i < 3; i++) piece(sphere(0.045, 10, 8).scale(0.6, 1.3, 0.6), 0xFFB8D2, { pos: [x + Math.cos(i * 2.1) * 0.045, h + 0.09, z + Math.sin(i * 2.1) * 0.045], parent: g, noOutline: true }); }
   else if (sp === "cucHoaMi") for (let k = 0; k < 3; k++) { // ba bông cúc trắng nhuỵ vàng
     const a = k * 2.1, fx = x + Math.cos(a) * 0.05, fz = z + Math.sin(a) * 0.05, fy = h + 0.04 + (k % 2) * 0.05;

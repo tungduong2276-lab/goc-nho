@@ -17,6 +17,9 @@ import { COZY, ROOM_MOODS } from "./cozy-palette.mjs";
 import { decorateCozyRoom, disposeCozyRoom, COZY_DECOR_NAME } from "./cozy-decor.js";
 import * as SY from "./sync.mjs";
 import { connectCloud } from "./cloud.js";
+import { applyLife, sanitizeLife, FOOD } from "./life.mjs";
+import { createLifeUI } from "./life-ui.js";
+import { lifeYardScene } from "./life-scene.js";
 import * as AD from "./appdata.mjs";
 import {WORLD_FEATURES,featureOf} from "../src/world-features.mjs";
 
@@ -81,6 +84,19 @@ const saveLayout = () => { store.set(sceneKey(S.scene), E.serialize(S.layout)); 
 // ---------- đồng bộ hai máy (W2) ----------
 // CLOUD.on = đã đăng nhập Góc Nhỏ và vào được nhà chung; khi đó người kia do máy kia điều khiển.
 const CLOUD = { on: false, api: null, last: Object.fromEntries(Object.keys(WD.SCENES).map(sc => [sc, new Map()])), known: new Set(), meta: {}, remote: null, sentP: null, ev: null, lastEv: null, lastTarget: null };
+const LIFE_KEY = "gocnho.nha3d.life.v1";
+const LIFE = { state: (() => { try { return sanitizeLife(JSON.parse(store.get(LIFE_KEY)||"null")); } catch {return sanitizeLife(null);} })() };
+async function doLife(op){
+  if(CLOUD.on){
+    const result = await CLOUD.api.actLife(op,S.me);
+    if(result.ok)LIFE.state=result.next;
+    lifeUI.refresh();return result;
+  }
+  const result=applyLife(LIFE.state,op,S.me);
+  if(result.ok){LIFE.state=result.next;store.set(LIFE_KEY,JSON.stringify(result.next));}
+  lifeUI.refresh();return result;
+}
+const lifeUI=createLifeUI({getState:()=>LIFE.state,act:doLife,who:()=>S.me,online:()=>CLOUD.on});
 function pushScene(scene) {
   if (!CLOUD.on) return;
   const L = S.layouts[scene], last = CLOUD.last[scene], { upserts, removes } = SY.diffLayout(last, L);
@@ -181,6 +197,7 @@ function applyTime() {
 let shell = null, grid = null;
 // Cửa dựng bằng hình học thật, có vùng chạm; chuyển phòng khi nhân vật đi tới ngưỡng cửa.
 const portalsG = new THREE.Group(); scene.add(portalsG);
+const lifeProps=lifeYardScene();scene.add(lifeProps);lifeProps.visible=S.scene==="san";
 function buildPortalModels() {
   for (const obj of [...portalsG.children]) {
     obj.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
@@ -606,6 +623,7 @@ function floorPoint(cx, cy) { setRay(cx, cy); const p = new THREE.Vector3(); ret
 function pickAt(cx, cy) {
   setRay(cx, cy);
   const objs = [itemsG];
+  if(S.mode==="play"&&S.scene==="san")objs.push(lifeProps);
   if (S.mode === "play") objs.push(portalsG, actors.anh.root, actors.em.root, cat.root);
   const hits = ray.intersectObjects(objs, true);
   let portalHit = null;
@@ -620,6 +638,7 @@ function pickAt(cx, cy) {
     }
     if (ud.actor && ud.actor.root.visible) return { actor: ud.actor };
     if (ud.cat) return { cat: true };
+    if (ud.lifeSpot) return { lifeSpot:ud.lifeSpot };
     if (ud.uid) { let o = h.object, part = null; while (o && !part) { part = o.userData.part || null; o = o.parent; } return { uid: ud.uid, point: h.point, part }; }
   }
   return portalHit;
@@ -688,6 +707,7 @@ function onTap(cx, cy) {
   const hit = pickAt(cx, cy);
   if (hit && hit.portal) return walkThroughPortal(hit.portal);
   if (hit && hit.actor) return actorMenu(hit.actor, cx, cy);
+  if (hit && hit.lifeSpot) { lifeUI.open(hit.lifeSpot); return; }
   if (hit && hit.cat) { floatAt(cat.x, 0.9, cat.z, "💗", 2); bubble(cat.x, 1.0, cat.z, "Meo~", 1400); return; }
   if (hit && hit.part) return partMenu(itemByUid(hit.uid), hit.part, hit.point);
   if (hit && hit.uid) return itemMenu(itemByUid(hit.uid), cx, cy);
@@ -723,6 +743,7 @@ function positionFloating(el) {
 function itemMenu(it, cx, cy) {
   const def = CATALOG[it.type], view = views.get(it.uid), p = E.itemPose(it), m = me(), use = def.use;
   const anchor = [p.x, (view?.height || 1) + 0.15, p.z];
+  if (!use && it.type === "oMeo") { showActions("Ổ thú cưng", [["🐾 Chăm bé nhà mình",()=>lifeUI.open("pet")]],...anchor);return; }
   if (!use) { bubble(...anchor, def.name, 1600); return; }
   const list = [];
   if (use.type === "sit") {
@@ -739,9 +760,11 @@ function itemMenu(it, cx, cy) {
   if (use.type === "wardrobe") list.push([use.label, () => useItem(m, it, () => openWardrobe(it))]);
   if (use.type === "app") appMenu(it, use, list);
   if (it.type === "tuLanh") {
+    list.push(["🧺 Mở kho thức ăn chung",()=>useItem(m,it,()=>lifeUI.open("pantry"))]);
     if (APPST.fridge.shown.length) list.push([APPST.fridge.fresh ? `Đọc giấy mới (${APPST.fridge.fresh})` : "Đọc giấy trên cửa", () => useItem(m, it, () => { const n = APPST.fridge.shown.find(x => x.fresh) || APPST.fridge.shown[0]; partMenu(it, { kind: "note", id: n.id }); })]);
     list.push(["Dán một mẩu giấy", () => useItem(m, it, () => openApp("tu-lanh"))]);
   }
+  if (it.type === "bepNau") list.push(["🍳 Nấu ăn cùng nhau",()=>useItem(m,it,()=>lifeUI.open("kitchen"))]);
   if (use.type === "garden") { gardenMenu(it, anchor); return; }
   if (use.type === "enter") list.push([use.label, () => walkThroughDoor()]);
   if (use.type === "cafe") list.push([use.label, () => useItem(m, it, () => orderDrink(m, it))], ["Mời " + NAMES[partner().who] + " một ly", () => useItem(m, it, () => { orderDrink(m, it, true); if (CLOUD.on) { emitEv("invite", { text: "mời bạn một ly ở quầy cà phê ☕" }); return; } setTimeout(() => useItem(partner(), it, () => partner().emote("wave")), 300); })]);
@@ -766,6 +789,9 @@ $("#btn-world-guide").onclick=()=>{
  const heading=document.createElement("h3");heading.textContent="🚪 Các phòng trong nhà";root.append(heading);
  for(const id of ["nha","ngu","bep","bao-tang","xuong","phong-choi","hanh-lang"]){const b=document.createElement("button");b.className="pill";b.textContent="Đi tới "+WD.SCENE_LABELS[id];b.onclick=()=>{$("#world-guide").hidden=true;guideIntent={scene:id,roomOnly:true};guideArrive();};root.append(b);}
  const toolsHeading=document.createElement("h3");toolsHeading.textContent="💌 Đồ dùng và hoạt động";root.append(toolsHeading);
+ for(const [id,label]of [["kitchen","🍳 Bếp chung"],["pantry","🧺 Kho nguyên liệu"],["coop","🐔 Chuồng gà vịt"],["pond","🐠 Hồ cá"],["pet","🐾 Thú cưng"]]){
+   const b=document.createElement("button");b.className="pill";b.textContent=label;b.onclick=()=>{$("#world-guide").hidden=true;lifeUI.open(id);};root.append(b);
+ }
  for(const f of WORLD_FEATURES){const b=document.createElement("button");b.className="pill";b.textContent=f.title+" · "+f.place;b.onclick=()=>{$("#world-guide").hidden=true;if(!f.scene){openApp(f.id);return;}guideIntent=f;guideArrive();};root.append(b);}
  openSheet("#world-guide");
 };
@@ -813,13 +839,29 @@ function waterPlant(actor, it) {
   setTimeout(() => refreshView(it), 300);
   if (after.wateredBy.length > 1 && before.wateredBy.length < 2) { setTimeout(() => { floatAt(p.x, h + 0.35, p.z, "💚", 3); bubble(p.x, h + 0.4, p.z, "Hai đứa cùng tưới, cây lớn nhanh hơn!", 2600); }, 700); }
 }
-function harvest(actor, it) {
+async function harvest(actor, it) {
   const st = GD.status(it.plant, now()); if (!st.ripe) return;
   const def = GD.SPECIES[st.sp], p = E.itemPose(it), n = it.type === "luongTrong" ? 3 : 1;
-  basket[st.sp] = (basket[st.sp] || 0) + n; saveBasket();
-  floatAt(p.x, 0.8, p.z, def.yield, 5); actor.emote("wave", 1.4); actor.setFace?.("cuoi");
-  it.plant = undefined; saveLayout(); refreshView(it);
-  toast(`Thu được ${n} ${def.noun} · trong giỏ có ${basket[st.sp]} ${def.yield}`);
+  let result=null;
+  if (!(st.sp in FOOD)) {
+    // Hoa trang trí vẫn thu như trước, không ép đưa vào kho nguyên liệu ăn được.
+    it.plant=undefined;saveLayout();result={ok:true,message:"Đã hái "+n+" "+def.noun+" để trang trí 🌼"};
+  } else if (CLOUD.on) {
+    try { result=await CLOUD.api.harvestLife(S.scene,it.uid,S.me,Date.now()); }
+    catch(e){console.warn("Không thể thu hoạch chung",e);toast("Chưa lưu được rau củ; kiểm tra mạng rồi thử lại");return;}
+    if(!result.ok){toast(result.message);return;}
+    LIFE.state=result.next;lifeUI.refresh();
+    // Transaction đã lưu cây và kho cùng lúc; không pushScene lại item cũ.
+    it.plant=undefined;store.set(sceneKey(S.scene),E.serialize(S.layout));
+    SY.remember(CLOUD.last[S.scene],S.layout);
+  } else {
+    result=applyLife(LIFE.state,{type:"harvest",sp:st.sp,amount:n},actor.who,now());
+    if(result.ok){LIFE.state=result.next;store.set(LIFE_KEY,JSON.stringify(result.next));lifeUI.refresh();}
+    it.plant=undefined;saveLayout();
+  }
+  basket[st.sp]=(basket[st.sp]||0)+n;saveBasket();
+  floatAt(p.x, 0.8, p.z, def.yield, 5);actor.emote("wave", 1.4);actor.setFace?.("cuoi");
+  refreshView(it);toast(result.message);
 }
 // Cây lớn theo thời gian thật: vẽ lại khi giai đoạn hoặc độ ẩm đổi.
 function refreshGarden() { for (const it of S.layout.items) if (isGarden(it) && views.get(it.uid)?.key !== stateOf(it)) refreshView(it); }
@@ -1147,6 +1189,8 @@ async function startCloud() {
     }
   }
   CLOUD.on = true;
+  try { LIFE.state=await api.getLife();lifeUI.refresh();api.watchLife(next=>{LIFE.state=next;lifeUI.refresh();}); }
+  catch(e){console.warn("Chưa đọc được kho chung",e);}
   // Cảnh chưa có trên Firebase: máy này góp bố cục của mình làm bản chung đầu tiên.
   for (const sc of new Set(["nha", "san", S.scene])) if (!CLOUD.known.has(sc)) { CLOUD.known.add(sc); pushScene(sc); } // phòng khác chỉ seed khi bước vào
   CLOUD.remote = all.find(d => d.id === SY.presenceId(partner().who))?.data || null;
@@ -1202,7 +1246,9 @@ function goScene(id) {
     // người kia bước qua cửa ngay sau mình
     const c = E.worldToCell(sp.x + 0.5, sp.z + (id === "san" ? 0.5 : -0.5)), n = E.nearestFreeCell(S.G, c.i, c.j) || E.worldToCell(sp.x, sp.z), q = E.cellCenter(n.i, n.j);
     if (!CLOUD.on) p.place(q.x, q.z, sp.face);
-    cat.root.visible = id === "nha";
+    cat.root.visible = id === "nha" || id === "ngu";
+    lifeProps.visible = id === "san";
+    lifeUI.close();
     $("#btn-edit").hidden = !WD.canDecorate(id);
     document.body.dataset.scene = id;
     cam.target.set(m.x, 0.55, m.z); cam.goal.copy(cam.target); cam.goalPpm = cam.ppm = playPpm();
@@ -1583,6 +1629,9 @@ window.__NHA3D__ = {
   plant: uid => { const it = itemByUid(uid); return it && it.plant ? GD.status(it.plant, now()) : null; },
   plantKey: uid => views.get(uid)?.key,
   basket: () => ({ ...basket }),
+  life: () => JSON.parse(JSON.stringify(LIFE.state)),
+  lifeAction: (op) => doLife(op),
+  openLife: zone => lifeUI.open(zone),
   scene: () => S.scene,
   nearItem(uid) { const p = E.itemPose(itemByUid(uid)); this.teleport(p.x + 0.8, p.z + 1.2); },
   teleport(x, z) { const m = me(); m.stop(); m.place(x, z, 0); cam.goal.set(x, 0.55, z); cam.target.copy(cam.goal); updateCamera(); },
