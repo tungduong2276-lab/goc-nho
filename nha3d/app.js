@@ -537,11 +537,11 @@ function updateMe() {
   tags.anh.textContent = NAMES.anh; tags.em.textContent = NAMES.em;
   tags[S.me].classList.add("me"); tags[S.me === "anh" ? "em" : "anh"].classList.remove("me");
 }
+partner().root.visible = false;
 updateMe(); applyTime(); resize();
 
-// ---------- người kia tự sinh hoạt ----------
+// ---------- chỗ ngồi & thú cưng ----------
 const rand = E.rng(Date.now() & 0xffff);
-const AI = { timer: 2.5 };
 const freeCell = () => {
   for (let k = 0; k < 40; k++) {
     const i = Math.floor(rand() * RM.w), j = Math.floor(rand() * RM.d);
@@ -558,32 +558,6 @@ function goSit(actor, item, seat, say) {
     actor.sitOn(item, seat);
     if (say) bubble(actor.x, 1.5, actor.z, say);
   });
-}
-function partnerThink(dt) {
-  const p = partner(), m = me();
-  if (p.mode === "sleep") return;
-  AI.timer -= dt;
-  if (AI.timer > 0 || p.path.length) return;
-  AI.timer = 4 + rand() * 6;
-  // Đang ngồi cạnh nhau → ngồi yên, thỉnh thoảng thả tim
-  if (p.mode === "sit" && m.mode === "sit" && p.seat.uid === m.seat.uid) { if (rand() < 0.3) floatAt(p.x, p.seatH + 1.0, p.z, "💗", 2); return; }
-  // Mình đang ngồi ở món có ghế trống → sang ngồi cạnh
-  if (m.mode === "sit" && p.mode !== "sit") {
-    const it = itemByUid(m.seat.uid), fs = it && freeSeats(it);
-    if (fs && fs.length) { goSit(p, it, fs[0], "Cho " + NAMES[p.who].toLowerCase() + " ngồi cùng!"); return; }
-  }
-  if (p.mode === "sit" && rand() < 0.55) return; // ngồi thêm chút
-  { const thirsty = S.layout.items.filter(it => isGarden(it) && it.plant && GD.status(it.plant, now()).thirsty); if (thirsty.length && rand() < 0.35) { const it = thirsty[Math.floor(rand() * thirsty.length)]; useItem(p, it, () => waterPlant(p, it)); return; } }
-  const r = rand();
-  if (r < 0.45) { const c = freeCell(); if (c) p.goTo(c.x, c.z); }
-  else if (r < 0.7) {
-    const items = S.layout.items.filter(i => CATALOG[i.type].use?.type === "sit" && freeSeats(i).length);
-    const it = items[Math.floor(rand() * items.length)];
-    if (it) goSit(p, it, freeSeats(it)[0]);
-  } else if (r < 0.85) {
-    const c = E.worldToCell(m.x + 0.6, m.z + 0.3), n = E.nearestFreeCell(S.G, c.i, c.j);
-    if (n) { const q = E.cellCenter(n.i, n.j); p.goTo(q.x, q.z, () => { p.face = Math.atan2(m.x - p.x, m.z - p.z); p.emote("wave"); }); }
-  } else { p.emote("wave"); const ex = ["vui", "cuoi", "ngung", "nho"][Math.floor(rand() * 4)]; p.setFace(ex); }
 }
 function catThink(dt) {
   cat.t += dt;
@@ -655,7 +629,7 @@ function pickAt(cx, cy) {
   setRay(cx, cy);
   const objs = [itemsG];
   if(S.mode==="play"&&S.scene==="san")objs.push(lifeProps);
-  if (S.mode === "play") objs.push(portalsG, actors.anh.root, actors.em.root, cat.root);
+  if (S.mode === "play") objs.push(portalsG, ...Object.values(actors).filter(a => a.root.visible).map(a => a.root), cat.root);
   const hits = ray.intersectObjects(objs, true);
   let portalHit = null;
   for (const h of hits) {
@@ -779,7 +753,7 @@ function itemMenu(it, cx, cy) {
   const list = [];
   if (use.type === "sit") {
     list.push(["Ngồi", () => doSit(m, it)]);
-    if (E.seatsOf(it).length > 1) list.push(["Ngồi cùng " + NAMES[partner().who], () => { doSit(m, it); if (CLOUD.on) { emitEv("invite", { text: "rủ bạn ngồi cùng ở " + CATALOG[it.type].name.toLowerCase() }); return; } setTimeout(() => { const fs = freeSeats(it); if (fs.length) goSit(partner(), it, fs[0], "Tới liền!"); }, 400); }]);
+    if (E.seatsOf(it).length > 1 && partnerHere()) list.push(["Ngồi cùng " + NAMES[partner().who], () => { doSit(m, it); invitePartner("rủ bạn ngồi cùng ở " + CATALOG[it.type].name.toLowerCase()); }]);
     if (use.toggle) list.push([stateOf(it) === use.toggle ? "Tắt máy" : "Bật máy", () => useItem(m, it, () => toggleState(it, use.toggle))]);
   }
   if (use.type === "sleep") list.push(["Đi ngủ", () => useItem(m, it, () => sleepIn(m, it))]);
@@ -799,7 +773,12 @@ function itemMenu(it, cx, cy) {
   if (it.type === "ruong") list.push(["📸 Cất ảnh và kỷ vật mới",()=>useItem(m,it,()=>openApp("bao-tang"))]);
   if (use.type === "garden") { gardenMenu(it, anchor); return; }
   if (use.type === "enter") list.push([use.label, () => walkThroughDoor()]);
-  if (use.type === "cafe") list.push([use.label, () => useItem(m, it, () => orderDrink(m, it))], ["Mời " + NAMES[partner().who] + " một ly", () => useItem(m, it, () => { orderDrink(m, it, true); if (CLOUD.on) { emitEv("invite", { text: "mời bạn một ly ở quầy cà phê ☕" }); return; } setTimeout(() => useItem(partner(), it, () => partner().emote("wave")), 300); })]);
+  if (use.type === "cafe") {
+    list.push([use.label, () => useItem(m, it, () => orderDrink(m, it))]);
+    if (partnerHere()) list.push(["Mời " + NAMES[partner().who] + " một ly", () => useItem(m, it, () => {
+      if (invitePartner("mời bạn một ly ở quầy cà phê ☕")) orderDrink(m, it, true);
+    })]);
+  }
   showActions(def.name, list, ...anchor);
 }
 // The guide is also an entry point when a saved custom layout does not contain a newer object.
@@ -846,7 +825,7 @@ function gardenMenu(it, anchor) {
   if (st.ripe) list.push(["Thu hoạch " + GD.SPECIES[st.sp].yield, () => useItem(m, it, () => harvest(m, it))]);
   else {
     list.push(["Tưới nước 💧", () => useItem(m, it, () => waterPlant(m, it))]);
-    if (!st.wateredBy.includes(p.who)) list.push(["Rủ " + NAMES[p.who] + " cùng tưới", () => { useItem(m, it, () => waterPlant(m, it)); if (CLOUD.on) { emitEv("invite", { text: "rủ bạn cùng tưới " + st.name.toLowerCase() + " · tưới cùng cây lớn nhanh hơn" }); return; } setTimeout(() => useItem(p, it, () => waterPlant(p, it)), 500); }]);
+    if (partnerHere() && !st.wateredBy.includes(p.who)) list.push(["Rủ " + NAMES[p.who] + " cùng tưới", () => { useItem(m, it, () => waterPlant(m, it)); invitePartner("rủ bạn cùng tưới " + st.name.toLowerCase() + " · tưới cùng cây lớn nhanh hơn"); }]);
     list.push(["Xem cây", () => bubble(...anchor, plantHint(st), 3200)]);
   }
   list.push(["Nhổ đi, trồng lại", () => { it.plant = undefined; saveLayout(); refreshView(it); toast("Đã dọn " + name.toLowerCase()); }]);
@@ -1225,23 +1204,43 @@ readLocalApp();
 
 // ---------- người kia thật (W2) ----------
 const SCENE_NAME = WD.SCENE_LABELS;
+function partnerPresence() {
+  return CLOUD.on && navigator.onLine ? SY.readPresence(CLOUD.remote) : null;
+}
+function partnerHere(r = partnerPresence()) {
+  return !!(r && r.fresh && r.scene === S.scene);
+}
+function invitePartner(text) {
+  if (!partnerHere()) return false;
+  emitEv("invite", { text });
+  return true;
+}
+function hidePartner() {
+  const p = partner();
+  if (p.mode === "sit") p.standUp();
+  if (p.mode === "sleep") wake(p);
+  p.stop();
+  p.root.visible = false;
+  tags[p.who].hidden = true;
+  CLOUD.lastTarget = null;
+}
 function partnerStatus() {
   const el = $("#partner-status"); if (!el) return;
   if (!CLOUD.on) { el.hidden = true; return; }
-  const r = SY.readPresence(CLOUD.remote), n = NAMES[partner().who];
+  const r = partnerPresence(), n = NAMES[partner().who];
   el.hidden = false;
   el.textContent = !r ? `${n} chưa ra đảo` : !r.fresh ? `${n} đang vắng` : r.scene !== S.scene ? `${n} đang ở ${SCENE_NAME[r.scene]}` : `${n} đang ở đây 💗`;
   el.dataset.here = String(!!(r && r.fresh && r.scene === S.scene));
 }
 function remotePartnerStep() {
-  const p = partner(), r0 = CLOUD.remote, r = r0 && SY.readPresence(r0);
-  const here = !!(r && r.fresh && r.scene === S.scene);
-  if (!here) { if (p.mode === "sit") p.standUp(); if (p.mode === "sleep") wake(p); p.stop(); p.root.visible = false; return; }
+  const p = partner(), r = partnerPresence();
+  if (!partnerHere(r)) { hidePartner(); return; }
   if (r.mode === "sleep" && r.seat) {
     if (p.mode !== "sleep") { const bed = itemByUid(r.seat.uid); if (bed) sleepIn(p, bed, true); }
     return;
   }
   if (p.mode === "sleep") wake(p);
+  if (!p.root.visible) p.place(r.x, r.z, r.face);
   p.root.visible = true;
   if (r.mode === "sit" && r.seat) {
     if (p.mode !== "sit" || p.seat?.uid !== r.seat.uid || p.seat?.k !== r.seat.k) {
@@ -1331,7 +1330,7 @@ async function startCloud() {
   for (const sc of new Set(["nha", "san", S.scene])) if (!CLOUD.known.has(sc)) { CLOUD.known.add(sc); pushScene(sc); } // phòng khác chỉ seed khi bước vào
   CLOUD.remote = all.find(d => d.id === SY.presenceId(partner().who))?.data || null;
   useScene(S.scene); buildShell(); rebuildAll();
-  const p = partner(); p.stop(); if (p.mode === "sit") p.standUp(); p.root.visible = false;
+  hidePartner();
   $("#btn-me").hidden = true; $("#trial-pill").textContent = "Đảo chung";
   api.listen(changes=>{
     applyRemote(changes);
@@ -1386,20 +1385,17 @@ function goScene(id) {
     S.history=new E.History(40); $("#btn-undo").disabled=true;
     if(CLOUD.on&&!CLOUD.known.has(id)){CLOUD.known.add(id);pushScene(id);}
     buildShell(); buildGrid(); rebuildAll();
-    const sp = WD.spawnFrom(id, from), m = me(), p = partner();
+    const sp = WD.spawnFrom(id, from), m = me();
     const start=E.circleBlocked(S.G,sp.x,sp.z,E.AVATAR_R)?E.nearestFreeCell(S.G,E.worldToCell(sp.x,sp.z).i,E.worldToCell(sp.x,sp.z).j,8):null;
     const entry=start?E.cellCenter(start.i,start.j):sp;
     m.place(entry.x,entry.z,sp.face);
-    // người kia bước qua cửa ngay sau mình
-    const c = E.worldToCell(sp.x + 0.5, sp.z + (id === "san" ? 0.5 : -0.5)), n = E.nearestFreeCell(S.G, c.i, c.j) || E.worldToCell(sp.x, sp.z), q = E.cellCenter(n.i, n.j);
-    if (!CLOUD.on) p.place(q.x, q.z, sp.face);
+    hidePartner();
     cat.root.visible = id === "nha" || id === "ngu";
     lifeProps.visible = id === "san";
     lifeUI.close();creativeUI.close();
     $("#btn-edit").hidden = !WD.canDecorate(id);
     document.body.dataset.scene = id;
     cam.target.set(m.x, 0.55, m.z); cam.goal.copy(cam.target); cam.goalPpm = cam.ppm = playPpm();
-    AI.timer = 2;
     setTimeout(()=>{fade.classList.remove("on");switching=false;if(guideIntent)guideArrive();toast(id==="san"?"Ra sân rồi · vườn bên trái":("Đã tới "+(WD.SCENE_LABELS[id]||"phòng mới")));},120);
   }, 260);
 }
@@ -1407,10 +1403,11 @@ function goScene(id) {
 function actorMenu(a, cx, cy) {
   const m = me(), anchor = [a.x, 1.45, a.z];
   if (a === m) { showActions(NAMES[a.who], [["Vẫy tay", () => a.emote("wave")], ["Thả tim", () => heart(a)]], ...anchor); return; }
+  if (!partnerHere()) return;
   showActions(NAMES[a.who], [
-    ["Ôm một cái", () => { hug(m, a); emitEv("hug"); }],
-    ["Đập tay", () => { highFive(m, a); emitEv("five"); }],
-    ["Gọi lại đây", () => { if (CLOUD.on) { emitEv("invite", { text: "gọi bạn lại gần 💗" }); bubble(m.x, 1.5, m.z, "Lại đây nè!", 1400); } else callOver(a); }]
+    ["Ôm một cái", () => { if (partnerHere()) { hug(m, a); emitEv("hug"); } }],
+    ["Đập tay", () => { if (partnerHere()) { highFive(m, a); emitEv("five"); } }],
+    ["Gọi lại đây", () => { if (invitePartner("gọi bạn lại gần 💗")) bubble(m.x, 1.5, m.z, "Lại đây nè!", 1400); }]
   ], ...anchor);
 }
 function useItem(actor, it, done) {
@@ -1445,21 +1442,11 @@ function meetFront(a, b, then) {
   if (!tx || !a.goTo(tx.x, tx.z, () => { faceEachOther(a, b); then(); })) toast("Chưa tới gần được");
 }
 function hug(a, b) {
-  AI.timer = 6;
   meetFront(a, b, () => { a.emote("hug", 2.4); b.emote("hug", 2.4); a.setFace("ngung"); b.setFace("cuoi"); floatAt((a.x + b.x) / 2, 1.4, (a.z + b.z) / 2, "💗", 5); setTimeout(() => { a.setFace("vui"); b.setFace("vui"); }, 2600); });
 }
 function highFive(a, b) {
-  AI.timer = 5;
   meetFront(a, b, () => { a.emote("five", 1.2); b.emote("five", 1.2); floatAt((a.x + b.x) / 2, 1.3, (a.z + b.z) / 2, "✨", 2); bubble(b.x, 1.5, b.z, "Đập tay!", 1400); });
 }
-function callOver(b) {
-  AI.timer = 8; const a = me();
-  const c = E.worldToCell(a.x + Math.sin(a.face) * 0.6, a.z + Math.cos(a.face) * 0.6), n = E.nearestFreeCell(S.G, c.i, c.j);
-  if (!n) return; const p = E.cellCenter(n.i, n.j);
-  bubble(b.x, 1.5, b.z, "Đây đây!", 1400);
-  b.goTo(p.x, p.z, () => { faceEachOther(b, a); b.emote("wave"); });
-}
-
 // ---------- biểu cảm & đổi người ----------
 document.querySelectorAll("[data-emote]").forEach(b => b.addEventListener("click", () => {
   const m = me(); if (b.dataset.emote === "wave") m.emote("wave"); else heart(m);
@@ -1472,7 +1459,10 @@ for (const [k, name] of Object.entries(EXPRS)) {
 }
 $("#btn-face").addEventListener("click", () => { facesEl.hidden = !facesEl.hidden; });
 $("#btn-me").addEventListener("click", () => {
+  if (me().mode === "sleep") wake(me());
+  if (me().mode === "sit") me().standUp();
   S.me = S.me === "anh" ? "em" : "anh"; store.set(KEY.me, S.me); updateMe();
+  hidePartner(); me().root.visible = true;
   if(window.parent!==window)window.parent.postMessage({type:"gocnho:who",who:S.me},location.origin);
   me().stop(); toast("Giờ mình là " + NAMES[S.me]);
 });
@@ -1707,7 +1697,8 @@ cam.goalPpm = cam.ppm = playPpm();
 let simClock = 0;
 function step(dt) {
   simClock += dt;
-  if (S.mode === "play") { joyStep(dt); if (CLOUD.on) remotePartnerStep(); else partnerThink(dt); }
+  if (S.mode === "play") { joyStep(dt); if (CLOUD.on) remotePartnerStep(); }
+  if (CLOUD.on && !partnerHere() && partner().root.visible) hidePartner();
   if (CLOUD.on) sendPresence();
   if (S.scene === "nha") catThink(dt);
   for (const a of Object.values(actors)) a.update(dt);
@@ -1770,7 +1761,7 @@ window.__NHA3D__ = {
   info: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, ppm: cam.ppm }),
   cozy: () => ({ scene: S.scene, wall: S.layout.wall, floor: S.layout.floor, decorParts: shell?.getObjectByName(COZY_DECOR_NAME)?.children.length || 0 }),
   portalArt: () => portalsG.children.map(g=>({name:g.name,parts:g.children.length,yaw:g.rotation.y,x:g.position.x,z:g.position.z})),
-  pauseAI(on) { AI.timer = on ? 1e9 : 1; cat.wait = on ? 1e9 : 1; },
+  pauseAI(on) { cat.wait = on ? 1e9 : 1; },
   // Tua nhanh logic (không vẽ) để test không phụ thuộc tốc độ GPU của máy chạy CI.
   tick(sec) { for (let t = 0; t < sec; t += 1 / 30) step(1 / 30); },
   skipHours(h) { clockSkew += h * GD.HOUR; refreshGarden(); return GD.HOUR * 0 + clockSkew; },
