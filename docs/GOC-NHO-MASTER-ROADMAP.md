@@ -1,5 +1,37 @@
 # GÓC NHỎ — MASTER ROADMAP & AI HANDOFF
 
+## ★ Định hướng 2026-11-18 — Làm sâu thế giới của hai người
+
+Góc Nhỏ tiếp tục dùng đảo 3D làm giao diện chính. Ưu tiên là để hai người cùng làm một việc, tạo ra kết quả riêng và nhìn thấy dấu vết của việc ấy trong nhà hoặc bảo tàng. Hỗ trợ cả hai nhịp chơi: cùng lúc, hoặc một người bắt đầu và người kia tiếp tục sau. Tạm hoãn mở đảo, mở rộng hệ thống tiền/cấp, nhiệm vụ ngày bắt buộc và bổ sung nội dung hàng loạt. Các đợt bàn giao bên dưới ghi lại lịch sử triển khai; mục này quyết định thứ tự công việc hiện tại.
+
+| Giai đoạn | Phạm vi | Điều kiện nghiệm thu |
+| --- | --- | --- |
+| 1. Thế giới đáng tin cậy | Sao lưu/khôi phục dữ liệu 3D; bảo vệ quà bí mật ở tầng dữ liệu; kiểm tra hành trình 3D trọn vẹn; thống nhất nguồn trạng thái theo từng tính năng; đo trên hai điện thoại. | Khôi phục dữ liệu giả lập vào môi trường riêng trùng đường dẫn và nội dung kỳ vọng. Emulator kiểm tra quyền đọc quà theo vai và thời điểm. Hai máy hoàn tất các hành trình ở mục bên dưới, kể cả tải lại và kết nối lại. Ghi kết quả hiệu năng và các lỗi còn mở theo thiết bị. |
+| 2. Hoạt động có chiều sâu | Thử **một món nấu chung** từ vườn qua bàn sơ chế đến món ăn hiện trên bàn 3D và hai nhân vật có thể ngồi ăn. Thử **một quy trình trưng bày** cho phép chọn ảnh/kỷ vật gốc, chọn khung, đặt vào phòng và thêm chú thích của hai người. | Hai máy thấy cùng tiến độ, vị trí và kết quả sau khi tải lại. Một người có thể tiếp tục sau mà không mất bước đã làm. Gỡ bản trưng bày giữ nguyên ảnh/kỷ vật gốc. Quan sát xem hai người có tự hiểu thao tác và muốn làm lại. |
+| 3. Lý do để quay lại | Thử **một trò giải mật mã từ hũ hẹn hò** với manh mối phân cho hai người, có biến thể chơi lại và có thể nối tiếp sau khi tạm dừng. Sau khi giải, hai người chọn lời nhắn hoặc kỷ vật để trưng bày. | Chơi được với nhiều bộ manh mối, tiếp tục đúng tiến độ qua hai phiên và thấy dấu vết vẫn ở đó lần sau. Không phạt người vắng mặt. |
+
+Trong bảy ngày dùng thử, để hai người chơi theo nhịp bình thường. Sau mỗi lần chơi, ghi ngắn gọn điều thích nhất, điểm vướng và có muốn chủ động chơi lại hay không. Dùng ghi nhận này để quyết định có mở rộng món ăn, trưng bày hoặc trò phối hợp.
+
+### Giai đoạn 1 đã bắt đầu — kiểm kê phạm vi sao lưu
+
+Đối chiếu mã nguồn tại `89d580d04c158ce218a8b7acc5ae4e6c74c33cd0`. `backupJSON()` trong [index.html](../index.html) tạo JSON v1 từ trạng thái trong bộ nhớ: `S.meta` và 19 nhóm trong `COLS`, gồm ảnh/kỷ vật, thư, ghi chú, quà, truyện/tranh cũ và các nhóm cũ khác. Export này không duyệt Firestore để lấy dữ liệu 3D. Đường nhập v1 có thể ghi đè bản ghi trùng ID; giữ khả năng đọc v1, thử phục hồi ở đích cách ly trước khi thay đổi đường nhập.
+
+| Phạm vi | Nguồn đã đối chiếu | Quyết định cho bước sao lưu |
+| --- | --- | --- |
+| Nội thất, màu phòng, cây và lịch tưới | `couples/{cid}/world/i_{scene}_{uid}`, `m_{scene}` · [sync.mjs](../nha3d/sync.mjs), [cloud.js](../nha3d/cloud.js) | Đưa bố cục các phòng và sân vào fixture đầu tiên; giữ nguyên ID, trạng thái cây và trường thời gian. |
+| Kho đồ ăn, nấu ăn, gia cầm, cá, thú cưng | `couples/{cid}/world/l_home` · [cloud.js](../nha3d/cloud.js) | Giữ trạng thái chung và món đang làm dở. Thử đối chiếu cả kho nguyên liệu lẫn tiến trình nấu sau khôi phục. |
+| Sáng tác chung đang làm và đã xuất bản | `cc_paint_meta`, `cc_paint_{anh\|em}`, `cc_story_meta`, `cc_draft_{anh\|em}`, `cc_art_{id}`, `cc_book_{id}` trong `world` · [creative.mjs](../nha3d/creative.mjs) | Giữ phiên, tác giả và ID tác phẩm. Kiểm tra tranh mở được từ bảo tàng, sách mở được từ kệ, bản đang làm tiếp tục được. |
+| Hiện diện và dấu vết của đảo hẹn hò đã gỡ | `p_{who}` là vị trí/nhịp kết nối; ứng dụng bỏ qua nhóm `a_*` · [app.js](../nha3d/app.js), [sync.mjs](../nha3d/sync.mjs) | Loại hiện diện khỏi bản xuất phục hồi của người dùng. Giữ nguyên tài liệu lịch sử trên nguồn; phân biệt bản xuất người dùng với bản sao lưu quản trị. |
+| Dữ liệu riêng từng máy và dữ liệu quản trị | Bố cục/giỏ thu hoạch/bản sáng tác cục bộ trong `localStorage`; hồ sơ `users`, mã mời `codes`, thành viên và vai ở tài liệu `couples/{cid}` | Ghi rõ phạm vi của từng chế độ sao lưu. Không tự trộn dữ liệu cục bộ vào nhà dùng chung, không nhập đè quyền thành viên hoặc mã mời từ bản xuất người dùng. |
+
+**Bước kỹ thuật kế tiếp.** Mở nhánh sao lưu riêng, dùng dữ liệu giả lập để thử xuất–nhập theo phiên bản, nhận diện bản v1 và báo mục thiếu. Đối chiếu đường dẫn, ID và nội dung trước/sau với [runbook M0](M0-STAGING-BACKUP-RUNBOOK.md); thử dữ liệu lỗi, ID trùng, nhập lại và thiếu tài liệu. Tách nghiệm thu Emulator khỏi bằng chứng export/import cloud, vốn cần một đích staging rỗng riêng đã được xác minh. Quyền riêng tư của bản xuất cần xét cùng quà bí mật để tránh đưa phần quà chưa đến ngày vào gói sao lưu của người nhận.
+
+**Quà bí mật.** [Rules trong repo](../firestore.rules) đang có quyền đọc rộng cho thành viên nhà. Chuẩn bị thiết kế tách metadata hiển thị khỏi nội dung/ảnh, rà các mẫu đường dẫn trùng nhau để quyền đọc rộng không mở nội dung sớm. Dùng Emulator và tài khoản giả lập để kiểm tra người gửi, người nhận trước/sau thời điểm mở và người ngoài; kiểm tra cả ảnh và bản ghi cũ. Đối chiếu [cách Firestore xử lý quy tắc trùng khớp](https://firebase.google.com/docs/rules/rules-behavior#overlapping_match_statements). Trạng thái Rules đang chạy trên cloud chưa được xác minh trong đợt này.
+
+**Hành trình nghiệm thu 3D.** Lần lượt thử ghi chú tủ lạnh, bốc/chơi lá hẹn hò, thêm ảnh/kỷ vật, thu hoạch tới kho/bếp, vẽ và viết chung. Bắt đầu từ vật thể 3D, thực hiện tác vụ, lưu, tải lại và kiểm tra trên máy còn lại bằng tài khoản thử. Thử mất mạng/kết nối lại và hai thao tác đồng thời ở luồng có ghi chung. Xác định nơi sở hữu trạng thái của từng luồng trước khi gỡ listener trùng, dùng cơ chế hũ hẹn hò theo trạng thái host làm một ví dụ đã có. Ghi mẫu máy, hệ điều hành/trình duyệt, thời gian vào đảo, độ mượt khi đi/đổi phòng và pin/nhiệt/bộ nhớ nếu đo được; chạy trên iOS và Android thực tế.
+
+**Bàn giao.** Đã kiểm kê từ mã nguồn và chốt phạm vi bước đầu. Export/restore 3D, kiểm thử Emulator, kiểm tra cloud, thử hai điện thoại và thử nghiệm bảy ngày còn chờ thực hiện. Các thay đổi ứng dụng triển khai qua từng PR và nghiệm thu trên đúng commit trước khi merge hoặc phát hành.
+
 ## ★ Hũ hẹn hò — sửa lỗi bốc lá, 24 lá mới, chơi ngay trên hũ (2026-11-18)
 
 **User report:** "bốc lá hẹn hò không thực hiện được"; asked to fix bugs, add more and more fun cards, improve UX.
@@ -229,7 +261,7 @@ The 2026-11-16 note asked for playable shared activities first; its first increm
 
 ## 0. START HERE — instructions for a new AI conversation
 
-0. **The current product direction is V3 — OPEN 3D WORLD (section at the top of this file).** Continue its build order unless the user says otherwise.
+0. Continue the [2026-11-18 direction](#định-hướng-2026-11-18--làm-sâu-thế-giới-của-hai-người) in the 3D-only world. Start with the first incomplete reliability task.
 1. Read `AGENTS.md` and this entire file. Inspect actual `main`, open PRs, CI status and Firebase configuration before making assumptions.
 2. Ask which milestone to implement **only if the user has not already specified it**. If asked to continue, start with the first incomplete milestone and current blockers.
 3. Read existing code before editing; do not rewrite the app from scratch or replace the Firebase backend.
@@ -381,6 +413,8 @@ Security and privacy: never embed private payloads in public render metadata, UR
 **Never** remove tests, weaken assertions or bypass checks merely to get a green CI. Do not use production couple data for testing.
 
 ## 6. Immediate next actions / blockers
+
+See the [2026-11-18 direction](#định-hướng-2026-11-18--làm-sâu-thế-giới-của-hai-người) for current work. The original M0/M1 checklist follows for historical reference.
 
 1. Check current `main` and PR #9 status, latest CI logs and 3D render artifacts.
 2. Fix any remaining PR #9 test failures; inspect rendered room/map geometry and hit zones. Merge only after validation; otherwise document remaining blockers.
