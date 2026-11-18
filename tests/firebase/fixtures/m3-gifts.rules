@@ -46,6 +46,14 @@ service cloud.firestore {
           && request.resource.data.roles == resource.data.roles)
       );
 
+      // Cutover candidate: clients read opened history using an opened == true query.
+      // The migration keeps originals under restricted access.
+      match /gifts/{giftId} {
+        allow get, list: if request.auth != null
+          && request.auth.uid in get(/databases/$(database)/documents/couples/$(cid)).data.members
+          && resource.data.opened == true;
+      }
+
       // M3 candidate. Metadata may be listed without downloading either content or images.
       match /giftEnvelopes/{giftId} {
         function house() {
@@ -100,7 +108,7 @@ service cloud.firestore {
       // chính /couples/{cid} và vượt qua các ràng buộc membership ở trên.
       // Bắt buộc có ít nhất một collection segment trước đệ quy.
       match /{collection}/{document=**} {
-        allow read, write: if collection != 'giftEnvelopes' && request.auth != null
+        allow read, write: if collection != 'giftEnvelopes' && collection != 'gifts' && request.auth != null
           && request.auth.uid in get(/databases/$(database)/documents/couples/$(cid)).data.members;
       }
     }
