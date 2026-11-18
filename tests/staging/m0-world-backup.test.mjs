@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { creativeState, readCreativeDocs } from "../../nha3d/creative.mjs";
+import { creativeState, MAX_POINTS, MAX_STROKES, readCreativeDocs } from "../../nha3d/creative.mjs";
 import { applyLife, INITIAL_LIFE, sanitizeLife } from "../../nha3d/life.mjs";
 import { decodeItem, encodeItem, itemId, metaId } from "../../nha3d/sync.mjs";
 import { compareSyntheticRestore, createSyntheticManifest } from "../../scripts/m0-restore-manifest.mjs";
@@ -130,4 +130,17 @@ test("invalid JSON, path/ID mismatches, and duplicate records are rejected", () 
   assert.throws(() => readSyntheticWorldBackup(JSON.stringify(tampered)), /EXCLUDED_BACKUP_DOCUMENT/);
   assert.throws(() => planSyntheticWorldRestore(encodeSyntheticWorldBackup([life]), [life, life]),
     /DUPLICATE_DOCUMENT/);
+});
+
+test("world backup accepts an app-sized painting above the general M0 document limit", () => {
+  const points = Array.from({ length: MAX_POINTS }, (_, i) => ({ x: (101 + i) / 1000, y: 0.987 }));
+  const strokes = Array.from({ length: 2 * MAX_STROKES }, (_, i) => ({
+    ...stroke("s" + i, i < MAX_STROKES ? "anh" : "em"), points,
+  }));
+  const canvas = row("cc_art_large", { k: "creative-art", id: "large", strokes });
+  assert.ok(Buffer.byteLength(JSON.stringify(canvas.fields), "utf8") > 64 * 1024);
+  assert.throws(() => createSyntheticManifest([canvas]), /DOCUMENT_TOO_LARGE/);
+  const json = encodeSyntheticWorldBackup([canvas]);
+  assert.deepEqual(planSyntheticWorldRestore(json, []).create, [canvas]);
+  assert.equal(planSyntheticWorldRestore(json, [canvas]).status, "ALREADY_RESTORED");
 });
