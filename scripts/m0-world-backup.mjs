@@ -4,6 +4,7 @@ import { createSyntheticManifest, compareSyntheticRestore } from "./m0-restore-m
 // Offline fixture rehearsal. Records use the M0 tagged JSON representation.
 const WORLD = "couples/fixture-couple/world/";
 const FORMAT = "goc-nho-synthetic-world-backup";
+const MANIFEST_OPTIONS = { maxDocumentBytes: 512 * 1024 };
 const GROUPS = ["layout", "life", "creative"];
 const ID = /^[\w-]{1,120}$/;
 const role = value => value === "anh" || value === "em";
@@ -70,7 +71,7 @@ function inspectRows(rows) {
 
 export function encodeSyntheticWorldBackup(sourceRows) {
   const { records } = inspectRows(sourceRows);
-  const manifest = createSyntheticManifest(records);
+  const manifest = createSyntheticManifest(records, MANIFEST_OPTIONS);
   return JSON.stringify({ app: FORMAT, v: 2, records, manifest });
 }
 
@@ -84,7 +85,7 @@ export function readSyntheticWorldBackup(json) {
   }
   const { records, counts } = inspectRows(backup.records);
   if (records.length !== backup.records.length) throw new Error("EXCLUDED_BACKUP_DOCUMENT");
-  const verification = compareSyntheticRestore(backup.manifest, records);
+  const verification = compareSyntheticRestore(backup.manifest, records, MANIFEST_OPTIONS);
   if (verification.status !== "SYNTHETIC_MANIFEST_MATCH") {
     return { status: "INVALID_CONTENT", verification };
   }
@@ -104,7 +105,7 @@ export function planSyntheticWorldRestore(json, destinationRows) {
   if (backup.status !== "VERIFIED_WORLD") return { ...backup, create: [] };
   const { records } = inspectRows(destinationRows);
   const existing = new Map(records.length
-    ? createSyntheticManifest(records).documents.map(doc => [doc.path, doc.hash])
+    ? createSyntheticManifest(records, MANIFEST_OPTIONS).documents.map(doc => [doc.path, doc.hash])
     : []);
   const conflicts = [];
   const matching = [];
