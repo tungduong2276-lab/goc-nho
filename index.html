@@ -2237,7 +2237,7 @@ document.addEventListener("keydown",e=>{if(wrap&&e.key==="Escape"){wrap=null;ren
 /* ================= timeline ================= */
 function renderHistory(){
   const h=hist().slice().reverse();
-  $("tab-history").innerHTML=`<div class="tab-head"><div><h2>Nhật ký</h2><p>Toàn bộ các buổi hẹn, mới nhất ở trên.</p></div></div>`+
+  $("tab-history").innerHTML=`<div class="tab-head"><div><h2>Nhật ký</h2><p>Buổi hẹn được ghi tự động. Có thể lưu kỷ niệm và ảnh bất cứ lúc nào vào Bảo tàng.</p></div><a href="#bao-tang" class="btn btn-main btn-small" aria-label="Ghi kỷ niệm và thêm ảnh vào Bảo tàng">+ Ghi kỷ niệm / ảnh</a></div>`+
   (h.length?`<ul class="tl">${h.map(x=>{const g=hg(x)||{name:"?"},cg=x.combo?byN(x.combo.n):null;
     const w=x.wordId&&S.dict[x.wordId],it=x.itemId&&S.museum[x.itemId],pl=x.placeId&&S.places[x.placeId],ru=x.ruleId&&S.rules[x.ruleId];
     const photos=[...(it?.photos||[]),...(pl?.photos||[])].slice(0,4);
