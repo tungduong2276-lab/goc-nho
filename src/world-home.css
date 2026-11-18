@@ -14,7 +14,12 @@ html.world-only #app{display:none}
 #world-surface-close{min-height:44px;flex:none}
 html.world-only #world-surface #app{display:flex;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;max-width:none;width:100%;margin:0;padding:14px;gap:12px;min-height:0;flex:1}
 html.world-only #app>header,html.world-only #app>nav,html.world-only #app>.topline,html.world-only #app>#seasonRow,html.world-only #app .section-intro,html.world-only #app .guinhau,html.world-only #app .hs-bed,html.world-only #app .house-rooms,html.world-only #app .w3d-card{display:none!important}
-html.world-only #world-surface .tab-head,html.world-only #world-surface #settings>.sheet-head{display:none!important}
+/* The old tab header contains the ONLY Add button for museum, places, dictionary
+   and promises. Hiding it turns those features into read-only galleries. */
+html.world-only #world-surface .tab-head{display:flex!important;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+html.world-only #world-surface .tab-head h2{font-size:clamp(17px,4.6vw,22px);margin:0}
+html.world-only #world-surface .tab-head .btn{min-height:44px;flex:none}
+html.world-only #world-surface #settings>.sheet-head{display:none!important}
 html.world-only #world-surface #settings{position:static;inset:auto;z-index:auto;width:100%;max-height:none;overflow:visible;transform:none;margin:0;border:0;padding:0;box-shadow:none}
 html.world-only #world-surface[data-feature="settings"] #app>.view{display:none!important}
 html.world-only #world-surface[data-panel] #tab-home>:not(.world-selected-panel){display:none!important}
@@ -41,3 +46,19 @@ html.world-only #stage>.jar{display:none}
 @media (prefers-reduced-motion:reduce){#world-surface .world-focus{animation:none}}
 
 #world-home-loading::before{content:"☁️  ♡  ✨";color:#C54F80;font:800 38px var(--display);line-height:1.3}
+
+/* Give forms/photos room to edit without covering the underlying 3D navigation. */
+html.world-only #world-surface[data-feature="bao-tang"],
+html.world-only #world-surface[data-feature="ban-do"],
+html.world-only #world-surface[data-feature="tu-dien"],
+html.world-only #world-surface[data-feature="bo-luat"]{height:min(82dvh,720px)}
+html.world-only #world-surface .formcard{max-width:100%;min-width:0}
+html.world-only #world-surface .field input,
+html.world-only #world-surface .field textarea{min-height:44px}
+html.world-only #world-surface .file-btn{min-height:44px;display:inline-flex;align-items:center}
+@media(max-width:390px){html.world-only #world-surface .tab-head>.btn{width:100%;justify-content:center}}
+
+/* Museum captions and map memories are ordinary cards, not pink sticky notes:
+   using the old .note class must never give them burgundy text on navy cards. */
+html.world-only #world-surface .museum .note,
+html.world-only #world-surface .places .note{background:transparent;color:var(--ink);transform:none;box-shadow:none;border:0;padding:0;line-height:1.55}
