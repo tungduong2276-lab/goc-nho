@@ -8,7 +8,10 @@ const makeRoom = (id, items, w=16, d=14) => ({
   id, w, d, wallH: 2.7,
   // Cửa ở mép trước, dành lối thoát; hành lang có thêm các cửa ở mép sau.
   reserved: id === "hanh-lang"
-    ? [[11,16],[12,16],[11,17],[12,17], ...[3,7,11,15,19].flatMap(i=>[[i,0],[i,1],[i+1,0],[i+1,1]])]
+    ? [[11,16],[12,16],[11,17],[12,17],
+       // Ba vòm phía bắc và hai vòm bên hông, tránh hàng năm cửa dày đặc.
+       ...[7,11,15].flatMap(i=>[[i,0],[i,1],[i+1,0],[i+1,1]]),
+       ...[0,1,22,23].flatMap(i=>[[i,10],[i,11]])]
     : [[7,12],[8,12],[7,13],[8,13]],
   defaultLayout: {v:1, wall:ROOM_MOODS[id].wall, floor:ROOM_MOODS[id].floor, items}
 });
@@ -58,11 +61,11 @@ export const SCENE_LABELS = Object.freeze({
 const endpoint=(scene,x,z,nx,nz)=>({scene,x,z,nx,nz});
 export const ROOM_LINKS=Object.freeze([
   {id:"khach-hanh-lang",a:endpoint("nha",1.75,-2.35,0,-1),b:endpoint("hanh-lang",0,3.7,0,1)},
-  {id:"hall-ngu",a:endpoint("hanh-lang",-4,-3.65,0,-1),b:endpoint("ngu",0,3,0,1)},
+  {id:"hall-ngu",a:endpoint("hanh-lang",-5.15,0.8,-1,0),b:endpoint("ngu",0,3,0,1)},
   {id:"hall-bep",a:endpoint("hanh-lang",-2,-3.65,0,-1),b:endpoint("bep",0,3,0,1)},
   {id:"hall-bao-tang",a:endpoint("hanh-lang",0,-3.65,0,-1),b:endpoint("bao-tang",0,3,0,1)},
   {id:"hall-xuong",a:endpoint("hanh-lang",2,-3.65,0,-1),b:endpoint("xuong",0,3,0,1)},
-  {id:"hall-phong-choi",a:endpoint("hanh-lang",4,-3.65,0,-1),b:endpoint("phong-choi",0,3,0,1)}
+  {id:"hall-phong-choi",a:endpoint("hanh-lang",5.15,0.8,1,0),b:endpoint("phong-choi",0,3,0,1)}
 ]);
 export function directedDoors(scene, links=ROOM_LINKS){
   return links.flatMap(link=>link.a.scene===scene?[{id:link.id,from:link.a,to:link.b,label:SCENE_LABELS[link.b.scene]}]:
