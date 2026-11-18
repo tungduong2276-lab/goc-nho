@@ -247,6 +247,8 @@ function buildPortalModels() {
   for (const d of WD.sceneDoors(S.scene)) {
     if (d.to.scene === "san") continue; // thảm cửa chính đã có sẵn
     const g = makeCutePortal(d);
+    // Side alcove arches face toward the corridor, not through the wall.
+    g.rotation.y=d.from.nx<0?Math.PI/2:d.from.nx>0?-Math.PI/2:0;
     g.position.set(d.from.x,0,d.from.z);
     g.traverse(o => { o.userData.portalId=d.id; });
     portalsG.add(g);
