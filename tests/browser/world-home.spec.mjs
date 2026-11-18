@@ -221,3 +221,15 @@ for(const width of [360,390,430])test('museum, photos, map, dictionary and promi
   expect(saved.museum).toBeTruthy();expect(saved.places).toBe(true);
   expect(errors).toEqual([]);expect(apiRequests).toEqual([]);
 });
+
+test('date journal offers an honest path to add a new photo memory',async({page})=>{
+ const {frame,errors}=await open(page,390);
+ await frame.evaluate(()=>parent.postMessage({type:'gocnho:open',id:'nhat-ky'},location.origin));
+ await expect(page.locator('#world-surface-title')).toHaveText('Sổ những buổi hẹn');
+ const link=page.getByRole('link',{name:'Ghi kỷ niệm và thêm ảnh vào Bảo tàng'});
+ await expect(link).toBeVisible();
+ await link.click();
+ await expect(page.locator('#world-surface-title')).toHaveText('Kỷ vật của hai đứa');
+ await expect(page.locator('#tab-museum [data-tnew="museum"]')).toBeVisible();
+ expect(errors).toEqual([]);
+});
