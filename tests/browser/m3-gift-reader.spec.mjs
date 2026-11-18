@@ -12,7 +12,7 @@ if (process.env.M3_GIFT_BROWSER_REQUIRED === "1" && !enabled) {
   throw new Error("Gift UI test requires local Firestore and Auth Emulators");
 }
 test.skip(!enabled, "Requires local Firestore and Auth Emulators");
-test.describe.configure({ timeout: 95000 });
+test.describe.configure({ timeout: 180000 });
 
 const config = {
   projectId: "demo-goc-nho-safety", apiKey: "local-emulator-only",
@@ -38,7 +38,8 @@ async function account(who) {
 }
 
 async function openHost(browser, who, uid) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" });
+  const width = who === "bob" ? 360 : 430;
+  const context = await browser.newContext({ viewport: { width, height: 844 }, serviceWorkers: "block" });
   try {
     await context.route("**/*", async route => {
       const url = new URL(route.request().url());
@@ -50,17 +51,15 @@ async function openHost(browser, who, uid) {
         if (url.pathname === "/firebase-config.js") {
           return route.fulfill({ contentType: "text/javascript", body: "window.FIREBASE_CONFIG=" + JSON.stringify(config) });
         }
-        // Host gift panel is real. Rendering and cloud access by the island
-        // iframe are outside this test and covered separately.
-        if (url.pathname === "/nha3d/index.html") {
-          return route.fulfill({ contentType: "text/html", body:
-            '<script>parent.postMessage({type:"gocnho:ready"},location.origin)</script>' });
-        }
         return route.continue();
       }
       const sdk = /^\/firebasejs\/10\.12\.2\/(firebase-(?:app|auth|firestore)-compat\.js)$/.exec(url.pathname);
       if (url.hostname === "www.gstatic.com" && sdk) {
         return route.fulfill({ contentType: "text/javascript", path: resolve("node_modules/firebase", sdk[1]) });
+      }
+      const three = /^\/npm\/three@0\.169\.0\/(.+\.js)$/.exec(url.pathname);
+      if (url.hostname === "cdn.jsdelivr.net" && three) {
+        return route.fulfill({ contentType: "text/javascript", path: resolve("node_modules/three", three[1]) });
       }
       return route.abort("blockedbyclient");
     });
@@ -74,9 +73,20 @@ async function openHost(browser, who, uid) {
       new Promise((_, reject) => setTimeout(() => reject(new Error("Auth Emulator sign-in timed out")), 15000)),
     ]).then(credential => credential.user.uid), { email: email(who), password });
     await expect.poll(() => page.evaluate(() => ({ uid: CLOUD.uid, ready: dbReady }))).toEqual({ uid, ready: true });
-    await page.evaluate(() => { location.hash = "gifts"; });
-    await expect(page.locator("#world-surface")).toBeVisible();
     await expect(page.locator("#world-frame")).toHaveAttribute("src", /[?&]cloud=0(?:&|$)/);
+    const island = page.frameLocator("#world-frame");
+    await expect(page.locator("#world-home-loading")).toBeHidden({ timeout: 45000 });
+    await expect(island.locator("#world")).toBeVisible();
+    await island.getByRole("button", { name: "Bản đồ và đồ dùng trên đảo" }).click();
+    await island.getByRole("button", { name: "Hộp quà · Cây anh đào", exact: true }).click();
+    const frame = page.frames().find(candidate => new URL(candidate.url()).pathname === "/nha3d/index.html");
+    if (!frame) throw new Error("Island iframe missing");
+    await expect.poll(async () => {
+      // Advance walking independent of runner GPU speed.
+      await frame.evaluate(() => window.__NHA3D__.tick(0.5));
+      return page.locator("#world-surface").getAttribute("data-feature");
+    }, { timeout: 20000 }).toBe("gifts");
+    await expect(page.locator("#world-surface")).toBeVisible();
     await expect(page.locator("#gift-envelopes [data-gift-envelope]")).toHaveCount(2);
     return { context, page, errors };
   } catch (error) {
@@ -85,7 +95,7 @@ async function openHost(browser, who, uid) {
   }
 }
 
-test("gift panel keeps opened history, defers sealed content to the server and excludes gifts from shared export", async ({ browser }) => {
+test("two viewport sizes reach gifts through the real 3D island and complete the gift lifecycle", async ({ browser }) => {
   const env = await initializeTestEnvironment({
     projectId: config.projectId,
     firestore: { host: "127.0.0.1", port: 8080, rules: readFileSync("tests/firebase/fixtures/m3-gifts.rules", "utf8") },
