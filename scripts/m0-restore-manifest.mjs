@@ -54,7 +54,9 @@ function digest(value) {
  * These tagged objects are data in a human-reviewed offline snapshot, NOT a
  * replacement for the Firestore SDK/Admin API's native typed values.
  */
-export function createSyntheticManifest(rows) {
+export function createSyntheticManifest(rows, { maxDocumentBytes = MAX_JSON_BYTES } = {}) {
+  if (!Number.isSafeInteger(maxDocumentBytes) || maxDocumentBytes < 1 || maxDocumentBytes > 524288)
+    throw new ManifestError("INVALID_DOCUMENT_SIZE_LIMIT");
   if (!Array.isArray(rows) || rows.length === 0 || rows.length > MAX_DOCUMENTS)
     throw new ManifestError("INVALID_DOCUMENT_COUNT");
   const paths = new Set();
@@ -65,7 +67,7 @@ export function createSyntheticManifest(rows) {
     if (paths.has(path)) throw new ManifestError("DUPLICATE_DOCUMENT");
     paths.add(path);
     const fields = canonical(row.fields);
-    if (Buffer.byteLength(JSON.stringify(fields), "utf8") > MAX_JSON_BYTES)
+    if (Buffer.byteLength(JSON.stringify(fields), "utf8") > maxDocumentBytes)
       throw new ManifestError("DOCUMENT_TOO_LARGE");
     return { path, hash: digest(fields) };
   }).sort((a, b) => a.path.localeCompare(b.path, "en"));
@@ -79,7 +81,7 @@ export function createSyntheticManifest(rows) {
   };
 }
 
-export function compareSyntheticRestore(expected, restoredRows) {
+export function compareSyntheticRestore(expected, restoredRows, options) {
   if (!plain(expected) || expected.format !== "goc-nho-m0-synthetic-v1" ||
       expected.syntheticOnly !== true || expected.source !== "OFFLINE_INPUT_NOT_CLOUD_VERIFIED" ||
       !Array.isArray(expected.documents) || !Number.isSafeInteger(expected.count) ||
@@ -102,7 +104,7 @@ export function compareSyntheticRestore(expected, restoredRows) {
   if (JSON.stringify(sorted) !== JSON.stringify(expectedRows) ||
       digest(expectedRows) !== expected.rootHash)
     throw new ManifestError("TAMPERED_EXPECTED_MANIFEST");
-  const actual = createSyntheticManifest(restoredRows);
+  const actual = createSyntheticManifest(restoredRows, options);
   const byPath = new Map(actual.documents.map(d => [d.path, d.hash]));
   const expectedByPath = new Map(expectedRows.map(d => [d.path, d.hash]));
   const missing = expectedRows.filter(d => !byPath.has(d.path)).map(d => d.path);
