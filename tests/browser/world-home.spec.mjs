@@ -189,7 +189,8 @@ for(const width of [360,390,430])test('museum, photos, map, dictionary and promi
     const root=page.locator('#tab-'+item.type);
     const add=root.locator('[data-tnew="'+item.type+'"]');
     await expect(add).toBeVisible();
-    const box=await add.boundingBox();expect(box.width).toBeGreaterThan(44);
+    // The world host can rerender during async state snapshots; wait for a stable button rectangle.
+    await expect.poll(async()=>{const b=await add.boundingBox();return b?.width||0;},{timeout:15000}).toBeGreaterThan(44);
     await add.click();
     const form=root.locator('form[data-type="'+item.type+'"]');
     await expect(form).toBeVisible();
