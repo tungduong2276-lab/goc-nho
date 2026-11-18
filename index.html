@@ -4641,7 +4641,7 @@ window.addEventListener("hashchange",()=>{const r=GN_ROOT[location.hash];if(r)gn
 // Only bounded feature ids enter this bridge; it never accepts HTML, selectors or write commands.
 let worldActiveFeature=null;
 window.GOCNHO_WORLD={
- user:()=>({who:ME===null?(lsGet("gocnho.nha3d.me")||"anh"):CH(ME),known:ME!==null,cloud:!!CLOUD.cid&&ME!==null&&!document.body.classList.contains("gated"),names:S.meta.names.slice(),avatars:(S.meta.chars||["anh","em"]).slice(),key:(CLOUD.uid||"local")+"|"+(CLOUD.cid||"")}),
+ user:()=>({who:ME===null?(lsGet("gocnho.nha3d.me")||"anh"):CH(ME),known:ME!==null,cloud:!giftPreview&&!!CLOUD.cid&&ME!==null&&!document.body.classList.contains("gated"),names:S.meta.names.slice(),avatars:(S.meta.chars||["anh","em"]).slice(),key:(CLOUD.uid||"local")+"|"+(CLOUD.cid||"")}),
  select:who=>{if(CLOUD.uid)return;const i=(S.meta.chars||["anh","em"]).indexOf(who);if(i<0)return;ME=i;lsSet("hu-hen-ho-me",String(ME));rerender();},
  open:(f,opts={})=>{worldActiveFeature=f;$("settings").hidden=true;if(f.id==="settings"){$("openSettings").click();return;}if(f.id==="tu-lanh"&&opts.focus&&S.fridge[opts.focus]){if(opts.reply)replyOpen=opts.focus;const at=list("fridge").sort((a,b)=>a.date<b.date?1:-1).findIndex(n=>n.id===opts.focus);if(at>=frShow)frShow=at+1;}location.hash=f.route||f.id;route();rerender();},
  // Two narrow in-scene actions, each running the same handler and write as the app's own button.
