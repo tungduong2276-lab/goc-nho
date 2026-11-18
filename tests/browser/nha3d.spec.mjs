@@ -40,16 +40,17 @@ test("dựng nhà 3D trực tiếp, không lỗi và không gọi Firebase", asy
   expect(firebase).toEqual([]);
 });
 
-test("chạm sofa để ngồi, rủ người kia ngồi cùng, đẩy cần điều khiển để đứng dậy", async ({ page }) => {
+test("chơi một mình: ngồi sofa và đứng dậy, không hiện người kia", async ({ page }) => {
   const { errors, N } = await openHouse(page);
   const [x, y] = await N("screenOfItem", "a2", 0.5);
   expect(await N("pickAt", x, y)).toBe("a2");
   await page.mouse.click(x, y);
-  await page.getByRole("button", { name: "Ngồi cùng Em" }).click();
-  await page.waitForTimeout(700);
+  await expect(page.getByRole("button", { name: "Ngồi cùng Em" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Ngồi", exact: true }).click();
   await N("tick", 10);
   expect((await N("me")).mode).toBe("sit");
-  expect((await N("partner")).mode).toBe("sit");
+  expect((await N("cloud")).partnerVisible).toBe(false);
+  await expect(page.locator(".nametag:visible")).toHaveCount(1);
   await page.keyboard.down("ArrowUp"); await N("tick", 1); await page.keyboard.up("ArrowUp");
   expect((await N("me")).mode).toBe("idle");
   expect(errors).toEqual([]);
@@ -124,7 +125,7 @@ for (const width of [360, 390, 430]) {
   });
 }
 
-test("vườn: gieo hạt, cùng tưới, cây lớn theo giờ thật, khát khi quên tưới, thu hoạch", async ({ page }) => {
+test("vườn: chơi một mình, gieo hạt, tưới, cây lớn theo giờ thật, khát khi quên tưới, thu hoạch", async ({ page }) => {
   const { errors, firebase, N } = await openHouse(page, { scene: "san" });
   // đứng cạnh vườn ngoài sân
   const bed = (await N("layout")).items.find(i => i.uid === "y-g1");
@@ -139,12 +140,14 @@ test("vườn: gieo hạt, cùng tưới, cây lớn theo giờ thật, khát kh
   await page.locator("#actions button", { hasText: "Gieo cà chua bi" }).click();
   await expect.poll(async () => { await N("tick", 0.5); return (await N("plant", "y-g1"))?.stage; }, { timeout: 30_000 }).toBe(0);
   expect((await N("plant", "y-g1")).wateredBy).toEqual(["anh"]);
-  // Rủ người kia cùng tưới → cả hai cùng tưới
+  // Chơi một mình chỉ ghi nhận lượt tưới của mình.
   await N("skipHours", 2);
   const [x2, y2] = await N("screenOfItem", "y-g1", 0.5);
   await page.mouse.click(x2, y2);
-  await page.locator("#actions button", { hasText: "cùng tưới" }).click();
-  await expect.poll(async () => { await N("tick", 0.5); return (await N("plant", "y-g1")).wateredBy.length; }, { timeout: 40_000 }).toBe(2);
+  await expect(page.locator("#actions button", { hasText: "cùng tưới" })).toHaveCount(0);
+  await page.locator("#actions button", { hasText: "Tưới nước" }).click();
+  await expect.poll(async () => { await N("tick", 0.5); return (await N("layout")).items.find(i => i.uid === "y-g1").plant.w.length; }, { timeout: 40_000 }).toBe(2);
+  expect((await N("plant", "y-g1")).wateredBy).toEqual(["anh"]);
   // Cây lớn và đổi hình theo thời gian
   await N("skipHours", 16);
   const grown = await N("plant", "y-g1");
@@ -263,6 +266,13 @@ test("W2: đảo chung — gửi thay đổi, nhận người kia và đồ đ�
   await N("tick", 0.2);
   expect((await N("cloud")).partnerVisible).toBe(false);
   await expect(page.locator("#partner-status")).toHaveText("Em đang ở Phòng khách");
+  await N("remoteChanges", [{ id: "p_em", data: { k: "presence", who: "em", scene: "san", x: me.x+1, z: me.z, face: 0, at: Date.now()-120_000 } }]);
+  await N("tick", 0.2);
+  expect((await N("cloud")).partnerVisible).toBe(false);
+  await expect(page.locator("#partner-status")).toHaveText("Em đang vắng");
+  await N("remoteChanges", [{ id: "p_em", data: null }]);
+  await N("tick", 0.2);
+  await expect(page.locator(".nametag:visible")).toHaveCount(1);
   // Em gieo dâu ở luống khác và dời ghế dài: máy này thấy ngay
   await N("remoteChanges", [
     { id: "i_san_y-g2", data: { k: "item", scene: "san", uid: "y-g2", it: { type: "luongTrong", gx: 9, gz: 14, r: 0 }, plant: { sp: "dau", at: Date.now() - 1000, by: "em" }, w: [{ t: Date.now() - 1000, by: "em" }] } },
