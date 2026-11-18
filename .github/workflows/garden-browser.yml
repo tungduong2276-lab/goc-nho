@@ -31,7 +31,7 @@ permissions:
 
 jobs:
   emulator-gift-reader:
-    if: github.event_name == 'pull_request' && (github.event.pull_request.head.ref == 'feature/m3-gift-reader-emulator-20261118' || github.event.pull_request.head.ref == 'feature/m3-gift-actions-real-partner-20261118')
+    if: github.event_name == 'pull_request' && (github.event.pull_request.head.ref == 'feature/m3-gift-reader-emulator-20261118' || github.event.pull_request.head.ref == 'feature/m3-gift-actions-real-partner-20261118' || github.event.pull_request.head.ref == 'feature/m3-gift-island-acceptance-20261118')
     permissions:
       contents: read
     runs-on: ubuntu-24.04
@@ -55,7 +55,7 @@ jobs:
         run: npx firebase emulators:exec --config firebase.world-shared-emulator.json --project demo-goc-nho-safety --only firestore,auth "npx playwright test tests/browser/m3-gift-reader.spec.mjs --workers=1"
 
   emulator-gift-privacy:
-    if: github.event_name == 'pull_request' && (github.event.pull_request.head.ref == 'feature/m3-gift-privacy-emulator-20261118' || (github.event.pull_request.head.ref == 'feature/m3-gift-migration-emulator-20261118' || github.event.pull_request.head.ref == 'feature/m3-gift-actions-real-partner-20261118'))
+    if: github.event_name == 'pull_request' && (github.event.pull_request.head.ref == 'feature/m3-gift-privacy-emulator-20261118' || (github.event.pull_request.head.ref == 'feature/m3-gift-migration-emulator-20261118' || github.event.pull_request.head.ref == 'feature/m3-gift-actions-real-partner-20261118' || github.event.pull_request.head.ref == 'feature/m3-gift-island-acceptance-20261118'))
     permissions:
       contents: read
     runs-on: ubuntu-24.04
