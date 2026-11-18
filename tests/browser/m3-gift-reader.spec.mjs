@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { deleteApp, initializeApp } from "firebase/app";
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth } from "firebase/auth";
-import { Bytes, doc, setDoc, Timestamp } from "firebase/firestore";
+import { Bytes, doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import { initializeTestEnvironment } from "@firebase/rules-unit-testing";
 
 const enabled = /^(127\.0\.0\.1|localhost):8080$/.test(process.env.FIRESTORE_EMULATOR_HOST || "")
@@ -121,7 +121,7 @@ test("gift panel keeps opened history, defers sealed content to the server and e
     const p = recipient.page;
     await expect(p.locator("#gifts")).toContainText("Dịp cũ");
     await expect(p.locator("#gifts")).not.toContainText("Dịp phải ẩn");
-    await expect(p.locator("#giftForm")).toHaveCount(0);
+    await expect(p.locator("#giftForm")).toHaveCount(1);
     await p.locator('[data-gopen="archived"]').click();
     await expect(p.locator("#v3modal")).toContainText(openedNote);
     await p.locator("#v3ok").click();
@@ -143,6 +143,51 @@ test("gift panel keeps opened history, defers sealed content to the server and e
     const sender = await openHost(browser, "alice", alice);clients.push(sender);
     await sender.page.locator('[data-gopen-envelope="sealed"]').click();
     await expect(sender.page.locator("#v3modal")).toContainText(closedNote);
+    await sender.page.locator("#v3ok").click();
+    const received = '[data-gift-envelope="ready"]';
+    await expect(sender.page.locator(received)).toContainText("Đã mở");
+    const firstOpenedAt = await p.evaluate(async () =>
+      (await DB.collection("giftEnvelopes").doc("ready").get({ source: "server" })).data().openedAt.toMillis());
+    await p.locator('[data-gopen-envelope="ready"]').click();
+    await expect(p.locator("#v3modal")).toContainText(readyNote);
+    await p.locator("#v3ok").click();
+    expect(await p.evaluate(async () =>
+      (await DB.collection("giftEnvelopes").doc("ready").get({ source: "server" })).data().openedAt.toMillis()
+    )).toBe(firstOpenedAt);
+
+    const q = sender.page;
+    await q.locator("#giftDet summary").click();
+    await q.locator("#gift-msg").fill("Fixture packed from panel");
+    const future = await q.locator("#gift-when option").evaluateAll(options => options.find(option =>
+      Date.parse(option.value.split("|")[0] + "T00:00:00+07:00") > Date.now() + 3600000)?.value);
+    expect(future).toBeTruthy();
+    await q.locator("#gift-when").selectOption(future);
+    await q.locator("#gift-photos input[type=file]").setInputFiles({
+      name: "fixture.png", mimeType: "image/png",
+      buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j5WQAAAAASUVORK5CYII=", "base64"),
+    });
+    await expect(q.locator("#gift-photos .pthumb")).toHaveCount(1);
+    await q.locator("#giftForm button.btn-main").click();
+    await expect(q.locator("#gift-envelopes [data-gift-envelope]")).toHaveCount(3);
+    await expect(p.locator("#gift-envelopes [data-gift-envelope]")).toHaveCount(3);
+    const packed = await q.locator('#gift-envelopes [data-gift-envelope]:not([data-gift-envelope="ready"]):not([data-gift-envelope="sealed"])')
+      .getAttribute("data-gift-envelope");
+    await env.withSecurityRulesDisabled(async ctx => {
+      const payload = await getDoc(doc(ctx.firestore(), "couples", cid, "giftEnvelopes", packed, "private", "content"));
+      expect(payload.data().note).toBe("Fixture packed from panel");
+      expect(payload.data().photos[0].toUint8Array().length).toBeGreaterThan(0);
+    });
+    const cancel = q.locator('[data-gcancel-envelope="' + packed + '"]');
+    await cancel.click();
+    await expect(cancel).toHaveText("Bấm lần nữa để hủy");
+    await cancel.click();
+    await expect(p.locator("#gift-envelopes [data-gift-envelope]")).toHaveCount(2);
+    await expect(q.locator("#gift-envelopes [data-gift-envelope]")).toHaveCount(2);
+    await env.withSecurityRulesDisabled(async ctx => {
+      const payload = await getDoc(doc(ctx.firestore(), "couples", cid, "giftEnvelopes", packed, "private", "content"));
+      expect(payload.exists()).toBe(false);
+    });
+
     for (const client of clients) {
       const json = await client.page.evaluate(() => backupJSON());
       expect(JSON.parse(json).app).toBe("goc-nho-shared");
