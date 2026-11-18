@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { assertFails, initializeTestEnvironment } from "@firebase/rules-unit-testing";
 import {
-  Bytes, collection, doc, getDoc, getDocs, serverTimestamp, setDoc, Timestamp, updateDoc, writeBatch,
+  Bytes, collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, Timestamp, updateDoc, writeBatch,
 } from "firebase/firestore";
 
 const endpoint = /^(127\.0\.0\.1|localhost):([0-9]+)$/.exec(process.env.FIRESTORE_EMULATOR_HOST || "");
@@ -103,4 +103,37 @@ test("the candidate keeps shared world and legacy gifts accessible through their
     id: "legacy-fixture", opened: true, key: "2020-01-01",
   }));
   assert.equal((await getDoc(doc(recipient, legacy.path))).data().opened, true);
+});
+
+function cancel(db, id) {
+  const batch = writeBatch(db);
+  batch.delete(envelope(db, id));
+  batch.delete(content(db, id));
+  return batch.commit();
+}
+
+test("only the sender can cancel before release and both documents must disappear together", async () => {
+  await wrap(sender, "cancel", metadata(60 * 60 * 1000));
+  await assertFails(cancel(recipient, "cancel"));
+  await assertFails(deleteDoc(envelope(sender, "cancel")));
+  await assertFails(deleteDoc(content(sender, "cancel")));
+  await cancel(sender, "cancel");
+  await env.withSecurityRulesDisabled(async ctx => {
+    const db = ctx.firestore();
+    assert.equal((await getDoc(envelope(db, "cancel"))).exists(), false);
+    assert.equal((await getDoc(content(db, "cancel"))).exists(), false);
+  });
+});
+
+test("only the recipient can record opening at or after release, and the first server timestamp stays immutable", async () => {
+  await wrap(sender, "future", metadata(60 * 60 * 1000));
+  await wrap(sender, "ready", metadata(-60 * 1000));
+  await assertFails(updateDoc(envelope(recipient, "future"), { openedAt: serverTimestamp() }));
+  await assertFails(updateDoc(envelope(sender, "ready"), { openedAt: serverTimestamp() }));
+  await assertFails(cancel(sender, "ready"));
+  await updateDoc(envelope(recipient, "ready"), { openedAt: serverTimestamp() });
+  const opened = (await getDoc(envelope(sender, "ready"))).data().openedAt;
+  assert.ok(opened instanceof Timestamp);
+  await assertFails(updateDoc(envelope(recipient, "ready"), { openedAt: serverTimestamp() }));
+  assert.ok(opened.isEqual((await getDoc(envelope(sender, "ready"))).data().openedAt));
 });

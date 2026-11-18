@@ -2602,14 +2602,14 @@ function showGiftContents(g){
     <p class="quiet">Gói ngày ${fmtDate(g.date)}</p>`,"Cảm ơn ♥",()=>rerender());
 }
 const giftEnvelopeDate=new Intl.DateTimeFormat("vi-VN",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Ho_Chi_Minh"});
-let giftEnvelopes=new Map(),giftEnvelopeState="loading",giftOpening=false;
+let giftEnvelopes=new Map(),giftEnvelopeState="loading",giftOpening=false,giftSaving=false,giftCancelling=false,giftCancelId=null;
 function watchGiftEnvelopes(db){
   db.collection("giftEnvelopes").onSnapshot({includeMetadataChanges:true},snap=>{
     if(snap.metadata.fromCache)return;
     giftEnvelopes=new Map(snap.docs.flatMap(doc=>{
       const g=doc.data(),unlockAt=g.unlockAt?.toMillis?.(),date=g.createdAt?.toDate?.();
       if(!Number.isFinite(unlockAt)||!date)return [];
-      return [[doc.id,{fromUid:g.fromUid,toUid:g.toUid,unlockAt,date:date.toISOString()}]];
+      return [[doc.id,{fromUid:g.fromUid,toUid:g.toUid,unlockAt,date:date.toISOString(),label:g.label,opened:!!g.openedAt}]];
     }));
     giftEnvelopeState="ready";schedule();
   },()=>{giftEnvelopes.clear();giftEnvelopeState="error";schedule();});
@@ -2626,22 +2626,77 @@ async function openGiftEnvelope(id){
       const encoded=photo?.toBase64?.();
       return typeof encoded==="string"?["data:image/jpeg;base64,"+encoded]:[];
     });
-    showGiftContents({from:CLOUD.roles[gift.fromUid],label:"dịp đã hẹn",note:data.note,photos,date:gift.date});
+    if(gift.toUid===UID){
+      const ref=DB.collection("giftEnvelopes").doc(id);
+      await CLOUD.fs.runTransaction(async tx=>{
+        const current=await tx.get(ref);
+        if(!current.exists)throw Error("missing gift");
+        if(!current.data().openedAt)tx.update(ref,{openedAt:FV().serverTimestamp()});
+      });
+    }
+    showGiftContents({from:CLOUD.roles[gift.fromUid],label:gift.label||"dịp đã hẹn",note:data.note,photos,date:gift.date});
   }catch(e){
     toast(e?.code==="permission-denied"?"Hộp quà chưa đến giờ mở hoặc bạn không có quyền đọc.":"Cần kết nối để mở hộp quà. Thử lại nhé.");
   }finally{giftOpening=false;}
+}
+async function packGiftEnvelope(key,label,note,photos){
+  if(giftSaving)return;
+  const partnerUid=CLOUD.members.find(uid=>uid!==UID);
+  if(!partnerUid){toast("Cần có người ở chung nhà để gửi quà.");return;}
+  const date=new Date(key+"T00:00:00+07:00");
+  if(!Number.isFinite(date.getTime())){toast("Chọn một ngày mở quà hợp lệ.");return;}
+  const ref=DB.collection("giftEnvelopes").doc();
+  giftSaving=true;
+  try{
+    const blobs=photos.map(photo=>{
+      const prefix="data:image/jpeg;base64,";
+      if(!photo.startsWith(prefix))throw Error("invalid photo");
+      const blob=firebase.firestore.Blob.fromBase64String(photo.slice(prefix.length));
+      if(blob.toUint8Array().length>300000)throw Error("large photo");
+      return blob;
+    });
+    await CLOUD.fs.runTransaction(async tx=>{
+      const current=await tx.get(ref);
+      if(current.exists)throw Error("existing gift");
+      tx.set(ref,{fromUid:UID,toUid:partnerUid,createdAt:FV().serverTimestamp(),
+        unlockAt:firebase.firestore.Timestamp.fromDate(date),label});
+      tx.set(ref.collection("private").doc("content"),{note,photos:blobs});
+    });
+    const input=$("gift-msg");if(input)input.value="";
+    tempPhotos.gift=[];const form=$("giftDet");if(form)form.open=false;
+    rerender();toast("Đã gói quà.");
+  }catch(e){
+    toast(e?.message==="large photo"?"Ảnh quá lớn. Hãy chọn ảnh khác.":"Chưa thể gói quà. Kiểm tra kết nối và thử lại nhé.");
+  }finally{giftSaving=false;}
+}
+async function cancelGiftEnvelope(id){
+  if(giftCancelling)return;
+  if(giftCancelId!==id){giftCancelId=id;rerender();return;}
+  giftCancelling=true;
+  try{
+    const ref=DB.collection("giftEnvelopes").doc(id);
+    await CLOUD.fs.runTransaction(async tx=>{
+      if(!(await tx.get(ref)).exists)return;
+      tx.delete(ref.collection("private").doc("content"));tx.delete(ref);
+    });
+    toast("Đã hủy hộp quà.");
+  }catch(e){
+    toast(e?.code==="permission-denied"?"Chỉ người gửi mới có thể hủy quà trước giờ mở.":"Chưa thể hủy quà. Thử lại khi có kết nối.");
+  }finally{giftCancelling=false;giftCancelId=null;rerender();}
 }
 function giftEnvelopesHTML(){
   const mine=[...giftEnvelopes].filter(([,g])=>[g.fromUid,g.toUid].includes(UID));
   const rows=mine.sort((a,b)=>a[1].unlockAt-b[1].unlockAt).map(([id,g])=>
     '<div class="gift" data-gift-envelope="'+esc(id)+'">'+boxSVG+
     '<div class="gb"><b>'+(g.fromUid===UID?"Hộp quà bạn đã gửi":"Hộp quà hẹn giờ")+
-    '</b><span>'+esc(giftEnvelopeDate.format(g.unlockAt))+' · Giờ Việt Nam</span></div>'+
-    '<button class="btn btn-main btn-small" data-gopen-envelope="'+esc(id)+'">Mở quà</button></div>').join("");
+    '</b><span>'+(g.label?esc(g.label)+' · ':'')+esc(giftEnvelopeDate.format(g.unlockAt))+' · Giờ Việt Nam'+(g.opened?' · Đã mở':'')+'</span></div>'+
+    '<button class="btn btn-main btn-small" data-gopen-envelope="'+esc(id)+'">'+(g.opened?"Xem lại":g.fromUid===UID?"Xem quà đã gửi":"Mở quà")+'</button>'+
+    (g.fromUid===UID&&!g.opened&&Date.now()<g.unlockAt?'<button class="linkish" data-gcancel-envelope="'+esc(id)+'">'+(giftCancelId===id?"Bấm lần nữa để hủy":"Hủy quà")+'</button>':'')+
+    '</div>').join("");
   const status=giftEnvelopeState==="error"?"Chưa tải được hộp quà hẹn giờ.":giftEnvelopeState==="loading"?"Đang tải hộp quà hẹn giờ…":"";
   return '<div id="gift-envelopes" class="gifts">'+rows+'</div>'+
     (status?'<p class="quiet" role="status">'+status+'</p>':'')+
-    '<p class="quiet">Bản thử trên dữ liệu giả lập · Gói và huỷ quà sẽ được bật sau.</p>';
+    '<p class="quiet">Bản thử trên dữ liệu giả lập</p>';
 }
 function giftsHTML(){
   if(ME===null)return"";
@@ -2654,8 +2709,7 @@ function giftsHTML(){
   const rowSent=g=>`<div class="gift">${boxSVG}<div class="gb"><b>Bạn gói quà cho ${N(o)}</b><span>${esc(g.label)} · ${fmtDate(g.key+"T12:00:00")}${g.opened?" · đã được mở":""}</span>
       ${giftPreview&&g.opened?`<button class="btn btn-ghost btn-small" data-gopen="${esc(g.id)}">Xem lại</button>`:!g.opened?`<div class="entry-actions"><button class="linkish" data-gdel="${g.id}">${giftDel===g.id?"Bấm lần nữa để huỷ":"Huỷ quà"}</button></div>`:""}</div></div>`;
   const previous=mine.length||sent.length?`<div class="gifts">${mine.map(rowMine).join("")}${sent.map(rowSent).join("")}</div>`:"";
-  if(giftPreview)return previous+giftEnvelopesHTML();
-  return `${previous}
+  return `${previous}${giftPreview?giftEnvelopesHTML():""}
     <details class="fold" id="giftDet"><summary>Gói một hộp quà cho ${N(o)}</summary>
       <form class="v3form" id="giftForm">
         <p class="quiet" style="margin:0">Hộp quà chỉ mở được đúng ngày đã chọn. Trước đó ${N(o)} chỉ thấy chiếc hộp.</p>
@@ -2668,12 +2722,14 @@ function giftsHTML(){
 }
 function bindGifts(root){
   root.querySelectorAll("[data-gopen-envelope]").forEach(b=>b.onclick=()=>openGiftEnvelope(b.dataset.gopenEnvelope));
+  root.querySelectorAll("[data-gcancel-envelope]").forEach(b=>b.onclick=()=>cancelGiftEnvelope(b.dataset.gcancelEnvelope));
   bindStrip("gift");
   root.querySelectorAll("[data-gopen]").forEach(b=>b.onclick=()=>openGift(b.dataset.gopen));
   root.querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{if(giftDel===b.dataset.gdel){del("gifts",giftDel);giftDel=null;}else giftDel=b.dataset.gdel;rerender();});
   const f=$("giftForm");if(f)f.onsubmit=e=>{e.preventDefault();
     const [key,label]=($("gift-when").value||"").split("|"),note=$("gift-msg").value.trim(),photos=(tempPhotos.gift||[]).slice();
     if(!key||(!note&&!photos.length)){$("gift-err").hidden=false;return;}
+    if(giftPreview){packGiftEnvelope(key,label,note,photos);return;}
     put("gifts",{id:uid(),from:ME,to:OTHER(),key,label,note,photos,date:nowIso(),opened:false});
     $("gift-msg").value="";tempPhotos.gift=[];$("giftDet").open=false;toast("Đã gói quà. Đến ngày mới mở được nhé.");rerender();};
 }
