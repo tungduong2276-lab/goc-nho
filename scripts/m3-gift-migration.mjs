@@ -62,6 +62,11 @@ function prepare(gift, roles) {
   };
 }
 
+// Same conversion for the isolated transactional rehearsal.
+export function prepareLegacyGift(gift, house) {
+  return prepare(gift, confirmedRoles(house));
+}
+
 // destinations is a fixture snapshot keyed by the original ID. A destination
 // entry uses both documents, ISO timestamps and canonical base64 photo bytes.
 export function rehearseLegacyGiftMigration({ house, gifts, destinations = {} }) {
