@@ -794,6 +794,7 @@ function itemMenu(it, cx, cy) {
     list.push(["Dán một mẩu giấy", () => useItem(m, it, () => openApp("tu-lanh"))]);
   }
   if (it.type === "bepNau") list.push(["🍳 Nấu ăn cùng nhau",()=>useItem(m,it,()=>lifeUI.open("kitchen"))]);
+  if (it.type === "ruong") list.push(["📸 Cất ảnh và kỷ vật mới",()=>useItem(m,it,()=>openApp("bao-tang"))]);
   if (use.type === "garden") { gardenMenu(it, anchor); return; }
   if (use.type === "enter") list.push([use.label, () => walkThroughDoor()]);
   if (use.type === "cafe") list.push([use.label, () => useItem(m, it, () => orderDrink(m, it))], ["Mời " + NAMES[partner().who] + " một ly", () => useItem(m, it, () => { orderDrink(m, it, true); if (CLOUD.on) { emitEv("invite", { text: "mời bạn một ly ở quầy cà phê ☕" }); return; } setTimeout(() => useItem(partner(), it, () => partner().emote("wave")), 300); })]);
@@ -1006,15 +1007,18 @@ function appMenu(it, use, list) {
     return;
   }
   if(it.type==="tuKinh"&&S.scene==="bao-tang"){
+    list.push(["📸 Thêm ảnh hoặc kỷ vật",()=>useItem(m,it,()=>openApp("bao-tang"))]);
     list.push(["🖼️ Tranh của hai đứa ("+creativeState().artworks.length+")",()=>creativeUI.open("museum")]);
-    list.push(["💌 Kỷ vật cũ",()=>useItem(m,it,()=>openApp("bao-tang"))]);
+    list.push(["💌 Xem và sửa kỷ vật đã lưu",()=>useItem(m,it,()=>openApp("bao-tang"))]);
     return;
   }
   if(it.type==="keSach"&&S.scene==="ngu"){
     list.push(["📚 Đọc truyện chung ("+creativeState().books.length+")",()=>creativeUI.open("books")]);
     list.push(["✍️ Viết tiếp truyện",()=>creativeUI.open("story")]);
+    list.push(["📖 Thêm từ vào từ điển riêng",()=>useItem(m,it,()=>openApp("tu-dien"))]);
     return;
   }
+  if(it.type==="banDo")list.push(["📍 Ghim địa điểm và ảnh mới",()=>useItem(m,it,()=>openApp("ban-do"))]);
   const memory = APPST.memory;
   const labels = { tuKinh: `Bảo tàng (${memory.museum} hiện vật)`, keSach: `Từ điển riêng (${memory.words} từ)`, banDo: `Bản đồ (${memory.places} địa điểm)`, benThuyen: memory.kingdom.pending ? `Ghé Vương quốc (${memory.kingdom.pending} đề xuất chờ bạn)` : `Ghé ${memory.kingdom.name}`, cayHoa: "Xem và gói quà cho nhau" };
   if (labels[it.type]) {
