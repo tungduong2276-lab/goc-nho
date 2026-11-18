@@ -99,6 +99,8 @@ test("the candidate keeps shared world and legacy gifts accessible through their
   assert.equal((await getDoc(doc(recipient, world.path))).exists(), true);
 
   const legacy = doc(sender, "couples", cid, "gifts", "legacy-fixture");
-  await setDoc(legacy, { id: "legacy-fixture", opened: true, key: "2020-01-01" });
+  await env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), legacy.path), {
+    id: "legacy-fixture", opened: true, key: "2020-01-01",
+  }));
   assert.equal((await getDoc(doc(recipient, legacy.path))).data().opened, true);
 });
