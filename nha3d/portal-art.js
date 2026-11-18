@@ -44,7 +44,7 @@ export function makeCutePortal(door){
   const c=document.createElement("canvas");c.width=384;c.height=104;
   const ctx=c.getContext("2d");
   if(ctx){
-    ctx.fillStyle="#FFFDF7";ctx.beginPath();ctx.roundRect(4,4,376,96,30);ctx.fill();
+    const r=26;ctx.fillStyle="#FFFDF7";ctx.beginPath();ctx.moveTo(4+r,4);ctx.lineTo(380-r,4);ctx.quadraticCurveTo(380,4,380,4+r);ctx.lineTo(380,100-r);ctx.quadraticCurveTo(380,100,380-r,100);ctx.lineTo(4+r,100);ctx.quadraticCurveTo(4,100,4,100-r);ctx.lineTo(4,4+r);ctx.quadraticCurveTo(4,4,4+r,4);ctx.closePath();ctx.fill();
     ctx.strokeStyle="#587B91";ctx.lineWidth=7;ctx.stroke();
     ctx.fillStyle="#D66090";ctx.font="bold 38px sans-serif";ctx.textAlign="center";ctx.fillText(symbol,42,68);
     ctx.fillStyle="#1D2B4F";ctx.font="bold 38px sans-serif";ctx.fillText(name,216,68);
