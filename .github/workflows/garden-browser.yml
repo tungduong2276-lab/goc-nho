@@ -30,6 +30,30 @@ permissions:
   contents: write
 
 jobs:
+  emulator-gift-reader:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feature/m3-gift-reader-emulator-20261118'
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm install
+      - run: npx playwright install chromium
+      - name: Check gift panel in Chromium with loopback Firestore and Auth
+        env:
+          M3_GIFT_BROWSER_REQUIRED: '1'
+        run: npx firebase emulators:exec --config firebase.world-shared-emulator.json --project demo-goc-nho-safety --only firestore,auth "npx playwright test tests/browser/m3-gift-reader.spec.mjs --workers=1"
+
   emulator-gift-privacy:
     if: github.event_name == 'pull_request' && (github.event.pull_request.head.ref == 'feature/m3-gift-privacy-emulator-20261118' || github.event.pull_request.head.ref == 'feature/m3-gift-migration-emulator-20261118')
     permissions:
