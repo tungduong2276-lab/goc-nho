@@ -1640,11 +1640,13 @@ function retryFailedDbWrites(){
   for(const [key,retry] of Array.from(failedDbWrites.entries()))if(typeof retry==="function")trackDbWrite(retry(),key,{retry});
 }
 function put(col,obj,opts={}){
+  if(giftPreview&&col==="gifts")return;
   S[col][obj.id]=obj;if(MODE!=="db")return saveLocal();
   const ref=DB.collection(col).doc(obj.id),data=clone(obj),key=col+"/"+obj.id;
   return trackDbWrite(ref.set(data),key,Object.assign({},opts,{retry:()=>ref.set(data)}));
 }
 function del(col,id){
+  if(giftPreview&&col==="gifts")return;
   delete S[col][id];if(MODE!=="db")return saveLocal();
   const ref=DB.collection(col).doc(id),key=col+"/"+id;
   return trackDbWrite(ref.delete(),key,{retry:()=>ref.delete()});
@@ -1721,6 +1723,7 @@ async function initDb(){
   DB=db;UID=CLOUD.uid;
   const localCopy=clone(S);
   MODE="db";setSync("Đang tải dữ liệu chung...",false);
+  if(giftPreview){S.gifts={};watchGiftEnvelopes(db);}
   let first=0,metaExists=false;const need=COLS.length+1;
   const t=setTimeout(()=>{if(first<need)setSync("Mạng chậm, vẫn đang kết nối...",false);},10000);
   const onFirst=()=>{first++;if(first===need){clearTimeout(t);dbReady=true;refreshDbWriteStatus();migrate(localCopy,metaExists);}};
@@ -1732,8 +1735,9 @@ async function initDb(){
     schedule();
   },()=>setSync("Mất kết nối, đang thử lại...",false));
   COLS.forEach(c=>{let f=true;
-    DB.collection(c).onSnapshot(snap=>{
-      const o={};snap.docs.forEach(d=>{if(d.exists)o[d.id]=clone(d.data());});S[c]=o;
+    const source=giftPreview&&c==="gifts"?DB.collection(c).where("opened","==",true):DB.collection(c);
+    source.onSnapshot(snap=>{
+      const o={};snap.docs.forEach(d=>{if(d.exists){const value=d.data();if(!giftPreview||c!=="gifts"||value.opened===true)o[d.id]=clone(value);}});S[c]=o;
       if(f){f=false;onFirst();}
       schedule();
     },()=>setSync("Mất kết nối, đang thử lại...",false));
@@ -2588,22 +2592,70 @@ const giftReady=g=>dayStart(new Date())>=parseDay(g.key);
 let giftDel=null;
 function openGift(id){
   const g=S.gifts[id];if(!g)return;
+  if(giftPreview&&!g.opened)return;
   if(!g.opened)put("gifts",Object.assign({},g,{opened:true,openedAt:nowIso()}));
+  showGiftContents(g);
+}
+function showGiftContents(g){
   showModal(`${boxSVG.replace('class="box"','class="big-ic"')}<h2>Quà của ${N(g.from)} cho ${esc(g.label)}</h2>
-    ${g.note?`<p class="msg">${esc(g.note)}</p>`:""}${(g.photos||[]).length?`<div class="gallery">${g.photos.map(p=>`<img src="${p}" alt="Ảnh trong hộp quà">`).join("")}</div>`:""}
+    ${g.note?`<p class="msg">${esc(g.note)}</p>`:""}${(g.photos||[]).length?`<div class="gallery">${g.photos.map(p=>`<img src="${esc(p)}" alt="Ảnh trong hộp quà">`).join("")}</div>`:""}
     <p class="quiet">Gói ngày ${fmtDate(g.date)}</p>`,"Cảm ơn ♥",()=>rerender());
+}
+const giftEnvelopeDate=new Intl.DateTimeFormat("vi-VN",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Ho_Chi_Minh"});
+let giftEnvelopes=new Map(),giftEnvelopeState="loading",giftOpening=false;
+function watchGiftEnvelopes(db){
+  db.collection("giftEnvelopes").onSnapshot({includeMetadataChanges:true},snap=>{
+    if(snap.metadata.fromCache)return;
+    giftEnvelopes=new Map(snap.docs.flatMap(doc=>{
+      const g=doc.data(),unlockAt=g.unlockAt?.toMillis?.(),date=g.createdAt?.toDate?.();
+      if(!Number.isFinite(unlockAt)||!date)return [];
+      return [[doc.id,{fromUid:g.fromUid,toUid:g.toUid,unlockAt,date:date.toISOString()}]];
+    }));
+    giftEnvelopeState="ready";schedule();
+  },()=>{giftEnvelopes.clear();giftEnvelopeState="error";schedule();});
+}
+async function openGiftEnvelope(id){
+  const gift=giftEnvelopes.get(id);
+  if(!gift||giftOpening||![gift.fromUid,gift.toUid].includes(UID))return;
+  giftOpening=true;
+  try{
+    const snap=await DB.doc("giftEnvelopes/"+id+"/private/content").get({source:"server"});
+    if(!snap.exists||!giftEnvelopes.has(id)){toast("Không tìm thấy nội dung hộp quà.");return;}
+    const data=snap.data();
+    const photos=(Array.isArray(data.photos)?data.photos:[]).flatMap(photo=>{
+      const encoded=photo?.toBase64?.();
+      return typeof encoded==="string"?["data:image/jpeg;base64,"+encoded]:[];
+    });
+    showGiftContents({from:CLOUD.roles[gift.fromUid],label:"dịp đã hẹn",note:data.note,photos,date:gift.date});
+  }catch(e){
+    toast(e?.code==="permission-denied"?"Hộp quà chưa đến giờ mở hoặc bạn không có quyền đọc.":"Cần kết nối để mở hộp quà. Thử lại nhé.");
+  }finally{giftOpening=false;}
+}
+function giftEnvelopesHTML(){
+  const mine=[...giftEnvelopes].filter(([,g])=>[g.fromUid,g.toUid].includes(UID));
+  const rows=mine.sort((a,b)=>a[1].unlockAt-b[1].unlockAt).map(([id,g])=>
+    '<div class="gift" data-gift-envelope="'+esc(id)+'">'+boxSVG+
+    '<div class="gb"><b>'+(g.fromUid===UID?"Hộp quà bạn đã gửi":"Hộp quà hẹn giờ")+
+    '</b><span>'+esc(giftEnvelopeDate.format(g.unlockAt))+' · Giờ Việt Nam</span></div>'+
+    '<button class="btn btn-main btn-small" data-gopen-envelope="'+esc(id)+'">Mở quà</button></div>').join("");
+  const status=giftEnvelopeState==="error"?"Chưa tải được hộp quà hẹn giờ.":giftEnvelopeState==="loading"?"Đang tải hộp quà hẹn giờ…":"";
+  return '<div id="gift-envelopes" class="gifts">'+rows+'</div>'+
+    (status?'<p class="quiet" role="status">'+status+'</p>':'')+
+    '<p class="quiet">Bản thử trên dữ liệu giả lập · Gói và huỷ quà sẽ được bật sau.</p>';
 }
 function giftsHTML(){
   if(ME===null)return"";
   const all=list("gifts"),mine=all.filter(g=>g.to===ME).sort(byAt("key")),sent=all.filter(g=>g.from===ME).sort(byAt("key"));
   const up=upcoming(8),o=OTHER();
   if(!tempPhotos.gift)tempPhotos.gift=[];
-  const rowMine=g=>{const r=giftReady(g),n=Math.round((parseDay(g.key)-dayStart(new Date()))/864e5);
+  const rowMine=g=>{const r=giftPreview||giftReady(g),n=Math.round((parseDay(g.key)-dayStart(new Date()))/864e5);
     return `<div class="gift${r&&!g.opened?" ready":""}">${boxSVG}<div class="gb"><b>Hộp quà từ ${N(g.from)}</b><span>${esc(g.label)} · ${fmtDate(g.key+"T12:00:00")}${!r?` · còn ${n} ngày`:""}</span></div>
-      ${r?`<button class="btn ${g.opened?"btn-ghost":"btn-main"} btn-small" data-gopen="${g.id}">${g.opened?"Xem lại":"Mở quà"}</button>`:""}</div>`;};
+      ${r?`<button class="btn ${g.opened?"btn-ghost":"btn-main"} btn-small" data-gopen="${esc(g.id)}">${g.opened?"Xem lại":"Mở quà"}</button>`:""}</div>`;};
   const rowSent=g=>`<div class="gift">${boxSVG}<div class="gb"><b>Bạn gói quà cho ${N(o)}</b><span>${esc(g.label)} · ${fmtDate(g.key+"T12:00:00")}${g.opened?" · đã được mở":""}</span>
-      ${!g.opened?`<div class="entry-actions"><button class="linkish" data-gdel="${g.id}">${giftDel===g.id?"Bấm lần nữa để huỷ":"Huỷ quà"}</button></div>`:""}</div></div>`;
-  return `${mine.length||sent.length?`<div class="gifts">${mine.map(rowMine).join("")}${sent.map(rowSent).join("")}</div>`:""}
+      ${giftPreview&&g.opened?`<button class="btn btn-ghost btn-small" data-gopen="${esc(g.id)}">Xem lại</button>`:!g.opened?`<div class="entry-actions"><button class="linkish" data-gdel="${g.id}">${giftDel===g.id?"Bấm lần nữa để huỷ":"Huỷ quà"}</button></div>`:""}</div></div>`;
+  const previous=mine.length||sent.length?`<div class="gifts">${mine.map(rowMine).join("")}${sent.map(rowSent).join("")}</div>`:"";
+  if(giftPreview)return previous+giftEnvelopesHTML();
+  return `${previous}
     <details class="fold" id="giftDet"><summary>Gói một hộp quà cho ${N(o)}</summary>
       <form class="v3form" id="giftForm">
         <p class="quiet" style="margin:0">Hộp quà chỉ mở được đúng ngày đã chọn. Trước đó ${N(o)} chỉ thấy chiếc hộp.</p>
@@ -2615,6 +2667,7 @@ function giftsHTML(){
       </form></details>`;
 }
 function bindGifts(root){
+  root.querySelectorAll("[data-gopen-envelope]").forEach(b=>b.onclick=()=>openGiftEnvelope(b.dataset.gopenEnvelope));
   bindStrip("gift");
   root.querySelectorAll("[data-gopen]").forEach(b=>b.onclick=()=>openGift(b.dataset.gopen));
   root.querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{if(giftDel===b.dataset.gdel){del("gifts",giftDel);giftDel=null;}else giftDel=b.dataset.gdel;rerender();});
@@ -3455,7 +3508,7 @@ Object.keys(BLD).forEach(k=>{BLD_SVG[k]=isoIcon(k);});
 
 
 /* ---------- sao lưu ---------- */
-function backupJSON(){const o={app:"hu-hen-ho",v:1,exported:nowIso(),meta:clone(S.meta),data:{}};COLS.forEach(c=>{o.data[c]=clone(S[c]);});return JSON.stringify(o);}
+function backupJSON(){const o={app:giftPreview?"goc-nho-shared":"hu-hen-ho",v:1,exported:nowIso(),meta:clone(S.meta),data:{}};COLS.forEach(c=>{if(!giftPreview||c!=="gifts")o.data[c]=clone(S[c]);});return JSON.stringify(o);}
 async function saveBackup(){
   const name="hu-hen-ho-sao-luu-"+dkey()+".json",data=backupJSON();
   if(window.HHH_STANDALONE){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"application/json"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);toast("Đã tải bản sao lưu");return;}
@@ -3521,6 +3574,9 @@ const inviteHTML=()=>window.HHH_INVITE?window.HHH_INVITE():"";
 
 /* ================= bản app riêng: Firebase ================= */
 const CLOUD={uid:null,email:"",cid:null,code:"",members:[],roles:{},fs:null};
+const giftPreview=["localhost","127.0.0.1"].includes(location.hostname)
+  && new URLSearchParams(location.search).get("m3GiftPreview")==="1"
+  && window.FIREBASE_CONFIG?.projectId==="demo-goc-nho-safety";
 let cloudResolve;CLOUD.ready=new Promise(r=>{cloudResolve=r;});
 const AUTH_ERR={"auth/invalid-email":"Email chưa đúng định dạng.","auth/email-already-in-use":"Email này đã có tài khoản. Chuyển sang Đăng nhập nhé.","auth/weak-password":"Mật khẩu cần ít nhất 6 ký tự.",
   "auth/invalid-credential":"Email hoặc mật khẩu chưa đúng.","auth/invalid-login-credentials":"Email hoặc mật khẩu chưa đúng.","auth/user-not-found":"Chưa có tài khoản với email này.","auth/wrong-password":"Mật khẩu chưa đúng.",
@@ -3718,7 +3774,9 @@ function cloudInit(){
   if(!window.firebase||!cfg||!cfg.apiKey||/DAN-|PASTE/i.test(cfg.apiKey)){showGate("config");return;}
   showGate("loading");
   try{firebase.initializeApp(cfg);}catch(e){showGate("error",e);return;}
-  const fs=firebase.firestore();try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(e){}
+  const fs=firebase.firestore();
+  if(giftPreview){firebase.auth().useEmulator("http://127.0.0.1:9099",{disableWarnings:true});fs.useEmulator("127.0.0.1",8080);}
+  else try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(e){}
   CLOUD.fs=fs;
   firebase.auth().onAuthStateChanged(async u=>{
     if(!u){if(CLOUD.cid){location.reload();return;}showGate("login");return;}
@@ -4583,7 +4641,7 @@ window.addEventListener("hashchange",()=>{const r=GN_ROOT[location.hash];if(r)gn
 // Only bounded feature ids enter this bridge; it never accepts HTML, selectors or write commands.
 let worldActiveFeature=null;
 window.GOCNHO_WORLD={
- user:()=>({who:ME===null?(lsGet("gocnho.nha3d.me")||"anh"):CH(ME),known:ME!==null,cloud:!!CLOUD.cid&&ME!==null&&!document.body.classList.contains("gated"),names:S.meta.names.slice(),avatars:(S.meta.chars||["anh","em"]).slice(),key:(CLOUD.uid||"local")+"|"+(CLOUD.cid||"")}),
+ user:()=>({who:ME===null?(lsGet("gocnho.nha3d.me")||"anh"):CH(ME),known:ME!==null,cloud:!giftPreview&&!!CLOUD.cid&&ME!==null&&!document.body.classList.contains("gated"),names:S.meta.names.slice(),avatars:(S.meta.chars||["anh","em"]).slice(),key:(CLOUD.uid||"local")+"|"+(CLOUD.cid||"")}),
  select:who=>{if(CLOUD.uid)return;const i=(S.meta.chars||["anh","em"]).indexOf(who);if(i<0)return;ME=i;lsSet("hu-hen-ho-me",String(ME));rerender();},
  open:(f,opts={})=>{worldActiveFeature=f;$("settings").hidden=true;if(f.id==="settings"){$("openSettings").click();return;}if(f.id==="tu-lanh"&&opts.focus&&S.fridge[opts.focus]){if(opts.reply)replyOpen=opts.focus;const at=list("fridge").sort((a,b)=>a.date<b.date?1:-1).findIndex(n=>n.id===opts.focus);if(at>=frShow)frShow=at+1;}location.hash=f.route||f.id;route();rerender();},
  // Two narrow in-scene actions, each running the same handler and write as the app's own button.
