@@ -63,3 +63,21 @@ test("phòng ngủ, bếp và xưởng có bố cục độc lập; vào lại k
   expect((await N(page,"scene"))).toBe("bao-tang");
   expect(errors).toEqual([]);
 });
+
+for(const width of [360,390,430])test("pastel room arches are readable and side doors still work at "+width+"px",async({page})=>{
+  const {errors,firebase}=await openRoom(page,"hanh-lang",width);
+  const portals=await N(page,"portalArt");
+  expect(portals).toHaveLength(6);
+  expect(portals.filter(d=>Math.abs(d.yaw)>1)).toHaveLength(2);
+  for(const d of portals){
+    expect(d.name).toMatch(/^cute-portal-/);
+    expect(d.parts).toBeGreaterThan(8);
+  }
+  await enterNear(page,-5.15,.8,"Phòng ngủ");
+  expect(await N(page,"scene")).toBe("ngu");
+  await N(page,"goScene","hanh-lang");await N(page,"settle");
+  await enterNear(page,5.15,.8,"Phòng hoạt động");
+  expect(await N(page,"scene")).toBe("phong-choi");
+  expect(errors).toEqual([]);
+  expect(firebase).toEqual([]);
+});

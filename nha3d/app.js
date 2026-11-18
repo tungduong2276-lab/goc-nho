@@ -15,6 +15,7 @@ import * as WD from "./world.mjs";
 import * as WM from "./world-models.js";
 import { COZY, ROOM_MOODS } from "./cozy-palette.mjs";
 import { decorateCozyRoom, disposeCozyRoom, COZY_DECOR_NAME } from "./cozy-decor.js";
+import { makeCutePortal, disposeCutePortal } from "./portal-art.js";
 import * as SY from "./sync.mjs";
 import { connectCloud } from "./cloud.js";
 import { applyLife, sanitizeLife, FOOD } from "./life.mjs";
@@ -239,24 +240,15 @@ const portalsG = new THREE.Group(); scene.add(portalsG);
 const lifeProps=lifeYardScene();scene.add(lifeProps);lifeProps.visible=S.scene==="san";
 function buildPortalModels() {
   for (const obj of [...portalsG.children]) {
-    obj.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    disposeCutePortal(obj);
     portalsG.remove(obj);
   }
   if (S.scene === "san") return; // cửa ngoài đã nằm trên mô hình căn nhà
   for (const d of WD.sceneDoors(S.scene)) {
     if (d.to.scene === "san") continue; // thảm cửa chính đã có sẵn
-    const g = new THREE.Group();
-    const accent = [COZY.mint, COZY.pink, COZY.blue][ROOM_MOODS[d.to.scene]?.accent ?? 1];
-    const frame = new THREE.MeshToonMaterial({color: COZY.cream});
-    const tint = new THREE.MeshToonMaterial({color:accent,transparent:true,opacity:.56});
-    const add = (w,h,dep,x,y,z,mat=frame) => {
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,dep),mat);
-      mesh.position.set(x,y,z); mesh.castShadow=true; g.add(mesh);
-    };
-    add(.12,1.52,.15,-.55,.76,0); add(.12,1.52,.15,.55,.76,0);
-    add(1.22,.14,.15,0,1.52,0);
-    add(1.05,1.40,.065,0,.76,0,tint);
-    add(.18,.045,.82,0,.027,.14,new THREE.MeshToonMaterial({color:accent}));
+    const g = makeCutePortal(d);
+    // Side alcove arches face toward the corridor, not through the wall.
+    g.rotation.y=d.from.nx<0?Math.PI/2:d.from.nx>0?-Math.PI/2:0;
     g.position.set(d.from.x,0,d.from.z);
     g.traverse(o => { o.userData.portalId=d.id; });
     portalsG.add(g);
@@ -804,6 +796,7 @@ function itemMenu(it, cx, cy) {
     list.push(["Dán một mẩu giấy", () => useItem(m, it, () => openApp("tu-lanh"))]);
   }
   if (it.type === "bepNau") list.push(["🍳 Nấu ăn cùng nhau",()=>useItem(m,it,()=>lifeUI.open("kitchen"))]);
+  if (it.type === "ruong") list.push(["📸 Cất ảnh và kỷ vật mới",()=>useItem(m,it,()=>openApp("bao-tang"))]);
   if (use.type === "garden") { gardenMenu(it, anchor); return; }
   if (use.type === "enter") list.push([use.label, () => walkThroughDoor()]);
   if (use.type === "cafe") list.push([use.label, () => useItem(m, it, () => orderDrink(m, it))], ["Mời " + NAMES[partner().who] + " một ly", () => useItem(m, it, () => { orderDrink(m, it, true); if (CLOUD.on) { emitEv("invite", { text: "mời bạn một ly ở quầy cà phê ☕" }); return; } setTimeout(() => useItem(partner(), it, () => partner().emote("wave")), 300); })]);
@@ -1016,15 +1009,18 @@ function appMenu(it, use, list) {
     return;
   }
   if(it.type==="tuKinh"&&S.scene==="bao-tang"){
+    list.push(["📸 Thêm ảnh hoặc kỷ vật",()=>useItem(m,it,()=>openApp("bao-tang"))]);
     list.push(["🖼️ Tranh của hai đứa ("+creativeState().artworks.length+")",()=>creativeUI.open("museum")]);
-    list.push(["💌 Kỷ vật cũ",()=>useItem(m,it,()=>openApp("bao-tang"))]);
+    list.push(["💌 Xem và sửa kỷ vật đã lưu",()=>useItem(m,it,()=>openApp("bao-tang"))]);
     return;
   }
   if(it.type==="keSach"&&S.scene==="ngu"){
     list.push(["📚 Đọc truyện chung ("+creativeState().books.length+")",()=>creativeUI.open("books")]);
     list.push(["✍️ Viết tiếp truyện",()=>creativeUI.open("story")]);
+    list.push(["📖 Thêm từ vào từ điển riêng",()=>useItem(m,it,()=>openApp("tu-dien"))]);
     return;
   }
+  if(it.type==="banDo")list.push(["📍 Ghim địa điểm và ảnh mới",()=>useItem(m,it,()=>openApp("ban-do"))]);
   const memory = APPST.memory;
   const labels = { tuKinh: `Bảo tàng (${memory.museum} hiện vật)`, keSach: `Từ điển riêng (${memory.words} từ)`, banDo: `Bản đồ (${memory.places} địa điểm)`, benThuyen: memory.kingdom.pending ? `Ghé Vương quốc (${memory.kingdom.pending} đề xuất chờ bạn)` : `Ghé ${memory.kingdom.name}`, cayHoa: "Xem và gói quà cho nhau" };
   if (labels[it.type]) {
@@ -1773,6 +1769,7 @@ window.__NHA3D__ = {
   appDeco: uid => { let n = 0; views.get(uid)?.root.traverse(o => { if (o.userData.bob) n++; }); return n; },
   info: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, ppm: cam.ppm }),
   cozy: () => ({ scene: S.scene, wall: S.layout.wall, floor: S.layout.floor, decorParts: shell?.getObjectByName(COZY_DECOR_NAME)?.children.length || 0 }),
+  portalArt: () => portalsG.children.map(g=>({name:g.name,parts:g.children.length,yaw:g.rotation.y,x:g.position.x,z:g.position.z})),
   pauseAI(on) { AI.timer = on ? 1e9 : 1; cat.wait = on ? 1e9 : 1; },
   // Tua nhanh logic (không vẽ) để test không phụ thuộc tốc độ GPU của máy chạy CI.
   tick(sec) { for (let t = 0; t < sec; t += 1 / 30) step(1 / 30); },

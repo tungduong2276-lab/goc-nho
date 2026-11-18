@@ -174,3 +174,63 @@ test('the date jar is played on the island: full slip card, play, open-date guid
  await page.evaluate(()=>{delete S.history.hx;rerender();});
  expect(errors).toEqual([]);
 });
+
+for(const width of [360,390,430])test('museum, photos, map, dictionary and promises are editable from 3D world at '+width+'px',async({page})=>{
+  const {frame,errors,apiRequests}=await open(page,width);
+  const cases=[
+    {id:'bao-tang',type:'museum',primary:'name',fields:{name:'Hộp vé lưu niệm',note:'Chúng mình giữ vé này từ ngày đầu tiên'}},
+    {id:'ban-do',type:'places',primary:'nick',fields:{real:'Quảng trường Lam Sơn',nick:'Góc hẹn đầu tiên',note:'Cùng nhau ngắm hoàng hôn'}},
+    {id:'tu-dien',type:'dict',primary:'w',fields:{w:'Mây nhỏ',m:'Lời gọi bí mật của hai đứa'}},
+    {id:'bo-luat',type:'rules',primary:'rule',fields:{rule:'Mỗi tuần cùng nấu một món mới',note:'Lời hứa chung'}}
+  ];
+  for(const item of cases)await test.step(item.type,async()=>{
+    await frame.evaluate(id=>parent.postMessage({type:'gocnho:open',id},location.origin),item.id);
+    await expect(page.locator('#world-surface-title')).toBeVisible();
+    const root=page.locator('#tab-'+item.type);
+    const add=root.locator('[data-tnew="'+item.type+'"]');
+    await expect(add).toBeVisible();
+    // The world host can rerender during async state snapshots; wait for a stable button rectangle.
+    await expect.poll(async()=>{const b=await add.boundingBox();return b?.width||0;},{timeout:15000}).toBeGreaterThan(44);
+    await add.click();
+    const form=root.locator('form[data-type="'+item.type+'"]');
+    await expect(form).toBeVisible();
+    for(const [key,value]of Object.entries(item.fields))await page.locator('#tab-'+item.type+'-'+key).fill(value);
+    if(item.type==='museum'){
+      // The upload is on this form; photos must not be a display-only ornament.
+      const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAJ8V9RUAAAAASUVORK5CYII=','base64');
+      await form.locator('input[data-addph="tab-museum"]').setInputFiles({name:'memory.png',mimeType:'image/png',buffer:png});
+      await expect(form.locator('#tab-museum-photos img')).toHaveCount(1);
+    }
+    await form.locator('button.btn-main').click();
+    await expect.poll(()=>page.evaluate(({type,key,value})=>Object.values(S[type]).some(e=>e[key]===value),{type:item.type,key:item.primary,value:item.fields[item.primary]})).toBe(true);
+    if(item.type==='museum'){
+      await expect(root.locator('.exhibit img')).toHaveCount(1);
+      await page.evaluate(()=>document.documentElement.dataset.theme='dark');
+      const c=await root.locator('.exhibit .note').evaluate(el=>getComputedStyle(el).color);
+      expect(c).toBe('rgb(234, 244, 255)'); // pale caption on dark navy, never burgundy.
+      await page.evaluate(()=>document.documentElement.dataset.theme='light');
+    }
+    await page.getByRole('button',{name:'Đóng đồ dùng, về đảo'}).click();
+    await frame.evaluate(id=>parent.postMessage({type:'gocnho:open',id},location.origin),item.id);
+    await expect(root.locator('[data-tnew="'+item.type+'"]')).toBeVisible();
+    await expect(root).toContainText(item.fields[item.primary]);
+    await page.getByRole('button',{name:'Đóng đồ dùng, về đảo'}).click();
+  });
+  await page.reload();
+  await expect(page.locator('#world-home-loading')).toBeHidden({timeout:90000});
+  const saved=await page.evaluate(()=>({museum:Object.values(S.museum).some(x=>x.name==='Hộp vé lưu niệm'&&x.photos?.length),places:Object.values(S.places).some(x=>x.nick==='Góc hẹn đầu tiên')}));
+  expect(saved.museum).toBeTruthy();expect(saved.places).toBe(true);
+  expect(errors).toEqual([]);expect(apiRequests).toEqual([]);
+});
+
+test('date journal offers an honest path to add a new photo memory',async({page})=>{
+ const {frame,errors}=await open(page,390);
+ await frame.evaluate(()=>parent.postMessage({type:'gocnho:open',id:'nhat-ky'},location.origin));
+ await expect(page.locator('#world-surface-title')).toHaveText('Sổ những buổi hẹn');
+ const link=page.getByRole('link',{name:'Ghi kỷ niệm và thêm ảnh vào Bảo tàng'});
+ await expect(link).toBeVisible();
+ await link.click();
+ await expect(page.locator('#world-surface-title')).toHaveText('Kỷ vật của hai đứa');
+ await expect(page.locator('#tab-museum [data-tnew="museum"]')).toBeVisible();
+ expect(errors).toEqual([]);
+});

@@ -81,3 +81,21 @@ test("Các cửa mặc định tới được bằng A*, kể cả nhà cũ và 
     }
   }
 });
+
+test("Hành lang đáng yêu chia cửa thành ba vòm sau và hai vòm bên, không mất đường đi",()=>{
+  const entries=WD.sceneDoors("hanh-lang").filter(d=>d.to.scene!=="nha");
+  assert.equal(entries.length,5);
+  const back=entries.filter(d=>d.from.nz===-1);
+  const left=entries.filter(d=>d.from.nx===-1);
+  const right=entries.filter(d=>d.from.nx===1);
+  assert.equal(back.length,3,"ba cửa phía sau hành lang");
+  assert.equal(left.length,1,"một cửa bên trái");
+  assert.equal(right.length,1,"một cửa bên phải");
+  const room=ROOM_PRESETS["hanh-lang"],G=E.blockGrid(room.defaultLayout,room);
+  for(const d of entries){
+    const start=WD.spawnFrom("hanh-lang","nha");
+    assert.equal(E.circleBlocked(G,d.from.x,d.from.z,E.AVATAR_R,room),false,d.id);
+    assert.ok(E.worldPath(G,start.x,start.z,d.from.x,d.from.z,room)?.length>=2,d.id);
+    assert.equal(WD.crossedPortal("hanh-lang",d.from.x,d.from.z,d.from.nx,d.from.nz)?.to.scene,d.to.scene,d.id);
+  }
+});
