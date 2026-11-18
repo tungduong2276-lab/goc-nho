@@ -1769,6 +1769,7 @@ window.__NHA3D__ = {
   appDeco: uid => { let n = 0; views.get(uid)?.root.traverse(o => { if (o.userData.bob) n++; }); return n; },
   info: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, ppm: cam.ppm }),
   cozy: () => ({ scene: S.scene, wall: S.layout.wall, floor: S.layout.floor, decorParts: shell?.getObjectByName(COZY_DECOR_NAME)?.children.length || 0 }),
+  portalArt: () => portalsG.children.map(g=>({name:g.name,parts:g.children.length,yaw:g.rotation.y,x:g.position.x,z:g.position.z})),
   pauseAI(on) { AI.timer = on ? 1e9 : 1; cat.wait = on ? 1e9 : 1; },
   // Tua nhanh logic (không vẽ) để test không phụ thuộc tốc độ GPU của máy chạy CI.
   tick(sec) { for (let t = 0; t < sec; t += 1 / 30) step(1 / 30); },
