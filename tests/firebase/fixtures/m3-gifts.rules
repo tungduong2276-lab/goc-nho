@@ -69,10 +69,11 @@ service cloud.firestore {
           return /databases/$(database)/documents/couples/$(cid)/giftEnvelopes/$(giftId)/private/content;
         }
         function validEnvelope(data) {
-          return data.keys().hasOnly(['fromUid', 'toUid', 'createdAt', 'unlockAt'])
+          return data.keys().hasOnly(['fromUid', 'toUid', 'createdAt', 'unlockAt', 'label'])
             && data.fromUid == request.auth.uid
             && data.toUid is string && data.toUid in house() && data.toUid != data.fromUid
-            && data.createdAt == request.time && data.unlockAt is timestamp;
+            && data.createdAt == request.time && data.unlockAt is timestamp
+            && data.get('label', '') is string && data.get('label', '').size() <= 100;
         }
         function photoAt(photos, index) {
           return photos.size() <= index || (photos[index] is bytes && photos[index].size() > 0
@@ -86,9 +87,18 @@ service cloud.firestore {
             && photoAt(data.photos, 0) && photoAt(data.photos, 1) && photoAt(data.photos, 2);
         }
 
+        function senderMayCancel(data) {
+          return data.fromUid == request.auth.uid
+            && request.time < data.unlockAt && !('openedAt' in data);
+        }
         allow get, list: if member();
         allow create: if member() && validEnvelope(request.resource.data)
           && !exists(payloadPath()) && existsAfter(payloadPath());
+        allow delete: if member() && senderMayCancel(resource.data) && !existsAfter(payloadPath());
+        allow update: if member() && resource.data.toUid == request.auth.uid
+          && request.time >= resource.data.unlockAt && !('openedAt' in resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['openedAt'])
+          && request.resource.data.openedAt == request.time;
 
         match /private/content {
           function canRead() {
@@ -100,6 +110,8 @@ service cloud.firestore {
           allow create: if member() && validPayload(request.resource.data)
             && !exists(envelopePath()) && existsAfter(envelopePath())
             && validEnvelope(getAfter(envelopePath()).data);
+          allow delete: if member() && senderMayCancel(get(envelopePath()).data)
+            && !existsAfter(envelopePath());
         }
       }
 
