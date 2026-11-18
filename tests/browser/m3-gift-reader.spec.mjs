@@ -43,6 +43,10 @@ async function openHost(browser, who, uid) {
     await context.route("**/*", async route => {
       const url = new URL(route.request().url());
       if (url.hostname === "127.0.0.1" && ["4173", "8080", "9099"].includes(url.port)) {
+        if (url.pathname === "/index.html" && url.searchParams.get("m3GiftPreview") === "1") {
+          // The default test server disables cloud startup for all other suites.
+          return route.fulfill({ contentType: "text/html; charset=utf-8", body: readFileSync("index.html") });
+        }
         if (url.pathname === "/firebase-config.js") {
           return route.fulfill({ contentType: "text/javascript", body: "window.FIREBASE_CONFIG=" + JSON.stringify(config) });
         }
@@ -64,16 +68,18 @@ async function openHost(browser, who, uid) {
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.goto("/index.html?m3GiftPreview=1");
-    await page.waitForFunction(() => typeof CLOUD !== "undefined" && CLOUD.fs);
-    await page.evaluate(({ email, password }) => firebase.auth().signInWithEmailAndPassword(email, password)
-      .then(credential => credential.user.uid), { email: email(who), password });
+    await page.waitForFunction(() => typeof CLOUD !== "undefined" && !!CLOUD.fs, null, { timeout: 10000 });
+    await page.evaluate(({ email, password }) => Promise.race([
+      firebase.auth().signInWithEmailAndPassword(email, password),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Auth Emulator sign-in timed out")), 15000)),
+    ]).then(credential => credential.user.uid), { email: email(who), password });
     await expect.poll(() => page.evaluate(() => ({ uid: CLOUD.uid, ready: dbReady }))).toEqual({ uid, ready: true });
     await page.evaluate(() => { location.hash = "gifts"; });
     await expect(page.locator("#world-surface")).toBeVisible();
     await expect(page.locator("#gift-envelopes [data-gift-envelope]")).toHaveCount(2);
     return { context, page, errors };
   } catch (error) {
-    await context.close();
+    await context.close().catch(() => {});
     throw error;
   }
 }
