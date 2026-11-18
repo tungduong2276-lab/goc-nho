@@ -76,6 +76,7 @@ async function openHost(browser, who, uid) {
     await expect.poll(() => page.evaluate(() => ({ uid: CLOUD.uid, ready: dbReady }))).toEqual({ uid, ready: true });
     await page.evaluate(() => { location.hash = "gifts"; });
     await expect(page.locator("#world-surface")).toBeVisible();
+    await expect(page.locator("#world-frame")).toHaveAttribute("src", /[?&]cloud=0(?:&|$)/);
     await expect(page.locator("#gift-envelopes [data-gift-envelope]")).toHaveCount(2);
     return { context, page, errors };
   } catch (error) {
