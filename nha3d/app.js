@@ -15,6 +15,7 @@ import * as WD from "./world.mjs";
 import * as WM from "./world-models.js";
 import { COZY, ROOM_MOODS } from "./cozy-palette.mjs";
 import { decorateCozyRoom, disposeCozyRoom, COZY_DECOR_NAME } from "./cozy-decor.js";
+import { makeCutePortal, disposeCutePortal } from "./portal-art.js";
 import * as SY from "./sync.mjs";
 import { connectCloud } from "./cloud.js";
 import { applyLife, sanitizeLife, FOOD } from "./life.mjs";
@@ -239,24 +240,13 @@ const portalsG = new THREE.Group(); scene.add(portalsG);
 const lifeProps=lifeYardScene();scene.add(lifeProps);lifeProps.visible=S.scene==="san";
 function buildPortalModels() {
   for (const obj of [...portalsG.children]) {
-    obj.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    disposeCutePortal(obj);
     portalsG.remove(obj);
   }
   if (S.scene === "san") return; // cửa ngoài đã nằm trên mô hình căn nhà
   for (const d of WD.sceneDoors(S.scene)) {
     if (d.to.scene === "san") continue; // thảm cửa chính đã có sẵn
-    const g = new THREE.Group();
-    const accent = [COZY.mint, COZY.pink, COZY.blue][ROOM_MOODS[d.to.scene]?.accent ?? 1];
-    const frame = new THREE.MeshToonMaterial({color: COZY.cream});
-    const tint = new THREE.MeshToonMaterial({color:accent,transparent:true,opacity:.56});
-    const add = (w,h,dep,x,y,z,mat=frame) => {
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,dep),mat);
-      mesh.position.set(x,y,z); mesh.castShadow=true; g.add(mesh);
-    };
-    add(.12,1.52,.15,-.55,.76,0); add(.12,1.52,.15,.55,.76,0);
-    add(1.22,.14,.15,0,1.52,0);
-    add(1.05,1.40,.065,0,.76,0,tint);
-    add(.18,.045,.82,0,.027,.14,new THREE.MeshToonMaterial({color:accent}));
+    const g = makeCutePortal(d);
     g.position.set(d.from.x,0,d.from.z);
     g.traverse(o => { o.userData.portalId=d.id; });
     portalsG.add(g);
