@@ -1,6 +1,7 @@
 import { after, before, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { stagingRules } from "../../scripts/build-m3-gift-staging.mjs";
 import { assertFails, initializeTestEnvironment } from "@firebase/rules-unit-testing";
 import {
   Bytes, collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, Timestamp, updateDoc, writeBatch,
@@ -23,12 +24,14 @@ const metadata = delay => ({
 });
 
 let env, sender, recipient, other, anonymous;
+const stagingMode = process.env.M3_GIFT_STAGING_RULES === "1";
 before(async () => {
+  const candidate = readFileSync(new URL("./fixtures/m3-gifts.rules", import.meta.url), "utf8");
   env = await initializeTestEnvironment({
     projectId: "demo-goc-nho-safety",
     firestore: {
       host: endpoint[1], port: Number(endpoint[2]),
-      rules: readFileSync(new URL("./fixtures/m3-gifts.rules", import.meta.url), "utf8"),
+      rules: stagingMode ? stagingRules(candidate, [alice, bob]) : candidate,
     },
   });
   sender = env.authenticatedContext(alice).firestore();
@@ -136,4 +139,10 @@ test("only the recipient can record opening at or after release, and the first s
   assert.ok(opened instanceof Timestamp);
   await assertFails(updateDoc(envelope(recipient, "ready"), { openedAt: serverTimestamp() }));
   assert.ok(opened.isEqual((await getDoc(envelope(sender, "ready"))).data().openedAt));
+});
+
+test("staging allows account-linked documents only for the two designated testers", { skip: !stagingMode }, async () => {
+  await setDoc(doc(sender, "users", alice), { couple: cid });
+  await assertFails(setDoc(doc(other, "users", outsider), { couple: cid }));
+  await assertFails(getDoc(doc(other, "users", outsider)));
 });
