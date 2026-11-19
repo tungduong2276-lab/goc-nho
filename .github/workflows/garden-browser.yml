@@ -30,6 +30,23 @@ permissions:
   contents: write
 
 jobs:
+  real-partner-browser:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/real-partner-only-20261118'
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npx playwright install chromium
+      - run: npx playwright test tests/browser/nha3d.spec.mjs --grep "chơi một mình|W2:" --workers=1
+
   # Independent fast security gate. No browser/apt packages, no cloud project.
   # Runs only for this Draft laboratory branch so a leaked Firestore SDK stream
   # is visible without waiting for the full Playwright suite to complete.
