@@ -1,27 +1,15 @@
-import { ART_COLORS, MAX_STROKES, cleanStrokes, canPublishPainting, canPublishBook } from "./creative.mjs";
+import { ART_COLORS, MAX_STROKES, cleanStrokes, canPublishPainting, canPublishBook, ERASER_WIDTH, drawPainting } from "./creative.mjs";
 
 const freshId=(prefix)=>prefix+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const names={anh:"Anh",em:"Em"};
 const text=(tag,content,cls="")=>{const e=document.createElement(tag);e.textContent=content;if(cls)e.className=cls;return e;};
-function drawStrokes(canvas,all){
-  const ctx=canvas.getContext("2d");if(!ctx)return;
-  const w=canvas.width,h=canvas.height;ctx.fillStyle="#FFFEFA";ctx.fillRect(0,0,w,h);
-  for(const stroke of all){
-    const points=stroke.points||[];if(!points.length)continue;
-    ctx.strokeStyle=stroke.color;ctx.fillStyle=stroke.color;ctx.lineWidth=stroke.width;
-    ctx.lineJoin="round";ctx.lineCap="round";ctx.beginPath();
-    points.forEach(({x,y},i)=>{if(i)ctx.lineTo(x*w,y*h);else ctx.moveTo(x*w,y*h);});
-    if(points.length===1){ctx.arc(points[0].x*w,points[0].y*h,stroke.width/2,0,Math.PI*2);ctx.fill();}
-    else ctx.stroke();
-  }
-}
 const ordered=strokes=>[...strokes].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id));
 
 export function createCreativeUI({getState,work,who,online,connected=online}){
   const el=document.createElement("section");el.id="creative-sheet";el.className="sheet creative-sheet";
   el.setAttribute("aria-label","Xưởng sáng tác của hai đứa");el.setAttribute("role","dialog");el.hidden=true;document.body.append(el);
   let zone="paint",note="",busy=false,paintSession=null,paintWho=null,ownStrokes=[],liveStroke=null,canvas=null;
-  let selected=ART_COLORS[0],width=5,dragging=false,lastSend=0,sendTimer=null,writeQueue=Promise.resolve();
+  let selected=ART_COLORS[0],width=5,erase=false,dragging=false,lastSend=0,sendTimer=null,writeQueue=Promise.resolve();
   let storyTextarea=null,otherDraft=null,linesBox=null,seenStory=null;
   const modes={paint:"🎨 Vẽ cùng nhau",story:"✍️ Viết truyện chung",museum:"🖼️ Bảo tàng tranh",books:"📚 Kệ sách phòng ngủ"};
   const button=(label,handler,disabled=false)=>{
@@ -48,7 +36,7 @@ export function createCreativeUI({getState,work,who,online,connected=online}){
     const s=getState(),p=s.painting;
     if(!p||p.id!==paintSession)return;
     const partnerStrokes=p[who()==="anh"?"em":"anh"]||[];
-    drawStrokes(canvas,ordered([...partnerStrokes,...ownStrokes,...(liveStroke?[liveStroke]:[])]));
+    drawPainting(canvas,ordered([...partnerStrokes,...ownStrokes,...(liveStroke?[liveStroke]:[])]));
     const pub=el.querySelector("#creative-publish");
     if(pub)pub.disabled=!canPublishPainting(who()==="anh"?ownStrokes:p.anh,who()==="em"?ownStrokes:p.em);
     const status=el.querySelector("#creative-partner");
@@ -56,7 +44,7 @@ export function createCreativeUI({getState,work,who,online,connected=online}){
   }
   const makeCanvas=(strokes,isPreview=false)=>{
     const c=document.createElement("canvas");c.width=480;c.height=320;c.className="creative-canvas";c.style.touchAction=isPreview?"auto":"none";
-    drawStrokes(c,strokes);return c;
+    drawPainting(c,strokes);return c;
   };
   function render(){
     if(el.hidden)return;
@@ -94,22 +82,25 @@ export function createCreativeUI({getState,work,who,online,connected=online}){
         }
         canvas=makeCanvas(ordered([...p[other],...ownStrokes]));canvas.setAttribute("aria-label","Tranh chung của Anh và Em");panel.append(canvas);
         canvas.addEventListener("pointerdown",e=>{
+          if(dragging)return;
           if(ownStrokes.length>=MAX_STROKES){note="Mỗi người đã đủ 80 nét, xuất bản để vẽ bức mới nhé.";render();return;}
           e.preventDefault();canvas.setPointerCapture(e.pointerId);dragging=true;
           const r=canvas.getBoundingClientRect(),pt={x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))};
-          liveStroke={id:freshId("s"),by:me,at:Date.now(),color:selected,width,points:[pt]};
+          const latest=getState().painting;
+          const at=Math.max(Date.now(),...ownStrokes.map(s=>s.at+1),...(latest?.[other]||[]).map(s=>s.at+1));
+          liveStroke={id:freshId("s"),by:me,at,color:selected,width:erase?ERASER_WIDTH:width,erase,points:[pt]};
           repaint();schedulePaint();
         });
         canvas.addEventListener("pointermove",e=>{
-          if(!dragging||!liveStroke)return;e.preventDefault();
+          if(!dragging||!liveStroke||!canvas.hasPointerCapture(e.pointerId))return;e.preventDefault();
           const r=canvas.getBoundingClientRect(),pt={x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))};
           const old=liveStroke.points.at(-1);
           if(Math.hypot((pt.x-old.x)*480,(pt.y-old.y)*320)>=3&&liveStroke.points.length<90){
             liveStroke.points.push(pt);repaint();schedulePaint();
           }
         });
-        const end=()=>{
-          if(!dragging)return;dragging=false;if(liveStroke){
+        const end=e=>{
+          if(!dragging||!canvas.hasPointerCapture(e.pointerId))return;dragging=false;if(liveStroke){
             ownStrokes.push(liveStroke);liveStroke=null;schedulePaint(true);repaint();
           }
         };
@@ -118,13 +109,18 @@ export function createCreativeUI({getState,work,who,online,connected=online}){
         for(const color of ART_COLORS){
           const b=document.createElement("button");b.type="button";b.className="creative-swatch";
           b.style.backgroundColor=color;b.title="Chọn màu "+color;b.setAttribute("aria-label","Màu "+color);
-          b.setAttribute("aria-pressed",String(color===selected));
-          b.onclick=()=>{selected=color;render();};tools.append(b);
+          b.setAttribute("aria-pressed",String(!erase&&color===selected));
+          b.onclick=()=>{selected=color;erase=false;render();};tools.append(b);
         }
         for(const w of [2,5,9]){
           const b=document.createElement("button");b.type="button";b.className="creative-width";b.textContent=w===2?"Nét mảnh":w===5?"Nét vừa":"Nét đậm";
           b.setAttribute("aria-pressed",String(w===width));b.onclick=()=>{width=w;render();};tools.append(b);
-        }panel.append(tools);
+        }
+        const eraser=document.createElement("button");
+        eraser.type="button";eraser.className="creative-width";eraser.textContent="Tẩy";
+        eraser.setAttribute("aria-pressed",String(erase));
+        eraser.onclick=()=>{erase=!erase;render();};
+        tools.append(eraser);panel.append(tools);
         const partnerHint=text("p","💞 Người kia đang thấy những nét được đồng bộ gần như trực tiếp","creative-hint");
         partnerHint.id="creative-partner";panel.append(partnerHint);
         const both=canPublishPainting(me==="anh"?ownStrokes:p.anh,me==="em"?ownStrokes:p.em);

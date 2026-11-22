@@ -1,5 +1,9 @@
 # GÓC NHỎ — MASTER ROADMAP & AI HANDOFF
 
+## Xưởng vẽ — tẩy và giữ đủ nét trong bảo tàng (2026-11-22)
+
+Nhánh `fix/creative-eraser` lưu thao tác tẩy cùng nét vẽ trên mặt giấy chung. Bảng vẽ, giá vẽ và tranh trong bảo tàng dùng cùng cách hiển thị. Khi đọc tranh đã lưu, giới hạn 80 nét áp dụng riêng cho từng người. Ca Node bao phủ tranh 160 nét và ca Chromium kiểm tra một điểm ảnh được tẩy trên bảng vẽ lẫn tranh đã xuất bản. Vẫn cần thử cả hai người kéo nét đồng thời trên staging.
+
 ## ★ Đảo 3D chỉ hiện người chơi thật (2026-11-18)
 
 Khi chơi một mình, đảo chỉ giữ nhân vật đang điều khiển và thú cưng. Người chơi kia hiện khi dữ liệu hiện diện còn mới và ở cùng cảnh. Các thao tác ngồi, uống và tưới cây có thể làm một mình. Lời mời chỉ hiện với người kia đang ở cùng cảnh. [Kiểm tra Chromium đạt 3/3](https://github.com/tungduong2276-lab/goc-nho/actions/runs/44282457391/job/134726417528) trên `5c75aaf`: chơi một mình, chăm vườn một mình, và người kia hiện/ẩn theo cảnh và tín hiệu còn hạn. Ca hiện diện dùng bộ nối giả. Phần thử nghiệm nhiều phòng riêng vẫn có chế độ mô phỏng bật thủ công.

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ART_COLORS, cleanStroke, cleanStrokes, combinePainting, canPublishPainting, canPublishBook,
+import { ART_COLORS, ERASER_WIDTH, MAX_STROKES, cleanStroke, cleanStrokes, combinePainting, canPublishPainting, canPublishBook,
   readCreativeDocs, creativeState, artId, bookId } from "../../nha3d/creative.mjs";
 import { localCreative } from "../../nha3d/creative-local.mjs";
 
@@ -64,4 +64,21 @@ test("bản ghi hoàn thành giữ nguyên khi gỡ phiên và snapshot đến s
   assert.equal(creativeState(docs).books.length,1);
   const onlyArt=readCreativeDocs([{id:bookId("b1"),data:null},{id:artId("a1"),data:docs.get(artId("a1"))}]);
   assert.equal(creativeState(onlyArt).books.length,0);
+});
+
+test("bảo tàng đọc đủ nét của hai người và giữ thao tác tẩy sau khi xuất bản",()=>{
+  const local=localCreative();
+  local.startCreative("paint","Bức tranh đủ nét","anh","p160",100);
+  const anh=Array.from({length:MAX_STROKES},(_,index)=>stroke("anh",index+101));
+  const em=Array.from({length:MAX_STROKES},(_,index)=>stroke("em",index+201));
+  em[em.length-1]={...em.at(-1),erase:true};
+  assert.equal(canPublishPainting(anh,[em.at(-1)]),false);
+  local.savePaint("p160","anh",anh);
+  local.savePaint("p160","em",em);
+  assert.equal(local.publishPainting("p160",300).ok,true);
+  const painting=creativeState(local.docs).artworks[0];
+  assert.equal(painting.strokes.length,MAX_STROKES*2);
+  assert.equal(painting.strokes[0].id,anh[0].id);
+  assert.equal(painting.strokes.at(-1).erase,true);
+  assert.equal(painting.strokes.at(-1).width,ERASER_WIDTH);
 });
