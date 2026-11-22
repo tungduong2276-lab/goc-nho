@@ -11,6 +11,7 @@ export function createCreativeUI({getState,work,who,online,connected=online}){
   let zone="paint",note="",busy=false,paintSession=null,paintWho=null,ownStrokes=[],liveStroke=null,canvas=null;
   let selected=ART_COLORS[0],width=5,erase=false,dragging=false,lastSend=0,sendTimer=null,writeQueue=Promise.resolve();
   let storyTextarea=null,otherDraft=null,linesBox=null,seenStory=null;
+  const draftTitles={paint:"",story:""};
   const modes={paint:"🎨 Vẽ cùng nhau",story:"✍️ Viết truyện chung",museum:"🖼️ Bảo tàng tranh",books:"📚 Kệ sách phòng ngủ"};
   const button=(label,handler,disabled=false)=>{
     const b=document.createElement("button");b.type="button";b.textContent=label;b.className="creative-btn";b.disabled=disabled||busy;
@@ -73,7 +74,13 @@ export function createCreativeUI({getState,work,who,online,connected=online}){
         section("Bắt đầu một bức tranh chung");
         line("Chỉ có một mặt giấy. Hai đứa nhìn thấy những nét đang vẽ, không giấu nửa tranh nữa.");
         const input=document.createElement("input");input.className="creative-input";input.maxLength=64;input.placeholder="Đặt tên tranh: Ngôi nhà trong mơ";input.id="creative-new-art";panel.append(input);
-        panel.append(button("💗 Mở giá vẽ chung",()=>work("startPaint",{id:freshId("p"),title:input.value||"Tranh của hai đứa"})));
+        input.value=draftTitles.paint;
+        input.oninput=()=>{draftTitles.paint=input.value;};
+        panel.append(button("💗 Mở giá vẽ chung",async()=>{
+          const result=await work("startPaint",{id:freshId("p"),title:draftTitles.paint||"Tranh của hai đứa"});
+          if(result?.ok)draftTitles.paint="";
+          return result;
+        }));
       }else{
         section(p.title);
         line("Màu từ hai người cùng nằm trên một khung vẽ. Dùng ngón tay hoặc chuột để vẽ.");
@@ -137,7 +144,13 @@ export function createCreativeUI({getState,work,who,online,connected=online}){
         section("Tạo câu chuyện hai người cùng viết");
         line("Cả hai có thể gõ bản nháp đồng thời và thấy chữ của nhau. Không phải chờ đúng lượt.");
         const input=document.createElement("input");input.className="creative-input";input.maxLength=64;input.id="creative-new-book";input.placeholder="Tên truyện: Chúng mình và khu rừng bí mật";panel.append(input);
-        panel.append(button("📖 Mở cuốn truyện chung",()=>work("startStory",{id:freshId("b"),title:input.value||"Truyện của hai đứa"})));
+        input.value=draftTitles.story;
+        input.oninput=()=>{draftTitles.story=input.value;};
+        panel.append(button("📖 Mở cuốn truyện chung",async()=>{
+          const result=await work("startStory",{id:freshId("b"),title:draftTitles.story||"Truyện của hai đứa"});
+          if(result?.ok)draftTitles.story="";
+          return result;
+        }));
       }else{
         section(p.title);
         const list=document.createElement("div");list.className="creative-lines";list.id="creative-lines";panel.append(list);

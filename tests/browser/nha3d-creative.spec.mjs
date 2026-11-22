@@ -28,10 +28,17 @@ test("hai người vẽ trực tiếp một canvas, tranh vào bảo tàng và t
     await page.mouse.up();
   };
 
+  const enterText=(selector,value)=>page.locator(selector).evaluate((field,value)=>{
+    field.value=value;
+    field.dispatchEvent(new Event("input",{bubbles:true}));
+  },value);
+
   await N("openCreative","paint");
   await expect(page.locator("#creative-sheet")).toBeVisible();
   await expect(page.locator(".creative-sync")).toContainText("Bản chơi trên máy này");
-  await page.locator("#creative-new-art").fill("Ngôi nhà ba màu");
+  await enterText("#creative-new-art","Ngôi nhà ba màu");
+  await page.evaluate(()=>window.dispatchEvent(new Event("online")));
+  await expect(page.locator("#creative-new-art")).toHaveValue("Ngôi nhà ba màu");
   await page.getByRole("button",{name:/Mở giá vẽ chung/}).click();
   expect(await N("creativeEasel")).toBe(1);
   await paint();
@@ -65,9 +72,9 @@ test("hai người vẽ trực tiếp một canvas, tranh vào bảo tàng và t
 
   await N("goScene","xuong");await N("settle");
   await N("openCreative","story");
-  await page.locator("#creative-new-book").fill("Miu và căn nhà bé xíu");
+  await enterText("#creative-new-book","Miu và căn nhà bé xíu");
   await page.getByRole("button",{name:/Mở cuốn truyện chung/}).click();
-  await page.locator("#creative-story-draft").fill("Miu mở cửa bước vào một khu vườn.");
+  await enterText("#creative-story-draft","Miu mở cửa bước vào một khu vườn.");
   await expect.poll(async()=>(await N("creative")).story?.drafts.em).toContain("Miu mở cửa");
   await page.getByRole("button",{name:/Ghi đoạn văn vào truyện/}).click();
   await expect.poll(async()=>(await N("creative")).story?.lines.length).toBe(1);
@@ -75,7 +82,7 @@ test("hai người vẽ trực tiếp một canvas, tranh vào bảo tàng và t
 
   await page.locator("#btn-me").click();
   await N("openCreative","story");
-  await page.locator("#creative-story-draft").fill("Anh đợi Miu bên hồ cá xanh.");
+  await enterText("#creative-story-draft","Anh đợi Miu bên hồ cá xanh.");
   await page.getByRole("button",{name:/Ghi đoạn văn vào truyện/}).click();
   await expect(page.locator("#creative-publish-book")).toBeEnabled();
   await page.locator("#creative-publish-book").click();
