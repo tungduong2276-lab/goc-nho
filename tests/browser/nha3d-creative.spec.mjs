@@ -40,6 +40,7 @@ test("hai người vẽ trực tiếp một canvas, tranh vào bảo tàng và t
   const pixel=locator=>locator.evaluate(c=>Array.from(c.getContext("2d").getImageData(96,96,1,1).data));
   await expect.poll(()=>pixel(canvas)).toEqual([29,43,79,255]);
   await page.getByRole("button",{name:"Tẩy",exact:true}).click();
+  await canvas.scrollIntoViewIfNeeded();
   const bounds=await canvas.boundingBox();
   await page.mouse.click(bounds.x+bounds.width*.2,bounds.y+bounds.height*.3);
   await expect.poll(()=>pixel(canvas)).toEqual([255,254,250,255]);
