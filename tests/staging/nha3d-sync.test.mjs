@@ -57,7 +57,7 @@ test("vị trí người kia: hợp lệ và còn mới; ghi tiết kiệm", () 
   assert.equal(SY.readPresence(p, 1000 + 10e3).fresh, true);
   assert.equal(SY.readPresence(p, 1000 + SY.PRESENCE_STALE_MS + 1).fresh, false);
   assert.equal(SY.readPresence({ ...p, scene: "mars" }), null);
-  const base = { scene: "san", x: 0, z: 0, mode: "idle", seat: null, ev: null, tx: null, tz: null };
+  const base = { scene: "san", x: 0, z: 0, mode: "idle", seat: null, ev: null, tx: null, tz: null, moving: true };
   assert.equal(SY.shouldSendPresence(null, base, 0), true);
   const prev = { ...base, sentAt: 0, moving: true };
   assert.equal(SY.shouldSendPresence(prev, { ...base, x: 0.5 }, 300), false, "đang đi: không ghi dày hơn 1,2 giây");
@@ -65,6 +65,23 @@ test("vị trí người kia: hợp lệ và còn mới; ghi tiết kiệm", () 
   assert.equal(SY.shouldSendPresence(prev, { ...base, scene: "nha" }, 10), true, "đổi cảnh ghi ngay");
   assert.equal(SY.shouldSendPresence(prev, { ...base, ev: { id: "1", kind: "heart" } }, 10), true, "thả tim ghi ngay");
   assert.equal(SY.shouldSendPresence(prev, { ...base, tx: 3, tz: 4 }, 10), true, "chạm đi tới chỗ mới ghi ngay");
-  assert.equal(SY.shouldSendPresence({ ...prev, moving: false }, base, 5000), false);
-  assert.equal(SY.shouldSendPresence({ ...prev, moving: false }, base, SY.PRESENCE_HEARTBEAT_MS), true);
+  const idle = { ...base, moving: false };
+  assert.equal(SY.shouldSendPresence(prev, idle, 40), true, "dừng ngay cả khi hai vị trí giống nhau");
+  assert.equal(SY.shouldSendPresence({ ...prev, moving: false }, idle, 5000), false);
+  assert.equal(SY.shouldSendPresence({ ...prev, moving: false }, idle, SY.PRESENCE_HEARTBEAT_MS), true);
+});
+
+test("di chuyển liên tục không gửi vị trí mỗi khung hình", () => {
+  let previous = null;
+  const sentAt = [];
+  for (let i = 0; i < 180; i++) {
+    const t = i * 1000 / 60;
+    const sample = { scene: "san", x: i * 0.03, z: 0, mode: "idle", seat: null, tx: null, tz: null, moving: true };
+    if (SY.shouldSendPresence(previous, sample, t)) {
+      sentAt.push(t);
+      previous = { ...sample, sentAt: t };
+    }
+  }
+  assert.deepEqual(sentAt, [0, 1200, 2400]);
+  assert.equal(SY.shouldSendPresence(previous, { ...previous, moving: false }, 3000), true);
 });

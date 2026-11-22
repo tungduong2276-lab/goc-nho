@@ -1,5 +1,11 @@
 # GÓC NHỎ — MASTER ROADMAP & AI HANDOFF
 
+## Đồng bộ hiện diện trên đảo (2026-11-22)
+
+Nhánh `fix/island-presence-cadence` phân biệt dừng thật với dịch chuyển nhỏ giữa các khung hình. Gửi ngay khi bắt đầu hoặc dừng, đổi phòng, đổi đích hoặc trở lại ứng dụng sau khi mất mạng. Nếu thông tin đang ngủ tới trước dữ liệu giường, người kia hiện ở tọa độ đã nhận đến khi có giường. Kết nối hiện diện không chờ tải kho chung.
+
+Ca Node mô phỏng 180 khung hình trong ba giây cho đúng ba lần gửi khi đang đi. Ca Chromium bộ nối giả bao phủ vị trí đến trước bố cục, đổi cảnh và trạng thái quá hạn. Chạy CI đúng commit và thử nghiệm hai điện thoại trên staging trước khi merge.
+
 ## ★ Đảo 3D chỉ hiện người chơi thật (2026-11-18)
 
 Khi chơi một mình, đảo chỉ giữ nhân vật đang điều khiển và thú cưng. Người chơi kia hiện khi dữ liệu hiện diện còn mới và ở cùng cảnh. Các thao tác ngồi, uống và tưới cây có thể làm một mình. Lời mời chỉ hiện với người kia đang ở cùng cảnh. [Kiểm tra Chromium đạt 3/3](https://github.com/tungduong2276-lab/goc-nho/actions/runs/44282457391/job/134726417528) trên `5c75aaf`: chơi một mình, chăm vườn một mình, và người kia hiện/ẩn theo cảnh và tín hiệu còn hạn. Ca hiện diện dùng bộ nối giả. Phần thử nghiệm nhiều phòng riêng vẫn có chế độ mô phỏng bật thủ công.

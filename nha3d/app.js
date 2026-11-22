@@ -457,7 +457,9 @@ function wake(actor) {
   const it = itemByUid(actor.sleepUid);
   actor.mode = "idle"; actor.root.visible = true;
   if (it) {
-    S.transient.delete(it.uid); refreshView(it);
+    if (Object.values(actors).every(a => a.sleepUid !== it.uid || a.mode !== "sleep")) {
+      S.transient.delete(it.uid); refreshView(it);
+    }
     const ap = E.approachPoint(S.G, it);
     if (ap) actor.place(ap.x, ap.z, ap.face + Math.PI);
   }
@@ -1235,8 +1237,13 @@ function partnerStatus() {
 function remotePartnerStep() {
   const p = partner(), r = partnerPresence();
   if (!partnerHere(r)) { hidePartner(); return; }
-  if (r.mode === "sleep" && r.seat) {
-    if (p.mode !== "sleep") { const bed = itemByUid(r.seat.uid); if (bed) sleepIn(p, bed, true); }
+  const bed = r.mode === "sleep" && r.seat ? itemByUid(r.seat.uid) : null;
+  if (bed?.type === "giuong") {
+    if (p.mode !== "sleep" || p.sleepUid !== bed.uid) {
+      p.standUp();
+      sleepIn(p, bed, true);
+      CLOUD.lastTarget = null;
+    }
     return;
   }
   if (p.mode === "sleep") wake(p);
@@ -1266,13 +1273,15 @@ function remotePartnerStep() {
   }
 }
 function sendPresence() {
+  if (!CLOUD.on || document.hidden || !navigator.onLine) return;
   const m = me(), t = performance.now(), end = m.path.length ? m.path[m.path.length - 1] : null;
   const r2 = v => Math.round(v * 100) / 100;
   const next = { scene: S.scene, x: r2(m.x), z: r2(m.z), face: r2(m.face), mode: m.mode === "sit" || m.mode === "sleep" ? m.mode : "idle",
     seat: m.mode === "sit" && m.seat ? { uid: m.seat.uid, k: m.seat.k } : m.mode === "sleep" && m.sleepUid ? { uid: m.sleepUid, k: 0 } : null,
     tx: end ? r2(end.x) : null, tz: end ? r2(end.z) : null, ev: CLOUD.ev, look: S.looks[S.me] };
-  if (!SY.shouldSendPresence(CLOUD.sentP, next, t)) return;
-  CLOUD.sentP = { ...next, sentAt: t, moving: m.joy || m.path.length > 0 };
+  const sample = { ...next, moving: !!m.joy || m.path.length > 0 };
+  if (!SY.shouldSendPresence(CLOUD.sentP, sample, t)) return;
+  CLOUD.sentP = { ...sample, sentAt: t };
   CLOUD.api.setPresence(S.me, { ...next, at: Date.now() });
 }
 // Nhãn "Em đang ở…" cập nhật mỗi giây (người kia có thể vắng đi mà không có thay đổi nào gửi tới).
@@ -1324,8 +1333,6 @@ async function startCloud() {
   }
   CREATIVE.cloud=CM.readCreativeDocs(all);
   CLOUD.on = true;
-  try { LIFE.state=await api.getLife();lifeUI.refresh();api.watchLife(next=>{LIFE.state=next;lifeUI.refresh();}); }
-  catch(e){console.warn("Chưa đọc được kho chung",e);}
   // Cảnh chưa có trên Firebase: máy này góp bố cục của mình làm bản chung đầu tiên.
   for (const sc of new Set(["nha", "san", S.scene])) if (!CLOUD.known.has(sc)) { CLOUD.known.add(sc); pushScene(sc); } // phòng khác chỉ seed khi bước vào
   CLOUD.remote = all.find(d => d.id === SY.presenceId(partner().who))?.data || null;
@@ -1344,6 +1351,7 @@ async function startCloud() {
     if(needsArt||needsLive)for(const it of S.layout.items)if((S.scene==="bao-tang"&&it.type==="tuKinh")||
       (S.scene==="ngu"&&it.type==="keSach")||(S.scene==="xuong"&&it.type==="giaVe"&&needsLive))refreshView(it);
   });
+  api.watchLife(next=>{LIFE.state=next;lifeUI.refresh();});
   if (api.watchApp) { APPSRC.cloud = true; api.watchApp(d => setAppData(d)); }
   toast("Đã nối đảo chung · " + NAMES[partner().who] + " vào là thấy nhau");
 }
@@ -1690,7 +1698,14 @@ $("#btn-edit").addEventListener("click", () => setMode("edit"));
 $("#btn-done").addEventListener("click", () => setMode("play"));
 
 // ---------- vòng lặp ----------
-setInterval(()=>{if(worldObscured&&CLOUD.on&&!document.hidden)sendPresence();},15000);
+setInterval(()=>{if(worldObscured)sendPresence();},SY.PRESENCE_HEARTBEAT_MS);
+function resumePresence() {
+  if (document.hidden || !navigator.onLine) return;
+  CLOUD.sentP = null;
+  sendPresence();
+}
+document.addEventListener("visibilitychange",resumePresence);
+window.addEventListener("online",resumePresence);
 let hasRenderedWorld=false;
 let last = performance.now();
 cam.goalPpm = cam.ppm = playPpm();
@@ -1698,7 +1713,7 @@ let simClock = 0;
 function step(dt) {
   simClock += dt;
   if (S.mode === "play") { joyStep(dt); if (CLOUD.on) remotePartnerStep(); }
-  if (CLOUD.on && !partnerHere() && partner().root.visible) hidePartner();
+  if (CLOUD.on && S.mode !== "play" && !partnerHere() && (partner().root.visible || partner().mode === "sleep")) hidePartner();
   if (CLOUD.on) sendPresence();
   if (S.scene === "nha") catThink(dt);
   for (const a of Object.values(actors)) a.update(dt);
