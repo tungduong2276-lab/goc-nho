@@ -19,28 +19,45 @@ test("hai người vẽ trực tiếp một canvas, tranh vào bảo tàng và t
   await page.goto("/nha3d/index.html?scene=xuong&host=1&cloud=0");
   await page.waitForFunction(()=>window.__NHA3D__?.ready,null,{timeout:90000});
   const N=(method,...args)=>page.evaluate(([m,a])=>window.__NHA3D__[m](...a),[method,args]);
-  const paint=async()=>{
+  const paint=async(offset=0)=>{
     const cv=page.locator(".creative-canvas");await cv.scrollIntoViewIfNeeded();
     const b=await cv.boundingBox();
-    await page.mouse.move(b.x+b.width*.2,b.y+b.height*.3);
+    await page.mouse.move(b.x+b.width*.2,b.y+b.height*(.3+offset));
     await page.mouse.down();
-    await page.mouse.move(b.x+b.width*.65,b.y+b.height*.7,{steps:5});
+    await page.mouse.move(b.x+b.width*.65,b.y+b.height*(.7+offset),{steps:5});
     await page.mouse.up();
   };
+
+  const enterText=(selector,value)=>page.locator(selector).evaluate((field,value)=>{
+    field.value=value;
+    field.dispatchEvent(new Event("input",{bubbles:true}));
+  },value);
 
   await N("openCreative","paint");
   await expect(page.locator("#creative-sheet")).toBeVisible();
   await expect(page.locator(".creative-sync")).toContainText("Bản chơi trên máy này");
-  await page.locator("#creative-new-art").fill("Ngôi nhà ba màu");
+  await enterText("#creative-new-art","Ngôi nhà ba màu");
+  await page.evaluate(()=>window.dispatchEvent(new Event("online")));
+  await expect(page.locator("#creative-new-art")).toHaveValue("Ngôi nhà ba màu");
   await page.getByRole("button",{name:/Mở giá vẽ chung/}).click();
   expect(await N("creativeEasel")).toBe(1);
   await paint();
   await expect.poll(async()=>(await N("creative")).painting?.anh.length).toBeGreaterThan(0);
+  const canvas=page.locator(".creative-canvas");
+  const pixel=locator=>locator.evaluate(c=>Array.from(c.getContext("2d").getImageData(96,96,1,1).data));
+  await expect.poll(()=>pixel(canvas)).toEqual([29,43,79,255]);
+  await page.getByRole("button",{name:"Tẩy",exact:true}).click();
+  await canvas.scrollIntoViewIfNeeded();
+  const bounds=await canvas.boundingBox();
+  await page.mouse.click(bounds.x+bounds.width*.2,bounds.y+bounds.height*.3);
+  await expect.poll(()=>pixel(canvas)).toEqual([255,254,250,255]);
+  await expect.poll(async()=>(await N("creative")).painting?.anh.at(-1)?.erase).toBe(true);
+  await page.getByRole("button",{name:"Tẩy",exact:true}).click();
   await page.locator(".creative-close").click();
 
   await page.locator("#btn-me").click();
   await N("openCreative","paint");
-  await paint();
+  await paint(.1);
   await expect.poll(async()=>(await N("creative")).painting?.em.length).toBeGreaterThan(0);
   expect(await N("creativeEasel")).toBe(1);
   await expect(page.locator("#creative-publish")).toBeEnabled();
@@ -50,13 +67,14 @@ test("hai người vẽ trực tiếp một canvas, tranh vào bảo tàng và t
   await N("openCreative","museum");
   await expect(page.locator("#creative-sheet")).toContainText("Ngôi nhà ba màu");
   await expect(page.locator(".creative-gallery canvas")).toBeVisible();
+  await expect.poll(()=>pixel(page.locator(".creative-gallery canvas"))).toEqual([255,254,250,255]);
   await page.locator(".creative-close").click();
 
   await N("goScene","xuong");await N("settle");
   await N("openCreative","story");
-  await page.locator("#creative-new-book").fill("Miu và căn nhà bé xíu");
+  await enterText("#creative-new-book","Miu và căn nhà bé xíu");
   await page.getByRole("button",{name:/Mở cuốn truyện chung/}).click();
-  await page.locator("#creative-story-draft").fill("Miu mở cửa bước vào một khu vườn.");
+  await enterText("#creative-story-draft","Miu mở cửa bước vào một khu vườn.");
   await expect.poll(async()=>(await N("creative")).story?.drafts.em).toContain("Miu mở cửa");
   await page.getByRole("button",{name:/Ghi đoạn văn vào truyện/}).click();
   await expect.poll(async()=>(await N("creative")).story?.lines.length).toBe(1);
@@ -64,7 +82,7 @@ test("hai người vẽ trực tiếp một canvas, tranh vào bảo tàng và t
 
   await page.locator("#btn-me").click();
   await N("openCreative","story");
-  await page.locator("#creative-story-draft").fill("Anh đợi Miu bên hồ cá xanh.");
+  await enterText("#creative-story-draft","Anh đợi Miu bên hồ cá xanh.");
   await page.getByRole("button",{name:/Ghi đoạn văn vào truyện/}).click();
   await expect(page.locator("#creative-publish-book")).toBeEnabled();
   await page.locator("#creative-publish-book").click();

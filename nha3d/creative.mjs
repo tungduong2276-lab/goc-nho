@@ -1,7 +1,7 @@
 // Sáng tác chung mới: không sử dụng `drawings` nửa trên/dưới và `story` luân phiên cũ.
 // Toàn bộ document mới nằm ở couples/{cid}/world/cc_* để giữ nguyên kỷ vật cũ.
 export const ART_COLORS=Object.freeze(["#1D2B4F","#ED78A3","#62B8A3","#6FB8EE","#F2AF66","#AB8FE6"]);
-export const MAX_STROKES=80,MAX_POINTS=90,MAX_LINES=80;
+export const MAX_STROKES=80,MAX_POINTS=90,MAX_LINES=80,ERASER_WIDTH=18;
 const WHO=new Set(["anh","em"]);
 export const key=(kind)=>"cc_"+kind+"_meta";
 export const painter=who=>"cc_paint_"+who;
@@ -15,7 +15,8 @@ export const title=s=>bounded(s,64);
 export function cleanStroke(raw){
   if(!raw||!Array.isArray(raw.points)||raw.points.length<1||!WHO.has(raw.by))return null;
   const color=ART_COLORS.includes(raw.color)?raw.color:ART_COLORS[0];
-  const width=[2,5,9].includes(raw.width)?raw.width:5;
+  const erase=raw.erase===true;
+  const width=erase?ERASER_WIDTH:[2,5,9].includes(raw.width)?raw.width:5;
   // Firestore cấm nested arrays: lưu {x,y} thay vì [[x,y]]. Vẫn đọc tuple từ bản nháp local cũ.
   const points=raw.points.slice(0,MAX_POINTS).map(p=>{
     if(Array.isArray(p)&&p.length===2&&Number.isFinite(p[0])&&Number.isFinite(p[1]))return {x:n(p[0]),y:n(p[1])};
@@ -24,7 +25,7 @@ export function cleanStroke(raw){
   }).filter(Boolean);
   if(!points.length)return null;
   return {id:validId(raw.id)?raw.id:"s"+Math.max(0,Math.floor(raw.at||0)).toString(36),by:raw.by,
-    at:Number.isFinite(raw.at)?raw.at:0,color,width,points};
+    at:Number.isFinite(raw.at)?raw.at:0,color,width,points,...(erase?{erase:true}:{})};
 }
 export function cleanStrokes(raw,who=null){
   if(!Array.isArray(raw))return [];
@@ -35,13 +36,38 @@ export function combinePainting(anh,em){
   const a=cleanStrokes(anh,"anh"),b=cleanStrokes(em,"em");
   return [...a,...b].sort((x,y)=>x.at-y.at||x.id.localeCompare(y.id)).slice(-MAX_STROKES*2);
 }
+export function drawPainting(canvas,strokes,paper="#FFFEFA"){
+  const ctx=canvas.getContext("2d");if(!ctx)return;
+  const w=canvas.width,h=canvas.height;
+  ctx.save();
+  ctx.clearRect(0,0,w,h);
+  ctx.lineJoin="round";ctx.lineCap="round";
+  for(const stroke of strokes){
+    const points=stroke.points;
+    if(!points.length)continue;
+    ctx.globalCompositeOperation=stroke.erase?"destination-out":"source-over";
+    ctx.strokeStyle=stroke.color;ctx.fillStyle=stroke.color;ctx.lineWidth=stroke.width*w/480;
+    ctx.beginPath();
+    if(points.length===1){
+      ctx.arc(points[0].x*w,points[0].y*h,ctx.lineWidth/2,0,Math.PI*2);
+      ctx.fill();
+    }else{
+      ctx.moveTo(points[0].x*w,points[0].y*h);
+      for(const pt of points.slice(1))ctx.lineTo(pt.x*w,pt.y*h);
+      ctx.stroke();
+    }
+  }
+  ctx.globalCompositeOperation="destination-over";
+  ctx.fillStyle=paper;ctx.fillRect(0,0,w,h);
+  ctx.restore();
+}
 export function cleanLines(raw){
   if(!Array.isArray(raw))return [];
   return raw.slice(0,MAX_LINES).filter(x=>x&&WHO.has(x.by)&&typeof x.text==="string"&&x.text.trim())
     .map(x=>({by:x.by,text:bounded(x.text,300),at:Number.isFinite(x.at)?x.at:0}));
 }
 export function canPublishPainting(anh,em){
-  return cleanStrokes(anh,"anh").length>0 && cleanStrokes(em,"em").length>0;
+  return cleanStrokes(anh,"anh").some(s=>!s.erase) && cleanStrokes(em,"em").some(s=>!s.erase);
 }
 export function canPublishBook(lines){
   const clean=cleanLines(lines);
@@ -61,7 +87,7 @@ export function creativeState(map){
   const getPaint=who=>{const raw=map.get(painter(who));return raw&&raw.session===meta?.id?cleanStrokes(raw.strokes,who):[]};
   const getDraft=who=>{const raw=map.get(draft(who));return raw&&raw.session===story?.id?bounded(raw.text,300):""};
   const artworks=[...map.entries()].filter(([id,d])=>id.startsWith("cc_art_")&&d?.k==="creative-art")
-    .map(([id,d])=>({id,title:title(d.title)||"Tranh chung",at:d.at||0,strokes:cleanStrokes(d.strokes)})).sort((a,b)=>b.at-a.at).slice(0,24);
+    .map(([id,d])=>({id,title:title(d.title)||"Tranh chung",at:d.at||0,strokes:Array.isArray(d.strokes)?combinePainting(d.strokes.filter(s=>s?.by==="anh"),d.strokes.filter(s=>s?.by==="em")):[]})).sort((a,b)=>b.at-a.at).slice(0,24);
   const books=[...map.entries()].filter(([id,d])=>id.startsWith("cc_book_")&&d?.k==="creative-book")
     .map(([id,d])=>({id,title:title(d.title)||"Truyện hai đứa",at:d.at||0,lines:cleanLines(d.lines)})).sort((a,b)=>b.at-a.at).slice(0,24);
   return {painting:meta&&validId(meta.id)?{id:meta.id,title:title(meta.title)||"Bức tranh của hai đứa",anh:getPaint("anh"),em:getPaint("em")}:null,

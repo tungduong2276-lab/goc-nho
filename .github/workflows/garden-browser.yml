@@ -98,7 +98,7 @@ jobs:
   # real Firestore onSnapshot events and recover from a connection drop.
   # The named demo project and loopback Emulators are mandatory: no production URLs.
   emulator-world-shared:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feature/world-live-creative-20261117'
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feature/world-live-creative-20261117' || github.event.pull_request.head.ref == 'fix/creative-eraser'
     runs-on: ubuntu-24.04
     timeout-minutes: 9
     steps:

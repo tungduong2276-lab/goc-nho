@@ -32,6 +32,11 @@ Khi chơi một mình, đảo chỉ giữ nhân vật đang điều khiển và 
 
 **Acceptance gates:** Node document sanitization and co-author tests, Emulator auth/concurrent story+harvest tests, real Playwright canvas stroke and 2-author publish at phone widths, performance review and two *physical* phone real-time session; failures or missing proof mean no merge. No actual hardware acceptance can be claimed here.
 
+## Xưởng vẽ — tẩy và giữ đủ nét trong bảo tàng (2026-11-22)
+
+Nhánh `fix/creative-eraser` lưu thao tác tẩy cùng nét vẽ trên mặt giấy chung. Bảng vẽ, giá vẽ và tranh trong bảo tàng dùng cùng cách hiển thị. Khi đọc tranh đã lưu, giới hạn 80 nét áp dụng riêng cho từng người. Ca Node bao phủ tranh 160 nét và ca Chromium kiểm tra một điểm ảnh được tẩy trên bảng vẽ lẫn tranh đã xuất bản. Vẫn cần thử cả hai người kéo nét đồng thời trên staging.
+
+
 ## ★ SHARED LIFE LOOP — farm, pantry, cooking, fish, pets (user request 2026-11-17)
 
 User wants practical co-op living in the 3D world: harvest vegetables/fruit, keep livestock, store ingredients, cook together, care for pets and fish. User additionally wants a **single simultaneous drawing canvas** rather than old hidden halves; published paintings go into the 3D museum, finished stories onto the bedroom bookshelf. Preserve all old `drawings`, `story`, `museum`, `pet`, garden and other production records.
