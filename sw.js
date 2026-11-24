@@ -1,6 +1,6 @@
 // Lưu sẵn khung app để mở được cả khi mạng chập chờn. Dữ liệu do Firebase tự đồng bộ.
 // Mỗi lần sửa app, tăng số phiên bản dưới đây để điện thoại nhận bản mới.
-const CACHE = "goc-nho-v32";
+const CACHE = "goc-nho-v33";
 const SHELL = [
   "./", "./index.html", "./src/world-home.js", "./src/world-home.css", "./src/world-features.mjs", "./nha3d/index.html", "./nha3d/rooms.mjs", "./nha3d/nha3d.css", "./nha3d/cozy-palette.mjs", "./nha3d/cozy-decor.js", "./nha3d/portal-art.js", "./nha3d/life.mjs", "./nha3d/life-ui.js", "./nha3d/life-ui.css", "./nha3d/life-scene.js", "./nha3d/creative.mjs", "./nha3d/creative-local.mjs", "./nha3d/creative-ui.js", "./nha3d/creative-ui.css", "./nha3d/creative-models.js", "./manifest.webmanifest", "./firebase-config.js",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png",

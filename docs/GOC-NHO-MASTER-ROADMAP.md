@@ -1,5 +1,11 @@
 # GÓC NHỎ — MASTER ROADMAP & AI HANDOFF
 
+## Hũ hẹn hò — bốc lại và quản lý lá (2026-11-22)
+
+Nhánh `feature/date-jar-free-roll` cho bốc lại không giới hạn trước khi chơi, kể cả khi bốc Joker. Sổ hũ mở từ vật thể 3D có biểu mẫu thêm lá, nút bỏ và khôi phục. Lá bỏ lưu theo từng mã trong `meta.jarRemoved`, bị loại khỏi vòng bốc và danh sách Joker. Định nghĩa lá được giữ để đọc lịch sử. Lá vừa chơi được ưu tiên sau; khi hũ ít lá, vẫn có thể bốc lại nếu còn lá khác.
+
+Kiểm tra tĩnh và 112 ca Node cục bộ đạt. Ca trình duyệt 360 px kiểm tra bốc lại dù đã hết lượt theo dữ liệu cũ, thêm/bỏ/khôi phục và tải lại giữ lịch sử. Chromium cục bộ bị chặn khi khởi động, cần xác nhận qua CI và thử hai điện thoại trên staging trước khi merge.
+
 ## ★ Đảo 3D chỉ hiện người chơi thật (2026-11-18)
 
 Khi chơi một mình, đảo chỉ giữ nhân vật đang điều khiển và thú cưng. Người chơi kia hiện khi dữ liệu hiện diện còn mới và ở cùng cảnh. Các thao tác ngồi, uống và tưới cây có thể làm một mình. Lời mời chỉ hiện với người kia đang ở cùng cảnh. [Kiểm tra Chromium đạt 3/3](https://github.com/tungduong2276-lab/goc-nho/actions/runs/44282457391/job/134726417528) trên `5c75aaf`: chơi một mình, chăm vườn một mình, và người kia hiện/ẩn theo cảnh và tín hiệu còn hạn. Ca hiện diện dùng bộ nối giả. Phần thử nghiệm nhiều phòng riêng vẫn có chế độ mô phỏng bật thủ công.

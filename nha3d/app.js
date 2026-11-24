@@ -965,7 +965,7 @@ function appMenu(it, use, list) {
     if (j.openNo) list.push([`Buổi hẹn #${j.openNo} đang diễn ra`, () => useItem(m, it, () => jarCard(it))]);
     else if (j.pending) list.push([JAR.pending?.name && !JAR.pending.lost ? `Lá đang chờ: ${JAR.pending.name}` : "Đọc lá đang chờ", () => useItem(m, it, () => jarCard(it))]);
     else list.push(["Lắc hũ, bốc một lá", () => useItem(m, it, () => drawFromJar(it))]);
-    list.push(["Mở sổ hũ hẹn hò", () => useItem(m, it, () => openApp("hom-nay"))]);
+    list.push(["Mở sổ hũ hẹn hò · thêm / bỏ lá", () => useItem(m, it, () => openApp("hom-nay"))]);
     return;
   }
   if (it.type === "loUocMo") {
@@ -1075,7 +1075,7 @@ function setJarNames(d) {
   JAR.pending = ok(p) ? { id: jarText(p.id, 40), n: p.n, name: jarText(p.name, 80), desc: jarText(p.desc, 320), group: jarText(p.group, 30), aux: aux(p.aux),
     secret: !!p.secret, starter: p.starter ? jarText(p.starter, 30) : null, gold: !!p.gold, bonus: p.bonus ? jarText(p.bonus, 120) : null,
     special: p.special ? jarText(p.special, 60) : null, combo: p.combo ? jarText(p.combo, 80) : null, joker: !!p.joker, lost: !!p.lost,
-    swaps: Number.isFinite(p.swaps) ? Math.max(0, Math.min(99, p.swaps)) : 0 } : null;
+    canReroll: p.canReroll === true } : null;
   JAR.open = ok(d.open) ? { no: d.open.no, n: d.open.n, name: jarText(d.open.name, 80), todo: Number.isFinite(d.open.todo) ? d.open.todo : null } : null;
   JAR.ready = Number.isFinite(d.ready) ? d.ready : null;
   if (d.got === true) JAR.got = true;
@@ -1089,8 +1089,7 @@ function setJarNames(d) {
 const JAR_WHY = {
   open: () => `Buổi hẹn #${JAR.open?.no || ""} vẫn đang diễn ra · thả tim kết thúc buổi rồi bốc lá mới nhé`,
   pending: () => "Đang có một lá chờ chơi rồi nè",
-  empty: () => "Hũ tạm hết lá: các lá vừa chơi đang nghỉ",
-  noswap: () => "Mùa này hết lượt đổi lá rồi",
+  empty: () => "Hũ chưa có lá phù hợp · mở sổ để thêm hoặc khôi phục lá",
   joker: () => "Lá Joker: mở sổ hũ để tự chọn lá",
   who: () => "Chọn xem điện thoại này của ai trước đã nhé",
   none: () => "Hũ đã đổi trên máy kia · xem lại nhé",
@@ -1108,12 +1107,11 @@ function hostActed(d) {
   toast(why);
   // Không để người chơi đứng trước hũ mà không biết làm gì: luôn mở đúng chỗ giải quyết được.
   if (d.reason === "pending" && it) { if (actionsEl.hidden) jarCard(it); return; }
-  if (d.reason === "noswap" && it) { jarCard(it); return; }
   if (d.reason === "empty") return;
   openApp("hom-nay", 400);
 }
 function jarAct(action) { window.parent.postMessage({ type: "gocnho:act", feature: "hom-nay", action }, location.origin); }
-function jarCardKey() { return JAR.open ? "open" + JAR.open.no : JAR.pending ? "slip" + JAR.pending.id : null; }
+function jarCardKey() { return JAR.open ? "open" + JAR.open.no : JAR.pending ? "slip" + JAR.pending.id + ":" + JAR.pending.lost + ":" + JAR.pending.canReroll : null; }
 // Đọc lá ngay trên hũ: tên, cách chơi, các thứ đã bốc kèm, người bắt đầu; chơi hoặc đổi lá không cần mở sổ.
 function jarCard(it) {
   const j = JAR, m = me();
@@ -1123,7 +1121,13 @@ function jarCard(it) {
     return;
   }
   const p = j.pending;
-  if (p && p.lost) { showActions(`Lá #${p.n}`, [["🔄 Bốc lá khác", () => drawFromJar(it)]], ...anchorOf(it), "Lá này không còn trong hũ (có thể là lá tự tạo đã bị xoá). Bốc lá khác nhé, lượt đổi không bị trừ."); actionsEl._jar = jarCardKey(); return; }
+  if (p && p.lost) {
+    const acts = [["📖 Mở sổ để quản lý lá", () => openApp("hom-nay")]];
+    if (p.canReroll) acts.unshift(["🔄 Bốc lá khác", () => drawFromJar(it)]);
+    showActions(`Lá #${p.n}`, acts, ...anchorOf(it), "Bốc lá khác hoặc mở sổ để đưa lá trở lại hũ.");
+    actionsEl._jar = jarCardKey();
+    return;
+  }
   if (p) {
     const lines = [p.name];
     if (p.special) lines.push("✨ " + p.special + (p.combo ? " · lá thứ hai: " + p.combo : ""));
@@ -1136,9 +1140,9 @@ function jarCard(it) {
     if (p.joker) acts.push(["🃏 Tự chọn lá trong sổ hũ", () => useItem(m, it, () => openApp("hom-nay"))]);
     else {
       acts.push(["▶ Chơi lá này", () => jarAct("play")]);
-      if (p.swaps > 0) acts.push([`🔄 Đổi lá (còn ${p.swaps})`, () => { shakeJar(it); JAR.wantDraw = Date.now(); JAR.wantFrom = p.id; jarAct("swap"); }]);
       acts.push(["📖 Xem trong sổ hũ", () => useItem(m, it, () => openApp("hom-nay"))]);
     }
+    if (p.canReroll) acts.push(["🔄 Bốc lại", () => { shakeJar(it); JAR.wantDraw = Date.now(); JAR.wantFrom = p.id; jarAct("swap"); }]);
     showActions(`Lá ${p.n} · ${p.group || "Hũ hẹn hò"}${p.gold ? " · lá vàng ✨" : ""}`, acts, ...anchorOf(it), lines.join("\n")); actionsEl._jar = jarCardKey();
     return;
   }

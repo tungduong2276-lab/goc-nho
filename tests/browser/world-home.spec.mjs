@@ -234,3 +234,73 @@ test('date journal offers an honest path to add a new photo memory',async({page}
  await expect(page.locator('#tab-museum [data-tnew="museum"]')).toBeVisible();
  expect(errors).toEqual([]);
 });
+
+test('the shared date jar can reroll repeatedly and manage cards without changing history',async({page})=>{
+ await page.addInitScript(()=>{
+  if(sessionStorage.getItem('jar-seeded'))return;
+  sessionStorage.setItem('jar-seeded','1');
+  localStorage.setItem('hu-hen-ho-v2',JSON.stringify({
+   meta:{pending:{id:'pick',n:101,aux:[],starter:0},swaps:{1:99}},
+   history:{previous:{id:'previous',n:101,no:1,aux:[],starter:0,closed:true,date:'2026-11-01T00:00:00.000Z'}}
+  }));
+ });
+ const {N,errors,apiRequests}=await open(page,360,'#hom-nay');
+ await expect(page.locator('#world-surface-title')).toHaveText('Hũ hẹn hò');
+ const history=await page.evaluate(()=>JSON.stringify(S.history));
+ for(let i=0;i<4;i++){
+  const previous=await page.evaluate(()=>S.meta.pending.n);
+  await page.locator('#swapBtn').click();
+  expect(await page.evaluate(()=>S.meta.pending.n)).not.toBe(previous);
+ }
+ expect(await page.evaluate(()=>S.meta.swaps[1])).toBe(99);
+ await page.getByText('Quản lý lá trong hũ',{exact:true}).click();
+ await page.getByLabel('Tên lá',{exact:true}).fill('Cùng gấp một chiếc thuyền');
+ await page.getByLabel('Cách chơi',{exact:true}).fill('Mỗi người gấp một nửa.');
+ await page.getByRole('button',{name:'Thêm lá vào hũ',exact:true}).click();
+ expect(await page.evaluate(()=>jarGames().some(g=>g.name==='Cùng gấp một chiếc thuyền'))).toBe(true);
+ const current=await page.evaluate(()=>byN(S.meta.pending.n).name);
+ await page.getByRole('button',{name:'Bỏ lá '+current,exact:true}).click();
+ await expect(page.locator('#result')).toContainText('Lá này không còn trong hũ');
+ await expect.poll(()=>N('jarNames').then(j=>j.pending?.lost)).toBe(true);
+ await page.getByRole('button',{name:'Khôi phục lá '+current,exact:true}).click();
+ await expect(page.locator('#swapBtn')).toBeVisible();
+ await page.getByRole('button',{name:'Bỏ lá Cùng gấp một chiếc thuyền',exact:true}).click();
+ await page.reload();
+ await page.getByText('Quản lý lá trong hũ',{exact:true}).click();
+ await expect(page.getByRole('button',{name:'Khôi phục lá Cùng gấp một chiếc thuyền',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>JSON.stringify(S.history))).toBe(history);
+ expect(errors).toEqual([]);expect(apiRequests).toEqual([]);
+});
+
+
+test('concurrent jar card additions and removals merge without losing either phone edit',async({page})=>{
+ const{errors,apiRequests}=await open(page,390);
+ const result=await page.evaluate(()=>{
+   const base=structuredClone(S.meta),idA=jarCardId(GAMES[0]),idB=jarCardId(GAMES[1]);
+   const n=Math.max(...allGames().map(g=>g.n))+1;
+   const card=(cardId,name)=>({n,cardId,g:'dac',name,desc:'Kiểm thử độc lập',aux:[],by:0});
+   const a={__base:base,custom:[card('card-fixture-a','Lá A')],
+     jarRemoved:{...base.jarRemoved,[idA]:true}};
+   const b={__base:base,custom:[card('card-fixture-b','Lá B')],
+     jarRemoved:{...base.jarRemoved,[idB]:true}};
+   const ab=mergeMetaForWrite(mergeMetaForWrite(base,a),b);
+   const ba=mergeMetaForWrite(mergeMetaForWrite(base,b),a);
+   const repeated=mergeMetaForWrite(ab,b);
+   const inspect=x=>({
+     removedA:x.jarRemoved[idA],removedB:x.jarRemoved[idB],
+     names:x.custom.map(g=>g.name).sort(),
+     uniqueNumbers:new Set(x.custom.map(g=>g.n)).size===x.custom.length,
+     uniqueCards:new Set(x.custom.map(g=>g.cardId)).size===x.custom.length
+   });
+   return{ab:inspect(ab),ba:inspect(ba),repeated:inspect(repeated),
+     repeatedCount:repeated.custom.length};
+ });
+ for(const key of ['ab','ba','repeated']){
+   expect(result[key]).toEqual({
+     removedA:true,removedB:true,names:['Lá A','Lá B'],
+     uniqueNumbers:true,uniqueCards:true
+   });
+ }
+ expect(result.repeatedCount).toBe(2);
+ expect(errors).toEqual([]);expect(apiRequests).toEqual([]);
+});

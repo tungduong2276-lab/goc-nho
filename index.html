@@ -1330,7 +1330,7 @@ html.embed #app{padding-top:8px}
     </div>
     <details class="fold rules-fold"><summary>Luật chơi của hũ hẹn hò</summary><ul class="rules">
       <li>Mỗi buổi hẹn: bốc trò của ngày, đặt 1 từ mới, giữ 1 hiện vật, đánh dấu 1 địa điểm, cuối buổi thả tim.</li>
-      <li>Lá vừa chơi nghỉ 3 buổi. Mỗi mùa 10 buổi, 2 lượt đổi lá.</li>
+      <li>Mỗi mùa có 10 buổi. Có thể bốc lại bao nhiêu lần tùy thích trước khi bắt đầu buổi hẹn.</li>
       <li>Thỉnh thoảng sẽ bốc trúng lá vàng có phần thưởng. Ngày đặc biệt bốc ra 2 lá cùng lúc.</li>
       <li>Hết mỗi mùa, mỗi người được viết thêm 1 lá mới vào hũ.</li>
       <li id="syncRule">Để cùng dùng trên hai điện thoại, chia sẻ trang này cho người kia với quyền chỉnh sửa.</li>
@@ -1396,7 +1396,13 @@ html.embed #app{padding-top:8px}
       <div id="wheelBox"></div>
     </details>
     <details id="allDetails">
-      <summary>Tất cả lá trong hũ</summary>
+      <summary>Quản lý lá trong hũ</summary>
+      <form id="jarAddForm">
+        <label class="field">Tên lá<input id="jarNewName" required maxlength="40"></label>
+        <label class="field">Cách chơi<textarea id="jarNewDesc" required maxlength="300" rows="3"></textarea></label>
+        <button class="btn btn-main" type="submit">Thêm lá vào hũ</button>
+      </form>
+      <p class="hint">Bỏ lá khỏi hũ sẽ giữ lại các buổi hẹn đã lưu. Bạn có thể đưa lá trở lại bất cứ lúc nào.</p>
       <ul class="all" id="allList"></ul>
     </details>
   </div>
@@ -1511,7 +1517,7 @@ const TIMERS={9:20,12:15,22:10,23:10,26:5,27:30,101:3,104:15,112:20,121:15};
 GAMES.forEach(g=>{if(TIMERS[g.n])g.timer=TIMERS[g.n];});
 GAMES.find(g=>g.n===14).aux[0].secret=true;
 const PENALTIES=["Hát một câu trước mặt người kia","Để người kia vẽ lên mu bàn tay","Nói giọng em bé trong 5 phút","Gọi người kia bằng biệt danh sến nhất cho đến hết buổi","Kể một bí mật nhỏ","Chụp một tấm ảnh mặt xấu","Cõng người kia 10 bước","Đứng im làm tượng 30 giây theo tư thế người kia chọn"];
-const BONUSES=["Người thắng trò hôm nay được một điều ước nhỏ","Hôm nay người bốc thăm được bao","Được thêm 1 lượt đổi lá trong mùa này","Cả hai được miễn một hình phạt bất kỳ","Cuối buổi, người thua phải đấm lưng 10 phút","Người bốc thăm được chọn món tráng miệng","Mỗi người được đặt thêm một luật cấm riêng cho người kia","Người kia phải chụp cho mình 10 tấm ảnh thật đẹp"];
+const BONUSES=["Người thắng trò hôm nay được một điều ước nhỏ","Hôm nay người bốc thăm được bao","Người bốc thăm được chọn nhạc cho buổi hẹn","Cả hai được miễn một hình phạt bất kỳ","Cuối buổi, người thua phải đấm lưng 10 phút","Người bốc thăm được chọn món tráng miệng","Mỗi người được đặt thêm một luật cấm riêng cho người kia","Người kia phải chụp cho mình 10 tấm ảnh thật đẹp"];
 const FIXED_DAYS={"14/2":"Lễ Tình nhân","8/3":"Quốc tế Phụ nữ","20/10":"Ngày Phụ nữ Việt Nam","24/12":"Đêm Giáng sinh","25/12":"Giáng sinh","1/1":"Năm mới"};
 
 function mascot(level=0){
@@ -1588,7 +1594,7 @@ function flowerSVG(kind){
 /* ================= state ================= */
 const LKEY="hu-hen-ho-v2",OLDKEY="hu-hen-ho-v1";
 const COLS=["history","dict","museum","places","wishes","letters","rules","care","taps","presence","gifts","fridge","story","drawings","kingdom","treasures","realm","medals","pet"];
-const defaultMeta=()=>({names:["Anh","Em"],swaps:{},extraSwaps:{},pending:null,custom:[],startDate:"",bday:["",""]});
+const defaultMeta=()=>({names:["Anh","Em"],swaps:{},extraSwaps:{},pending:null,custom:[],jarRemoved:{},startDate:"",bday:["",""]});
 const S={meta:defaultMeta()};COLS.forEach(c=>S[c]={});
 let MODE="local",DB=null,UID=null,dbReady=false;
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -1652,7 +1658,7 @@ function del(col,id){
 function mergeMetaPatchQueue(older,newer){
   const out=Object.assign({},clone(older||{}),clone(newer||{}));
   if(older&&older.__base)out.__base=clone(older.__base);
-  for(const key of ["looks","swaps","extraSwaps"]){
+  for(const key of ["looks","swaps","extraSwaps","jarRemoved"]){
     if(older&&older[key]&&newer&&newer[key])out[key]=Object.assign({},clone(older[key]),clone(newer[key]));
   }
   for(const key of ["names","bday","chars"]){
@@ -1678,15 +1684,16 @@ function mergeMetaForWrite(latest,patch){
       const merged=Array.isArray(out.custom)?clone(out.custom):[],seen=new Set();
       for(const item of value){
         const fingerprint=JSON.stringify(item);if(seen.has(fingerprint))continue;seen.add(fingerprint);
+        if(item.cardId&&merged.some(x=>x.cardId===item.cardId))continue;
         const same=merged.find(x=>Number(x.n)===Number(item.n));
         if(!same){merged.push(item);continue;}
         if(JSON.stringify(same)===fingerprint)continue;
-        const nextN=Math.max(0,...merged.map(x=>Number(x.n)||0))+1;
+        const nextN=Math.max(0,...merged.map(x=>Number(x.n)||0),...value.map(x=>Number(x.n)||0))+1;
         merged.push(Object.assign({},item,{n:nextN}));
         if(p.pending&&Number(p.pending.n)===Number(item.n))p.pending.n=nextN;
       }
       out.custom=merged;
-    }else if(["looks","swaps","extraSwaps"].includes(key)&&value&&typeof value==="object"&&!Array.isArray(value)){
+    }else if(["looks","swaps","extraSwaps","jarRemoved"].includes(key)&&value&&typeof value==="object"&&!Array.isArray(value)){
       const merged=Object.assign({},out[key]||{});
       for(const [sub,v] of Object.entries(value)){
         if((key==="swaps"||key==="extraSwaps")&&Number.isFinite(Number(v))&&Number.isFinite(Number(merged[sub])))merged[sub]=Math.max(Number(merged[sub]),Number(v));
@@ -1702,6 +1709,10 @@ function putMeta(patch){
   const base=clone(S.meta),changes={};
   for(const [key,value] of Object.entries(patch||{}))if(JSON.stringify(value)!==JSON.stringify(base[key]))changes[key]=clone(value);
   if(Object.keys(changes).length)changes.__base=base;
+  if(changes.jarRemoved){
+    changes.jarRemoved=Object.fromEntries(Object.entries(changes.jarRemoved)
+      .filter(([id,removed])=>removed!==base.jarRemoved?.[id]));
+  }
   Object.assign(S.meta,patch);if(MODE!=="db")return saveLocal();
   if(!Object.keys(changes).length)return Promise.resolve();
   failedMetaPatch=mergeMetaPatchQueue(failedMetaPatch,changes);
@@ -1741,7 +1752,8 @@ async function initDb(){
 }
 function migrate(local,metaExists){
   if(metaExists||lsGet("hu-hen-ho-migrated"))return;
-  const has=COLS.some(c=>Object.keys(local[c]||{}).length)||local.meta.names.join()!=="Anh,Em";
+  const has=COLS.some(c=>Object.keys(local[c]||{}).length)||local.meta.names.join()!=="Anh,Em"
+    ||local.meta.custom?.length||Object.keys(local.meta.jarRemoved||{}).length;
   lsSet("hu-hen-ho-migrated","1");
   if(!has)return;
   putMeta(local.meta);
@@ -1770,9 +1782,15 @@ const nextNo=()=>{const h=hist();return h.length?h[h.length-1].no+1:1;};
 const seasonOf=no=>Math.floor((no-1)/10)+1;
 const curSeason=()=>{const o=openDate();return o?seasonOf(o.no):seasonOf(nextNo());};
 const completedSeasons=()=>Math.floor(closedCount()/10);
-const swapsLeft=()=>{const s=curSeason();return 2+(S.meta.extraSwaps?.[s]||0)-(S.meta.swaps?.[s]||0);};
 const cooling=()=>hist().slice(-3).map(h=>h.n);
-const available=ex=>{const c=cooling();return allGames().filter(g=>!c.includes(g.n)&&!ex.includes(g.n));};
+const jarCardId=g=>g.cardId||((GAMES.includes(g)?"built-in-":"custom-")+g.n);
+const jarRemoved=g=>!!S.meta.jarRemoved?.[jarCardId(g)];
+const jarGames=()=>allGames().filter(g=>!jarRemoved(g));
+const available=exclude=>{
+  const pool=jarGames().filter(g=>!exclude.includes(g.n)), recent=cooling();
+  const fresh=pool.filter(g=>!recent.includes(g.n));
+  return fresh.length?fresh:pool;
+};
 const list=c=>Object.values(S[c]);
 const avgOf=h=>h.rating?(h.rating.s[0]+h.rating.s[1])/2:0;
 const mascotLevel=()=>{const c=closedCount();return c>=30?3:c>=15?2:c>=5?1:0;};
@@ -1820,7 +1838,7 @@ let lastAnim=null;
 // Kết quả: "ok" | "pending" (đã có lá chờ) | "open" (buổi hẹn chưa kết thúc) | "empty" (hũ hết lá).
 function drawNow(){
   if(S.meta.pending)return"pending";if(openDate())return"open";
-  const d=buildDraw([]);if(!d){toast("Hũ tạm hết lá: các lá vừa chơi đang nghỉ. Thêm lá mới bằng Joker nhé.");return"empty";}
+  const d=buildDraw([]);if(!d){toast("Hũ đang trống. Mở Quản lý lá trong hũ để thêm hoặc khôi phục lá nhé.");return"empty";}
   shake();$("drawBtn").disabled=true;
   setTimeout(()=>{$("drawBtn").disabled=false;putMeta({pending:d});rerender();
     $("result").scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});},650);
@@ -1828,24 +1846,25 @@ function drawNow(){
 }
 // Lá đang chờ mà số lá không còn trong hũ (lá tự tạo đã bị xoá, dữ liệu cũ): trước đây màn hình trống trơn,
 // không còn nút nào để bốc tiếp. Giờ cho bỏ lá đó và bốc lại; lịch sử không bị đụng tới.
-const lostPending=()=>{const p=S.meta.pending;return!!p&&!byN(p.n);};
-function redrawLost(){if(!lostPending())return"none";putMeta({pending:null});return drawNow();}
+const lostPending=()=>{
+  const p=S.meta.pending,g=p&&byN(p.n);
+  return !!p&&(!g||jarRemoved(g)||(p.combo&&(!byN(p.combo.n)||jarRemoved(byN(p.combo.n)))));
+};
+function redrawLost(){return lostPending()?swapPending():"none";}
 // Hai nút của lá đang chờ, dùng chung cho màn hình hũ và cho hũ 3D trên đảo.
 function playPending(){
-  const d=S.meta.pending;if(!d)return"none";const g=byN(d.n);if(!g)return"lost";if(g.joker)return"joker";
-  const s=curSeason();
+  const d=S.meta.pending;if(!d)return"none";if(lostPending())return"lost";const g=byN(d.n);if(g.joker)return"joker";
   const h={id:d.id,no:nextNo(),n:d.n,aux:d.aux,starter:d.starter,viaJoker:!!d.viaJoker,gold:!!d.gold,bonus:d.bonus||null,combo:d.combo||null,special:d.special||null,date:new Date().toISOString(),closed:false};
   put("history",h);
-  const patch={pending:null};
-  if(d.bonus===BONUSES[2]){const ex=Object.assign({},S.meta.extraSwaps);ex[s]=(ex[s]||0)+1;patch.extraSwaps=ex;}
-  putMeta(patch);for(const k in ritEdit)ritEdit[k]=false;["dict","museum","places","rules"].forEach(t=>delete tempPhotos["rit-"+t]);
+  putMeta({pending:null});for(const k in ritEdit)ritEdit[k]=false;["dict","museum","places","rules"].forEach(t=>delete tempPhotos["rit-"+t]);
   toast("Bắt đầu buổi hẹn #"+h.no);rerender();return"ok";
 }
 function swapPending(){
-  const p=S.meta.pending;if(!p)return"none";const g=byN(p.n);if(!g)return"lost";if(g.joker)return"joker";
-  if(swapsLeft()<=0)return"noswap";const d=buildDraw([p.n]);if(!d)return"empty";
-  const s=curSeason(),sws=Object.assign({},S.meta.swaps);sws[s]=(sws[s]||0)+1;
-  shake();putMeta({pending:d,swaps:sws});rerender();return"ok";
+  if(openDate())return"open";
+  const p=S.meta.pending;if(!p)return"none";
+  const d=buildDraw([p.n]);
+  if(!d){toast("Hũ chưa có lá khác. Thêm hoặc khôi phục lá trong sổ hũ nhé.");return"empty";}
+  shake();putMeta({pending:d});rerender();return"ok";
 }
 const reduced=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
 function shake(){const j=$("jar");j.classList.remove("shake");void j.offsetWidth;j.classList.add("shake");}
@@ -1980,9 +1999,9 @@ function tickAll(){
 }
 function ticketHTML(d,mode){
   const g=byN(d.n);
-  if(!g)return `<article class="ticket"><div class="t-top"><span class="stamp">Lá ${esc(d.n)}</span></div>
-    <h2 class="t-name">Lá này không còn trong hũ</h2><p class="t-desc">Có thể đây là lá tự tạo đã bị xoá. ${mode==="pending"?"Bỏ lá này và bốc lá khác nhé, lượt đổi lá không bị trừ.":"Buổi hẹn vẫn được giữ nguyên trong nhật ký."}</p>
-    ${mode==="pending"?`<div class="actions"><button class="btn btn-main" id="lostRedraw">Bốc lá khác</button></div>`:""}</article>`;const grp=GROUPS[g.g]||GROUPS.dac;
+  if(!g||(mode==="pending"&&lostPending()))return `<article class="ticket"><div class="t-top"><span class="stamp">Lá ${esc(d.n)}</span></div>
+    <h2 class="t-name">Lá này không còn trong hũ</h2><p class="t-desc">${mode==="pending"?"Bốc lá khác hoặc đưa lại lá vào hũ trong phần quản lý.":"Buổi hẹn vẫn được giữ nguyên trong nhật ký."}</p>
+    ${mode==="pending"?`<div class="actions"><button class="btn btn-main" id="lostRedraw" ${available([d.n]).length?"":"disabled"}>Bốc lá khác</button></div>`:""}</article>`;const grp=GROUPS[g.g]||GROUPS.dac;
   const cg=d.combo?byN(d.combo.n):null;
   return `<article class="ticket${d.gold?" gold":""}${lastAnim!==d.id&&mode==="pending"?" pop":""}">
     <div class="t-top"><span class="stamp">Lá ${g.n}</span><span class="chip" style="--c:var(${grp.c})">${grp.t}</span>${d.gold?'<span class="chip" style="--c:#B57A00">Lá vàng</span>':""}${d.viaJoker?'<span class="chip" style="--c:var(--g6)">Chọn bằng Joker</span>':""}</div>
@@ -1998,17 +2017,17 @@ function ticketHTML(d,mode){
 }
 function pendingControls(g){
   if(g.joker){
-    const opts=allGames().filter(x=>!x.joker).map(x=>`<button data-pick="${x.n}"><span>${x.n}</span>${esc(x.name)}</button>`).join("");
+    const opts=jarGames().filter(x=>!x.joker).map(x=>`<button data-pick="${x.n}"><span>${x.n}</span>${esc(x.name)}</button>`).join("");
     return `<div class="picker"><div class="lbl">Chọn một lá</div><div class="pick-grid">${opts}</div>
       <div class="lbl">Hoặc phát minh trò mới</div>
       <label class="field">Tên trò<input id="newName" maxlength="40" placeholder="Ví dụ: Ngày đi bộ không đích"></label>
       <label class="field">Cách chơi<textarea id="newDesc" rows="3" maxlength="300" placeholder="Luật chơi ngắn gọn"></textarea></label>
       <button class="btn btn-ghost" id="addCustom">Thêm vào hũ và chơi trò này</button>
+      <button class="btn btn-ghost" id="swapBtn" ${available([g.n]).length?"":"disabled"}>Bốc lại</button>
       <p class="err" id="customErr" hidden>Điền tên và cách chơi trước đã.</p></div>`;
   }
-  const left=swapsLeft();
   return `<div class="actions"><button class="btn btn-main" id="playBtn">Chơi lá này</button>
-    <button class="btn btn-ghost" id="swapBtn" ${left<=0?"disabled":""}>Đổi lá (còn ${Math.max(left,0)})</button></div>`;
+    <button class="btn btn-ghost" id="swapBtn" ${available([g.n]).length?"":"disabled"}>Bốc lại</button></div>`;
 }
 function stars(who,val){return `<div class="stars" role="radiogroup" aria-label="Tim của ${N(who)}">${[1,2,3,4,5].map(i=>`<button type="button" role="radio" aria-checked="${val===i}" aria-label="${i} tim" data-star="${who}:${i}" class="${i<=val?"on":""}">♥</button>`).join("")}</div>`;}
 function savedSummary(type,e){
@@ -2081,7 +2100,7 @@ function renderToday(){
   $("whoBox").innerHTML=ME===null?`<div class="who"><p>Điện thoại này của ai?</p><div class="row"><button class="btn btn-ghost" data-me="0">${N(0)}</button><button class="btn btn-ghost" data-me="1">${N(1)}</button></div></div>`:"";
   $("stage").hidden=!!o;
   $("drawBtn").hidden=!!p;
-  $("drawHint").textContent=p?"Lá đang chờ: chơi luôn hoặc đổi lá.":"Mở màn buổi hẹn: bốc trước khi ra khỏi nhà nhé · "+available([]).length+" lá sẵn sàng trong hũ.";
+  $("drawHint").textContent=p?"Lá đang chờ: chơi luôn hoặc bốc lại bao nhiêu lần tùy thích.":"Mở màn buổi hẹn: bốc trước khi ra khỏi nhà nhé · "+available([]).length+" lá sẵn sàng trong hũ.";
   if(p){$("result").innerHTML=ticketHTML(p,"pending");lastAnim=p.id;}
   else if(o)$("result").innerHTML=ticketHTML(o,"open");
   else $("result").innerHTML="";
@@ -2100,16 +2119,42 @@ function renderJar(){
 }
 function renderAllList(){
   const c=cooling();
-  $("allList").innerHTML=allGames().map(g=>{const idx=c.lastIndexOf(g.n);
-    return `<li class="${idx>=0?"cool":""}"><span class="n">${g.n}</span><span class="nm">${esc(g.name)}${g.by!=null&&g.unlock?` <small style="color:var(--muted)">· lá của ${N(g.by)}</small>`:""}</span>${idx>=0?`<span class="cd">nghỉ ${idx+1} buổi</span>`:""}</li>`;}).join("");
+  $("allList").innerHTML=allGames().map(g=>{
+    const id=jarCardId(g),removed=jarRemoved(g),idx=c.lastIndexOf(g.n);
+    return `<li class="${removed?"cool":""}"><span class="n">${g.n}</span><span class="nm">${esc(g.name)}${g.by!=null&&g.unlock?` <small style="color:var(--muted)">· lá của ${N(g.by)}</small>`:""}</span>
+      ${removed?'<span class="cd">Đã bỏ</span>':idx>=0?`<span class="cd">Ưu tiên sau</span>`:""}
+      <button type="button" class="btn btn-ghost btn-small" data-jar-card="${esc(id)}" aria-label="${removed?"Khôi phục":"Bỏ"} lá ${esc(g.name)}">${removed?"Khôi phục":"Bỏ lá"}</button></li>`;
+  }).join("");
+  $("allList").querySelectorAll("[data-jar-card]").forEach(button=>button.onclick=()=>{
+    const id=button.dataset.jarCard,card=allGames().find(g=>jarCardId(g)===id);
+    if(!card||ME===null)return;
+    const removing=!jarRemoved(card);
+    putMeta({jarRemoved:{...S.meta.jarRemoved,[id]:removing}});
+    rerender();
+    $("allList").querySelector(`[data-jar-card="${CSS.escape(id)}"]`)?.focus({preventScroll:true});
+    toast(removing?"Đã bỏ lá khỏi hũ":"Đã đưa lá trở lại hũ");
+  });
 }
+$("jarAddForm").onsubmit=e=>{
+  e.preventDefault();
+  if(ME===null){toast("Chọn người đang dùng máy trước khi thêm lá nhé.");return;}
+  const name=$("jarNewName"),desc=$("jarNewDesc");
+  if(!name.value.trim()||!desc.value.trim()){toast("Điền tên lá và cách chơi trước nhé.");return;}
+  const card={n:Math.max(...allGames().map(g=>g.n))+1,cardId:"card-"+uid(),
+    g:"dac",name:name.value.trim().slice(0,40),desc:desc.value.trim().slice(0,300),aux:[],by:ME};
+  putMeta({custom:[...(S.meta.custom||[]),card]});
+  e.currentTarget.reset();
+  rerender();
+  name.focus({preventScroll:true});
+  toast("Đã thêm lá vào hũ");
+};
 function bindTicket(){
   const root=$("app");
   root.querySelectorAll("[data-me]").forEach(b=>b.onclick=()=>{ME=+b.dataset.me;lsSet("hu-hen-ho-me",String(ME));rerender();});
   const p=$("playBtn");if(p)p.onclick=playPending;
   const sw=$("swapBtn");if(sw)sw.onclick=swapPending;
   const lost=$("lostRedraw");if(lost)lost.onclick=redrawLost;
-  root.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{const old=S.meta.pending;const d=makeDraw(byN(+b.dataset.pick));Object.assign(d,{id:old.id,viaJoker:true,gold:old.gold,bonus:old.bonus,special:old.special});putMeta({pending:d});rerender();});
+  root.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{const old=S.meta.pending,g=byN(+b.dataset.pick);if(!old||!g||jarRemoved(g))return;const d=makeDraw(g);Object.assign(d,{id:old.id,viaJoker:true,gold:old.gold,bonus:old.bonus,special:old.special});putMeta({pending:d});rerender();});
   const add=$("addCustom");if(add)add.onclick=()=>{
     const name=$("newName").value.trim(),desc=$("newDesc").value.trim();if(!name||!desc){$("customErr").hidden=false;return;}
     const n=Math.max(...allGames().map(g=>g.n))+1;const g={n,g:"dac",name,desc,aux:[],by:ME};
@@ -4602,10 +4647,10 @@ window.GOCNHO_WORLD={
   const p=S.meta.pending,o=openDate(),cut=(v,n)=>String(v??"").slice(0,n);
   const vis=d=>(d.aux||[]).filter(x=>!x.secret&&Array.isArray(x.values)&&x.values.length).slice(0,4).map(x=>({label:cut(x.label,60),values:x.values.slice(0,6).map(v=>cut(v,80))}));
   let pending=null,open=null;
-  if(p){const g=byN(p.n);pending=g?{id:cut(p.id,40),n:p.n,name:cut(g.name,80),desc:cut(g.desc,320),group:(GROUPS[g.g]||GROUPS.dac).t,aux:vis(p),
+  if(p){const g=byN(p.n);pending=g&&!lostPending()?{id:cut(p.id,40),n:p.n,name:cut(g.name,80),desc:cut(g.desc,320),group:(GROUPS[g.g]||GROUPS.dac).t,aux:vis(p),
     secret:(p.aux||[]).some(x=>x.secret),starter:g.joker||p.starter==null?null:cut(S.meta.names[p.starter],30),gold:!!p.gold,bonus:p.bonus?cut(p.bonus,120):null,
-    special:p.special?cut(p.special,60):null,combo:p.combo&&byN(p.combo.n)?cut(byN(p.combo.n).name,80):null,joker:!!g.joker,swaps:Math.max(0,swapsLeft()),lost:false}
-   :{id:cut(p.id,40),n:p.n,name:"Lá này không còn trong hũ",lost:true,aux:[],swaps:0};}
+    special:p.special?cut(p.special,60):null,combo:p.combo&&byN(p.combo.n)?cut(byN(p.combo.n).name,80):null,joker:!!g.joker,canReroll:available([p.n]).length>0,lost:false}
+   :{id:cut(p.id,40),n:p.n,name:"Lá này không còn trong hũ",lost:true,aux:[],canReroll:available([p.n]).length>0};}
   if(o){const g=hg(o),todo=["dict","museum","places"].filter(t=>!o[COL[t].link]).length+(o.rating?0:1);
    open={no:o.no,n:o.n,name:cut(g?g.name:"Lá "+o.n,80),todo};}
   return{got:true,pending,open,ready:available([]).length};
