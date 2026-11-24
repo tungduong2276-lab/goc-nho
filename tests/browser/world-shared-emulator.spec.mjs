@@ -129,12 +129,33 @@ test("two isolated phones live-sync strokes, co-writing, offline catch-up; outsi
    await bob.context.setOffline(true);
    await expect.poll(()=>bob.page.evaluate(()=>navigator.onLine),{timeout:10000}).toBe(false);
    await set(alice.page,"cc_draft_anh",{k:"creative-draft",session:"story1",who:"anh",text:"Bí mật dưới giếng.",at:Date.now()});
+   // While Bob is offline, Alice erases a stroke. The remote Firestore copy
+   // must contain the eraser operation after reconnect, not just the paint.
+   await set(alice.page,"cc_paint_anh",{
+     k:"creative-paint",session:"p1",who:"anh",
+     strokes:[
+       {id:"a1",by:"anh",at:10,color:"#1D2B4F",width:5,points:[{x:.1,y:.1},{x:.6,y:.8}]},
+       {id:"a2",by:"anh",at:12,color:"#1D2B4F",width:18,erase:true,points:[{x:.1,y:.1}]}
+     ]
+   });
    await bob.page.waitForTimeout(300);
    expect(await last(bob.page,"cc_draft_anh")).toBeNull();
+   expect((await last(bob.page,"cc_paint_anh"))?.strokes).toHaveLength(1);
    await bob.context.setOffline(false);
    await expect.poll(()=>bob.page.evaluate(()=>navigator.onLine),{timeout:10000}).toBe(true);
    await expect.poll(async()=>(await last(bob.page,"cc_draft_anh"))?.text,
      {timeout:15000}).toBe("Bí mật dưới giếng.");
+   await expect.poll(async()=>(await last(bob.page,"cc_paint_anh"))?.strokes?.[1]?.erase,
+     {timeout:15000}).toBe(true);
+   // Re-render with the real creative engine on Bob's browser after catch-up.
+   const erasedPixel=await bob.page.evaluate(async({cid})=>{
+     const {drawPainting}=await import("/nha3d/creative.mjs");
+     const snap=await window.lab.db.doc("couples/"+cid+"/world/cc_paint_anh").get();
+     const canvas=document.createElement("canvas");canvas.width=480;canvas.height=320;
+     drawPainting(canvas,snap.data().strokes);
+     return Array.from(canvas.getContext("2d").getImageData(48,32,1,1).data);
+   },{cid:CID});
+   expect(erasedPixel).toEqual([255,254,250,255]);
 
    // A third signed-in user, even with a valid Firebase token, cannot read the home.
    const outsider=await connect(browser,"outsider");clients.push(outsider);
