@@ -103,6 +103,32 @@ test("two isolated phones live-sync strokes, co-writing, offline catch-up; outsi
    await expect.poll(async()=>(await last(alice.page,"cc_paint_em"))?.strokes?.[0]?.by,
      {timeout:15000}).toBe("em");
 
+   // Real 3D island presence lives in world/p_<role>, unlike the legacy
+   // standalone nha3dPresence prototype. Prove authenticated onSnapshot and
+   // reconnect on these actual W2 document IDs with two independent sessions.
+   await subscribe(bob.page,"p_anh");
+   await subscribe(alice.page,"p_em");
+   const firstAt=Date.now();
+   await set(alice.page,"p_anh",{k:"presence",who:"anh",scene:"san",x:1,z:2,mode:"idle",at:firstAt});
+   await expect.poll(async()=>(await last(bob.page,"p_anh"))?.x,
+     {timeout:15000}).toBe(1);
+   await set(bob.page,"p_em",{k:"presence",who:"em",scene:"san",x:3,z:4,mode:"idle",at:Date.now()});
+   await expect.poll(async()=>(await last(alice.page,"p_em"))?.z,
+     {timeout:15000}).toBe(4);
+   const parsed=await bob.page.evaluate(async({cid})=>{
+     const {readPresence}=await import("/nha3d/sync.mjs");
+     const snap=await window.lab.db.doc("couples/"+cid+"/world/p_anh").get();
+     return readPresence(snap.data(),Date.now());
+   },{cid:CID});
+   expect(parsed).toMatchObject({who:"anh",scene:"san",fresh:true});
+   await bob.context.setOffline(true);
+   await set(alice.page,"p_anh",{k:"presence",who:"anh",scene:"bep",x:5,z:6,mode:"idle",at:Date.now()});
+   await bob.page.waitForTimeout(250);
+   expect((await last(bob.page,"p_anh"))?.scene).toBe("san");
+   await bob.context.setOffline(false);
+   await expect.poll(async()=>(await last(bob.page,"p_anh"))?.scene,
+     {timeout:15000}).toBe("bep");
+
    // Concurrent transactions append to ONE story; neither user's paragraph may vanish.
    await set(alice.page,"cc_story_meta",{
      k:"creative-meta",kind:"story",id:"story1",title:"Hai đứa đi lạc",lines:[]
