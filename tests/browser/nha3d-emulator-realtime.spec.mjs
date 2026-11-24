@@ -127,6 +127,13 @@ test("two isolated Chromium profiles receive genuine authenticated onSnapshot up
 
     await subscribe(alice.page, bob.uid);
     await subscribe(bob.page, alice.uid);
+    // Wait until BOTH browser listeners have received their initial server
+    // snapshot before the first publish. Otherwise the first WebChannel
+    // subscription and commit can race on a fresh Emulator startup.
+    await expect.poll(() => alice.page.evaluate(() =>
+      window.__nha3dLab.seen.length), { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect.poll(() => bob.page.evaluate(() =>
+      window.__nha3dLab.seen.length), { timeout: 15_000 }).toBeGreaterThan(0);
     await publish(alice.page, "khach", 8, 11, 1, SESSION_A);
     await expect.poll(() => received(bob.page, alice.uid, 1, "khach"),
       { timeout: 15_000 }).toBe(true);
