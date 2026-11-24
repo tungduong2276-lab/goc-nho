@@ -51,7 +51,7 @@ jobs:
   # Runs only for this Draft laboratory branch so a leaked Firestore SDK stream
   # is visible without waiting for the full Playwright suite to complete.
   emulator-presence:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'staging/nha3d-integrated-review-20261108'
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'staging/nha3d-integrated-review-20261108' || github.event.pull_request.head.ref == 'fix/island-presence-cadence'
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
@@ -72,7 +72,7 @@ jobs:
 
   emulator-browser-realtime:
     # Never run this against the live Firebase project or shared staging.
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'staging/nha3d-integrated-review-20261108'
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'staging/nha3d-integrated-review-20261108' || github.event.pull_request.head.ref == 'fix/island-presence-cadence'
     runs-on: ubuntu-24.04
     timeout-minutes: 9
     steps:
