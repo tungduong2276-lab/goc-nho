@@ -90,16 +90,20 @@ test("two isolated phones live-sync strokes, co-writing, offline catch-up; outsi
    await subscribe(bob.page,"cc_draft_anh");
    await expect.poll(()=>bob.page.evaluate(()=>window.lab.seen.cc_paint_anh.length),{timeout:10000}).toBeGreaterThan(0);
 
-   await set(alice.page,"cc_paint_anh",{
-     k:"creative-paint",session:"p1",who:"anh",
-     strokes:[{id:"a1",by:"anh",at:10,color:"#1D2B4F",width:5,points:[{x:.1,y:.1},{x:.6,y:.8}]}]
-   });
+   // Draw at the SAME time on two independent authenticated devices.
+   // Separate per-person documents must both persist without last-write-wins loss.
+   await Promise.all([
+     set(alice.page,"cc_paint_anh",{
+       k:"creative-paint",session:"p1",who:"anh",
+       strokes:[{id:"a1",by:"anh",at:10,color:"#1D2B4F",width:5,points:[{x:.1,y:.1},{x:.6,y:.8}]}]
+     }),
+     set(bob.page,"cc_paint_em",{
+       k:"creative-paint",session:"p1",who:"em",
+       strokes:[{id:"b1",by:"em",at:11,color:"#ED78A3",width:5,points:[{x:.9,y:.3},{x:.4,y:.6}]}]
+     })
+   ]);
    await expect.poll(async()=>(await last(bob.page,"cc_paint_anh"))?.strokes?.[0]?.points?.[1]?.x,
      {timeout:15000}).toBe(.6);
-   await set(bob.page,"cc_paint_em",{
-     k:"creative-paint",session:"p1",who:"em",
-     strokes:[{id:"b1",by:"em",at:11,color:"#ED78A3",width:5,points:[{x:.9,y:.3},{x:.4,y:.6}]}]
-   });
    await expect.poll(async()=>(await last(alice.page,"cc_paint_em"))?.strokes?.[0]?.by,
      {timeout:15000}).toBe("em");
 
