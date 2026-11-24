@@ -54,7 +54,6 @@ export async function connectCloud() {
     setPresence(who, data) { return swallow(col.doc(presenceId(who)).set({ ...data, k: "presence", who, ts: ts() })); },
     // Hoạt động sinh hoạt dùng tài liệu riêng trong collection world vốn đã được phân quyền cho cặp đôi.
     // Đảm bảo không mất nguyên liệu nếu hai máy nấu/thu hoạch cùng lúc.
-    getLife() { return col.doc("l_home").get().then(s => sanitizeLife(s.exists ? s.data().state : null)); },
     watchLife(cb) {
       return col.doc("l_home").onSnapshot(s => cb(sanitizeLife(s.exists ? s.data().state : null)),
         e => console.warn("Kho chung chưa đồng bộ", e));

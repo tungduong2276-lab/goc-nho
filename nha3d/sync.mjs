@@ -101,8 +101,8 @@ export function shouldSendPresence(prev, next, now) {
   if (prev.scene !== next.scene || prev.mode !== next.mode || JSON.stringify(prev.seat) !== JSON.stringify(next.seat)) return true;
   if (next.ev && (!prev.ev || prev.ev.id !== next.ev.id)) return true;
   if (prev.tx !== next.tx || prev.tz !== next.tz) return true;           // vừa chạm đi tới chỗ mới
+  if (prev.moving !== next.moving) return true;                           // bắt đầu hoặc dừng thật
   const moved = Math.hypot(prev.x - next.x, prev.z - next.z) > 0.15;
   if (moved && now - prev.sentAt >= PRESENCE_MOVE_MS) return true;
-  if (!moved && prev.moving) return true;                                  // vừa dừng lại
   return now - prev.sentAt >= PRESENCE_HEARTBEAT_MS;
 }

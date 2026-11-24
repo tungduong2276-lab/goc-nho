@@ -261,6 +261,16 @@ test("W2: đảo chung — gửi thay đổi, nhận người kia và đồ đ�
   await N("remoteChanges", [{ id: "p_em", data: { k: "presence", who: "em", scene: "san", x: me.x + 1.2, z: me.z, tx: me.x + 1.2, tz: me.z + 2, face: 0, mode: "idle", at: Date.now() } }]);
   await N("tick", 2);
   expect((await N("partner")).z).toBeGreaterThan(me.z + 1.5);
+  // Nếu vị trí đến trước bố cục phòng, vẫn hiện Em tại tọa độ đã nhận.
+  await N("remoteChanges", [{ id: "p_em", data: null }]);
+  await N("tick", 0.2);
+  await N("remoteChanges", [{ id: "p_em", data: {
+    k: "presence", who: "em", scene: "san", x: me.x + 1.2, z: me.z, face: 0,
+    mode: "sleep", seat: { uid: "bed-not-yet-loaded", k: 0 }, at: Date.now()
+  } }]);
+  await N("tick", 0.2);
+  expect((await N("cloud")).partnerVisible).toBe(true);
+  expect((await N("partner")).x).toBeCloseTo(me.x + 1.2);
   // Em vào nhà: ngoài sân không còn thấy, nhãn báo Em ở trong nhà
   await N("remoteChanges", [{ id: "p_em", data: { k: "presence", who: "em", scene: "nha", x: 0, z: 2, face: 0, mode: "idle", at: Date.now() } }]);
   await N("tick", 0.2);
