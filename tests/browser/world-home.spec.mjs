@@ -271,3 +271,36 @@ test('the shared date jar can reroll repeatedly and manage cards without changin
  expect(await page.evaluate(()=>JSON.stringify(S.history))).toBe(history);
  expect(errors).toEqual([]);expect(apiRequests).toEqual([]);
 });
+
+
+test('concurrent jar card additions and removals merge without losing either phone edit',async({page})=>{
+ const{errors,apiRequests}=await open(page,390);
+ const result=await page.evaluate(()=>{
+   const base=structuredClone(S.meta),idA=jarCardId(GAMES[0]),idB=jarCardId(GAMES[1]);
+   const n=Math.max(...allGames().map(g=>g.n))+1;
+   const card=(cardId,name)=>({n,cardId,g:'dac',name,desc:'Kiểm thử độc lập',aux:[],by:0});
+   const a={__base:base,custom:[card('card-fixture-a','Lá A')],
+     jarRemoved:{...base.jarRemoved,[idA]:true}};
+   const b={__base:base,custom:[card('card-fixture-b','Lá B')],
+     jarRemoved:{...base.jarRemoved,[idB]:true}};
+   const ab=mergeMetaForWrite(mergeMetaForWrite(base,a),b);
+   const ba=mergeMetaForWrite(mergeMetaForWrite(base,b),a);
+   const repeated=mergeMetaForWrite(ab,b);
+   const inspect=x=>({
+     removedA:x.jarRemoved[idA],removedB:x.jarRemoved[idB],
+     names:x.custom.map(g=>g.name).sort(),
+     uniqueNumbers:new Set(x.custom.map(g=>g.n)).size===x.custom.length,
+     uniqueCards:new Set(x.custom.map(g=>g.cardId)).size===x.custom.length
+   });
+   return{ab:inspect(ab),ba:inspect(ba),repeated:inspect(repeated),
+     repeatedCount:repeated.custom.length};
+ });
+ for(const key of ['ab','ba','repeated']){
+   expect(result[key]).toEqual({
+     removedA:true,removedB:true,names:['Lá A','Lá B'],
+     uniqueNumbers:true,uniqueCards:true
+   });
+ }
+ expect(result.repeatedCount).toBe(2);
+ expect(errors).toEqual([]);expect(apiRequests).toEqual([]);
+});
